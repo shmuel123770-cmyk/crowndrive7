@@ -1,0 +1,2084 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crown Drive · השכרת רכבים · קראון הייטס</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EFF2F6; --bg2:#E6EAEF; --bg3:#DAE0E7; --card:#FFFFFF;
+  --line:rgba(0,0,0,.12); --line2:rgba(0,0,0,.2); --hair:rgba(0,0,0,.08);
+  --gold:#3F6B8E; --gold-l:#557FA1; --gold-d:#31567A;
+  --ivory:#1D1D1F; --mut:#6E6E73; --mut2:#A1A1A6;
+  --ok:#1C7C4F; --ok-bg:rgba(28,124,79,.08);
+  --no:#D70015; --no-bg:rgba(215,0,21,.06);
+  --soon:#A05A00; --soon-bg:rgba(160,90,0,.08);
+  --r:12px;
+  --sh:0 24px 60px rgba(0,0,0,.1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Heebo',sans-serif;font-weight:400;color:var(--ivory);background:var(--bg);line-height:1.7}
+h1,h2,h3,.serif{font-family:'Heebo',sans-serif;font-weight:800;line-height:1.12;letter-spacing:-.022em}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit}
+:focus-visible{outline:1.5px solid var(--gold);outline-offset:3px}
+::selection{background:var(--gold);color:#fff}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+.kicker{font-size:.85rem;font-weight:500;letter-spacing:.02em;color:#8CA3B8}
+.hairline{height:1px;background:linear-gradient(90deg,transparent,var(--line2),transparent)}
+
+/* ---------- NAV ---------- */
+.nav{position:sticky;top:0;z-index:60;background:#1B222B;border-bottom:none}
+.nav-in{max-width:1200px;margin:auto;display:flex;align-items:center;justify-content:space-between;padding:16px 28px;gap:16px}
+.logo{display:flex;align-items:center;gap:13px;text-decoration:none;color:#fff}
+.logo-mark{width:38px;height:38px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.18);border-radius:9px;display:grid;place-items:center;color:#fff}
+.logo b{font-family:'Heebo';font-weight:800;font-weight:700;font-size:1.2rem;letter-spacing:.06em}
+.logo small{display:block;font-size:.58rem;font-weight:500;color:#9a9a9a;letter-spacing:.32em;margin-top:-2px}
+.nav-links{display:flex;gap:30px;font-size:.85rem;font-weight:400;letter-spacing:.05em}
+.nav-links a{color:#c9c9c9;text-decoration:none;transition:color .2s}
+.nav-links a:hover{color:#fff}
+.nav-side{display:flex;gap:10px;align-items:center}
+.who{font-size:.8rem;color:#b9b9b9}
+.who b{color:#fff;font-weight:600}
+@media(max-width:900px){.nav-links{display:none}.who{display:none}}
+
+.btn{border-radius:10px;font-weight:600;font-size:.9rem;letter-spacing:0;padding:12px 24px;transition:all .2s;border:1px solid transparent}
+.btn-gold{background:var(--gold);color:#fff;border-color:var(--gold)}
+.btn-gold:hover{background:var(--gold-l);border-color:var(--gold-l)}
+.btn-out{background:#fff;color:var(--ivory);border-color:var(--line2)}
+.btn-dark-out{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.45)}
+.btn-dark-out:hover{background:rgba(255,255,255,.12);border-color:#fff}
+.btn-out:hover{border-color:var(--ivory)}
+.btn-ghost{background:transparent;color:var(--mut);border-color:var(--hair)}
+.btn-ghost:hover{color:var(--ivory);border-color:var(--mut2)}
+
+/* ---------- HERO ---------- */
+.hero{position:relative;background:#1B222B;overflow:hidden}
+.hero::before{content:"";position:absolute;inset:0;background:
+  radial-gradient(900px 420px at 15% -10%, rgba(198,161,91,.13), transparent 60%),
+  radial-gradient(700px 400px at 90% 110%, rgba(198,161,91,.07), transparent 60%)}
+.hero-in{max-width:1200px;margin:auto;padding:110px 28px 90px;position:relative;text-align:center}
+.hero .kicker{display:block;margin-bottom:26px}
+.hero h1{font-size:clamp(2.4rem,5.4vw,4.1rem);color:#fff;max-width:22ch;margin:0 auto}
+.hero h1 em{font-style:normal;color:var(--gold-l)}
+.hero p{color:var(--mut);font-size:1.05rem;max-width:52ch;margin:24px auto 40px;font-weight:200}
+.hero-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.hero-actions .btn{padding:14px 34px;font-size:.9rem}
+.hero-stats{display:flex;justify-content:center;gap:0;margin-top:64px;background:#fff;border-radius:16px;overflow:hidden;max-width:760px;margin-inline:auto;box-shadow:0 22px 54px rgba(0,0,0,.26)}
+.hstat{flex:1;padding:22px 10px;border-inline-start:1px solid var(--hair)}
+.hstat:first-child{border:none}
+.hstat b{font-family:'Heebo';font-weight:800;font-size:1.7rem;color:var(--ivory);display:block}
+.hstat span{font-size:.76rem;color:var(--mut);letter-spacing:.02em;font-weight:500}
+
+/* ---------- SECTIONS ---------- */
+.section{max-width:1200px;margin:auto;padding:90px 28px}
+.sec-head{text-align:center;margin-bottom:50px}
+.sec-head .kicker{display:block;margin-bottom:14px}
+.sec-head h2{font-size:clamp(1.7rem,3.4vw,2.4rem);font-weight:700}
+.sec-head .sub{color:var(--mut);font-size:.95rem;margin-top:10px;font-weight:200}
+.sec-tools{display:flex;justify-content:center;margin:34px 0 40px}
+.filters{display:flex;background:var(--bg2);border-radius:99px;padding:4px;gap:2px}
+.filters button{border:none;background:transparent;font-weight:500;font-size:.85rem;color:var(--mut);padding:9px 24px;border-radius:99px;transition:all .2s}
+.filters button.on{background:#232A33;color:#fff;font-weight:600}
+
+/* ---------- FLEET ---------- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:22px}
+.card{background:#fff;border:1px solid var(--hair);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;transition:transform .25s,box-shadow .25s}
+.card:hover{transform:translateY(-4px)}
+.gallery{position:relative;aspect-ratio:16/10;background:var(--bg3);overflow:hidden}
+.gallery img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s ease}
+.card:hover .gallery img{transform:scale(1.04)}
+.card.off .gallery img{filter:grayscale(1) brightness(.55)}
+.g-nav{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border:none;border-radius:50%;background:rgba(255,255,255,.85);color:#1D1D1F;font-size:1rem;display:grid;place-items:center;opacity:0;transition:opacity .2s;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+.gallery:hover .g-nav{opacity:1}
+.g-prev{inset-inline-start:12px}.g-next{inset-inline-end:12px}
+.g-dots{position:absolute;bottom:12px;inset-inline:0;display:flex;justify-content:center;gap:6px}
+.g-dots span{width:5px;height:5px;border-radius:50%;background:rgba(244,239,230,.4)}
+.g-dots span.on{background:var(--gold-l);width:18px;border-radius:99px}
+.g-count{position:absolute;top:12px;inset-inline-end:12px;background:rgba(0,0,0,.55);border-radius:99px;color:#fff;font-size:.7rem;padding:3px 10px;letter-spacing:.02em}
+.g-status{position:absolute;top:12px;inset-inline-start:12px}
+.pill{font-size:.72rem;font-weight:600;letter-spacing:.02em;padding:4px 13px;border:1px solid;border-radius:99px}
+.pill.ok{color:var(--ok);background:var(--ok-bg);border-color:rgba(127,191,158,.4)}
+.pill.no{color:var(--no);background:var(--no-bg);border-color:rgba(217,138,128,.4)}
+.pill.soon{color:var(--soon);background:var(--soon-bg);border-color:rgba(217,190,128,.4)}
+.card-body{padding:24px;display:flex;flex-direction:column;gap:15px;flex:1}
+.card-title{display:flex;justify-content:space-between;gap:12px;align-items:start}
+.card-title h3{font-size:1.2rem;font-weight:700}
+.card-title .meta{color:var(--mut);font-size:.8rem;font-weight:300;letter-spacing:.03em}
+.price{text-align:left;flex:none}
+.price b{font-family:'Heebo';font-weight:800;font-size:1.35rem;color:var(--gold-d);font-weight:700}
+.price span{font-size:.7rem;color:var(--mut);display:block;letter-spacing:.08em}
+.specs{display:flex;gap:18px;flex-wrap:wrap;border-top:1px solid var(--hair);padding-top:15px}
+.spec{display:flex;align-items:center;gap:7px;font-size:.79rem;color:var(--mut)}
+.spec svg{width:15px;height:15px;stroke:var(--gold-d)}
+.tags{display:flex;gap:7px;flex-wrap:wrap}
+.tag{background:var(--bg2);border-radius:99px;font-size:.72rem;font-weight:500;color:var(--mut);padding:3px 12px}
+.card-btn{margin-top:auto;border:none;background:#232A33;color:#fff;font-weight:600;font-size:.92rem;border-radius:10px;padding:13px;transition:all .2s}
+.card-btn.book:hover{background:#33404E}
+.card-btn.dis{background:var(--bg2);color:var(--mut2);cursor:not-allowed}
+.ret{font-size:.75rem;color:var(--soon);letter-spacing:.04em}
+.empty{grid-column:1/-1;background:var(--bg2);border-radius:18px;padding:90px 30px;text-align:center}
+.empty h3{font-size:1.3rem;font-weight:700;margin-bottom:8px}
+.empty p{color:var(--mut);font-size:.9rem;margin-bottom:26px;font-weight:200}
+
+/* ---------- STATUS STRIP ---------- */
+.strip{border-block:1px solid var(--hair);background:#fff}
+.strip-in{max-width:1200px;margin:auto;padding:16px 28px;display:flex;justify-content:center;gap:44px;flex-wrap:wrap;font-size:.82rem;letter-spacing:.05em}
+.strip .it{display:flex;gap:9px;align-items:center;color:var(--mut)}
+.strip .it b{font-family:'Heebo';font-weight:800;font-size:1.05rem;color:var(--ivory)}
+.strip .dot{width:7px;height:7px;border-radius:50%}
+.dot.ok{background:var(--ok)}.dot.no{background:var(--no)}.dot.soon{background:var(--soon)}
+
+/* ---------- HOW ---------- */
+.how-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px}
+.hstep{background:var(--bg2);border-radius:18px;padding:36px 28px}
+.hstep .num{font-family:'Heebo';font-weight:800;font-size:2rem;color:var(--gold-d);font-weight:700;display:block;margin-bottom:14px}
+.hstep h3{font-size:1rem;font-weight:700;margin-bottom:7px;letter-spacing:.02em}
+.hstep p{font-size:.84rem;color:var(--mut);font-weight:200}
+
+/* ---------- CTA / FOOTER ---------- */
+.foot-cta{background:#1B222B;border-radius:20px;padding:64px 40px;text-align:center;color:#fff;position:relative;overflow:hidden}
+.foot-cta::after{content:"";position:absolute;inset:0;background:radial-gradient(700px 340px at 85% -30%, rgba(120,155,185,.14), transparent 60%);pointer-events:none}
+.foot-cta>*{position:relative;z-index:1}
+
+.foot-cta h2{font-size:1.8rem;font-weight:700;margin-bottom:8px}
+.foot-cta p{color:#b9b9b9;font-weight:300;margin-bottom:28px}
+footer{border-top:1px solid var(--hair);color:var(--mut2);padding:34px 28px;font-size:.78rem;letter-spacing:.05em}
+.foot-in{max-width:1200px;margin:auto;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer a{color:var(--mut);text-decoration:none}
+
+/* ---------- OVERLAYS ---------- */
+.overlay{position:fixed;inset:0;background:rgba(5,5,7,.82);backdrop-filter:blur(6px);z-index:100;display:none;align-items:center;justify-content:center;padding:18px}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:20px;width:min(640px,100%);max-height:92vh;overflow:auto;box-shadow:0 30px 80px rgba(0,0,0,.25);animation:up .25s ease-out}
+.modal.wide{width:min(940px,100%)}
+@keyframes up{from{transform:translateY(18px);opacity:0}to{transform:none;opacity:1}}
+.m-head{border-bottom:1px solid var(--hair);padding:20px 26px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:rgba(255,255,255,.9);backdrop-filter:blur(14px);z-index:3}
+.m-head h3{font-size:1.1rem;font-weight:700;letter-spacing:.03em}
+.m-close{background:var(--bg2);border:none;border-radius:50%;color:var(--mut);width:32px;height:32px;font-size:.95rem}
+.m-close:hover{color:var(--ivory);border-color:var(--mut2)}
+.m-body{padding:26px}
+.steps-bar{display:flex;gap:5px;margin-bottom:24px}
+.sb{flex:1;height:2px;background:var(--hair);transition:background .3s}
+.sb.on{background:var(--gold)}
+.m-car{display:flex;gap:15px;align-items:center;background:var(--bg2);border-radius:14px;padding:12px 16px;margin-bottom:22px}
+.m-car img{width:92px;height:60px;object-fit:cover;flex:none;border-radius:9px}
+.m-car b{font-weight:600}
+.m-car .p{font-size:.8rem;color:var(--mut)}
+
+.f-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.f-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media(max-width:560px){.f-row,.f-row3{grid-template-columns:1fr}}
+.field{margin-bottom:15px}
+.field label{display:block;font-weight:500;font-size:.8rem;letter-spacing:.06em;margin-bottom:7px;color:var(--ivory)}
+.field label .req{color:var(--no)}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ivory);padding:11px 14px;font-size:.95rem;font-weight:400;transition:border-color .2s,box-shadow .2s}
+.field input:focus,.field select:focus{border-color:var(--gold);outline:none;box-shadow:0 0 0 4px rgba(63,107,142,.13)}
+.field input::placeholder{color:var(--mut2)}
+.field .hint{font-size:.72rem;color:var(--mut2);margin-top:5px}
+.field.err input,.field.err select{border-color:var(--no)}
+.err-msg{color:var(--no);font-size:.74rem;font-weight:500;margin-top:5px;display:none}
+.field.err .err-msg{display:block}
+select option{background:var(--bg2);color:var(--ivory)}
+
+.summary-box{background:var(--bg2);border-radius:14px;padding:18px;margin-bottom:18px}
+.summary-box .row{display:flex;justify-content:space-between;padding:8px 0;font-size:.88rem;border-bottom:1px solid var(--hair)}
+.summary-box .row:last-child{border:none;font-weight:600;color:var(--gold-l);font-size:1rem}
+.m-actions{display:flex;gap:10px;margin-top:10px}
+.m-actions .grow{flex:1;padding:14px}
+.note{display:flex;gap:10px;align-items:start;background:var(--bg2);border-radius:12px;padding:12px 14px;font-size:.78rem;color:var(--mut);margin-top:14px}
+.note svg{width:16px;height:16px;flex:none;margin-top:3px;stroke:var(--gold-d)}
+
+/* uploads */
+.drop{border:1.5px dashed var(--line2);border-radius:14px;padding:28px 18px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg2)}
+.drop:hover,.drop.drag{border-color:var(--gold);background:#EFF5FD}
+.drop svg{width:34px;height:34px;stroke:var(--gold-d);margin-bottom:9px}
+.drop b{display:block;font-size:.88rem;font-weight:500}
+.drop span{font-size:.74rem;color:var(--mut)}
+.drop.err-b{border-color:var(--no);background:var(--no-bg)}
+.lic-prev{display:none;position:relative;border-radius:14px;border:1px solid rgba(28,124,79,.4);overflow:hidden}
+.lic-prev img{width:100%;display:block;max-height:220px;object-fit:cover}
+.lic-prev .ok-band{position:absolute;bottom:0;inset-inline:0;background:rgba(20,40,32,.92);color:var(--ok);font-weight:500;font-size:.8rem;padding:8px 14px;display:flex;justify-content:space-between;align-items:center}
+.lic-prev button{background:transparent;border:1px solid rgba(127,191,158,.5);color:var(--ok);padding:3px 12px;font-size:.75rem}
+
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px;margin-top:12px}
+.ph{position:relative;aspect-ratio:4/3;overflow:hidden;border-radius:10px;border:1px solid var(--hair)}
+.ph img{width:100%;height:100%;object-fit:cover}
+.ph button{position:absolute;top:5px;inset-inline-end:5px;width:22px;height:22px;border:none;background:rgba(11,11,13,.8);color:var(--ivory);font-size:.72rem}
+.ph .main-tag{position:absolute;bottom:0;inset-inline:0;background:rgba(11,11,13,.8);color:var(--gold-l);font-size:.64rem;text-align:center;padding:2px;letter-spacing:.08em}
+.photo-req{font-size:.76rem;font-weight:500;margin-top:9px;letter-spacing:.03em}
+.photo-req.bad{color:var(--no)}
+.photo-req.good{color:var(--ok)}
+
+/* terms + signature */
+.terms-box{border:1px solid var(--hair);border-radius:12px;background:var(--bg2);max-height:220px;overflow:auto;padding:18px;font-size:.8rem;color:var(--mut);font-weight:300;margin-bottom:16px}
+.terms-box h4{color:var(--ivory);font-weight:600;font-size:.85rem;margin:14px 0 5px}
+.terms-box h4:first-child{margin-top:0}
+.terms-box ol{padding-inline-start:18px;display:flex;flex-direction:column;gap:4px}
+.sig-wrap{border:1.5px dashed var(--line2);border-radius:14px;background:#FAFAFC;position:relative;overflow:hidden}
+.sig-wrap canvas{display:block;width:100%;height:150px;touch-action:none;cursor:crosshair}
+.sig-hint{position:absolute;inset:0;display:grid;place-items:center;color:#B9B2A2;font-size:.85rem;pointer-events:none;letter-spacing:.1em}
+.sig-tools{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.sig-clear{background:transparent;border:1px solid var(--hair);color:var(--mut);font-size:.76rem;padding:5px 14px}
+.sig-x{position:absolute;bottom:26px;inset-inline:24px;border-bottom:1px solid #C9C2B2;pointer-events:none}
+.check-line{display:flex;gap:11px;align-items:start;font-size:.83rem;margin:14px 0}
+.check-line input{width:17px;height:17px;margin-top:3px;accent-color:var(--gold)}
+
+/* success + receipt */
+.success{text-align:center;padding:14px 6px}
+.success .big-ok{width:74px;height:74px;margin:0 auto 16px;border:1px solid rgba(127,191,158,.5);border-radius:50%;display:grid;place-items:center;background:var(--ok-bg)}
+.success .big-ok svg{width:34px;height:34px;stroke:var(--ok);stroke-width:2.4}
+.success h3{font-size:1.4rem;font-weight:700;margin-bottom:6px}
+.success p{color:var(--mut);font-size:.9rem;font-weight:200}
+.conf-num{font-family:'Heebo';font-weight:800;font-size:1.3rem;background:var(--bg2);border-radius:12px;padding:11px;margin:16px auto;max-width:260px;letter-spacing:.2em;color:var(--ivory)}
+
+.receipt{background:#FBF8F2;color:#242018;padding:30px;margin-top:20px;text-align:right;font-weight:400}
+.receipt .r-head{display:flex;justify-content:space-between;align-items:start;border-bottom:2px solid #242018;padding-bottom:14px;margin-bottom:14px}
+.receipt .r-head h4{font-family:'Heebo';font-weight:800;font-weight:900;font-size:1.25rem}
+.receipt .r-head .sm{font-size:.72rem;color:#7A7264}
+.receipt .r-row{display:flex;justify-content:space-between;padding:6px 0;font-size:.84rem;border-bottom:1px dotted #D8D1C2}
+.receipt .r-row.total{border-bottom:none;border-top:2px solid #242018;margin-top:8px;padding-top:10px;font-weight:700;font-size:1rem}
+.receipt .r-foot{font-size:.7rem;color:#7A7264;margin-top:16px;text-align:center;border-top:1px solid #D8D1C2;padding-top:10px}
+
+/* auth */
+.role-pick{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:8px}
+@media(max-width:560px){.role-pick{grid-template-columns:1fr}}
+.role-card{background:var(--bg2);border:1.5px solid transparent;border-radius:18px;padding:26px 20px;text-align:center;cursor:pointer;transition:all .2s}
+.role-card:hover{border-color:var(--gold);background:#fff;box-shadow:0 10px 30px rgba(0,0,0,.08)}
+.role-card svg{width:34px;height:34px;stroke:var(--gold);margin-bottom:12px}
+.role-card b{display:block;font-weight:600;font-size:.98rem;margin-bottom:5px}
+.role-card span{font-size:.78rem;color:var(--mut);font-weight:200}
+.auth-tabs{display:flex;background:var(--bg2);border-radius:99px;padding:4px;margin-bottom:22px}
+.auth-tabs button{flex:1;border:none;background:transparent;color:var(--mut);font-weight:500;font-size:.88rem;padding:10px;border-radius:99px}
+.auth-tabs button.on{background:#232A33;color:#fff;font-weight:600}
+.auth-back{background:none;border:none;color:var(--mut);font-size:.78rem;margin-bottom:16px;letter-spacing:.05em}
+.auth-back:hover{color:var(--gold-d)}
+.card-row{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}
+@media(max-width:560px){.card-row{grid-template-columns:1fr}}
+
+/* dashboard */
+.dash-tabs{display:flex;border-bottom:1px solid var(--hair);margin-bottom:24px;overflow-x:auto}
+.dash-tabs button{border:none;background:transparent;color:var(--mut);font-weight:500;font-size:.85rem;padding:12px 20px;letter-spacing:.05em;border-bottom:2px solid transparent;white-space:nowrap}
+.dash-tabs button.on{color:var(--gold-d);border-bottom-color:var(--gold)}
+.adm-list{display:flex;flex-direction:column;gap:8px;margin-bottom:22px}
+.adm-item{display:flex;gap:13px;align-items:center;background:var(--bg2);border-radius:14px;padding:11px 14px;flex-wrap:wrap}
+.adm-item img{width:78px;height:52px;object-fit:cover;flex:none;background:var(--bg3);border-radius:8px}
+.adm-item .inf{flex:1;min-width:180px}
+.adm-item b{font-weight:600;font-size:.92rem}
+.adm-item .sm{font-size:.76rem;color:var(--mut)}
+.adm-item .acts{display:flex;gap:6px;flex-wrap:wrap}
+.mini{border:1px solid var(--line);background:#fff;border-radius:99px;font-size:.76rem;font-weight:500;padding:6px 13px;color:var(--mut)}
+.mini:hover{color:var(--ivory);border-color:var(--mut2)}
+.mini.gold{color:var(--gold-d);border-color:var(--line2)}
+.mini.danger{color:var(--no);border-color:rgba(215,0,21,.3)}
+.adm-empty{text-align:center;color:var(--mut);font-size:.88rem;padding:30px;background:var(--bg2);border-radius:14px}
+.divider{display:flex;align-items:center;gap:14px;color:var(--gold-d);font-size:.72rem;font-weight:600;letter-spacing:.3em;margin:10px 0 20px}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--hair)}
+.tbl{width:100%;border-collapse:collapse;font-size:.83rem}
+.tbl th{text-align:right;color:var(--gold-d);font-weight:600;font-size:.72rem;letter-spacing:.12em;padding:9px 10px;border-bottom:1px solid var(--line)}
+.tbl td{padding:10px;border-bottom:1px solid var(--hair);color:var(--ivory);font-weight:300;vertical-align:top}
+.tbl td .sm{color:var(--mut);font-size:.75rem}
+.tbl .num{font-family:'Heebo';font-weight:800;font-weight:700;color:var(--gold-d)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:24px}
+.kpi{background:var(--bg2);border-radius:16px;padding:20px}
+.kpi b{font-family:'Heebo';font-weight:800;font-size:1.6rem;color:var(--gold-d);font-weight:700;display:block}
+.kpi span{font-size:.72rem;color:var(--mut);letter-spacing:.08em}
+.lic-thumb{width:56px;height:38px;object-fit:cover;border:1px solid var(--hair);cursor:pointer}
+
+.toast{position:fixed;bottom:22px;inset-inline-start:50%;transform:translateX(50%) translateY(80px);background:#1D1D1F;color:#fff;border-radius:99px;padding:12px 26px;font-weight:500;font-size:.88rem;z-index:300;opacity:0;transition:all .3s}
+.toast.show{transform:translateX(50%) translateY(0);opacity:1}
+
+/* ---------- COLOR & MOTION LAYER ---------- */
+:root{--blue:#4C7DFF;--blue-d:#2A4DC4;--violet:#8B6CFF}
+
+
+
+
+
+/* colorful accents */
+.hero h1 em{font-style:normal;background:none;color:#9FB6C9}
+.btn-gold{background:var(--gold);color:#fff;border:none;box-shadow:none}
+.btn-gold:hover{background:var(--gold-l);transform:none;filter:none;box-shadow:none}
+
+.hero::before{background:radial-gradient(1000px 500px at 80% -20%, rgba(120,155,185,.12), transparent 60%)}
+
+.card:hover{box-shadow:0 22px 48px rgba(0,0,0,.12)}
+.card-btn.book:hover{background:#33404E}
+.strip{background:var(--bg2)}
+.hstep .num{background:none;color:var(--mut2)}
+.dash-tabs button.on{border-bottom-color:var(--gold)}
+
+.foot-cta{background:#101010}
+
+/* scroll reveal */
+.reveal{opacity:0;transform:translateY(34px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+.reveal.in{opacity:1;transform:none}
+@keyframes cardIn{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+.card{animation:cardIn .55s cubic-bezier(.2,.7,.2,1) both}
+
+/* hero entrance */
+.hero-in>*{animation:heroUp .8s cubic-bezier(.2,.7,.2,1) both}
+.hero-in>*:nth-child(2){animation-delay:.08s}
+.hero-in>*:nth-child(3){animation-delay:.16s}
+.hero-in>*:nth-child(4){animation-delay:.24s}
+.hero-in>*:nth-child(5){animation-delay:.34s}
+@keyframes heroUp{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+
+@media (prefers-reduced-motion: reduce){.reveal{opacity:1;transform:none}}
+
+/* ================= MOTION & GRAPHICS LAYER ================= */
+:root{--ease:cubic-bezier(.22,.9,.26,1)}
+
+/* scroll progress */
+#progress{position:fixed;top:0;inset-inline-start:0;height:3px;width:0;z-index:200;background:linear-gradient(90deg,var(--gold),#9FB6C9);transition:width .1s linear;border-radius:0 99px 99px 0}
+
+/* hero: aurora blobs + dot grid + parallax */
+.hero{isolation:isolate}
+.hero-in{position:relative;z-index:2;will-change:transform,opacity}
+.aur{position:absolute;border-radius:50%;filter:blur(90px);pointer-events:none;z-index:0;opacity:.55}
+.aur-1{width:560px;height:560px;background:radial-gradient(circle,rgba(96,138,172,.4),transparent 70%);top:-220px;inset-inline-start:-140px;animation:aurA 18s ease-in-out infinite alternate}
+.aur-2{width:640px;height:640px;background:radial-gradient(circle,rgba(63,107,142,.32),transparent 70%);bottom:-320px;inset-inline-end:-180px;animation:aurB 22s ease-in-out infinite alternate}
+.aur-3{width:420px;height:420px;background:radial-gradient(circle,rgba(159,182,201,.22),transparent 70%);top:30%;inset-inline-start:38%;animation:aurC 26s ease-in-out infinite alternate}
+@keyframes aurA{to{transform:translate(90px,70px) scale(1.18)}}
+@keyframes aurB{to{transform:translate(-80px,-60px) scale(1.12)}}
+@keyframes aurC{to{transform:translate(-60px,50px) scale(1.25)}}
+.hero::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+  background-image:radial-gradient(rgba(255,255,255,.09) 1px,transparent 1.4px);
+  background-size:28px 28px;
+  mask-image:radial-gradient(720px 420px at 50% 30%,#000 30%,transparent 75%);
+  -webkit-mask-image:radial-gradient(720px 420px at 50% 30%,#000 30%,transparent 75%)}
+
+/* headline word-by-word rise */
+.hero h1 .w{display:inline-block;opacity:0;transform:translateY(.55em) rotate(2deg);animation:wordUp .7s var(--ease) forwards}
+@keyframes wordUp{to{opacity:1;transform:none}}
+
+/* animated "road" underline for section titles */
+.sec-head h2{position:relative;display:inline-block;padding-bottom:14px}
+.sec-head h2::after{content:"";position:absolute;bottom:0;inset-inline-start:50%;transform:translateX(50%);height:4px;width:0;border-radius:99px;background:var(--gold);opacity:.6;transition:width .8s var(--ease) .15s}
+.sec-head.in h2::after{width:64px}
+
+/* deeper reveal: blur + rise, with staggered children */
+.reveal{opacity:0;transform:translateY(38px);filter:blur(10px);transition:opacity .8s var(--ease),transform .8s var(--ease),filter .8s var(--ease)}
+.reveal.in{opacity:1;transform:none;filter:blur(0)}
+.how-grid.reveal>*,.strip-in.reveal>*{opacity:0;transform:translateY(26px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+.how-grid.reveal.in>*,.strip-in.reveal.in>*{opacity:1;transform:none}
+.how-grid.reveal.in>*:nth-child(1){transition-delay:.05s}
+.how-grid.reveal.in>*:nth-child(2){transition-delay:.15s}
+.how-grid.reveal.in>*:nth-child(3){transition-delay:.25s}
+.how-grid.reveal.in>*:nth-child(4){transition-delay:.35s}
+.strip-in.reveal.in>*:nth-child(1){transition-delay:.05s}
+.strip-in.reveal.in>*:nth-child(2){transition-delay:.13s}
+.strip-in.reveal.in>*:nth-child(3){transition-delay:.21s}
+.strip-in.reveal.in>*:nth-child(4){transition-delay:.29s}
+
+/* cards: shine sweep + smooth media */
+.card{position:relative}
+.card::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.35) 48%,transparent 62%);
+  transform:translateX(140%);transition:transform .9s var(--ease)}
+[dir="rtl"] .card::after{transform:translateX(-140%)}
+.card:hover::after{transform:translateX(0)}
+.gallery img{transition:opacity .22s ease,transform .6s var(--ease)}
+.g-dots span{transition:all .3s var(--ease)}
+
+/* steps of booking flow slide in */
+.step-anim{animation:stepIn .4s var(--ease)}
+@keyframes stepIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* modal springy entrance */
+@keyframes up{0%{transform:translateY(26px) scale(.97);opacity:0}60%{transform:translateY(-4px) scale(1.004);opacity:1}100%{transform:none;opacity:1}}
+.modal{animation:up .45s var(--ease)}
+
+/* buttons: lively but restrained */
+.btn,.card-btn,.mini{transition:transform .18s var(--ease),background .2s,box-shadow .25s,border-color .2s,color .2s}
+.btn:hover,.card-btn.book:hover{transform:translateY(-2px)}
+.btn:active,.card-btn:active,.mini:active{transform:scale(.965)}
+.btn-gold:hover{box-shadow:0 10px 26px rgba(63,107,142,.35)}
+.card-btn.book:hover{box-shadow:0 10px 24px rgba(20,26,33,.28)}
+
+/* toast spring */
+.toast{transition:transform .45s cubic-bezier(.34,1.4,.4,1),opacity .3s}
+
+/* dashboard tab content fade */
+.tab-anim{animation:stepIn .35s var(--ease)}
+
+/* stats count-up handled in JS; keep tabular width steady */
+.hstat b,.strip .it b{font-variant-numeric:tabular-nums}
+
+@media (prefers-reduced-motion: reduce){
+  #progress{display:none}
+  .aur{animation:none}
+  .hero h1 .w{opacity:1;transform:none;animation:none}
+  .card::after{display:none}
+  
+}
+
+
+/* ================= LAYERS & RENTAL ATMOSPHERE ================= */
+
+/* --- hero road scene --- */
+.hero-in{padding-bottom:190px!important}
+.road{position:absolute;inset-inline:0;bottom:0;height:150px;z-index:1;pointer-events:none}
+.asphalt{position:absolute;inset-inline:0;bottom:0;height:74px;background:linear-gradient(#232B35,#151B22);box-shadow:0 -1px 0 rgba(255,255,255,.06)}
+.sil{position:absolute;fill:#0A0E13}
+.cars-near .sil{bottom:8px;width:168px;filter:drop-shadow(0 10px 8px rgba(0,0,0,.45))}
+.cars-far .sil{bottom:66px;width:96px;fill:#2B3542;opacity:.55;filter:blur(.7px)}
+.s1{animation:drive 24s linear infinite}
+.s3{animation:drive 15s linear 3s infinite}
+@keyframes drive{from{inset-inline-start:-220px}to{inset-inline-start:calc(100% + 60px)}}
+@media(max-width:720px){.hero-in{padding-bottom:150px!important}.road{height:110px}.asphalt{height:56px}.cars-near .sil{width:120px}.cars-far .sil{bottom:50px;width:76px}}
+
+
+/* --- route layer behind the fleet --- */
+#fleet{position:relative}
+#fleet>*{position:relative;z-index:1}
+.route{position:absolute;inset:0;z-index:0!important;width:100%;height:100%;pointer-events:none}
+.route-path{fill:none;stroke:var(--gold);stroke-width:2.5;opacity:.13;stroke-dasharray:3 14;stroke-linecap:round}
+.rp2{opacity:.09}
+.route-pin{fill:var(--gold);opacity:.28;transform-box:fill-box;transform-origin:center;animation:pinPulse 2.4s ease-in-out infinite}
+.route-pin.d2{animation-delay:.8s}
+.route-pin.d3{animation-delay:1.5s}
+@keyframes pinPulse{0%,100%{transform:scale(1);opacity:.28}50%{transform:scale(1.7);opacity:.1}}
+
+/* --- rental ticker band --- */
+.ticker{background:#1B222B;overflow:hidden;padding:16px 0;border-block:1px solid rgba(255,255,255,.05)}
+.ticker-track{display:flex;align-items:center;gap:34px;width:max-content;animation:tick 26s linear infinite}
+.ticker span{color:#C7D2DE;font-size:.88rem;font-weight:500;letter-spacing:.02em;white-space:nowrap}
+.ticker i{color:var(--gold-l);font-style:normal;font-size:.6rem;opacity:.8}
+@keyframes tick{to{transform:translateX(50%)}}
+.ticker:hover .ticker-track{animation-play-state:paused}
+#how{padding-top:64px}
+
+/* --- step icons --- */
+.hicon{width:48px;height:48px;border-radius:13px;display:grid;place-items:center;margin-bottom:14px;color:var(--gold-d);
+  background:linear-gradient(150deg,#EDF2F7,#E1E9F1);box-shadow:inset 0 0 0 1px rgba(63,107,142,.14)}
+.hicon svg{width:24px;height:24px}
+.hstep{position:relative;overflow:hidden}
+.hstep::after{content:"";position:absolute;inset-inline-end:-34px;top:-34px;width:110px;height:110px;border-radius:50%;
+  background:radial-gradient(circle,rgba(63,107,142,.09),transparent 70%)}
+.hstep .num{position:absolute;top:18px;inset-inline-end:20px;font-size:2.2rem;font-weight:800;color:rgba(31,41,53,.07);margin:0}
+
+/* --- contact banner: skyline + road --- */
+.skyline{position:absolute;inset-inline:0;bottom:0;height:96px;width:100%;pointer-events:none}
+.foot-cta{padding-bottom:96px!important}
+
+/* --- extra depth: nav + panels --- */
+.nav{box-shadow:0 10px 30px rgba(10,14,19,.35)}
+.hero-stats{position:relative;z-index:2}
+
+@media (prefers-reduced-motion: reduce){
+  .sil,.route-pin,.ticker-track{animation:none}
+}
+
+
+/* --- professional automotive backdrop --- */
+.blueprint{position:absolute;top:96px;inset-inline-start:50%;transform:translateX(50%);width:min(620px,86vw);z-index:0;color:#AFC4D6;opacity:.1;pointer-events:none}
+@media(max-width:900px){.blueprint{top:70px;opacity:.08}}
+
+.citymap{position:fixed;inset:0;width:100%;height:100%;z-index:-1;opacity:.05;pointer-events:none}
+.section,.strip,.ticker{position:relative}
+
+@media (prefers-reduced-motion: reduce){.blueprint{opacity:.08}}
+
+
+
+
+/* edit-mode flash on form title */
+.divider.flash{animation:flashGold 1.2s ease}
+@keyframes flashGold{0%{color:var(--gold);letter-spacing:.4em}100%{color:var(--gold-d)}}
+
+
+/* ================= CHAT ================= */
+#chat-fab{position:fixed;bottom:22px;inset-inline-start:22px;width:56px;height:56px;border-radius:50%;border:none;background:#1B222B;color:#fff;display:grid;place-items:center;box-shadow:0 14px 34px rgba(10,14,19,.35);z-index:95;transition:transform .2s var(--ease),background .2s}
+#chat-fab:hover{transform:translateY(-3px);background:#232C37}
+#chat-fab svg{width:25px;height:25px}
+#chat-badge{position:absolute;top:-4px;inset-inline-end:-4px;min-width:21px;height:21px;border-radius:99px;background:var(--no);color:#fff;font-size:.7rem;font-weight:700;display:grid;place-items:center;padding:0 5px;border:2px solid #fff}
+#chat-panel{position:fixed;bottom:90px;inset-inline-start:22px;width:min(370px,calc(100vw - 34px));height:min(520px,72vh);background:#fff;border-radius:18px;box-shadow:0 34px 90px rgba(10,14,19,.35);z-index:120;display:none;flex-direction:column;overflow:hidden}
+#chat-panel.open{display:flex;animation:up .35s var(--ease)}
+.cp-head{background:#1B222B;color:#fff;padding:14px 16px;display:flex;align-items:center;gap:10px}
+.cp-title{flex:1;font-weight:700;font-size:.95rem;text-align:center}
+.cp-x,.cp-back{background:rgba(255,255,255,.1);border:none;color:#fff;width:30px;height:30px;border-radius:8px;font-size:.9rem;flex:none}
+.cp-list{flex:1;overflow:auto;padding:12px}
+.cp-item{display:flex;gap:12px;align-items:center;padding:12px;border-radius:12px;cursor:pointer;transition:background .15s}
+.cp-item:hover{background:var(--bg2)}
+.cp-ava{width:42px;height:42px;border-radius:50%;flex:none;display:grid;place-items:center;color:#fff;font-weight:700;font-size:.85rem}
+.cp-ava.sup{background:var(--gold)}
+.cp-ava.usr{background:#232A33}
+.cp-item .inf{flex:1;min-width:0}
+.cp-item b{font-size:.88rem;display:block}
+.cp-item .last{font-size:.76rem;color:var(--mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:210px}
+.cp-unread{min-width:20px;height:20px;border-radius:99px;background:var(--no);color:#fff;font-size:.68rem;font-weight:700;display:grid;place-items:center;padding:0 5px}
+.cp-empty{text-align:center;color:var(--mut);font-size:.85rem;padding:36px 20px}
+.cp-thread{flex:1;display:flex;flex-direction:column;min-height:0}
+.cp-msgs{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:9px;background:var(--bg)}
+.bub{max-width:78%;padding:9px 13px;border-radius:15px;font-size:.86rem;line-height:1.5;word-wrap:break-word;animation:stepIn .25s var(--ease)}
+.bub.me{align-self:flex-start;background:#1B222B;color:#fff;border-end-start-radius:5px}
+.bub.them{align-self:flex-end;background:#fff;border:1px solid var(--hair);border-end-end-radius:5px}
+.bub.sys{align-self:center;background:transparent;color:var(--mut);font-size:.74rem;text-align:center;max-width:92%}
+.bub .who{display:block;font-size:.66rem;font-weight:700;opacity:.65;margin-bottom:2px}
+.bub .tm{display:block;font-size:.62rem;opacity:.55;margin-top:3px;text-align:left}
+.cp-input{display:flex;gap:9px;padding:11px;border-top:1px solid var(--hair);background:#fff}
+.cp-input input{flex:1;border:1px solid var(--line);border-radius:99px;padding:10px 16px;font-size:.88rem}
+.cp-input input:focus{outline:none;border-color:var(--gold)}
+.cp-input button{width:42px;height:42px;border-radius:50%;border:none;background:var(--gold);color:#fff;display:grid;place-items:center;flex:none}
+.cp-input button svg{width:18px;height:18px}
+.cp-input button:hover{background:var(--gold-l)}
+@media(max-width:520px){#chat-panel{bottom:0;inset-inline:0;width:100%;height:78vh;border-radius:18px 18px 0 0}}
+
+
+/* --- fleet: heading beside the cars, cards fill the space --- */
+.fleet-wrap{display:grid;grid-template-columns:272px 1fr;gap:46px;align-items:start}
+.fleet-side{position:sticky;top:92px}
+.fleet-side .sec-head{text-align:start;margin-bottom:26px}
+.fleet-side .sec-head h2{padding-bottom:16px}
+.fleet-side .sec-head h2::after{inset-inline-start:0;transform:none}
+.fleet-side .sub{max-width:24ch}
+.filters.vert{flex-direction:column;border-radius:16px;padding:6px;width:100%}
+.filters.vert button{text-align:start;padding:11px 16px;border-radius:11px;width:100%}
+.side-live{margin-top:18px;display:flex;align-items:center;gap:9px;font-size:.85rem;color:var(--mut);background:#fff;border:1px solid var(--hair);border-radius:12px;padding:11px 14px}
+.side-live b{color:var(--ivory);font-variant-numeric:tabular-nums}
+#fleet .grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+@media(max-width:940px){
+  .fleet-wrap{grid-template-columns:1fr;gap:26px}
+  .fleet-side{position:static}
+  .fleet-side .sec-head{text-align:center}
+  .fleet-side .sec-head h2::after{inset-inline-start:50%;transform:translateX(50%)}
+  .fleet-side .sub{max-width:none}
+  .filters.vert{flex-direction:row;border-radius:99px}
+  .filters.vert button{width:auto;text-align:center;border-radius:99px;flex:1}
+  .side-live{justify-content:center}
+}
+
+
+/* ===== ratings-and-profiles styles ===== */
+.stars{position:relative;display:inline-block;line-height:1;color:#CBD3DC;letter-spacing:1px;font-size:.95em;white-space:nowrap}
+.stars>i{position:absolute;inset-inline-start:0;top:0;white-space:nowrap;overflow:hidden;color:#E9A93D;font-style:normal}
+.rcount{font-size:.74em;color:var(--mut);margin-inline-start:4px}
+.new-tag{font-size:.7rem;font-weight:600;color:var(--gold-d);background:rgba(63,107,142,.1);border-radius:99px;padding:2px 10px}
+.owner-chip{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--hair);border-radius:99px;padding:5px 13px 5px 6px;width:fit-content;cursor:pointer;font-size:.8rem;color:var(--ivory);transition:border-color .2s,background .2s}
+.owner-chip:hover{border-color:var(--gold);background:#fff}
+.oc-ava{width:25px;height:25px;border-radius:50%;background:#232A33;color:#fff;display:grid;place-items:center;font-size:.72rem;font-weight:700;flex:none}
+.oc-name{font-weight:600}
+.rate-picker{display:inline-flex;gap:1px;direction:ltr}
+.rp-star{background:none;border:none;font-size:1.25rem;line-height:1;color:#CBD3DC;cursor:pointer;padding:0 2px;transition:transform .15s,color .15s}
+.rp-star:hover{color:#E9A93D;transform:scale(1.2)}
+.rate-label{font-size:.72rem;color:var(--mut);display:block;margin-bottom:3px}
+.prof-head{display:flex;gap:16px;align-items:center;margin-bottom:8px}
+.prof-ava{width:64px;height:64px;border-radius:50%;background:#232A33;color:#fff;display:grid;place-items:center;font-size:1.5rem;font-weight:800;flex:none}
+.prof-head b{font-size:1.15rem;display:block}
+.prof-head .sm{font-size:.8rem;color:var(--mut)}
+.prof-stars{margin-top:4px;font-size:1.05rem}
+.prof-cars{display:flex;flex-direction:column;gap:9px}
+.pc-item{display:flex;gap:12px;align-items:center;background:var(--bg2);border-radius:12px;padding:10px 12px}
+.pc-item img{width:74px;height:50px;object-fit:cover;border-radius:8px;flex:none}
+.pc-item .inf{flex:1;min-width:0}
+.pc-item b{font-size:.9rem}
+.pc-item .sm{font-size:.76rem;color:var(--mut)}
+
+</style>
+</head>
+<body>
+
+<div id="progress" aria-hidden="true"></div>
+
+<svg class="citymap" viewBox="0 0 1400 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+  <g fill="none" stroke="#31567A" stroke-width="1.4">
+    <path d="M120 0 V1000 M330 0 V1000 M545 0 V1000 M760 0 V1000 M980 0 V1000 M1190 0 V1000"/>
+    <path d="M0 140 H1400 M0 335 H1400 M0 540 H1400 M0 745 H1400 M0 930 H1400"/>
+    <path d="M0 60 L1400 620" stroke-width="2.2"/>
+    <path d="M200 1000 L1050 0" stroke-width="2.2"/>
+    <path d="M330 335 Q450 240 545 335 T760 335" stroke-width="2"/>
+  </g>
+  <g fill="#31567A">
+    <circle cx="545" cy="335" r="5"/><circle cx="980" cy="540" r="5"/><circle cx="330" cy="745" r="5"/>
+  </g>
+</svg>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="carSil" viewBox="0 0 200 70">
+    <path d="M14 52 q2 -12 16 -15 l18 -3 q10 -14 30 -16 l36 -1 q20 1 32 13 l10 9 q22 3 26 12 q2 7 -4 9 l-9 1 q-2 -11 -14 -11 t-14 11 l-70 0 q-2 -11 -14 -11 t-14 11 l-17 -1 q-9 -2 -8 -8 z"/>
+    <circle cx="57" cy="57" r="11"/>
+    <circle cx="155" cy="57" r="11"/>
+  </symbol>
+</svg>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-in">
+    <a class="logo" href="#top">
+      <span class="logo-mark"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M5 16l1.5-5.5A2 2 0 018.4 9h7.2a2 2 0 011.9 1.5L19 16M5 16h14M5 16v3m14-3v3M7.5 13h.01M16.5 13h.01"/></svg></span>
+      <span><b>CROWN DRIVE</b><small>קראון הייטס · ברוקלין</small></span>
+    </a>
+    <div class="nav-links">
+      <a href="#fleet">הרכבים</a>
+      <a href="#how">תהליך ההזמנה</a>
+      <a href="#contact">יצירת קשר</a>
+    </div>
+    <div class="nav-side" id="nav-side"></div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="aur aur-1" aria-hidden="true"></div>
+  <div class="aur aur-2" aria-hidden="true"></div>
+  <div class="aur aur-3" aria-hidden="true"></div>
+
+  <!-- technical blueprint sketch -->
+  <svg class="blueprint" viewBox="0 0 640 300" aria-hidden="true">
+    <g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+      <!-- body outline -->
+      <path d="M60 210 q4 -30 36 -36 l52 -8 q28 -40 84 -46 l96 -3 q56 2 92 34 l26 24 q56 6 66 30 q6 16 -6 20 l-24 3"/>
+      <path d="M60 210 q-4 12 10 16 l40 2"/>
+      <path d="M174 228 l180 0"/>
+      <path d="M478 228 l36 -2"/>
+      <!-- glasshouse -->
+      <path d="M172 166 q26 -36 78 -42 l92 -3 q50 3 84 32"/>
+      <path d="M258 124 l6 42 M356 121 l10 44"/>
+      <!-- doors & handle -->
+      <path d="M262 166 l-6 60 M362 165 l-2 62"/>
+      <path d="M286 184 l30 0 M388 183 l30 0"/>
+      <!-- lights -->
+      <path d="M64 196 l34 -6 M528 208 l24 -4"/>
+      <!-- wheels -->
+      <circle cx="204" cy="226" r="34"/><circle cx="204" cy="226" r="21"/><circle cx="204" cy="226" r="3"/>
+      <circle cx="452" cy="226" r="34"/><circle cx="452" cy="226" r="21"/><circle cx="452" cy="226" r="3"/>
+      <path d="M204 205 v42 M183 226 h42 M452 205 v42 M431 226 h42" opacity=".55"/>
+      <!-- blueprint construction marks -->
+      <circle cx="204" cy="226" r="48" stroke-dasharray="4 7" opacity=".5"/>
+      <circle cx="452" cy="226" r="48" stroke-dasharray="4 7" opacity=".5"/>
+      <path d="M60 272 l520 0" stroke-dasharray="4 7" opacity=".5"/>
+      <path d="M60 265 l0 14 M580 265 l0 14" opacity=".6"/>
+      <path d="M110 96 l-18 0 0 18 M540 96 l18 0 0 18" opacity=".5"/>
+    </g>
+  </svg>
+
+  <div class="hero-in">
+    <span class="kicker">קראון הייטס · ברוקלין</span>
+    <h1>השכרת רכבים <em>בקראון הייטס</em></h1>
+    <div class="hero-actions" style="margin-top:36px">
+      <button class="btn btn-gold" onclick="scrollToFleet()">לצפייה ברכבים</button>
+      <button class="btn btn-dark-out" onclick="openAuth()">כניסה / הרשמה</button>
+    </div>
+    <div class="hero-stats">
+      <div class="hstat"><b id="hs-cars">0</b><span>רכבים בצי</span></div>
+      <div class="hstat"><b id="hs-ok">0</b><span>זמינים כעת</span></div>
+      <div class="hstat"><b>24/6</b><span>מענה טלפוני</span></div>
+      <div class="hstat"><b>מבוטח</b><span>ביטוח מקיף</span></div>
+    </div>
+  </div>
+
+  <!-- layered road scene -->
+  <div class="road" aria-hidden="true">
+    <div class="cars-far">
+      <svg class="sil s1"><use href="#carSil"/></svg>
+    </div>
+    <div class="asphalt"></div>
+    <div class="cars-near">
+      <svg class="sil s3"><use href="#carSil"/></svg>
+    </div>
+  </div>
+</header>
+
+<!-- STATUS STRIP -->
+<div class="strip">
+  <div class="strip-in">
+    <span class="it"><span class="dot ok"></span><b id="cnt-ok">0</b> זמינים להשכרה</span>
+    <span class="it"><span class="dot no"></span><b id="cnt-no">0</b> מושכרים</span>
+    <span class="it"><span class="dot soon"></span><b id="cnt-soon">0</b> מתפנים בקרוב</span>
+    <span class="it" style="color:var(--mut2);font-size:.74rem" id="last-upd"></span>
+  </div>
+</div>
+
+<!-- FLEET -->
+<section class="section" id="fleet">
+  <svg class="route" viewBox="0 0 1200 640" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M-40 90 C 260 30, 420 220, 640 180 S 1020 300, 1250 210" class="route-path"/>
+    <path d="M-40 470 C 300 540, 620 400, 860 480 S 1140 560, 1260 500" class="route-path rp2"/>
+    <circle cx="120" cy="72" r="7" class="route-pin"/>
+    <circle cx="1080" cy="238" r="7" class="route-pin d2"/>
+    <circle cx="900" cy="486" r="7" class="route-pin d3"/>
+  </svg>
+  <div class="fleet-wrap">
+    <aside class="fleet-side">
+      <div class="sec-head">
+        <h2>צי הרכבים</h2>
+        <div class="sub">מפרט מלא, תמונות וזמינות מעודכנת לכל רכב</div>
+      </div>
+      <div class="filters vert" role="tablist" aria-label="סינון לפי זמינות">
+        <button class="on" onclick="setFilter('all',this)">הכל</button>
+        <button onclick="setFilter('available',this)">זמינים</button>
+        <button onclick="setFilter('rented',this)">מושכרים</button>
+      </div>
+      <div class="side-live"><span class="dot ok"></span><b id="side-avail">0</b> זמינים להשכרה עכשיו</div>
+    </aside>
+    <div class="grid" id="grid"></div>
+  </div>
+</section>
+
+<!-- ticker -->
+<div class="ticker" aria-hidden="true">
+  <div class="ticker-track"><span>איסוף מיידי בקראון הייטס</span><i>◆</i><span>ביטוח מקיף כלול</span><i>◆</i><span>הזמנה מקוונת ב-3 דקות</span><i>◆</i><span>רכבים חדשים ומטופחים</span><i>◆</i><span>מענה 24/6</span><i>◆</i><span>ביטול חינם עד 24 שעות</span><i>◆</i><span>איסוף מיידי בקראון הייטס</span><i>◆</i><span>ביטוח מקיף כלול</span><i>◆</i><span>הזמנה מקוונת ב-3 דקות</span><i>◆</i><span>רכבים חדשים ומטופחים</span><i>◆</i><span>מענה 24/6</span><i>◆</i><span>ביטול חינם עד 24 שעות</span><i>◆</i></div>
+</div>
+
+<!-- HOW -->
+<section class="section" id="how">
+  <div class="sec-head">
+    <h2>תהליך ההזמנה</h2>
+  </div>
+  <div class="how-grid">
+    <div class="hstep"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0114 0v1"/></svg></div><span class="num">1</span><h3>הרשמה</h3><p>פרטים אישיים, צילום רישיון נהיגה ואמצעי תשלום עם מסגרת פיקדון.</p></div>
+    <div class="hstep"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 16l1.5-5.5A2 2 0 018.4 9h7.2a2 2 0 011.9 1.5L19 16M5 16h14M5 16v3m14-3v3M7.5 13h.01M16.5 13h.01"/></svg></div><span class="num">2</span><h3>בחירת רכב ותאריכים</h3><p>בחירת רכב זמין וקביעת מועדי איסוף והחזרה. המחיר מחושב מיד.</p></div>
+    <div class="hstep"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 19l7-7a2.1 2.1 0 00-3-3l-7 7-1.5 4.5L12 19z"/><path d="M4 21h9"/></svg></div><span class="num">3</span><h3>הסכם וחתימה</h3><p>קריאת תקנון ההשכרה וחתימה דיגיטלית — שם מלא, חתימה ותאריך.</p></div>
+    <div class="hstep"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></div><span class="num">4</span><h3>אישור וקבלה</h3><p>מספר הזמנה וקבלה נשלחים לשוכר. הרכב ממתין בנקודת האיסוף.</p></div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section class="section" id="contact" style="padding-top:0">
+  <div class="foot-cta">
+    <svg class="skyline" viewBox="0 0 1200 120" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 120V78h34V58h22v20h30V40h26v78h40V64h30v-18h24v18h26v56h44V52h36v68h30V30h20l6-12 6 12h20v90h48V70h34v50h36V44h28v76h42V58h26v62h38V36h30v84h44V66h32v54h50V48h30v72h40V60h30v60h44V42h28v78h58V70h36v50H1200V120z" fill="rgba(255,255,255,.05)"/>
+    </svg>
+    <h2>שירות לקוחות</h2>
+    <p>כל התקשורת מתנהלת כאן, באתר — מענה מהיר בצ'אט בכל שעות היום (למעט שבת וחג)</p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <button class="btn btn-gold" style="padding:14px 34px;font-size:.95rem" onclick="openChatTo(supTid())">💬 פתיחת צ'אט עם שירות הלקוחות</button>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="foot-in">
+    <div><b style="color:var(--gold-d);font-family:'Heebo';font-weight:800">CROWN DRIVE</b> · קראון הייטס, ברוקלין NY</div>
+    <div>קינגסטון אווניו, קראון הייטס · שירות הלקוחות זמין בצ'אט שבאתר</div>
+    <div>© 2026 כל הזכויות שמורות</div>
+  </div>
+</footer>
+
+<!-- ============ AUTH MODAL ============ -->
+<div class="overlay" id="ov-auth" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="m-head"><h3 id="auth-title">כניסה לחשבון</h3><button class="m-close" onclick="closeOv('ov-auth')">✕</button></div>
+    <div class="m-body">
+
+      <!-- role pick -->
+      <div id="auth-roles">
+        <div class="role-pick">
+          <div class="role-card" onclick="pickRole('renter')" tabindex="0" role="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0114 0v1"/></svg>
+            <b>אני שוכר רכב</b>
+            <span>הרשמה עם פרטים אישיים, רישיון נהיגה ואמצעי תשלום</span>
+          </div>
+          <div class="role-card" onclick="pickRole('owner')" tabindex="0" role="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round"><path d="M5 16l1.5-5.5A2 2 0 018.4 9h7.2a2 2 0 011.9 1.5L19 16M5 16h14M5 16v3m14-3v3M7.5 13h.01M16.5 13h.01"/></svg>
+            <b>אני בעל רכב</b>
+            <span>פרסום רכבים, מעקב הזמנות ודוחות הכנסה שבועיים</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- auth forms -->
+      <div id="auth-forms" style="display:none">
+        <button class="auth-back" onclick="backToRoles()">→ חזרה לבחירת סוג חשבון</button>
+        <div class="auth-tabs">
+          <button id="t-login" class="on" onclick="setAuthMode('login')">כניסה</button>
+          <button id="t-signup" onclick="setAuthMode('signup')">הרשמה</button>
+        </div>
+
+        <!-- login -->
+        <div id="auth-login">
+          <div class="field" id="lf-mail"><label>אימייל <span class="req">*</span></label><input id="l-mail" type="email" dir="ltr" style="text-align:right" placeholder="name@email.com"><div class="err-msg">אימייל לא נמצא</div></div>
+          <div class="field" id="lf-pass"><label>סיסמה <span class="req">*</span></label><input id="l-pass" type="password"><div class="err-msg">סיסמה שגויה</div></div>
+          <div class="m-actions"><button class="btn btn-gold grow" onclick="doLogin()">כניסה לחשבון</button></div>
+        </div>
+
+        <!-- signup -->
+        <div id="auth-signup" style="display:none">
+          <div class="f-row">
+            <div class="field" id="sf-name"><label>שם מלא <span class="req">*</span></label><input id="s-name" placeholder="ישראל ישראלי"><div class="err-msg">שדה חובה</div></div>
+            <div class="field" id="sf-phone"><label>טלפון נייד <span class="req">*</span></label><input id="s-phone" type="tel" dir="ltr" style="text-align:right" placeholder="(617) 000-0000"><div class="err-msg">מספר לא תקין</div></div>
+          </div>
+          <div class="f-row">
+            <div class="field" id="sf-mail"><label>אימייל <span class="req">*</span></label><input id="s-mail" type="email" dir="ltr" style="text-align:right" placeholder="name@email.com"><div class="err-msg">אימייל לא תקין או כבר רשום</div></div>
+            <div class="field" id="sf-pass"><label>סיסמה <span class="req">*</span></label><input id="s-pass" type="password"><div class="err-msg">לפחות 6 תווים</div></div>
+          </div>
+
+          <!-- renter extras -->
+          <div id="renter-extras">
+            <div class="divider">אימות רישיון נהיגה</div>
+            <div class="field">
+              <label>צילום רישיון נהיגה בתוקף <span class="req">* חובה</span></label>
+              <div class="drop" id="drop-rlic" tabindex="0" role="button">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>
+                <b>לחצו להעלאה או גררו לכאן</b>
+                <span>JPG / PNG / HEIC · עד 10MB · צד קדמי</span>
+              </div>
+              <input type="file" id="rlic-file" accept="image/*" hidden>
+              <div class="err-msg" id="rlic-err" style="display:none">חובה להעלות צילום רישיון להשלמת ההרשמה</div>
+              <div class="lic-prev" id="rlic-prev">
+                <img id="rlic-img" alt="תצוגה מקדימה של הרישיון">
+                <div class="ok-band"><span>✓ הרישיון הועלה</span><button onclick="clearRLic()">החלפה</button></div>
+              </div>
+            </div>
+
+            <div class="divider">אמצעי תשלום ומסגרת פיקדון</div>
+            <div class="card-row">
+              <div class="field" id="sf-card"><label>מספר כרטיס אשראי <span class="req">*</span></label><input id="s-card" dir="ltr" style="text-align:right" inputmode="numeric" placeholder="4580 •••• •••• ••••" maxlength="19"><div class="err-msg">מספר כרטיס לא תקין</div></div>
+              <div class="field" id="sf-exp"><label>תוקף <span class="req">*</span></label><input id="s-exp" dir="ltr" style="text-align:right" placeholder="MM/YY" maxlength="5"><div class="err-msg">תוקף לא תקין</div></div>
+              <div class="field"><label>מסגרת פיקדון <span class="req">*</span></label>
+                <select id="s-frame"><option value="500">$500</option><option value="1000" selected>$1,000</option><option value="1500">$1,500</option><option value="2000">$2,000</option></select>
+              </div>
+            </div>
+            <div class="note">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+              <div>המסגרת נתפסת כפיקדון בעת ההשכרה ומשוחררת בהחזרת הרכב. <b style="color:var(--soon)">שימו לב:</b> זוהי גרסת הדגמה — באתר אמיתי אין לשמור פרטי אשראי גולמיים; החיוב חייב לעבור דרך סולק מאובטח (Stripe וכדומה).</div>
+            </div>
+          </div>
+
+          <div class="m-actions" style="margin-top:18px"><button class="btn btn-gold grow" onclick="doSignup()">יצירת חשבון</button></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ============ OWNER DASHBOARD ============ -->
+<div class="overlay" id="ov-owner" role="dialog" aria-modal="true">
+  <div class="modal wide">
+    <div class="m-head"><h3>אזור בעלי רכב</h3><button class="m-close" onclick="closeOv('ov-owner')">✕</button></div>
+    <div class="m-body">
+      <div class="dash-tabs">
+        <button class="on" id="dt-cars" onclick="setDash('cars')">הרכבים שלי</button>
+        <button id="dt-book" onclick="setDash('book')">הזמנות ושוכרים</button>
+        <button id="dt-rep" onclick="setDash('rep')">דוח שבועי</button>
+      </div>
+
+      <!-- cars tab -->
+      <div id="dash-cars">
+
+        <div class="note" style="margin:0 0 14px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 19l7-7a2.1 2.1 0 00-3-3l-7 7-1.5 4.5L12 19z"/></svg>
+          <div>המודעות שלך בשליטה מלאה: בכל רגע אפשר <b>לערוך את כל הפרטים</b>, לשנות זמינות או <b>למחוק את המודעה לגמרי</b> — והאתר מתעדכן מיד.</div>
+        </div>
+        <div class="adm-list" id="adm-list"></div>
+        <div class="divider" id="form-title">הוספת רכב חדש</div>
+        <div class="f-row3">
+          <div class="field" id="af-make"><label>יצרן <span class="req">*</span></label><input id="a-make" placeholder="Mercedes-Benz"><div class="err-msg">שדה חובה</div></div>
+          <div class="field" id="af-model"><label>דגם <span class="req">*</span></label><input id="a-model" placeholder="S-Class"><div class="err-msg">שדה חובה</div></div>
+          <div class="field" id="af-yr"><label>שנה <span class="req">*</span></label><input id="a-yr" type="number" min="2000" max="2027" placeholder="2025"><div class="err-msg">שנה לא תקינה</div></div>
+        </div>
+        <div class="f-row3">
+          <div class="field" id="af-color"><label>צבע <span class="req">*</span></label><input id="a-color" placeholder="שחור אובסידיאן"><div class="err-msg">שדה חובה</div></div>
+          <div class="field"><label>קטגוריה</label>
+            <select id="a-cat"><option>סדאן יוקרה</option><option>סדאן</option><option>SUV יוקרה</option><option>SUV</option><option>מיניוואן</option><option>קופה ספורט</option><option>קבריולה</option><option>רכב מסחרי</option></select>
+          </div>
+          <div class="field" id="af-price"><label>מחיר ליום ($) <span class="req">*</span></label><input id="a-price" type="number" min="1" placeholder="189"><div class="err-msg">יש להזין מחיר</div></div>
+        </div>
+        <div class="f-row3">
+          <div class="field"><label>מושבים</label><select id="a-seats"><option>2</option><option>4</option><option selected>5</option><option>7</option><option>8</option></select></div>
+          <div class="field"><label>תיבת הילוכים</label><select id="a-gear"><option selected>אוטומט</option><option>ידני</option></select></div>
+          <div class="field"><label>סוג הנעה <span class="req">*</span></label><select id="a-fuel"><option selected>בנזין</option><option>היברידי</option><option>היברידי נטען (PHEV)</option><option>חשמלי</option><option>דיזל</option></select></div>
+        </div>
+        <div class="f-row">
+          <div class="field"><label>אבזור <span style="color:var(--mut2);font-weight:300">(מופרד בפסיקים)</span></label><input id="a-tags" placeholder="ריפודי עור, גג פנורמי, מערכת שמע Burmester"></div>
+          <div class="field"><label>סטטוס התחלתי</label><select id="a-status"><option value="available" selected>זמין להשכרה</option><option value="rented">מושכר</option></select></div>
+        </div>
+        <div class="field">
+          <label>תמונות הרכב <span class="req">* לפחות 2 תמונות</span></label>
+          <div class="drop" id="drop-photos" tabindex="0" role="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+            <b>לחצו לבחירת תמונות או גררו לכאן</b>
+            <span>חזית, צד ופנים הרכב · עד 6 תמונות</span>
+          </div>
+          <input type="file" id="ph-file" accept="image/*" multiple hidden>
+          <div class="photo-grid" id="ph-grid"></div>
+          <div class="photo-req bad" id="ph-req">הועלו 0 מתוך 2 תמונות נדרשות</div>
+        </div>
+        <div class="m-actions">
+          <button class="btn btn-ghost" id="a-cancel" onclick="resetCarForm()" style="display:none">ביטול עריכה</button>
+          <button class="btn btn-gold grow" id="a-save" onclick="saveCar()">פרסום הרכב</button>
+        </div>
+      </div>
+
+      <!-- bookings tab -->
+      <div id="dash-book" style="display:none"></div>
+
+      <!-- report tab -->
+      <div id="dash-rep" style="display:none"></div>
+
+      <div class="note" style="margin-top:22px">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        <div>גרסת הדגמה: הנתונים נשמרים בזיכרון הדפדפן בלבד ונמחקים ברענון. חיבור מסד נתונים ושליחת מיילים אמיתית דורשים צד שרת.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ RENTER AREA ============ -->
+<div class="overlay" id="ov-renter" role="dialog" aria-modal="true">
+  <div class="modal wide">
+    <div class="m-head"><h3>האזור האישי שלי</h3><button class="m-close" onclick="closeOv('ov-renter')">✕</button></div>
+    <div class="m-body" id="renter-body"></div>
+  </div>
+</div>
+
+<!-- ============ BOOKING MODAL ============ -->
+<div class="overlay" id="ov-book" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="m-head"><h3>הזמנת רכב</h3><button class="m-close" onclick="closeOv('ov-book')">✕</button></div>
+    <div class="m-body">
+      <div class="steps-bar"><div class="sb on" id="sb1"></div><div class="sb" id="sb2"></div><div class="sb" id="sb3"></div><div class="sb" id="sb4"></div></div>
+      <div class="m-car" id="m-car"></div>
+
+      <!-- step 1: dates -->
+      <div id="step1">
+        <div class="f-row">
+          <div class="field" id="f-from"><label>תאריך איסוף <span class="req">*</span></label><input type="date" id="dt-from"><div class="err-msg">יש לבחור תאריך איסוף</div></div>
+          <div class="field"><label>שעת איסוף</label>
+            <select id="tm-from"><option>09:00</option><option>10:00</option><option>11:00</option><option>12:00</option><option>14:00</option><option>16:00</option><option>18:00</option><option>20:00</option></select>
+          </div>
+        </div>
+        <div class="f-row">
+          <div class="field" id="f-to"><label>תאריך החזרה <span class="req">*</span></label><input type="date" id="dt-to"><div class="err-msg">מועד ההחזרה חייב להיות אחרי האיסוף</div></div>
+          <div class="field"><label>שעת החזרה</label>
+            <select id="tm-to"><option>09:00</option><option>10:00</option><option>11:00</option><option selected>12:00</option><option>14:00</option><option>16:00</option><option>18:00</option><option>20:00</option></select>
+          </div>
+        </div>
+        <div class="summary-box" id="price-live" style="display:none"></div>
+        <div class="m-actions"><button class="btn btn-gold grow" onclick="goStep(2)">המשך להסכם ההשכרה</button></div>
+      </div>
+
+      <!-- step 2: terms + signature -->
+      <div id="step2" style="display:none">
+        <div class="divider">תקנון והסכם השכרה</div>
+        <div class="terms-box" id="terms-box">
+          <h4>1. כללי</h4>
+          <ol>
+            <li>הסכם זה נחתם בין Crown Drive ("המשכיר") לבין השוכר החתום מטה.</li>
+            <li>הרכב נמסר לשוכר במצב תקין ונקי, עם מיכל דלק מלא, ויוחזר באותו מצב.</li>
+          </ol>
+          <h4>2. הנהג והרישיון</h4>
+          <ol>
+            <li>רק השוכר הרשום, בעל רישיון נהיגה בתוקף שאומת באתר, רשאי לנהוג ברכב.</li>
+            <li>גיל הנהג המינימלי הוא 21. לנהגים מתחת לגיל 25 תיתכן תוספת נהג צעיר.</li>
+          </ol>
+          <h4>3. ביטוח והשתתפות עצמית</h4>
+          <ol>
+            <li>הרכב מבוטח בביטוח מקיף. בכל מקרה של נזק חלה השתתפות עצמית בגובה מסגרת הפיקדון.</li>
+            <li>נזק שנגרם עקב נהיגה רשלנית, תחת השפעה, או בניגוד להסכם — באחריות השוכר במלואו.</li>
+          </ol>
+          <h4>4. שימוש ברכב</h4>
+          <ol>
+            <li>העישון ברכב אסור בהחלט. הפרה תגרור דמי ניקוי של $250.</li>
+            <li>אין להוציא את הרכב מגבולות מדינות ניו יורק, ניו ג'רזי וקונטיקט ללא אישור מראש.</li>
+            <li>אגרות כבישים, דוחות חניה וקנסות תנועה בתקופת ההשכרה — באחריות השוכר.</li>
+          </ol>
+          <h4>5. איחור בהחזרה וביטול</h4>
+          <ol>
+            <li>איחור של יותר משעה במועד ההחזרה יחויב כיום השכרה נוסף.</li>
+            <li>ביטול חינם עד 24 שעות לפני מועד האיסוף. לאחר מכן — חיוב יום השכרה אחד.</li>
+          </ol>
+          <h4>6. פיקדון ותשלום</h4>
+          <ol>
+            <li>מסגרת הפיקדון נתפסת בכרטיס האשראי בעת האיסוף ומשוחררת עד 5 ימי עסקים לאחר החזרה תקינה.</li>
+            <li>התשלום המלא מתבצע בנקודת האיסוף.</li>
+          </ol>
+        </div>
+        <label class="check-line"><input type="checkbox" id="agree"> <span>קראתי את התקנון במלואו ואני מסכים/ה לכל תנאיו <span class="req">*</span></span></label>
+        <div class="err-msg" id="agree-err" style="display:none;margin-bottom:10px">יש לאשר את קריאת התקנון</div>
+
+        <div class="f-row">
+          <div class="field" id="f-signname"><label>שם מלא (כפי שמופיע ברישיון) <span class="req">*</span></label><input id="sign-name"><div class="err-msg">יש להזין שם מלא</div></div>
+          <div class="field" id="f-signdate"><label>תאריך חתימה <span class="req">*</span></label><input type="date" id="sign-date"><div class="err-msg">יש לבחור תאריך</div></div>
+        </div>
+        <div class="field">
+          <label>חתימה <span class="req">* חתמו בתוך המסגרת</span></label>
+          <div class="sig-wrap" id="sig-wrap">
+            <canvas id="sig-pad"></canvas>
+            <div class="sig-hint" id="sig-hint">✎ חתמו כאן</div>
+            <div class="sig-x"></div>
+          </div>
+          <div class="sig-tools">
+            <div class="err-msg" id="sig-err" style="display:none;margin:0">חתימה נדרשת לאישור ההסכם</div>
+            <button class="sig-clear" onclick="clearSig()">ניקוי חתימה</button>
+          </div>
+        </div>
+        <div class="m-actions"><button class="btn btn-ghost" onclick="goStep(1)">חזרה</button><button class="btn btn-gold grow" onclick="goStep(3)">אישור ההסכם והמשך</button></div>
+      </div>
+
+      <!-- step 3: summary -->
+      <div id="step3" style="display:none">
+        <div class="summary-box" id="final-sum"></div>
+        <div class="note">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>
+          <div>ביטול חינם עד 24 שעות לפני האיסוף · התשלום והפיקדון בנקודת האיסוף · קבלה תישלח לאימייל שלך.</div>
+        </div>
+        <div class="m-actions" style="margin-top:18px"><button class="btn btn-ghost" onclick="goStep(2)">חזרה</button><button class="btn btn-gold grow" onclick="confirmBooking()">אישור וסגירת הזמנה</button></div>
+      </div>
+
+      <!-- step 4: success + receipt -->
+      <div id="step4" style="display:none">
+        <div class="success">
+          <div class="big-ok"><svg viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+          <h3>ההזמנה אושרה</h3>
+          <p id="done-txt"></p>
+          <div class="conf-num" id="conf-num"></div>
+          <button class="btn btn-gold" style="margin-top:4px" onclick="openChatTo('b'+lastBooking.id)">💬 פתיחת צ'אט עם בעל הרכב</button>
+        </div>
+        <div class="receipt" id="receipt"></div>
+        <div class="m-actions" style="margin-top:18px">
+          <button class="btn btn-out grow" onclick="downloadReceipt()">הורדת הקבלה</button>
+          <button class="btn btn-out grow" onclick="emailReceipt()">פתיחה במייל</button>
+          <button class="btn btn-gold" onclick="closeOv('ov-book')">סיום</button>
+        </div>
+        <div class="note">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M4 4h16v16H4zM4 7l8 6 8-6"/></svg>
+          <div>בגרסת הדגמה הקבלה נפתחת כטיוטת מייל / קובץ להורדה. שליחה אוטומטית אמיתית לתיבת המייל דורשת צד שרת.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CHAT ============ -->
+<button id="chat-fab" onclick="toggleChat()" aria-label="פתיחת צ'אט">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+  <span id="chat-badge" style="display:none">0</span>
+</button>
+
+<div id="chat-panel" aria-label="חלון צ'אט">
+  <div class="cp-head">
+    <button class="cp-back" id="cp-back" onclick="showChatList()" style="visibility:hidden">→</button>
+    <div class="cp-title" id="cp-title">הודעות</div>
+    <button class="cp-x" onclick="toggleChat(false)">✕</button>
+  </div>
+  <div class="cp-list" id="cp-list"></div>
+  <div class="cp-thread" id="cp-thread" style="display:none">
+    <div class="cp-msgs" id="cp-msgs"></div>
+    <div class="cp-input">
+      <input id="cp-text" placeholder="כתבו הודעה..." maxlength="500">
+      <button onclick="sendMsg()" aria-label="שליחה">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="ov-profile" role="dialog" aria-modal="true">
+  <div class="modal" style="width:min(560px,100%)">
+    <div class="m-head"><h3>פרופיל משכיר</h3><button class="m-close" onclick="closeOv('ov-profile')">✕</button></div>
+    <div class="m-body" id="prof-body"></div>
+  </div>
+</div>
+
+<div class="overlay" id="ov-lic" role="dialog" aria-modal="true">
+  <div class="modal" style="width:min(560px,100%)">
+    <div class="m-head"><h3>רישיון נהיגה</h3><button class="m-close" onclick="closeOv('ov-lic')">✕</button></div>
+    <div class="m-body"><img id="lic-full" alt="רישיון נהיגה" style="width:100%;border-radius:12px"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= STATE ================= */
+const state = {
+  owners: [],   // {id,name,phone,email,pass}
+  renters: [],  // {id,name,phone,email,pass,lic,card4,exp,frame}
+  cars: [],     // {id,ownerId,make,model,yr,color,cat,price,seats,gear,fuel,tags[],status,ret,photos[]}
+  bookings: [], // {id,num,carId,ownerId,renterId,from,tmFrom,to,tmTo,hours,days,total,frame,signName,signDate,sig,createdAt}
+  session: null // {role:'owner'|'renter', id}
+};
+let ids = {owner:1,renter:1,car:1,book:1};
+let filter='all', currentCar=null, authRole=null, authMode='login', editId=null, formPhotos=[], rlicData=null, lastBooking=null;
+
+/* ================= DATABASE (Netlify DB, via /api/db) ================= */
+const DB_API = '/api/db';
+let dbReady = false;
+
+function cleanForDb(obj){
+  return JSON.parse(JSON.stringify(obj));
+}
+
+async function initFirebase(){
+  try{
+    await loadFirebaseData();
+    dbReady = true;
+    console.log('Database connected successfully');
+  }catch(err){
+    dbReady = false;
+    console.error('Database init failed:', err);
+    setTimeout(()=>showToast('לא הצלחתי להתחבר למסד הנתונים'),500);
+  }
+}
+
+async function loadFirebaseData(){
+  try{
+    const res = await fetch(DB_API);
+    if(!res.ok) throw new Error('DB bootstrap failed: '+res.status);
+    const all = await res.json();
+
+    state.owners = (all.owners||[]).sort((a,b)=>(a.id||0)-(b.id||0));
+    state.renters = (all.renters||[]).sort((a,b)=>(a.id||0)-(b.id||0));
+    state.cars = (all.cars||[]).sort((a,b)=>(a.id||0)-(b.id||0));
+    state.bookings = (all.bookings||[]).sort((a,b)=>(a.id||0)-(b.id||0));
+    state.msgs = (all.messages||[]).sort((a,b)=>(a.ts||0)-(b.ts||0));
+    state.ratings = (all.ratings||[]).sort((a,b)=>(a.ts||0)-(b.ts||0));
+
+    ids.owner = Math.max(0,...state.owners.map(x=>+x.id||0))+1;
+    ids.renter = Math.max(0,...state.renters.map(x=>+x.id||0))+1;
+    ids.car = Math.max(0,...state.cars.map(x=>+x.id||0))+1;
+    ids.book = Math.max(0,...state.bookings.map(x=>+x.id||0))+1;
+  }catch(err){
+    console.error('Database load failed:', err);
+    showToast('לא הצלחתי לטעון נתונים מהמסד');
+  }
+}
+
+async function fbSaveDoc(collectionName, item){
+  if(!item) return;
+  try{
+    const res = await fetch(DB_API, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({collection: collectionName, item: cleanForDb(item)})
+    });
+    if(!res.ok) throw new Error('save failed: '+res.status);
+  }catch(err){
+    console.error('Database save failed:', collectionName, err);
+    showToast('הנתונים לא נשמרו במסד');
+  }
+}
+
+async function fbDeleteDoc(collectionName, id){
+  try{
+    const res = await fetch(`${DB_API}?collection=${encodeURIComponent(collectionName)}&id=${encodeURIComponent(id)}`, {method:'DELETE'});
+    if(!res.ok) throw new Error('delete failed: '+res.status);
+  }catch(err){ console.error('Database delete failed:', collectionName, err); }
+}
+
+function fbSaveUser(role, user){
+  fbSaveDoc(role==='owner' ? 'owners' : 'renters', user);
+}
+
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const money = n => '$'+n.toLocaleString('en-US');
+const me = () => state.session ? (state.session.role==='owner' ? state.owners : state.renters).find(u=>u.id===state.session.id) : null;
+
+const ic = {
+  seat:'<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M7 18v-6a5 5 0 015-5h0a5 5 0 015 5v6M5 21h14"/></svg>',
+  gear:'<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>',
+  fuel:'<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M5 21V5a2 2 0 012-2h6a2 2 0 012 2v16M3 21h14M15 9h2a2 2 0 012 2v5a1.5 1.5 0 003 0V9l-3-3"/></svg>'
+};
+
+/* ================= NAV / SESSION ================= */
+function renderNav(){
+  const el = $('nav-side');
+  if(!state.session){
+    el.innerHTML = `<button class="btn btn-dark-out" onclick="openAuth()">כניסה / הרשמה</button>`;
+  } else {
+    const u = me();
+    const role = state.session.role;
+    el.innerHTML = `
+      <span class="who">שלום, <b>${esc(u.name.split(' ')[0])}</b> · ${role==='owner'?'בעל רכב':'שוכר'}</span>
+      <button class="btn btn-gold" onclick="${role==='owner'?'openOwner()':'openRenterArea()'}">${role==='owner'?'אזור בעלי רכב':'האזור שלי'}</button>
+      <button class="btn btn-dark-out" onclick="logout()">יציאה</button>`;
+  }
+}
+function logout(){state.session=null;renderNav();toggleChat(false);updateBadge();showToast('התנתקת מהחשבון')}
+
+/* ================= AUTH ================= */
+function openAuth(role){
+  authRole=null;
+  $('auth-roles').style.display='block';
+  $('auth-forms').style.display='none';
+  $('auth-title').textContent='כניסה לחשבון';
+  openOv('ov-auth');
+  if(role) pickRole(role);
+}
+function pickRole(r){
+  authRole=r;
+  $('auth-roles').style.display='none';
+  $('auth-forms').style.display='block';
+  $('renter-extras').style.display = r==='renter' ? 'block':'none';
+  $('auth-title').textContent = r==='owner' ? 'חשבון בעל רכב' : 'חשבון שוכר';
+  setAuthMode('login');
+}
+function backToRoles(){authRole=null;$('auth-roles').style.display='block';$('auth-forms').style.display='none';$('auth-title').textContent='כניסה לחשבון'}
+function setAuthMode(m){
+  authMode=m;
+  $('t-login').classList.toggle('on',m==='login');
+  $('t-signup').classList.toggle('on',m==='signup');
+  $('auth-login').style.display = m==='login'?'block':'none';
+  $('auth-signup').style.display = m==='signup'?'block':'none';
+}
+function doLogin(){
+  const em=$('l-mail').value.trim().toLowerCase(), ps=$('l-pass').value;
+  const pool = authRole==='owner'?state.owners:state.renters;
+  const u = pool.find(x=>x.email===em);
+  mark('lf-mail',!u);
+  if(!u) return;
+  mark('lf-pass',u.pass!==ps);
+  if(u.pass!==ps) return;
+  state.session={role:authRole,id:u.id};
+  closeOv('ov-auth'); renderNav();updateBadge();
+  showToast('ברוך הבא, '+u.name.split(' ')[0]);
+  if(pendingBookCar){const c=pendingBookCar;pendingBookCar=null;if(authRole==='renter')openBook(c)}
+}
+function doSignup(){
+  const name=$('s-name').value.trim(), phone=$('s-phone').value.replace(/\D/g,'');
+  const em=$('s-mail').value.trim().toLowerCase(), ps=$('s-pass').value;
+  const pool = authRole==='owner'?state.owners:state.renters;
+  let bad=false;
+  const mk=(id,b)=>{mark(id,b);if(b)bad=true};
+  mk('sf-name',name.length<2);
+  mk('sf-phone',phone.length<9);
+  mk('sf-mail',!/^\S+@\S+\.\S+$/.test(em) || pool.some(x=>x.email===em));
+  mk('sf-pass',ps.length<6);
+
+  let extra={};
+  if(authRole==='renter'){
+    const card=$('s-card').value.replace(/\D/g,''), exp=$('s-exp').value.trim();
+    mk('sf-card',card.length<12);
+    mk('sf-exp',!/^(0[1-9]|1[0-2])\/\d{2}$/.test(exp));
+    if(!rlicData){$('rlic-err').style.display='block';$('drop-rlic').classList.add('err-b');bad=true}
+    extra={lic:rlicData, card4:card.slice(-4), exp, frame:+$('s-frame').value};
+  }
+  if(bad) return;
+
+  const u={id:ids[authRole==='owner'?'owner':'renter']++, name, phone:$('s-phone').value.trim(), email:em, pass:ps, createdAt:Date.now(), ...extra};
+  pool.push(u);
+  fbSaveUser(authRole, u);
+  state.session={role:authRole,id:u.id};
+  closeOv('ov-auth'); renderNav();
+  showToast('החשבון נוצר בהצלחה');
+  ['s-name','s-phone','s-mail','s-pass','s-card','s-exp'].forEach(i=>$(i).value='');
+  clearRLic(true);
+  if(pendingBookCar && authRole==='renter'){const c=pendingBookCar;pendingBookCar=null;openBook(c)}
+  if(authRole==='owner') openOwner();
+}
+
+/* renter license upload in signup */
+bindDrop('drop-rlic','rlic-file',f=>readImg(f,d=>{
+  rlicData=d; $('rlic-img').src=d;
+  $('rlic-prev').style.display='block'; $('drop-rlic').style.display='none';
+  $('drop-rlic').classList.remove('err-b'); $('rlic-err').style.display='none';
+}));
+function clearRLic(s){rlicData=null;$('rlic-file').value='';$('rlic-prev').style.display='none';$('drop-rlic').style.display='block'}
+
+/* card formatting */
+$('s-card').addEventListener('input',e=>{
+  e.target.value = e.target.value.replace(/\D/g,'').slice(0,16).replace(/(.{4})/g,'$1 ').trim();
+});
+$('s-exp').addEventListener('input',e=>{
+  let v=e.target.value.replace(/\D/g,'').slice(0,4);
+  e.target.value = v.length>2 ? v.slice(0,2)+'/'+v.slice(2) : v;
+});
+
+/* ================= FLEET ================= */
+function statusInfo(c){
+  if(c.status==='available') return {cls:'ok',txt:'זמין עכשיו'};
+  if(c.ret) return {cls:'soon',txt:'מתפנה בקרוב'};
+  return {cls:'no',txt:'מושכר'};
+}
+function render(){
+  const g=$('grid'); g.innerHTML='';
+  const list = state.cars.filter(c=>filter==='all'||(filter==='available'?c.status==='available':c.status!=='available'));
+  if(state.cars.length===0){
+    g.innerHTML=`<div class="empty">
+      <h3>עדיין אין רכבים בצי</h3>
+      <p>רכבים חדשים יתווספו בקרוב.</p>
+    </div>`;
+  } else if(list.length===0){
+    g.innerHTML=`<div class="empty"><h3>אין רכבים בסינון זה</h3><p>נסו סינון אחר.</p></div>`;
+  } else list.forEach((c,idx)=>{
+    const s=statusInfo(c), off=c.status!=='available';
+    const ow=state.owners.find(o=>o.id===c.ownerId);
+    const ost=ownerStats(c.ownerId);
+    const el=document.createElement('article');
+    el.className='card'+(off?' off':''); el.dataset.id=c.id; el.dataset.ph=0;
+    el.style.animationDelay=(idx*70)+'ms';
+    el.innerHTML=`
+      <div class="gallery">
+        <img src="${c.photos[0]}" alt="${esc(c.make)} ${esc(c.model)}">
+        <span class="g-status"><span class="pill ${s.cls}">${s.txt}</span></span>
+        <span class="g-count">1 / ${c.photos.length}</span>
+        <button class="g-nav g-prev" onclick="slide(${c.id},-1,event)" aria-label="תמונה קודמת">‹</button>
+        <button class="g-nav g-next" onclick="slide(${c.id},1,event)" aria-label="תמונה הבאה">›</button>
+        <div class="g-dots">${c.photos.map((_,i)=>`<span class="${i===0?'on':''}"></span>`).join('')}</div>
+      </div>
+      <div class="card-body">
+        <div class="card-title">
+          <div><h3>${esc(c.make)} ${esc(c.model)}</h3><span class="meta">${c.yr} · ${esc(c.color)} · ${esc(c.cat)}</span></div>
+          <div class="price"><b>${money(c.price)}</b><span>ליום</span></div>
+        </div>
+        <button class="owner-chip" onclick="openOwnerProfile(${c.ownerId})" title="לצפייה בפרופיל המשכיר">
+          <span class="oc-ava">${esc(ow?ow.name[0]:'?')}</span>
+          <span class="oc-name">${esc(ow?ow.name.split(' ')[0]:'משכיר')}</span>
+          ${starsHTML(ost.avg,ost.count)}
+        </button>
+        <div class="specs">
+          <span class="spec">${ic.seat} ${c.seats} מושבים</span>
+          <span class="spec">${ic.gear} ${esc(c.gear)}</span>
+          <span class="spec">${ic.fuel} הנעה: ${esc(c.fuel)}</span>
+        </div>
+        ${c.tags.length?`<div class="tags">${c.tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>`:''}
+        ${off&&c.ret?`<div class="ret">${esc(c.ret)}</div>`:''}
+        ${off?`<button class="card-btn dis" disabled>לא זמין כרגע</button>`
+             :`<button class="card-btn book" onclick="tryBook(${c.id})">הזמנת רכב זה</button>`}
+      </div>`;
+    g.appendChild(el);
+  });
+  const ok=state.cars.filter(c=>c.status==='available').length;
+  const soon=state.cars.filter(c=>c.status!=='available'&&c.ret).length;
+  animateNum($('cnt-ok'),ok); animateNum($('cnt-no'),state.cars.length-ok-soon); animateNum($('cnt-soon'),soon);
+  animateNum($('hs-cars'),state.cars.length); animateNum($('hs-ok'),ok); animateNum($('side-avail'),ok);
+  $('last-upd').textContent='עודכן '+new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+}
+function slide(id,dir,e){
+  e.stopPropagation();
+  const el=document.querySelector(`.card[data-id="${id}"]`);
+  const c=state.cars.find(x=>x.id===id);
+  const i=(+el.dataset.ph+dir+c.photos.length)%c.photos.length;
+  el.dataset.ph=i;
+  const img=el.querySelector('.gallery img');
+  const swap=()=>{img.src=c.photos[i];img.style.opacity=1};
+  if(reduced){swap()}else{img.style.opacity=0;setTimeout(swap,180)}
+  el.querySelector('.g-count').textContent=`${i+1} / ${c.photos.length}`;
+  el.querySelectorAll('.g-dots span').forEach((d,j)=>d.classList.toggle('on',j===i));
+}
+function setFilter(f,btn){filter=f;document.querySelectorAll('.filters button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');render()}
+function scrollToFleet(){$('fleet').scrollIntoView({behavior:'smooth'})}
+
+/* ================= OWNER DASHBOARD ================= */
+function openOwner(){
+  if(!state.session||state.session.role!=='owner') return openAuth('owner');
+  setDash('cars'); renderAdminList(); resetCarForm(); openOv('ov-owner');
+}
+function setDash(t){
+  ['cars','book','rep'].forEach(x=>{
+    const el=$('dash-'+x);
+    el.style.display = x===t?'block':'none';
+    if(x===t&&!reduced){el.classList.remove('tab-anim');void el.offsetWidth;el.classList.add('tab-anim')}
+    $('dt-'+x).classList.toggle('on',x===t);
+  });
+  if(t==='book') renderOwnerBookings();
+  if(t==='rep') renderOwnerReport();
+}
+function myCars(){return state.cars.filter(c=>c.ownerId===state.session.id)}
+function renderAdminList(){
+  const box=$('adm-list'), list=myCars();
+  if(list.length===0){box.innerHTML='<div class="adm-empty">עדיין לא פרסמת רכבים. מלא את הטופס למטה כדי לפרסם את הראשון.</div>';return}
+  box.innerHTML=list.map(c=>{
+    const s=statusInfo(c);
+    return `<div class="adm-item">
+      <img src="${c.photos[0]}" alt="">
+      <div class="inf"><b>${esc(c.make)} ${esc(c.model)} ${c.yr}</b>
+        <div class="sm">${esc(c.color)} · הנעה: ${esc(c.fuel)} · ${esc(c.cat)} · ${money(c.price)}/יום · ${c.photos.length} תמונות · <span class="pill ${s.cls}" style="font-size:.62rem;padding:1px 8px">${s.txt}</span></div>
+      </div>
+      <div class="acts">
+        <button class="mini" onclick="toggleStatus(${c.id})">${c.status==='available'?'סימון כמושכר':'סימון כזמין'}</button>
+        <button class="mini gold" onclick="editCar(${c.id})">עריכת פרטים</button>
+        <button class="mini danger" onclick="deleteCar(${c.id})">מחיקת המודעה</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleStatus(id){
+  const c=state.cars.find(x=>x.id===id);
+  c.status=c.status==='available'?'rented':'available';
+  if(c.status==='available')c.ret='';
+  fbSaveDoc('cars', c);
+  render();renderAdminList();
+}
+function deleteCar(id){
+  const c=state.cars.find(x=>x.id===id);
+  const hasBookings=state.bookings.some(b=>b.carId===id);
+  const msg=`למחוק את המודעה של ${c.make} ${c.model} ${c.yr} לגמרי?\n\nהרכב יוסר מהאתר מיד.`+(hasBookings?'\nהיסטוריית ההזמנות שלו תישמר בדוח ההכנסות.':'');
+  if(!confirm(msg))return;
+  if(editId===id)resetCarForm();
+  state.cars=state.cars.filter(x=>x.id!==id);
+  fbDeleteDoc('cars', id);
+  render();renderAdminList();showToast('המודעה נמחקה מהאתר');
+}
+function editCar(id){
+  const c=state.cars.find(x=>x.id===id);
+  editId=id;
+  $('a-make').value=c.make;$('a-model').value=c.model;$('a-yr').value=c.yr;
+  $('a-color').value=c.color||'';$('a-cat').value=c.cat;$('a-price').value=c.price;
+  $('a-seats').value=c.seats;$('a-gear').value=c.gear;$('a-fuel').value=c.fuel;
+  $('a-tags').value=c.tags.join(', ');$('a-status').value=c.status;
+  formPhotos=[...c.photos];renderPhotoGrid();
+  $('form-title').textContent='עריכת '+c.make+' '+c.model;
+  $('a-save').textContent='שמירת שינויים';$('a-cancel').style.display='block';
+  const box=document.querySelector('#ov-owner .modal');
+  const y=$('form-title').offsetTop-80;
+  box.scrollTo({top:y,behavior:reduced?'auto':'smooth'});
+  const ft=$('form-title');
+  ft.classList.remove('flash');void ft.offsetWidth;ft.classList.add('flash');
+}
+function resetCarForm(){
+  editId=null;
+  ['a-make','a-model','a-yr','a-color','a-price','a-tags'].forEach(i=>$(i).value='');
+  $('a-cat').selectedIndex=0;$('a-seats').value='5';$('a-gear').selectedIndex=0;$('a-fuel').selectedIndex=0;$('a-status').value='available';
+  formPhotos=[];renderPhotoGrid();
+  ['af-make','af-model','af-yr','af-price'].forEach(i=>$(i).classList.remove('err'));
+  $('form-title').textContent='הוספת רכב חדש';$('a-save').textContent='פרסום הרכב';$('a-cancel').style.display='none';
+}
+bindDrop('drop-photos','ph-file',null,files=>{
+  [...files].forEach(f=>{
+    if(!f.type.startsWith('image/'))return showToast('ניתן להעלות קבצי תמונה בלבד');
+    if(f.size>10*1024*1024)return showToast(f.name+' — גדול מדי (מקס׳ 10MB)');
+    if(formPhotos.length>=6)return showToast('עד 6 תמונות לרכב');
+    readImg(f,d=>{formPhotos.push(d);renderPhotoGrid()});
+  });
+});
+function removePhoto(i){formPhotos.splice(i,1);renderPhotoGrid()}
+function renderPhotoGrid(){
+  $('ph-grid').innerHTML=formPhotos.map((p,i)=>`
+    <div class="ph"><img src="${p}" alt="תמונה ${i+1}"><button onclick="removePhoto(${i})">✕</button>${i===0?'<div class="main-tag">ראשית</div>':''}</div>`).join('');
+  const req=$('ph-req'),n=formPhotos.length;
+  if(n>=2){req.className='photo-req good';req.textContent=`✓ הועלו ${n} תמונות — עומד בדרישת המינימום`}
+  else{req.className='photo-req bad';req.textContent=`הועלו ${n} מתוך 2 תמונות נדרשות`}
+  $('drop-photos').classList.remove('err-b');
+}
+function saveCar(){
+  const make=$('a-make').value.trim(),model=$('a-model').value.trim();
+  const yr=+$('a-yr').value,price=+$('a-price').value;
+  let bad=false;const mk=(id,b)=>{$(id).classList.toggle('err',b);if(b)bad=true};
+  const color=$('a-color').value.trim();
+  mk('af-make',!make);mk('af-model',!model);mk('af-yr',!(yr>=2000&&yr<=2027));mk('af-color',!color);mk('af-price',!(price>0));
+  if(formPhotos.length<2){$('drop-photos').classList.add('err-b');showToast('חובה להעלות לפחות 2 תמונות של הרכב');bad=true}
+  if(bad)return;
+  const data={make,model,yr,price,color,cat:$('a-cat').value,
+    seats:$('a-seats').value,gear:$('a-gear').value,fuel:$('a-fuel').value,
+    tags:$('a-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
+    status:$('a-status').value,photos:[...formPhotos]};
+  if(editId){
+    const car = state.cars.find(x=>x.id===editId);
+    Object.assign(car,data);
+    fbSaveDoc('cars', car);
+    showToast('הרכב עודכן');
+  } else {
+    const car = {id:ids.car++,ownerId:state.session.id,ret:'',...data};
+    state.cars.push(car);
+    fbSaveDoc('cars', car);
+    showToast(make+' '+model+' נוסף לצי');
+  }
+  render();renderAdminList();resetCarForm();
+}
+
+/* owner: bookings tab */
+function renderOwnerBookings(){
+  const list=state.bookings.filter(b=>b.ownerId===state.session.id).sort((a,b)=>b.createdAt-a.createdAt);
+  const box=$('dash-book');
+  if(list.length===0){box.innerHTML='<div class="adm-empty">עדיין אין הזמנות על הרכבים שלך.</div>';return}
+  box.innerHTML=`<table class="tbl"><thead><tr>
+    <th>הזמנה</th><th>רכב</th><th>שוכר</th><th>תקופה</th><th>שעות</th><th>סכום</th><th>רישיון</th><th>דירוג</th>
+  </tr></thead><tbody>${list.map(b=>{
+    const rst=renterStats(b.renterId);
+    const mine=myRating(b.id,'owner');
+    const c=state.cars.find(x=>x.id===b.carId)||{make:'—',model:''};
+    const r=state.renters.find(x=>x.id===b.renterId)||{};
+    return `<tr>
+      <td class="num">${b.num}<div class="sm">${new Date(b.createdAt).toLocaleDateString('he-IL')}</div></td>
+      <td>${esc(c.make)} ${esc(c.model)}</td>
+      <td>${esc(b.signName)}<div class="sm">התקשורת מתנהלת בצ'אט</div><button class="mini gold" style="margin-top:6px" onclick="openChatTo('b'+${b.id})">💬 צ'אט עם השוכר</button></td>
+      <td>${fmt(b.from)} ${b.tmFrom}<div class="sm">עד ${fmt(b.to)} ${b.tmTo}</div></td>
+      <td class="num">${b.hours}</td>
+      <td class="num">${money(b.total)}<div class="sm">פיקדון ${money(b.frame)}</div></td>
+      <td>${r.lic?`<img class="lic-thumb" src="${r.lic}" alt="רישיון" onclick="viewLic(${b.renterId})">`:'—'}</td>
+      <td>
+        <span class="rate-label">דירוג השוכר בקהילה:</span>${starsHTML(rst.avg,rst.count)}
+        <span class="rate-label" style="margin-top:8px">הדירוג שלך לשוכר:</span>${mine?starsHTML(mine.stars,null):ratePicker(b.id)}
+      </td>
+    </tr>`;}).join('')}</tbody></table>`;
+}
+
+/* owner: weekly report */
+function weekKey(dateStr){
+  const d=new Date(dateStr+'T00:00');
+  const day=d.getDay(); // 0=Sunday
+  const start=new Date(d); start.setDate(d.getDate()-day);
+  return start.toISOString().split('T')[0];
+}
+function renderOwnerReport(){
+  const list=state.bookings.filter(b=>b.ownerId===state.session.id);
+  const box=$('dash-rep');
+  if(list.length===0){box.innerHTML='<div class="adm-empty">אין עדיין נתונים לדוח. הדוח יתמלא אוטומטית עם קבלת הזמנות.</div>';return}
+  const weeks={};
+  list.forEach(b=>{
+    const k=weekKey(b.from);
+    weeks[k]=weeks[k]||{hours:0,revenue:0,count:0};
+    weeks[k].hours+=b.hours; weeks[k].revenue+=b.total; weeks[k].count++;
+  });
+  const totH=list.reduce((s,b)=>s+b.hours,0), totR=list.reduce((s,b)=>s+b.total,0);
+  const rows=Object.entries(weeks).sort((a,b)=>b[0].localeCompare(a[0])).map(([k,w])=>{
+    const s=new Date(k+'T00:00'), e=new Date(s); e.setDate(s.getDate()+6);
+    const f=d=>d.toLocaleDateString('he-IL',{day:'numeric',month:'numeric'});
+    return `<tr><td>${f(s)} – ${f(e)}</td><td class="num">${w.count}</td><td class="num">${w.hours}</td><td class="num">${money(w.revenue)}</td></tr>`;
+  }).join('');
+  box.innerHTML=`
+    <div class="kpis">
+      <div class="kpi"><b>${list.length}</b><span>סה"כ הזמנות</span></div>
+      <div class="kpi"><b>${totH}</b><span>שעות השכרה מצטברות</span></div>
+      <div class="kpi"><b>${money(totR)}</b><span>סה"כ הכנסות</span></div>
+      <div class="kpi"><b>${money(Math.round(totR/Math.max(1,Object.keys(weeks).length)))}</b><span>ממוצע הכנסה לשבוע</span></div>
+    </div>
+    <table class="tbl"><thead><tr><th>שבוע (א'–ש')</th><th>הזמנות</th><th>שעות השכרה</th><th>הכנסה</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+/* ================= RENTER AREA ================= */
+function openRenterArea(){
+  if(!state.session||state.session.role!=='renter')return openAuth('renter');
+  const u=me();
+  const list=state.bookings.filter(b=>b.renterId===u.id).sort((a,b)=>b.createdAt-a.createdAt);
+  $('renter-body').innerHTML=`
+    <div class="summary-box">
+      <div class="row"><span>שם</span><span>${esc(u.name)}</span></div>
+      <div class="row"><span>אימייל</span><span>${esc(u.email)}</span></div>
+      <div class="row"><span>כרטיס אשראי</span><span dir="ltr">•••• ${esc(u.card4)}</span></div>
+      <div class="row"><span>מסגרת פיקדון</span><span>${money(u.frame)}</span></div>
+      <div class="row"><span>רישיון נהיגה</span><span style="color:var(--ok)">✓ מאומת</span></div>
+    </div>
+    <div class="divider">ההזמנות שלי</div>
+    ${list.length===0?'<div class="adm-empty">עדיין אין הזמנות.</div>'
+    :`<table class="tbl"><thead><tr><th>הזמנה</th><th>רכב</th><th>תקופה</th><th>סכום</th><th>דירוג המשכיר</th></tr></thead><tbody>
+      ${list.map(b=>{const c=state.cars.find(x=>x.id===b.carId)||{make:'—',model:''};
+        const mine=myRating(b.id,'renter');
+        return `<tr><td class="num">${b.num}</td><td>${esc(c.make)} ${esc(c.model)}</td>
+        <td>${fmt(b.from)} – ${fmt(b.to)}</td><td class="num">${money(b.total)}<br><button class="mini gold" style="margin-top:6px" onclick="openChatTo('b'+${b.id})">💬 צ'אט עם בעל הרכב</button></td>
+        <td>${mine?`<span class="rate-label">דירגת:</span>${starsHTML(mine.stars,null)}`:`<span class="rate-label">איך היה השירות?</span>${ratePicker(b.id)}`}</td></tr>`;}).join('')}
+    </tbody></table>`}`;
+  openOv('ov-renter');
+}
+
+/* ================= BOOKING ================= */
+let pendingBookCar=null;
+function tryBook(id){
+  if(!state.session||state.session.role!=='renter'){
+    pendingBookCar=id;
+    showToast('להזמנה יש להתחבר כשוכר');
+    openAuth('renter');
+    return;
+  }
+  openBook(id);
+}
+function openBook(id){
+  currentCar=state.cars.find(c=>c.id===id);
+  const u=me();
+  $('m-car').innerHTML=`<img src="${currentCar.photos[0]}" alt="">
+    <div><b>${esc(currentCar.make)} ${esc(currentCar.model)} ${currentCar.yr}</b>
+    <div class="p">${esc(currentCar.cat)} · ${money(currentCar.price)} ליום</div></div>`;
+  const today=new Date().toISOString().split('T')[0];
+  $('dt-from').min=today;$('dt-to').min=today;
+  $('dt-from').value='';$('dt-to').value='';
+  $('price-live').style.display='none';
+  $('agree').checked=false;$('agree-err').style.display='none';
+  $('sign-name').value=u.name;
+  $('sign-date').value=today;
+  clearSig();
+  goStep(1,true);
+  openOv('ov-book');
+}
+function hoursTotal(){
+  const f=$('dt-from').value,t=$('dt-to').value;
+  if(!f||!t)return 0;
+  const a=new Date(f+'T'+$('tm-from').value), b=new Date(t+'T'+$('tm-to').value);
+  return Math.max(0,Math.round((b-a)/3600000));
+}
+function daysTotal(){return Math.max(1,Math.ceil(hoursTotal()/24))}
+['dt-from','dt-to','tm-from','tm-to'].forEach(id=>$(id).addEventListener('change',()=>{
+  const h=hoursTotal(),box=$('price-live');
+  if(h>0&&currentCar){
+    const d=daysTotal();
+    box.style.display='block';
+    box.innerHTML=`<div class="row"><span>משך ההשכרה</span><span>${h} שעות (${d} ימי חיוב)</span></div>
+      <div class="row"><span>${d} × ${money(currentCar.price)}</span><span>${money(d*currentCar.price)}</span></div>
+      <div class="row"><span>סה"כ משוער</span><span>${money(d*currentCar.price)}</span></div>`;
+  } else box.style.display='none';
+}));
+function mark(id,bad){$(id).classList.toggle('err',bad)}
+function goStep(n,silent){
+  if(!silent){
+    if(n===2){
+      const f=$('dt-from').value,t=$('dt-to').value;
+      mark('f-from',!f);mark('f-to',!t||hoursTotal()<1);
+      if(!f||!t||hoursTotal()<1)return;
+    }
+    if(n===3){
+      let bad=false;
+      if(!$('agree').checked){$('agree-err').style.display='block';bad=true}else $('agree-err').style.display='none';
+      const nm=$('sign-name').value.trim();
+      mark('f-signname',nm.length<2);if(nm.length<2)bad=true;
+      mark('f-signdate',!$('sign-date').value);if(!$('sign-date').value)bad=true;
+      if(!sigDrawn){$('sig-err').style.display='block';bad=true}else $('sig-err').style.display='none';
+      if(bad)return;
+      buildSummary();
+    }
+  }
+  [1,2,3,4].forEach(i=>{
+    const st=$('step'+i);
+    st.style.display=i===n?'block':'none';
+    if(i===n&&!reduced){st.classList.remove('step-anim');void st.offsetWidth;st.classList.add('step-anim')}
+    $('sb'+i).classList.toggle('on',i<=n);
+  });
+  document.querySelector('#ov-book .modal').scrollTop=0;
+}
+function buildSummary(){
+  const u=me(),h=hoursTotal(),d=daysTotal();
+  $('final-sum').innerHTML=`
+    <div class="row"><span>רכב</span><span>${esc(currentCar.make)} ${esc(currentCar.model)} ${currentCar.yr}</span></div>
+    <div class="row"><span>איסוף</span><span>${fmt($('dt-from').value)} · ${$('tm-from').value}</span></div>
+    <div class="row"><span>החזרה</span><span>${fmt($('dt-to').value)} · ${$('tm-to').value}</span></div>
+    <div class="row"><span>משך</span><span>${h} שעות (${d} ימי חיוב)</span></div>
+    <div class="row"><span>שוכר</span><span>${esc($('sign-name').value)}</span></div>
+    <div class="row"><span>אמצעי תשלום</span><span dir="ltr">•••• ${esc(u.card4)}</span></div>
+    <div class="row"><span>מסגרת פיקדון</span><span>${money(u.frame)}</span></div>
+    <div class="row"><span>הסכם השכרה</span><span style="color:var(--ok)">✓ נחתם ב-${fmt($('sign-date').value)}</span></div>
+    <div class="row"><span>סה"כ לתשלום</span><span>${money(d*currentCar.price)}</span></div>`;
+}
+function fmt(d){return new Date(d+'T00:00').toLocaleDateString('he-IL',{day:'numeric',month:'long',year:'numeric'})}
+
+/* signature pad */
+let sigDrawn=false,sigCtx=null;
+function initSig(){
+  const c=$('sig-pad');
+  const resize=()=>{
+    const w=c.clientWidth;
+    if(!w)return;
+    const data=sigDrawn?c.toDataURL():null;
+    c.width=w*2;c.height=300;
+    sigCtx=c.getContext('2d');
+    sigCtx.scale(2,2);
+    sigCtx.strokeStyle='#1B2A4A';sigCtx.lineWidth=2.2;sigCtx.lineCap='round';sigCtx.lineJoin='round';
+    if(data){const img=new Image();img.onload=()=>sigCtx.drawImage(img,0,0,w,150);img.src=data}
+  };
+  new ResizeObserver(resize).observe(c);
+  let drawing=false,last=null;
+  const pos=e=>{const r=c.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}};
+  c.addEventListener('pointerdown',e=>{drawing=true;last=pos(e);c.setPointerCapture(e.pointerId)});
+  c.addEventListener('pointermove',e=>{
+    if(!drawing)return;
+    const p=pos(e);
+    sigCtx.beginPath();sigCtx.moveTo(last.x,last.y);sigCtx.lineTo(p.x,p.y);sigCtx.stroke();
+    last=p;
+    if(!sigDrawn){sigDrawn=true;$('sig-hint').style.display='none';$('sig-err').style.display='none'}
+  });
+  ['pointerup','pointerleave','pointercancel'].forEach(ev=>c.addEventListener(ev,()=>drawing=false));
+}
+function clearSig(){
+  const c=$('sig-pad');
+  if(sigCtx)sigCtx.clearRect(0,0,c.width,c.height);
+  sigDrawn=false;$('sig-hint').style.display='grid';
+}
+
+/* confirm + receipt */
+function confirmBooking(){
+  const u=me(),h=hoursTotal(),d=daysTotal(),total=d*currentCar.price;
+  const num='CD-'+Math.floor(100000+Math.random()*900000);
+  const b={id:ids.book++,num,carId:currentCar.id,ownerId:currentCar.ownerId,renterId:u.id,
+    from:$('dt-from').value,tmFrom:$('tm-from').value,to:$('dt-to').value,tmTo:$('tm-to').value,
+    hours:h,days:d,total,frame:u.frame,
+    signName:$('sign-name').value.trim(),signDate:$('sign-date').value,sig:$('sig-pad').toDataURL(),
+    createdAt:Date.now()};
+  state.bookings.push(b);
+  fbSaveDoc('bookings', b);
+  lastBooking=b;
+  pushMsg('b'+b.id,'system',0,'ההזמנה '+num+' אושרה. כל התקשורת בין השוכר לבעל הרכב מתנהלת כאן, באפליקציה.');
+  currentCar.status='rented';
+  currentCar.ret='מוזמן · איסוף '+fmt(b.from);
+  fbSaveDoc('cars', currentCar);
+  render();
+  $('conf-num').textContent=num;
+  $('done-txt').textContent=`${currentCar.make} ${currentCar.model} שמור עבורך. איסוף ב-${fmt(b.from)} בשעה ${b.tmFrom}.`;
+  $('receipt').innerHTML=receiptHTML(b);
+  goStep(4,true);
+  showToast('קבלה מוכנה — ניתן להוריד או לפתוח במייל');
+}
+function receiptHTML(b){
+  const c=state.cars.find(x=>x.id===b.carId),u=state.renters.find(x=>x.id===b.renterId);
+  return `
+    <div class="r-head">
+      <div><h4>CROWN DRIVE</h4><div class="sm">השכרת רכבים · קראון הייטס, ברוקלין NY<br>שירות לקוחות: בצ'אט שבאתר</div></div>
+      <div style="text-align:left"><div class="sm">קבלה / אישור הזמנה</div><b style="font-size:1.05rem">${b.num}</b><div class="sm">${new Date(b.createdAt).toLocaleDateString('he-IL')} · ${new Date(b.createdAt).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</div></div>
+    </div>
+    <div class="r-row"><span>לקוח</span><span>${esc(b.signName)} · ${esc(u.email)}</span></div>
+    <div class="r-row"><span>רכב</span><span>${esc(c.make)} ${esc(c.model)} ${c.yr} · ${esc(c.color)} · הנעה: ${esc(c.fuel)}</span></div>
+    <div class="r-row"><span>איסוף</span><span>${fmt(b.from)} · ${b.tmFrom}</span></div>
+    <div class="r-row"><span>החזרה</span><span>${fmt(b.to)} · ${b.tmTo}</span></div>
+    <div class="r-row"><span>משך ההשכרה</span><span>${b.hours} שעות (${b.days} ימי חיוב)</span></div>
+    <div class="r-row"><span>תעריף יומי</span><span>${money(c.price)}</span></div>
+    <div class="r-row"><span>אמצעי תשלום</span><span>כרטיס •••• ${esc(u.card4)}</span></div>
+    <div class="r-row"><span>מסגרת פיקדון (משוחררת בהחזרה)</span><span>${money(b.frame)}</span></div>
+    <div class="r-row"><span>הסכם השכרה</span><span>נחתם דיגיטלית · ${fmt(b.signDate)}</span></div>
+    <div class="r-row total"><span>סה"כ לתשלום</span><span>${money(b.total)}</span></div>
+    <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:end">
+      <div class="sm" style="font-size:.72rem;color:#7A7264">חתימת השוכר:</div>
+      <img src="${b.sig}" alt="חתימה" style="height:44px">
+    </div>
+    <div class="r-foot">תודה שבחרתם ב-Crown Drive · התשלום מתבצע בנקודת האיסוף · מסמך זה מהווה אישור הזמנה</div>`;
+}
+function downloadReceipt(){
+  if(!lastBooking)return;
+  const st='<sty'+'le>body{font-family:Arial,sans-serif;background:#EFF2F6;padding:30px;display:flex;justify-content:center}'
+    +'.receipt{background:#FBF8F2;color:#242018;padding:34px;max-width:560px;width:100%;box-shadow:0 10px 30px rgba(0,0,0,.12)}'
+    +'.r-head{display:flex;justify-content:space-between;border-bottom:2px solid #242018;padding-bottom:14px;margin-bottom:14px}'
+    +'.r-head h4{margin:0;font-size:1.3rem}.sm{font-size:.72rem;color:#7A7264}'
+    +'.r-row{display:flex;justify-content:space-between;padding:6px 0;font-size:.85rem;border-bottom:1px dotted #D8D1C2}'
+    +'.r-row.total{border-bottom:none;border-top:2px solid #242018;margin-top:8px;padding-top:10px;font-weight:700;font-size:1rem}'
+    +'.r-foot{font-size:.7rem;color:#7A7264;margin-top:16px;text-align:center;border-top:1px solid #D8D1C2;padding-top:10px}'
+    +'</sty'+'le>';
+  const html='<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="UTF-8"><title>קבלה '+lastBooking.num+'</title>'+st
+    +'</he'+'ad><body><div class="receipt">'+$('receipt').innerHTML+'</div></bo'+'dy></ht'+'ml>';
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));
+  a.download='קבלה-'+lastBooking.num+'.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function emailReceipt(){
+  if(!lastBooking)return;
+  const b=lastBooking,c=state.cars.find(x=>x.id===b.carId),u=state.renters.find(x=>x.id===b.renterId);
+  const body=[
+    'Crown Drive — אישור הזמנה וקבלה','',
+    'מספר הזמנה: '+b.num,
+    'רכב: '+c.make+' '+c.model+' '+c.yr,
+    'איסוף: '+fmt(b.from)+' בשעה '+b.tmFrom,
+    'החזרה: '+fmt(b.to)+' בשעה '+b.tmTo,
+    'משך: '+b.hours+' שעות ('+b.days+' ימי חיוב)',
+    'סה"כ לתשלום: '+money(b.total),
+    'מסגרת פיקדון: '+money(b.frame),
+    'הסכם השכרה נחתם דיגיטלית בתאריך '+fmt(b.signDate),'',
+    'תודה שבחרתם ב-Crown Drive · (718) 555-0123'
+  ].join('\n');
+  location.href='mailto:'+encodeURIComponent(u.email)+'?subject='+encodeURIComponent('קבלה ואישור הזמנה '+b.num+' — Crown Drive')+'&body='+encodeURIComponent(body);
+}
+
+/* ================= HELPERS ================= */
+function openOv(id){$(id).classList.add('open');document.body.style.overflow='hidden'}
+function closeOv(id){$(id).classList.remove('open');document.body.style.overflow=''}
+['ov-auth','ov-owner','ov-renter','ov-book','ov-lic','ov-profile'].forEach(id=>$(id).addEventListener('click',e=>{if(e.target.id===id)closeOv(id)}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')['ov-auth','ov-owner','ov-renter','ov-book','ov-lic','ov-profile'].forEach(closeOv)});
+function bindDrop(dropId,fileId,single,multi){
+  const d=$(dropId),f=$(fileId);
+  d.addEventListener('click',()=>f.click());
+  d.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();f.click()}});
+  ['dragover','dragenter'].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.add('drag')}));
+  ['dragleave','drop'].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.remove('drag')}));
+  d.addEventListener('drop',e=>{
+    if(multi)multi(e.dataTransfer.files);
+    else if(e.dataTransfer.files[0])single(e.dataTransfer.files[0]);
+  });
+  f.addEventListener('change',()=>{
+    if(multi){multi(f.files);f.value=''}
+    else if(f.files[0])single(f.files[0]);
+  });
+}
+function readImg(f,cb){
+  if(!f.type.startsWith('image/'))return showToast('יש להעלות קובץ תמונה בלבד');
+  if(f.size>10*1024*1024)return showToast('הקובץ גדול מדי (מקסימום 10MB)');
+  const r=new FileReader();r.onload=()=>cb(r.result);r.readAsDataURL(f);
+}
+function viewLic(renterId){
+  const r=state.renters.find(x=>x.id===renterId);
+  if(!r||!r.lic)return;
+  $('lic-full').src=r.lic;
+  openOv('ov-lic');
+}
+function showToast(msg){
+  const t=$('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+
+/* ================= CHAT ================= */
+state.msgs = [];          // {tid, role:'renter'|'owner'|'support'|'system', uid, text, ts}
+state.reads = {};         // key `${role}-${uid}-${tid}` -> ts
+let activeTid = null;
+
+function meKey(){return state.session ? state.session.role+'-'+state.session.id : 'guest-0'}
+function supTid(){return 'sup-'+meKey()}
+
+function myThreads(){
+  const t=[{tid:supTid(),kind:'sup',title:"שירות לקוחות",sub:"אנחנו כאן לכל שאלה"}];
+  if(state.session){
+    const {role,id}=state.session;
+    state.bookings
+      .filter(b=> role==='renter' ? b.renterId===id : b.ownerId===id)
+      .sort((a,b)=>b.createdAt-a.createdAt)
+      .forEach(b=>{
+        const c=state.cars.find(x=>x.id===b.carId);
+        const carName=c?`${c.make} ${c.model}`:'רכב';
+        if(role==='renter'){
+          const o=state.owners.find(x=>x.id===b.ownerId);
+          t.push({tid:'b'+b.id,kind:'usr',title:'בעל הרכב · '+carName,sub:'הזמנה '+b.num,ava:(o?o.name[0]:'ב')});
+        }else{
+          t.push({tid:'b'+b.id,kind:'usr',title:b.signName+' · '+carName,sub:'הזמנה '+b.num,ava:b.signName[0]});
+        }
+      });
+  }
+  return t;
+}
+function tMsgs(tid){return state.msgs.filter(m=>m.tid===tid)}
+function unread(tid){
+  const last=state.reads[meKey()+'-'+tid]||0;
+  const mine=state.session?state.session.role:'guest';
+  return tMsgs(tid).filter(m=>m.ts>last && m.role!==mine && m.role!=='system').length;
+}
+function totalUnread(){return myThreads().reduce((s,t)=>s+unread(t.tid),0)}
+function updateBadge(){
+  const n=totalUnread(),b=$('chat-badge');
+  b.style.display=n>0?'grid':'none';b.textContent=n;
+}
+function toggleChat(force){
+  const p=$('chat-panel');
+  const open=force!==undefined?force:!p.classList.contains('open');
+  p.classList.toggle('open',open);
+  if(open)showChatList();
+}
+function openChatTo(tid){
+  $('chat-panel').classList.add('open');
+  showThread(tid);
+}
+function showChatList(){
+  activeTid=null;
+  $('cp-back').style.visibility='hidden';
+  $('cp-title').textContent='הודעות';
+  $('cp-thread').style.display='none';
+  const list=$('cp-list');list.style.display='block';
+  const ts=myThreads();
+  list.innerHTML=ts.map(t=>{
+    const ms=tMsgs(t.tid),last=ms[ms.length-1];
+    const u=unread(t.tid);
+    return `<div class="cp-item" onclick="showThread('${t.tid}')">
+      <div class="cp-ava ${t.kind}">${t.kind==='sup'?'☎':esc(t.ava||'?')}</div>
+      <div class="inf"><b>${esc(t.title)}</b><span class="last">${last?esc(last.text):esc(t.sub)}</span></div>
+      ${u>0?`<span class="cp-unread">${u}</span>`:''}
+    </div>`;
+  }).join('');
+  if(!state.session){
+    list.innerHTML+='<div class="cp-empty">כדי לשוחח עם בעל רכב על הזמנה, יש להתחבר ולהזמין רכב.<br>צ\'אט שירות הלקוחות פתוח לכולם 👆</div>';
+  } else if(ts.length===1){
+    list.innerHTML+='<div class="cp-empty">אחרי שתיסגר הזמנה, יופיע כאן צ\'אט ישיר '+(state.session.role==='renter'?'עם בעל הרכב':'עם השוכר')+'.</div>';
+  }
+}
+function threadTitle(tid){
+  const t=myThreads().find(x=>x.tid===tid);
+  return t?t.title:'שיחה';
+}
+function showThread(tid){
+  activeTid=tid;
+  $('cp-back').style.visibility='visible';
+  $('cp-title').textContent=threadTitle(tid);
+  $('cp-list').style.display='none';
+  $('cp-thread').style.display='flex';
+  state.reads[meKey()+'-'+tid]=Date.now();
+  renderMsgs();updateBadge();
+  setTimeout(()=>$('cp-text').focus(),80);
+}
+function renderMsgs(){
+  const box=$('cp-msgs');
+  const mine=state.session?state.session.role:'guest';
+  const ms=tMsgs(activeTid);
+  box.innerHTML= ms.length===0
+    ? '<div class="bub sys">תחילת השיחה — כתבו הודעה ראשונה</div>'
+    : ms.map(m=>{
+        if(m.role==='system')return `<div class="bub sys">${esc(m.text)}</div>`;
+        const isMe=(m.role===mine)||(mine==='guest'&&m.role==='guest');
+        const who=m.role==='support'?'שירות לקוחות':(m.role==='owner'?'בעל הרכב':'שוכר');
+        return `<div class="bub ${isMe?'me':'them'}">${!isMe?`<span class="who">${who}</span>`:''}${esc(m.text)}<span class="tm">${new Date(m.ts).toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'})}</span></div>`;
+      }).join('');
+  box.scrollTop=box.scrollHeight;
+}
+function pushMsg(tid,role,uid,text){
+  const msg = {id:'m_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),tid,role,uid,text,ts:Date.now()};
+  state.msgs.push(msg);
+  fbSaveDoc('messages', msg);
+  if(activeTid===tid && $('chat-panel').classList.contains('open')){
+    state.reads[meKey()+'-'+tid]=Date.now();
+    renderMsgs();
+  }
+  updateBadge();
+}
+function sendMsg(){
+  const inp=$('cp-text'),txt=inp.value.trim();
+  if(!txt||!activeTid)return;
+  const role=state.session?state.session.role:'guest';
+  const uid=state.session?state.session.id:0;
+  const isSup=activeTid.startsWith('sup-');
+  const firstInSup=isSup && !tMsgs(activeTid).some(m=>m.role==='support');
+  pushMsg(activeTid,role,uid,txt);
+  inp.value='';
+  if(firstInSup){
+    setTimeout(()=>pushMsg(activeTid,'support',0,'תודה על הפנייה! נציג שירות יחזור אליך כאן בהקדם.'),900);
+  }
+}
+$('cp-text').addEventListener('keydown',e=>{if(e.key==='Enter')sendMsg()});
+
+/* ===== ratings-and-profiles engine ===== */
+state.ratings = [];
+let profOwnerId=null;
+function ownerStats(oid){
+  const rs=state.ratings.filter(r=>{
+    if(r.raterRole!=='renter')return false;
+    const b=state.bookings.find(x=>x.id===r.bookingId);
+    return b&&b.ownerId===oid;
+  });
+  const c=rs.length;
+  return{avg:c?rs.reduce((t,r)=>t+r.stars,0)/c:0,count:c};
+}
+function renterStats(rid){
+  const rs=state.ratings.filter(r=>{
+    if(r.raterRole!=='owner')return false;
+    const b=state.bookings.find(x=>x.id===r.bookingId);
+    return b&&b.renterId===rid;
+  });
+  const c=rs.length;
+  return{avg:c?rs.reduce((t,r)=>t+r.stars,0)/c:0,count:c};
+}
+function myRating(bid,role){return state.ratings.find(r=>r.bookingId===bid&&r.raterRole===role)}
+function starsHTML(avg,count){
+  if(count===0)return '<span class="new-tag">חדש · ללא דירוג</span>';
+  const pct=Math.max(0,Math.min(100,avg/5*100));
+  const tail=(count===null)?'':`<span class="rcount">${avg.toFixed(1)} (${count})</span>`;
+  return `<span class="stars" title="${avg.toFixed(1)} מתוך 5"><i style="width:${pct}%">★★★★★</i>★★★★★</span>`+tail;
+}
+function ratePicker(bid){
+  return `<span class="rate-picker">${[1,2,3,4,5].map(n=>`<button class="rp-star" title="${n} כוכבים" onclick="setRating(${bid},${n})">★</button>`).join('')}</span>`;
+}
+function setRating(bid,n){
+  if(!state.session)return;
+  const b=state.bookings.find(x=>x.id===bid);
+  if(!b)return;
+  const role=state.session.role;
+  if(role==='renter'&&b.renterId!==state.session.id)return;
+  if(role==='owner'&&b.ownerId!==state.session.id)return;
+  n=Math.round(Math.min(5,Math.max(1,+n||0)));
+  if(!n)return;
+  const ex=myRating(bid,role);
+  if(ex){
+    ex.stars=n; ex.ts=Date.now();
+    fbSaveDoc('ratings', ex);
+  }else{
+    const rating={id:bid+'_'+role,bookingId:bid,raterRole:role,stars:n,ts:Date.now()};
+    state.ratings.push(rating);
+    fbSaveDoc('ratings', rating);
+  }
+  showToast('הדירוג נשמר: '+n+' כוכבים');
+  render();
+  if(role==='renter'&&$('ov-renter').classList.contains('open'))openRenterArea();
+  if(role==='owner'&&$('ov-owner').classList.contains('open'))renderOwnerBookings();
+  if($('ov-profile').classList.contains('open')&&profOwnerId!==null)openOwnerProfile(profOwnerId);
+}
+function openOwnerProfile(oid){
+  const o=state.owners.find(x=>x.id===oid);
+  if(!o)return;
+  profOwnerId=oid;
+  const st=ownerStats(oid);
+  const cars=state.cars.filter(c=>c.ownerId===oid);
+  const since=new Date(o.createdAt||Date.now()).toLocaleDateString('he-IL',{month:'long',year:'numeric'});
+  const carsHtml = cars.length===0
+    ? '<div class="adm-empty">אין כרגע רכבים פעילים.</div>'
+    : '<div class="prof-cars">'+cars.map(c=>{
+        const si=statusInfo(c);
+        const btn = c.status==='available'
+          ? `<button class="mini gold" onclick="closeOv('ov-profile');tryBook(${c.id})">להזמנה</button>`
+          : '<button class="mini" disabled style="opacity:.5">מושכר</button>';
+        return `<div class="pc-item"><img src="${c.photos[0]}" alt=""><div class="inf"><b>${esc(c.make)} ${esc(c.model)} ${c.yr}</b><div class="sm">${esc(c.color)} · ${money(c.price)}/יום · <span class="pill ${si.cls}" style="font-size:.62rem;padding:1px 8px">${si.txt}</span></div></div>${btn}</div>`;
+      }).join('')+'</div>';
+  $('prof-body').innerHTML=`
+    <div class="prof-head">
+      <div class="prof-ava">${esc(o.name[0])}</div>
+      <div><b>${esc(o.name)}</b><span class="sm">משכיר · חבר מאז ${since}</span>
+      <div class="prof-stars">${starsHTML(st.avg,st.count)}</div></div>
+    </div>
+    <div class="divider">הרכבים של ${esc(o.name.split(' ')[0])} (${cars.length})</div>
+    ${carsHtml}`;
+  openOv('ov-profile');
+}
+
+/* ---------- SCROLL DYNAMICS ---------- */
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const heroIn=document.querySelector('.hero-in');
+const progress=$('progress');
+let tick=false;
+addEventListener('scroll',()=>{
+  if(tick)return;tick=true;
+  requestAnimationFrame(()=>{
+    const y=scrollY;
+    const max=document.documentElement.scrollHeight-innerHeight;
+    if(progress)progress.style.width=(max>0?(y/max)*100:0)+'%';
+    if(!reduced&&heroIn){
+      const f=Math.min(y/600,1);
+      heroIn.style.transform=`translateY(${y*.18}px)`;
+      heroIn.style.opacity=1-f*.55;
+    }
+    tick=false;
+  });
+},{passive:true});
+
+/* headline word-by-word entrance */
+(function(){
+  const h=document.querySelector('.hero h1');
+  if(!h||reduced)return;
+  let i=0;
+  const wrap=node=>{
+    [...node.childNodes].forEach(n=>{
+      if(n.nodeType===3){
+        const frag=document.createDocumentFragment();
+        n.textContent.split(/(\s+)/).forEach(part=>{
+          if(!part)return;
+          if(/^\s+$/.test(part)){frag.appendChild(document.createTextNode(part));return}
+          const sp=document.createElement('span');
+          sp.className='w';sp.textContent=part;
+          sp.style.animationDelay=(0.12+i*0.09)+'s';i++;
+          frag.appendChild(sp);
+        });
+        node.replaceChild(frag,n);
+      } else if(n.nodeType===1) wrap(n);
+    });
+  };
+  wrap(h);
+})();
+
+/* animated counters */
+function animateNum(el,target){
+  target=+target||0;
+  if(reduced){el.textContent=target;el._v=target;return}
+  const from=el._v||0;
+  if(from===target){el.textContent=target;return}
+  const t0=performance.now(),dur=700;
+  const step=t=>{
+    const k=Math.min((t-t0)/dur,1),e=1-Math.pow(1-k,3);
+    el.textContent=Math.round(from+(target-from)*e);
+    if(k<1)requestAnimationFrame(step);else el._v=target;
+  };
+  requestAnimationFrame(step);
+}
+
+/* reveal on scroll */
+const io=new IntersectionObserver(es=>es.forEach(e=>{
+  if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}
+}),{threshold:.12});
+document.querySelectorAll('.sec-head,.fleet-side,.how-grid,.foot-cta,.strip-in').forEach(el=>{
+  el.classList.add('reveal');io.observe(el);
+});
+
+initFirebase().finally(()=>{
+  renderNav();
+  render();
+  initSig();
+});
+</script>
+</body>
+</html>
