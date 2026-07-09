@@ -829,17 +829,15 @@ select option{background:var(--bg2);color:var(--ivory)}
               </div>
             </div>
 
-            <div class="divider">אמצעי תשלום ומסגרת פיקדון</div>
+            <div class="divider">מסגרת פיקדון</div>
             <div class="card-row">
-              <div class="field" id="sf-card"><label>מספר כרטיס אשראי <span class="req">*</span></label><input id="s-card" dir="ltr" style="text-align:right" inputmode="numeric" placeholder="4580 •••• •••• ••••" maxlength="19"><div class="err-msg">מספר כרטיס לא תקין</div></div>
-              <div class="field" id="sf-exp"><label>תוקף <span class="req">*</span></label><input id="s-exp" dir="ltr" style="text-align:right" placeholder="MM/YY" maxlength="5"><div class="err-msg">תוקף לא תקין</div></div>
               <div class="field"><label>מסגרת פיקדון <span class="req">*</span></label>
                 <select id="s-frame"><option value="500">$500</option><option value="1000" selected>$1,000</option><option value="1500">$1,500</option><option value="2000">$2,000</option></select>
               </div>
             </div>
             <div class="note">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-              <div>המסגרת נתפסת כפיקדון בעת ההשכרה ומשוחררת בהחזרת הרכב. <b style="color:var(--soon)">שימו לב:</b> זוהי גרסת הדגמה — באתר אמיתי אין לשמור פרטי אשראי גולמיים; החיוב חייב לעבור דרך סולק מאובטח (Stripe וכדומה).</div>
+              <div>המסגרת נתפסת כפיקדון בעת האיסוף ומשוחררת בהחזרת הרכב. פרטי התשלום נמסרים בעת איסוף הרכב — אין צורך למסור פרטי כרטיס אשראי בהרשמה.</div>
             </div>
           </div>
 
@@ -1161,7 +1159,7 @@ function fbSaveUser(role, user){ fbSaveDoc(role==='owner' ? 'owners' : 'renters'
 /* ================= STATE ================= */
 const state = {
   owners: [],   // {id,name,phone,email,pass}
-  renters: [],  // {id,name,phone,email,pass,lic,card4,exp,frame}
+  renters: [],  // {id,name,phone,email,pass,lic,frame}
   cars: [],     // {id,ownerId,make,model,yr,color,cat,price,seats,gear,fuel,tags[],status,ret,photos[]}
   bookings: [], // {id,num,carId,ownerId,renterId,from,tmFrom,to,tmTo,hours,days,total,frame,signName,signDate,sig,createdAt}
   session: null // {role:'owner'|'renter', id}
@@ -1297,11 +1295,8 @@ function doSignup(){
 
   let extra={};
   if(authRole==='renter'){
-    const card=$('s-card').value.replace(/\D/g,''), exp=$('s-exp').value.trim();
-    mk('sf-card',card.length<12);
-    mk('sf-exp',!/^(0[1-9]|1[0-2])\/\d{2}$/.test(exp));
     if(!rlicData){$('rlic-err').style.display='block';$('drop-rlic').classList.add('err-b');bad=true}
-    extra={lic:rlicData, card4:card.slice(-4), exp, frame:+$('s-frame').value};
+    extra={lic:rlicData, frame:+$('s-frame').value};
   }
   if(bad) return;
 
@@ -1318,7 +1313,7 @@ function doSignup(){
         db.collection('private').doc(uid).set(priv)
       ]);
     }).then(()=>{
-      ['s-name','s-phone','s-mail','s-pass','s-card','s-exp'].forEach(i=>$(i).value='');
+      ['s-name','s-phone','s-mail','s-pass'].forEach(i=>$(i).value='');
       clearRLic(true);
       showToast('החשבון נוצר בהצלחה');
     }).catch(e=>{mark('sf-mail',true);showToast('שגיאה: '+((e&&e.message)||e))});
@@ -1330,7 +1325,7 @@ function doSignup(){
   fbSaveUser(authRole, u);
   state.session={role:authRole,id:u.id,...u};
   saveSession();
-  ['s-name','s-phone','s-mail','s-pass','s-card','s-exp'].forEach(i=>$(i).value='');
+  ['s-name','s-phone','s-mail','s-pass'].forEach(i=>$(i).value='');
   clearRLic(true);
   showToast('החשבון נוצר בהצלחה');
   authJustSignedUp=(authRole==='owner');
@@ -1344,15 +1339,6 @@ bindDrop('drop-rlic','rlic-file',f=>readImg(f,d=>{
   $('drop-rlic').classList.remove('err-b'); $('rlic-err').style.display='none';
 }));
 function clearRLic(s){rlicData=null;$('rlic-file').value='';$('rlic-prev').style.display='none';$('drop-rlic').style.display='block'}
-
-/* card formatting */
-$('s-card').addEventListener('input',e=>{
-  e.target.value = e.target.value.replace(/\D/g,'').slice(0,16).replace(/(.{4})/g,'$1 ').trim();
-});
-$('s-exp').addEventListener('input',e=>{
-  let v=e.target.value.replace(/\D/g,'').slice(0,4);
-  e.target.value = v.length>2 ? v.slice(0,2)+'/'+v.slice(2) : v;
-});
 
 /* ================= FLEET ================= */
 function statusInfo(c){
@@ -1674,7 +1660,6 @@ function openRenterArea(){
     <div class="summary-box">
       <div class="row"><span>שם</span><span>${esc(u.name)}</span></div>
       <div class="row"><span>אימייל</span><span>${esc(u.email)}</span></div>
-      <div class="row"><span>כרטיס אשראי</span><span dir="ltr">•••• ${esc(u.card4)}</span></div>
       <div class="row"><span>מסגרת פיקדון</span><span>${money(u.frame)}</span></div>
       <div class="row"><span>רישיון נהיגה</span><span style="color:var(--ok)">✓ מאומת</span></div>
     </div>
@@ -1771,7 +1756,6 @@ function buildSummary(){
     <div class="row"><span>החזרה</span><span>${fmt($('dt-to').value)} · ${$('tm-to').value}</span></div>
     <div class="row"><span>משך</span><span>${h} שעות (${d} ימי חיוב)</span></div>
     <div class="row"><span>שוכר</span><span>${esc($('sign-name').value)}</span></div>
-    <div class="row"><span>אמצעי תשלום</span><span dir="ltr">•••• ${esc(u.card4)}</span></div>
     <div class="row"><span>מסגרת פיקדון</span><span>${money(u.frame)}</span></div>
     <div class="row"><span>הסכם השכרה</span><span style="color:var(--ok)">✓ נחתם ב-${fmt($('sign-date').value)}</span></div>
     <div class="row"><span>סה"כ לתשלום</span><span>${money(d*currentCar.price)}</span></div>`;
@@ -1816,7 +1800,7 @@ function confirmBooking(){
   const u=me(),h=hoursTotal(),d=daysTotal(),total=d*currentCar.price;
   const num='CD-'+Math.floor(100000+Math.random()*900000);
   const b={id:newId('bk'),num,carId:currentCar.id,ownerId:currentCar.ownerId,renterId:u.id,
-    lic:u.lic||null,card4:u.card4||'',renterName:u.name,
+    lic:u.lic||null,renterName:u.name,
     from:$('dt-from').value,tmFrom:$('tm-from').value,to:$('dt-to').value,tmTo:$('tm-to').value,
     hours:h,days:d,total,frame:u.frame,
     signName:$('sign-name').value.trim(),signDate:$('sign-date').value,sig:$('sig-pad').toDataURL(),
@@ -1858,7 +1842,6 @@ function receiptHTML(b){
     <div class="r-row"><span>החזרה</span><span>${fmt(b.to)} · ${b.tmTo}</span></div>
     <div class="r-row"><span>משך ההשכרה</span><span>${b.hours} שעות (${b.days} ימי חיוב)</span></div>
     <div class="r-row"><span>תעריף יומי</span><span>${money(c.price)}</span></div>
-    <div class="r-row"><span>אמצעי תשלום</span><span>כרטיס •••• ${esc(u.card4)}</span></div>
     <div class="r-row"><span>מסגרת פיקדון (משוחררת בהחזרה)</span><span>${money(b.frame)}</span></div>
     <div class="r-row"><span>הסכם השכרה</span><span>נחתם דיגיטלית · ${fmt(b.signDate)}</span></div>
     <div class="r-row total"><span>סה"כ לתשלום</span><span>${money(b.total)}</span></div>
