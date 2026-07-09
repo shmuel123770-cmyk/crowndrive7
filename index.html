@@ -555,6 +555,7 @@ select option{background:var(--bg2);color:var(--ivory)}
 }
 
 
+#demo-banner{display:none}
 /* ===== ratings-and-profiles styles ===== */
 .stars{position:relative;display:inline-block;line-height:1;color:#CBD3DC;letter-spacing:1px;font-size:.95em;white-space:nowrap}
 .stars>i{position:absolute;inset-inline-start:0;top:0;white-space:nowrap;overflow:hidden;color:#E9A93D;font-style:normal}
@@ -585,6 +586,7 @@ select option{background:var(--bg2);color:var(--ivory)}
 <body>
 
 <div id="progress" aria-hidden="true"></div>
+<div id="demo-banner" style="display:none"></div>
 
 <svg class="citymap" viewBox="0 0 1400 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
   <g fill="none" stroke="#31567A" stroke-width="1.4">
@@ -668,7 +670,7 @@ select option{background:var(--bg2);color:var(--ivory)}
     <div class="hero-stats">
       <div class="hstat"><b id="hs-cars">0</b><span>רכבים בצי</span></div>
       <div class="hstat"><b id="hs-ok">0</b><span>זמינים כעת</span></div>
-      <div class="hstat"><b>24/6</b><span>מענה טלפוני</span></div>
+      <div class="hstat"><b>24/6</b><span>מענה בצ'אט</span></div>
       <div class="hstat"><b>מבוטח</b><span>ביטוח מקיף</span></div>
     </div>
   </div>
@@ -855,9 +857,10 @@ select option{background:var(--bg2);color:var(--ivory)}
     <div class="m-head"><h3>אזור בעלי רכב</h3><button class="m-close" onclick="closeOv('ov-owner')">✕</button></div>
     <div class="m-body">
       <div class="dash-tabs">
-        <button class="on" id="dt-cars" onclick="setDash('cars')">הרכבים שלי</button>
-        <button id="dt-book" onclick="setDash('book')">הזמנות ושוכרים</button>
-        <button id="dt-rep" onclick="setDash('rep')">דוח שבועי</button>
+        <button class="on" id="dt-cars" onclick="setDash('cars')">ניהול הרכבים</button>
+        <button id="dt-book" onclick="setDash('book')">הזמנות</button>
+        <button id="dt-rep" onclick="setDash('rep')">סיכום הכנסות</button>
+        <button id="dt-add" onclick="setDash('add')">+ הוספת רכב</button>
       </div>
 
       <!-- cars tab -->
@@ -867,7 +870,12 @@ select option{background:var(--bg2);color:var(--ivory)}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 19l7-7a2.1 2.1 0 00-3-3l-7 7-1.5 4.5L12 19z"/></svg>
           <div>המודעות שלך בשליטה מלאה: בכל רגע אפשר <b>לערוך את כל הפרטים</b>, לשנות זמינות או <b>למחוק את המודעה לגמרי</b> — והאתר מתעדכן מיד.</div>
         </div>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn btn-gold" onclick="setDash('add')">+ הוספת רכב חדש</button></div>
         <div class="adm-list" id="adm-list"></div>
+      </div>
+
+      <!-- add/edit car tab -->
+      <div id="dash-add" style="display:none">
         <div class="divider" id="form-title">הוספת רכב חדש</div>
         <div class="f-row3">
           <div class="field" id="af-make"><label>יצרן <span class="req">*</span></label><input id="a-make" placeholder="Mercedes-Benz"><div class="err-msg">שדה חובה</div></div>
@@ -902,7 +910,7 @@ select option{background:var(--bg2);color:var(--ivory)}
           <div class="photo-req bad" id="ph-req">הועלו 0 מתוך 2 תמונות נדרשות</div>
         </div>
         <div class="m-actions">
-          <button class="btn btn-ghost" id="a-cancel" onclick="resetCarForm()" style="display:none">ביטול עריכה</button>
+          <button class="btn btn-ghost" id="a-cancel" onclick="resetCarForm(true)" style="display:none">ביטול עריכה</button>
           <button class="btn btn-gold grow" id="a-save" onclick="saveCar()">פרסום הרכב</button>
         </div>
       </div>
@@ -1088,62 +1096,49 @@ select option{background:var(--bg2);color:var(--ivory)}
 <div class="toast" id="toast"></div>
 
 <script>
-/* ================= STATE ================= */
-const state = {
-  owners: [],   // {id,name,phone,email,pass}
-  renters: [],  // {id,name,phone,email,pass,lic,card4,exp,frame}
-  cars: [],     // {id,ownerId,make,model,yr,color,cat,price,seats,gear,fuel,tags[],status,ret,photos[]}
-  bookings: [], // {id,num,carId,ownerId,renterId,from,tmFrom,to,tmTo,hours,days,total,frame,signName,signDate,sig,createdAt}
-  session: null // {role:'owner'|'renter', id}
-};
-let ids = {owner:1,renter:1,car:1,book:1};
-let filter='all', currentCar=null, authRole=null, authMode='login', editId=null, formPhotos=[], rlicData=null, lastBooking=null;
-
-/* ================= DATABASE (Netlify DB, via /api/db) ================= */
+/* ================= DATABASE (Netlify DB, via /api/db) =================
+   The site stores its data in the project's Netlify Database. Data is loaded
+   once on startup and every change is saved back to the database, so it is
+   shared across every device and browser — no external setup required.
+   CLOUD is kept as a disabled flag so the legacy Firebase code paths stay
+   dormant; the active path persists through the helpers below. */
+const CLOUD = false;
+let db = null, fauth = null;
 const DB_API = '/api/db';
 let dbReady = false;
 
-function cleanForDb(obj){
-  return JSON.parse(JSON.stringify(obj));
+function cloudErr(e){console.error(e);showToast('שגיאה בשמירה: '+((e&&e.message)||e))}
+function cleanForDb(obj){ return JSON.parse(JSON.stringify(obj)); }
+
+/* Rebuild the public-profile lookup (name/role/joined) from the stored users. */
+function rebuildUsers(){
+  state.users = {};
+  (state.owners||[]).forEach(u=>{ state.users[u.id]={name:u.name,role:'owner',createdAt:u.createdAt}; });
+  (state.renters||[]).forEach(u=>{ state.users[u.id]={name:u.name,role:'renter',createdAt:u.createdAt}; });
 }
 
-async function initFirebase(){
-  try{
-    await loadFirebaseData();
-    dbReady = true;
-    console.log('Database connected successfully');
-  }catch(err){
-    dbReady = false;
-    console.error('Database init failed:', err);
-    setTimeout(()=>showToast('לא הצלחתי להתחבר למסד הנתונים'),500);
-  }
-}
-
-async function loadFirebaseData(){
+async function bootstrapData(){
   try{
     const res = await fetch(DB_API);
-    if(!res.ok) throw new Error('DB bootstrap failed: '+res.status);
+    if(!res.ok) throw new Error('bootstrap failed: '+res.status);
     const all = await res.json();
-
-    state.owners = (all.owners||[]).sort((a,b)=>(a.id||0)-(b.id||0));
-    state.renters = (all.renters||[]).sort((a,b)=>(a.id||0)-(b.id||0));
-    state.cars = (all.cars||[]).sort((a,b)=>(a.id||0)-(b.id||0));
-    state.bookings = (all.bookings||[]).sort((a,b)=>(a.id||0)-(b.id||0));
-    state.msgs = (all.messages||[]).sort((a,b)=>(a.ts||0)-(b.ts||0));
-    state.ratings = (all.ratings||[]).sort((a,b)=>(a.ts||0)-(b.ts||0));
-
-    ids.owner = Math.max(0,...state.owners.map(x=>+x.id||0))+1;
-    ids.renter = Math.max(0,...state.renters.map(x=>+x.id||0))+1;
-    ids.car = Math.max(0,...state.cars.map(x=>+x.id||0))+1;
-    ids.book = Math.max(0,...state.bookings.map(x=>+x.id||0))+1;
+    state.owners  = all.owners   || [];
+    state.renters = all.renters  || [];
+    state.cars    = (all.cars     || []).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    state.bookings= (all.bookings || []).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    state.msgs    = (all.messages || []).sort((a,b)=>(a.ts||0)-(b.ts||0));
+    state.ratings = all.ratings  || [];
+    rebuildUsers();
+    dbReady = true;
   }catch(err){
+    dbReady = false;
     console.error('Database load failed:', err);
-    showToast('לא הצלחתי לטעון נתונים מהמסד');
+    setTimeout(()=>showToast('לא הצלחתי לטעון נתונים מהמסד'),400);
   }
 }
 
 async function fbSaveDoc(collectionName, item){
-  if(!item) return;
+  if(!item || item.id===undefined || item.id===null) return;
   try{
     const res = await fetch(DB_API, {
       method:'POST',
@@ -1151,10 +1146,7 @@ async function fbSaveDoc(collectionName, item){
       body: JSON.stringify({collection: collectionName, item: cleanForDb(item)})
     });
     if(!res.ok) throw new Error('save failed: '+res.status);
-  }catch(err){
-    console.error('Database save failed:', collectionName, err);
-    showToast('הנתונים לא נשמרו במסד');
-  }
+  }catch(err){ console.error('Database save failed:', collectionName, err); showToast('הנתונים לא נשמרו במסד'); }
 }
 
 async function fbDeleteDoc(collectionName, id){
@@ -1164,22 +1156,23 @@ async function fbDeleteDoc(collectionName, id){
   }catch(err){ console.error('Database delete failed:', collectionName, err); }
 }
 
-function fbSaveUser(role, user){
-  fbSaveDoc(role==='owner' ? 'owners' : 'renters', user);
-}
+function fbSaveUser(role, user){ fbSaveDoc(role==='owner' ? 'owners' : 'renters', user); rebuildUsers(); }
 
+/* ================= STATE ================= */
+const state = {
+  owners: [],   // {id,name,phone,email,pass}
+  renters: [],  // {id,name,phone,email,pass,lic,card4,exp,frame}
+  cars: [],     // {id,ownerId,make,model,yr,color,cat,price,seats,gear,fuel,tags[],status,ret,photos[]}
+  bookings: [], // {id,num,carId,ownerId,renterId,from,tmFrom,to,tmTo,hours,days,total,frame,signName,signDate,sig,createdAt}
+  session: null // {role:'owner'|'renter', id}
+};
+let seq = 1; const newId = p => p + (seq++) + Math.random().toString(36).slice(2,6);
+let filter='all', currentCar=null, authRole=null, authMode='login', editId=null, formPhotos=[], rlicData=null, lastBooking=null;
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 const money = n => '$'+n.toLocaleString('en-US');
-const me = () => {
-  if(!state.session) return null;
-  const pool = state.session.role==='owner' ? state.owners : state.renters;
-  const u = pool.find(u=>u.id===state.session.id);
-  // Fall back to the details stored with the session so the signed-in state
-  // still renders if the database is briefly unavailable on this visit.
-  return u || (state.session.name ? state.session : null);
-};
+const me = () => state.session;
 
 const ic = {
   seat:'<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M7 18v-6a5 5 0 015-5h0a5 5 0 015 5v6M5 21h14"/></svg>',
@@ -1188,21 +1181,30 @@ const ic = {
 };
 
 /* ================= NAV / SESSION ================= */
-/* Persist the login on this device/browser so returning visitors stay signed
-   in without re-entering email + code. Only a lightweight snapshot (role, id,
-   name, email) is stored locally — never the password. */
+function renderNav(){
+  const el = $('nav-side');
+  if(!state.session){
+    el.innerHTML = `<button class="btn btn-dark-out" onclick="openAuth()">כניסה / הרשמה</button>`;
+  } else {
+    const u = me();
+    const role = state.session.role;
+    el.innerHTML = `
+      <span class="who">שלום, <b>${esc(u.name.split(' ')[0])}</b> · ${role==='owner'?'בעל רכב':'שוכר'}</span>
+      <button class="btn btn-gold" onclick="${role==='owner'?'openOwner()':'openRenterArea()'}">${role==='owner'?'אזור בעלי רכב':'האזור שלי'}</button>
+      <button class="btn btn-dark-out" onclick="logout()">יציאה</button>`;
+  }
+}
+function logout(){if(CLOUD){fauth.signOut()}state.session=null;clearSession();stopUserFeeds();renderNav();toggleChat(false);updateBadge();showToast('התנתקת מהחשבון')}
+
+/* Keep the login on this device/browser so returning visitors stay signed in
+   without re-entering their email + password. Only a lightweight snapshot
+   (role, id, name, email) is stored locally — never the password. */
 const SESSION_KEY = 'cd-session';
 function saveSession(){
   try{
     if(state.session){
-      const u = me();
-      const snap = {
-        role: state.session.role,
-        id: state.session.id,
-        name: u ? u.name : state.session.name,
-        email: u ? u.email : state.session.email
-      };
-      localStorage.setItem(SESSION_KEY, JSON.stringify(snap));
+      const s = state.session;
+      localStorage.setItem(SESSION_KEY, JSON.stringify({role:s.role, id:s.id, name:s.name, email:s.email}));
     } else {
       localStorage.removeItem(SESSION_KEY);
     }
@@ -1218,31 +1220,16 @@ function restoreSession(){
   const pool = saved.role==='owner' ? state.owners : state.renters;
   const u = pool.find(x=>x.id===saved.id);
   if(u){
-    state.session = {role:saved.role, id:u.id};
+    state.session = {role:saved.role, id:u.id, ...u};
   } else if(!dbReady){
-    // The database didn't load this visit — keep the saved login and render
-    // from the stored snapshot instead of signing the user out. The account is
-    // re-linked automatically on the next load that succeeds.
+    // Database didn't load this visit — keep the saved login and render from the
+    // stored snapshot instead of signing the user out. Re-linked on next load.
     state.session = {role:saved.role, id:saved.id, name:saved.name, email:saved.email};
   } else {
     // Database loaded fine but the account no longer exists: drop the stale login.
     clearSession();
   }
 }
-function renderNav(){
-  const el = $('nav-side');
-  const u = state.session ? me() : null;
-  if(!state.session || !u){
-    el.innerHTML = `<button class="btn btn-dark-out" onclick="openAuth()">כניסה / הרשמה</button>`;
-  } else {
-    const role = state.session.role;
-    el.innerHTML = `
-      <span class="who">שלום, <b>${esc((u.name||'').split(' ')[0])}</b> · ${role==='owner'?'בעל רכב':'שוכר'}</span>
-      <button class="btn btn-gold" onclick="${role==='owner'?'openOwner()':'openRenterArea()'}">${role==='owner'?'אזור בעלי רכב':'האזור שלי'}</button>
-      <button class="btn btn-dark-out" onclick="logout()">יציאה</button>`;
-  }
-}
-function logout(){state.session=null;clearSession();renderNav();toggleChat(false);updateBadge();showToast('התנתקת מהחשבון')}
 
 /* ================= AUTH ================= */
 function openAuth(role){
@@ -1269,19 +1256,33 @@ function setAuthMode(m){
   $('auth-login').style.display = m==='login'?'block':'none';
   $('auth-signup').style.display = m==='signup'?'block':'none';
 }
+let authJustSignedUp=false, pendingProfile=null;
+function afterLoginUI(){
+  closeOv('ov-auth'); renderNav(); updateBadge();
+  const u=me();
+  if(u&&u.name)showToast('ברוך הבא, '+u.name.split(' ')[0]);
+  if(pendingBookCar && state.session && state.session.role==='renter'){const c=pendingBookCar;pendingBookCar=null;openBook(c)}
+  else pendingBookCar=null;
+  if(state.session && state.session.role==='owner' && authJustSignedUp){authJustSignedUp=false;openOwner();}
+}
 function doLogin(){
   const em=$('l-mail').value.trim().toLowerCase(), ps=$('l-pass').value;
+  if(CLOUD){
+    mark('lf-mail',false);mark('lf-pass',false);
+    fauth.signInWithEmailAndPassword(em,ps).catch(e=>{
+      if(((e&&e.code)||'').indexOf('user')>-1)mark('lf-mail',true);else mark('lf-pass',true);
+    });
+    return; /* onAuthStateChanged ממשיך מכאן */
+  }
   const pool = authRole==='owner'?state.owners:state.renters;
   const u = pool.find(x=>x.email===em);
   mark('lf-mail',!u);
   if(!u) return;
   mark('lf-pass',u.pass!==ps);
   if(u.pass!==ps) return;
-  state.session={role:authRole,id:u.id};
+  state.session={role:authRole,id:u.id,...u};
   saveSession();
-  closeOv('ov-auth'); renderNav();updateBadge();
-  showToast('ברוך הבא, '+u.name.split(' ')[0]);
-  if(pendingBookCar){const c=pendingBookCar;pendingBookCar=null;if(authRole==='renter')openBook(c)}
+  afterLoginUI();
 }
 function doSignup(){
   const name=$('s-name').value.trim(), phone=$('s-phone').value.replace(/\D/g,'');
@@ -1304,17 +1305,36 @@ function doSignup(){
   }
   if(bad) return;
 
-  const u={id:ids[authRole==='owner'?'owner':'renter']++, name, phone:$('s-phone').value.trim(), email:em, pass:ps, createdAt:Date.now(), ...extra};
+  if(CLOUD){
+    const role=authRole;
+    const prof={name,role,createdAt:Date.now()};
+    const priv={phone:$('s-phone').value.trim(),...extra};
+    fauth.createUserWithEmailAndPassword(em,ps).then(cred=>{
+      const uid=cred.user.uid;
+      authJustSignedUp=(role==='owner');
+      pendingProfile={uid,prof,priv};
+      return Promise.all([
+        db.collection('users').doc(uid).set(prof),
+        db.collection('private').doc(uid).set(priv)
+      ]);
+    }).then(()=>{
+      ['s-name','s-phone','s-mail','s-pass','s-card','s-exp'].forEach(i=>$(i).value='');
+      clearRLic(true);
+      showToast('החשבון נוצר בהצלחה');
+    }).catch(e=>{mark('sf-mail',true);showToast('שגיאה: '+((e&&e.message)||e))});
+    return;
+  }
+  const u={id:newId('u'), name, phone:$('s-phone').value.trim(), email:em, pass:ps, createdAt:Date.now(), ...extra};
   pool.push(u);
+  state.users[u.id]={name:u.name,role:authRole,createdAt:u.createdAt};
   fbSaveUser(authRole, u);
-  state.session={role:authRole,id:u.id};
+  state.session={role:authRole,id:u.id,...u};
   saveSession();
-  closeOv('ov-auth'); renderNav();
-  showToast('החשבון נוצר בהצלחה');
   ['s-name','s-phone','s-mail','s-pass','s-card','s-exp'].forEach(i=>$(i).value='');
   clearRLic(true);
-  if(pendingBookCar && authRole==='renter'){const c=pendingBookCar;pendingBookCar=null;openBook(c)}
-  if(authRole==='owner') openOwner();
+  showToast('החשבון נוצר בהצלחה');
+  authJustSignedUp=(authRole==='owner');
+  afterLoginUI();
 }
 
 /* renter license upload in signup */
@@ -1352,7 +1372,7 @@ function render(){
     g.innerHTML=`<div class="empty"><h3>אין רכבים בסינון זה</h3><p>נסו סינון אחר.</p></div>`;
   } else list.forEach((c,idx)=>{
     const s=statusInfo(c), off=c.status!=='available';
-    const ow=state.owners.find(o=>o.id===c.ownerId);
+    const ow=userOf(c.ownerId);
     const ost=ownerStats(c.ownerId);
     const el=document.createElement('article');
     el.className='card'+(off?' off':''); el.dataset.id=c.id; el.dataset.ph=0;
@@ -1362,8 +1382,8 @@ function render(){
         <img src="${c.photos[0]}" alt="${esc(c.make)} ${esc(c.model)}">
         <span class="g-status"><span class="pill ${s.cls}">${s.txt}</span></span>
         <span class="g-count">1 / ${c.photos.length}</span>
-        <button class="g-nav g-prev" onclick="slide(${c.id},-1,event)" aria-label="תמונה קודמת">‹</button>
-        <button class="g-nav g-next" onclick="slide(${c.id},1,event)" aria-label="תמונה הבאה">›</button>
+        <button class="g-nav g-prev" onclick="slide('${c.id}',-1,event)" aria-label="תמונה קודמת">‹</button>
+        <button class="g-nav g-next" onclick="slide('${c.id}',1,event)" aria-label="תמונה הבאה">›</button>
         <div class="g-dots">${c.photos.map((_,i)=>`<span class="${i===0?'on':''}"></span>`).join('')}</div>
       </div>
       <div class="card-body">
@@ -1371,7 +1391,7 @@ function render(){
           <div><h3>${esc(c.make)} ${esc(c.model)}</h3><span class="meta">${c.yr} · ${esc(c.color)} · ${esc(c.cat)}</span></div>
           <div class="price"><b>${money(c.price)}</b><span>ליום</span></div>
         </div>
-        <button class="owner-chip" onclick="openOwnerProfile(${c.ownerId})" title="לצפייה בפרופיל המשכיר">
+        <button class="owner-chip" onclick="openOwnerProfile('${c.ownerId}')" title="לצפייה בפרופיל המשכיר">
           <span class="oc-ava">${esc(ow?ow.name[0]:'?')}</span>
           <span class="oc-name">${esc(ow?ow.name.split(' ')[0]:'משכיר')}</span>
           ${starsHTML(ost.avg,ost.count)}
@@ -1384,7 +1404,7 @@ function render(){
         ${c.tags.length?`<div class="tags">${c.tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>`:''}
         ${off&&c.ret?`<div class="ret">${esc(c.ret)}</div>`:''}
         ${off?`<button class="card-btn dis" disabled>לא זמין כרגע</button>`
-             :`<button class="card-btn book" onclick="tryBook(${c.id})">הזמנת רכב זה</button>`}
+             :`<button class="card-btn book" onclick="tryBook('${c.id}')">הזמנת רכב זה</button>`}
       </div>`;
     g.appendChild(el);
   });
@@ -1415,7 +1435,7 @@ function openOwner(){
   setDash('cars'); renderAdminList(); resetCarForm(); openOv('ov-owner');
 }
 function setDash(t){
-  ['cars','book','rep'].forEach(x=>{
+  ['cars','add','book','rep'].forEach(x=>{
     const el=$('dash-'+x);
     el.style.display = x===t?'block':'none';
     if(x===t&&!reduced){el.classList.remove('tab-anim');void el.offsetWidth;el.classList.add('tab-anim')}
@@ -1436,17 +1456,20 @@ function renderAdminList(){
         <div class="sm">${esc(c.color)} · הנעה: ${esc(c.fuel)} · ${esc(c.cat)} · ${money(c.price)}/יום · ${c.photos.length} תמונות · <span class="pill ${s.cls}" style="font-size:.62rem;padding:1px 8px">${s.txt}</span></div>
       </div>
       <div class="acts">
-        <button class="mini" onclick="toggleStatus(${c.id})">${c.status==='available'?'סימון כמושכר':'סימון כזמין'}</button>
-        <button class="mini gold" onclick="editCar(${c.id})">עריכת פרטים</button>
-        <button class="mini danger" onclick="deleteCar(${c.id})">מחיקת המודעה</button>
+        <button class="mini" onclick="toggleStatus('${c.id}')">${c.status==='available'?'סימון כמושכר':'סימון כזמין'}</button>
+        <button class="mini gold" onclick="editCar('${c.id}')">עריכת פרטים</button>
+        <button class="mini danger" onclick="deleteCar('${c.id}')">מחיקת המודעה</button>
       </div>
     </div>`;
   }).join('');
 }
 function toggleStatus(id){
   const c=state.cars.find(x=>x.id===id);
-  c.status=c.status==='available'?'rented':'available';
-  if(c.status==='available')c.ret='';
+  if(!c)return;
+  const status=c.status==='available'?'rented':'available';
+  const ret=status==='available'?'':c.ret||'';
+  if(CLOUD){db.collection('cars').doc(id).update({status,ret}).catch(cloudErr);return;}
+  c.status=status;c.ret=ret;
   fbSaveDoc('cars', c);
   render();renderAdminList();
 }
@@ -1456,6 +1479,7 @@ function deleteCar(id){
   const msg=`למחוק את המודעה של ${c.make} ${c.model} ${c.yr} לגמרי?\n\nהרכב יוסר מהאתר מיד.`+(hasBookings?'\nהיסטוריית ההזמנות שלו תישמר בדוח ההכנסות.':'');
   if(!confirm(msg))return;
   if(editId===id)resetCarForm();
+  if(CLOUD){db.collection('cars').doc(id).delete().then(()=>showToast('המודעה נמחקה מהאתר')).catch(cloudErr);return;}
   state.cars=state.cars.filter(x=>x.id!==id);
   fbDeleteDoc('cars', id);
   render();renderAdminList();showToast('המודעה נמחקה מהאתר');
@@ -1463,6 +1487,7 @@ function deleteCar(id){
 function editCar(id){
   const c=state.cars.find(x=>x.id===id);
   editId=id;
+  setDash('add');
   $('a-make').value=c.make;$('a-model').value=c.model;$('a-yr').value=c.yr;
   $('a-color').value=c.color||'';$('a-cat').value=c.cat;$('a-price').value=c.price;
   $('a-seats').value=c.seats;$('a-gear').value=c.gear;$('a-fuel').value=c.fuel;
@@ -1483,6 +1508,7 @@ function resetCarForm(){
   formPhotos=[];renderPhotoGrid();
   ['af-make','af-model','af-yr','af-price'].forEach(i=>$(i).classList.remove('err'));
   $('form-title').textContent='הוספת רכב חדש';$('a-save').textContent='פרסום הרכב';$('a-cancel').style.display='none';
+  if($('ov-owner').classList.contains('open')&&$('dash-add').style.display==='block'&&arguments[0]===true)setDash('cars');
 }
 bindDrop('drop-photos','ph-file',null,files=>{
   [...files].forEach(f=>{
@@ -1513,45 +1539,97 @@ function saveCar(){
     seats:$('a-seats').value,gear:$('a-gear').value,fuel:$('a-fuel').value,
     tags:$('a-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
     status:$('a-status').value,photos:[...formPhotos]};
+  if(CLOUD){
+    const payload=editId?data:{...data,ownerId:state.session.id,ret:'',createdAt:Date.now()};
+    const op=editId? db.collection('cars').doc(editId).update(payload)
+                   : db.collection('cars').add(payload);
+    op.then(()=>{showToast(editId?'הרכב עודכן':make+' '+model+' נוסף לצי');resetCarForm();if($('ov-owner').classList.contains('open'))setDash('cars');}).catch(cloudErr);
+    return; /* הרשימה מתרעננת דרך המאזין */
+  }
   if(editId){
-    const car = state.cars.find(x=>x.id===editId);
+    const car=state.cars.find(x=>x.id===editId);
     Object.assign(car,data);
     fbSaveDoc('cars', car);
     showToast('הרכב עודכן');
   } else {
-    const car = {id:ids.car++,ownerId:state.session.id,ret:'',...data};
+    const car={id:newId('c'),createdAt:Date.now(),ownerId:state.session.id,ret:'',...data};
     state.cars.push(car);
     fbSaveDoc('cars', car);
     showToast(make+' '+model+' נוסף לצי');
   }
   render();renderAdminList();resetCarForm();
+  if($('ov-owner').classList.contains('open'))setDash('cars');
+}
+
+/* close a rental: booking marked done, car freed */
+function endRental(bid){
+  const b=state.bookings.find(x=>x.id===bid);
+  if(!b||b.done)return;
+  if(!state.session||state.session.role!=='owner'||b.ownerId!==state.session.id)return;
+  if(!confirm('לסיים את ההשכרה '+b.num+'? הרכב יסומן כזמין להשכרה.'))return;
+  if(CLOUD){
+    db.collection('bookings').doc(bid).update({done:true,doneAt:Date.now()})
+      .then(()=>db.collection('cars').doc(b.carId).update({status:'available',ret:''}))
+      .then(()=>showToast('ההשכרה הסתיימה — הרכב חזר להיות זמין'))
+      .catch(cloudErr);
+    return;
+  }
+  b.done=true;b.doneAt=Date.now();
+  const c=state.cars.find(x=>x.id===b.carId);
+  if(c){c.status='available';c.ret='';}
+  fbSaveDoc('bookings', b);
+  if(c) fbSaveDoc('cars', c);
+  render();renderOwnerBookings();
+  showToast('ההשכרה הסתיימה — הרכב חזר להיות זמין');
 }
 
 /* owner: bookings tab */
 function renderOwnerBookings(){
-  const list=state.bookings.filter(b=>b.ownerId===state.session.id).sort((a,b)=>b.createdAt-a.createdAt);
+  const all=state.bookings.filter(b=>b.ownerId===state.session.id).sort((a,b)=>b.createdAt-a.createdAt);
   const box=$('dash-book');
-  if(list.length===0){box.innerHTML='<div class="adm-empty">עדיין אין הזמנות על הרכבים שלך.</div>';return}
-  box.innerHTML=`<table class="tbl"><thead><tr>
+  if(all.length===0){box.innerHTML='<div class="adm-empty">עדיין אין הזמנות על הרכבים שלך.</div>';return}
+  const active=all.filter(b=>!b.done), list=all.filter(b=>b.done);
+  const activeHtml = active.length===0
+    ? '<div class="adm-empty">אין השכרות פעילות כרגע.</div>'
+    : active.map(b=>{
+        const c=state.cars.find(x=>x.id===b.carId)||{make:'—',model:''};
+        const rst=renterStats(b.renterId);
+        return `<div class="adm-item" style="border:1px solid rgba(28,124,79,.35);background:rgba(28,124,79,.05)">
+          ${b.lic?`<img src="${b.lic}" alt="רישיון" style="cursor:pointer" onclick="viewLic('${b.id}')">`:''}
+          <div class="inf">
+            <b>${esc(c.make)} ${esc(c.model)} · ${esc(b.signName)}</b>
+            <div class="sm">${b.num} · ${fmt(b.from)} ${b.tmFrom} → ${fmt(b.to)} ${b.tmTo} · ${money(b.total)} · דירוג שוכר: </div>
+            <div class="sm">${starsHTML(rst.avg,rst.count)}</div>
+          </div>
+          <div class="acts">
+            <button class="mini gold" onclick="openChatTo('b${b.id}')">💬 צ'אט עם השוכר</button>
+            <button class="mini" style="color:var(--ok);border-color:rgba(28,124,79,.4)" onclick="endRental('${b.id}')">✓ סיום השכרה</button>
+          </div>
+        </div>`;
+      }).join('');
+  const pastHtml = list.length===0
+    ? '<div class="adm-empty">אין עדיין הזמנות שהסתיימו.</div>'
+    : `<table class="tbl"><thead><tr>
     <th>הזמנה</th><th>רכב</th><th>שוכר</th><th>תקופה</th><th>שעות</th><th>סכום</th><th>רישיון</th><th>דירוג</th>
   </tr></thead><tbody>${list.map(b=>{
     const rst=renterStats(b.renterId);
     const mine=myRating(b.id,'owner');
     const c=state.cars.find(x=>x.id===b.carId)||{make:'—',model:''};
-    const r=state.renters.find(x=>x.id===b.renterId)||{};
     return `<tr>
       <td class="num">${b.num}<div class="sm">${new Date(b.createdAt).toLocaleDateString('he-IL')}</div></td>
       <td>${esc(c.make)} ${esc(c.model)}</td>
-      <td>${esc(b.signName)}<div class="sm">התקשורת מתנהלת בצ'אט</div><button class="mini gold" style="margin-top:6px" onclick="openChatTo('b'+${b.id})">💬 צ'אט עם השוכר</button></td>
+      <td>${esc(b.signName)}<div class="sm">התקשורת מתנהלת בצ'אט</div><button class="mini gold" style="margin-top:6px" onclick="openChatTo('b${b.id}')">💬 צ'אט עם השוכר</button></td>
       <td>${fmt(b.from)} ${b.tmFrom}<div class="sm">עד ${fmt(b.to)} ${b.tmTo}</div></td>
       <td class="num">${b.hours}</td>
       <td class="num">${money(b.total)}<div class="sm">פיקדון ${money(b.frame)}</div></td>
-      <td>${r.lic?`<img class="lic-thumb" src="${r.lic}" alt="רישיון" onclick="viewLic(${b.renterId})">`:'—'}</td>
+      <td>${b.lic?`<img class="lic-thumb" src="${b.lic}" alt="רישיון" onclick="viewLic('${b.id}')">`:'—'}</td>
       <td>
         <span class="rate-label">דירוג השוכר בקהילה:</span>${starsHTML(rst.avg,rst.count)}
         <span class="rate-label" style="margin-top:8px">הדירוג שלך לשוכר:</span>${mine?starsHTML(mine.stars,null):ratePicker(b.id)}
       </td>
     </tr>`;}).join('')}</tbody></table>`;
+  box.innerHTML=`<div class="divider">השכרות פעילות (${active.length})</div>${activeHtml}
+    <div class="divider" style="margin-top:26px">הזמנות קודמות (${list.length})</div>${pastHtml}`;
 }
 
 /* owner: weekly report */
@@ -1605,8 +1683,9 @@ function openRenterArea(){
     :`<table class="tbl"><thead><tr><th>הזמנה</th><th>רכב</th><th>תקופה</th><th>סכום</th><th>דירוג המשכיר</th></tr></thead><tbody>
       ${list.map(b=>{const c=state.cars.find(x=>x.id===b.carId)||{make:'—',model:''};
         const mine=myRating(b.id,'renter');
-        return `<tr><td class="num">${b.num}</td><td>${esc(c.make)} ${esc(c.model)}</td>
-        <td>${fmt(b.from)} – ${fmt(b.to)}</td><td class="num">${money(b.total)}<br><button class="mini gold" style="margin-top:6px" onclick="openChatTo('b'+${b.id})">💬 צ'אט עם בעל הרכב</button></td>
+        const st=b.done?'<span class="pill ok" style="font-size:.62rem;padding:1px 8px">הסתיימה</span>':'<span class="pill soon" style="font-size:.62rem;padding:1px 8px">פעילה</span>';
+        return `<tr><td class="num">${b.num}<br>${st}</td><td>${esc(c.make)} ${esc(c.model)}</td>
+        <td>${fmt(b.from)} – ${fmt(b.to)}</td><td class="num">${money(b.total)}<br><button class="mini gold" style="margin-top:6px" onclick="openChatTo('b${b.id}')">💬 צ'אט עם בעל הרכב</button></td>
         <td>${mine?`<span class="rate-label">דירגת:</span>${starsHTML(mine.stars,null)}`:`<span class="rate-label">איך היה השירות?</span>${ratePicker(b.id)}`}</td></tr>`;}).join('')}
     </tbody></table>`}`;
   openOv('ov-renter');
@@ -1736,18 +1815,28 @@ function clearSig(){
 function confirmBooking(){
   const u=me(),h=hoursTotal(),d=daysTotal(),total=d*currentCar.price;
   const num='CD-'+Math.floor(100000+Math.random()*900000);
-  const b={id:ids.book++,num,carId:currentCar.id,ownerId:currentCar.ownerId,renterId:u.id,
+  const b={id:newId('bk'),num,carId:currentCar.id,ownerId:currentCar.ownerId,renterId:u.id,
+    lic:u.lic||null,card4:u.card4||'',renterName:u.name,
     from:$('dt-from').value,tmFrom:$('tm-from').value,to:$('dt-to').value,tmTo:$('tm-to').value,
     hours:h,days:d,total,frame:u.frame,
     signName:$('sign-name').value.trim(),signDate:$('sign-date').value,sig:$('sig-pad').toDataURL(),
     createdAt:Date.now()};
-  state.bookings.push(b);
-  fbSaveDoc('bookings', b);
+  if(CLOUD){
+    const ref=db.collection('bookings').doc();
+    b.id=ref.id;
+    ref.set(b)
+      .then(()=>db.collection('cars').doc(currentCar.id).update({status:'rented',ret:'מוזמן · איסוף '+fmt(b.from)}))
+      .then(()=>pushMsg('b'+b.id,'system',0,'ההזמנה '+num+' אושרה. כל התקשורת בין השוכר לבעל הרכב מתנהלת כאן, באפליקציה.',[b.renterId,b.ownerId]))
+      .catch(cloudErr);
+  } else {
+    state.bookings.push(b);
+    currentCar.status='rented';
+    currentCar.ret='מוזמן · איסוף '+fmt(b.from);
+    fbSaveDoc('bookings', b);
+    fbSaveDoc('cars', currentCar);
+    pushMsg('b'+b.id,'system',0,'ההזמנה '+num+' אושרה. כל התקשורת בין השוכר לבעל הרכב מתנהלת כאן, באפליקציה.');
+  }
   lastBooking=b;
-  pushMsg('b'+b.id,'system',0,'ההזמנה '+num+' אושרה. כל התקשורת בין השוכר לבעל הרכב מתנהלת כאן, באפליקציה.');
-  currentCar.status='rented';
-  currentCar.ret='מוזמן · איסוף '+fmt(b.from);
-  fbSaveDoc('cars', currentCar);
   render();
   $('conf-num').textContent=num;
   $('done-txt').textContent=`${currentCar.make} ${currentCar.model} שמור עבורך. איסוף ב-${fmt(b.from)} בשעה ${b.tmFrom}.`;
@@ -1756,7 +1845,8 @@ function confirmBooking(){
   showToast('קבלה מוכנה — ניתן להוריד או לפתוח במייל');
 }
 function receiptHTML(b){
-  const c=state.cars.find(x=>x.id===b.carId),u=state.renters.find(x=>x.id===b.renterId);
+  const c=state.cars.find(x=>x.id===b.carId)||{make:'',model:'',yr:'',color:'',fuel:'',price:0};
+  const u=me()||{email:''};
   return `
     <div class="r-head">
       <div><h4>CROWN DRIVE</h4><div class="sm">השכרת רכבים · קראון הייטס, ברוקלין NY<br>שירות לקוחות: בצ'אט שבאתר</div></div>
@@ -1798,7 +1888,7 @@ function downloadReceipt(){
 }
 function emailReceipt(){
   if(!lastBooking)return;
-  const b=lastBooking,c=state.cars.find(x=>x.id===b.carId),u=state.renters.find(x=>x.id===b.renterId);
+  const b=lastBooking,c=state.cars.find(x=>x.id===b.carId)||{make:'',model:'',yr:''},u=me()||{email:''};
   const body=[
     'Crown Drive — אישור הזמנה וקבלה','',
     'מספר הזמנה: '+b.num,
@@ -1839,10 +1929,11 @@ function readImg(f,cb){
   if(f.size>10*1024*1024)return showToast('הקובץ גדול מדי (מקסימום 10MB)');
   const r=new FileReader();r.onload=()=>cb(r.result);r.readAsDataURL(f);
 }
-function viewLic(renterId){
-  const r=state.renters.find(x=>x.id===renterId);
-  if(!r||!r.lic)return;
-  $('lic-full').src=r.lic;
+function viewLic(bid){
+  const b=state.bookings.find(x=>x.id===bid);
+  if(!b||!b.lic)return;
+  if(!state.session||state.session.role!=='owner'||b.ownerId!==state.session.id)return;
+  $('lic-full').src=b.lic;
   openOv('ov-lic');
 }
 function showToast(msg){
@@ -1870,7 +1961,7 @@ function myThreads(){
         const c=state.cars.find(x=>x.id===b.carId);
         const carName=c?`${c.make} ${c.model}`:'רכב';
         if(role==='renter'){
-          const o=state.owners.find(x=>x.id===b.ownerId);
+          const o=userOf(b.ownerId);
           t.push({tid:'b'+b.id,kind:'usr',title:'בעל הרכב · '+carName,sub:'הזמנה '+b.num,ava:(o?o.name[0]:'ב')});
         }else{
           t.push({tid:'b'+b.id,kind:'usr',title:b.signName+' · '+carName,sub:'הזמנה '+b.num,ava:b.signName[0]});
@@ -1950,10 +2041,18 @@ function renderMsgs(){
       }).join('');
   box.scrollTop=box.scrollHeight;
 }
-function pushMsg(tid,role,uid,text){
-  const msg = {id:'m_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),tid,role,uid,text,ts:Date.now()};
-  state.msgs.push(msg);
-  fbSaveDoc('messages', msg);
+function participantsOf(tid){
+  if(tid.startsWith('b')){
+    const b=state.bookings.find(x=>'b'+x.id===tid);
+    return b?[b.renterId,b.ownerId]:[];
+  }
+  return state.session?[state.session.id]:[];
+}
+function pushMsg(tid,role,uid,text,parts){
+  const m={id:'m_'+newId(''),tid,role,uid,text,ts:Date.now(),participants:parts||participantsOf(tid)};
+  if(CLOUD && role!=='support'){db.collection('messages').add(m).catch(cloudErr);}
+  else if(role!=='support'){fbSaveDoc('messages', m);}
+  state.msgs.push(m);
   if(activeTid===tid && $('chat-panel').classList.contains('open')){
     state.reads[meKey()+'-'+tid]=Date.now();
     renderMsgs();
@@ -1963,6 +2062,7 @@ function pushMsg(tid,role,uid,text){
 function sendMsg(){
   const inp=$('cp-text'),txt=inp.value.trim();
   if(!txt||!activeTid)return;
+  if(CLOUD && !state.session){showToast('כדי לשלוח הודעה יש להתחבר');openAuth();return;}
   const role=state.session?state.session.role:'guest';
   const uid=state.session?state.session.id:0;
   const isSup=activeTid.startsWith('sup-');
@@ -1977,22 +2077,16 @@ $('cp-text').addEventListener('keydown',e=>{if(e.key==='Enter')sendMsg()});
 
 /* ===== ratings-and-profiles engine ===== */
 state.ratings = [];
+state.users = {};
+const userOf = uid => state.users[uid] || null;
 let profOwnerId=null;
 function ownerStats(oid){
-  const rs=state.ratings.filter(r=>{
-    if(r.raterRole!=='renter')return false;
-    const b=state.bookings.find(x=>x.id===r.bookingId);
-    return b&&b.ownerId===oid;
-  });
+  const rs=state.ratings.filter(r=>r.raterRole==='renter'&&r.ownerId===oid);
   const c=rs.length;
   return{avg:c?rs.reduce((t,r)=>t+r.stars,0)/c:0,count:c};
 }
 function renterStats(rid){
-  const rs=state.ratings.filter(r=>{
-    if(r.raterRole!=='owner')return false;
-    const b=state.bookings.find(x=>x.id===r.bookingId);
-    return b&&b.renterId===rid;
-  });
+  const rs=state.ratings.filter(r=>r.raterRole==='owner'&&r.renterId===rid);
   const c=rs.length;
   return{avg:c?rs.reduce((t,r)=>t+r.stars,0)/c:0,count:c};
 }
@@ -2004,7 +2098,7 @@ function starsHTML(avg,count){
   return `<span class="stars" title="${avg.toFixed(1)} מתוך 5"><i style="width:${pct}%">★★★★★</i>★★★★★</span>`+tail;
 }
 function ratePicker(bid){
-  return `<span class="rate-picker">${[1,2,3,4,5].map(n=>`<button class="rp-star" title="${n} כוכבים" onclick="setRating(${bid},${n})">★</button>`).join('')}</span>`;
+  return `<span class="rate-picker">${[1,2,3,4,5].map(n=>`<button class="rp-star" title="${n} כוכבים" onclick="setRating('${bid}',${n})">★</button>`).join('')}</span>`;
 }
 function setRating(bid,n){
   if(!state.session)return;
@@ -2016,14 +2110,9 @@ function setRating(bid,n){
   n=Math.round(Math.min(5,Math.max(1,+n||0)));
   if(!n)return;
   const ex=myRating(bid,role);
-  if(ex){
-    ex.stars=n; ex.ts=Date.now();
-    fbSaveDoc('ratings', ex);
-  }else{
-    const rating={id:bid+'_'+role,bookingId:bid,raterRole:role,stars:n,ts:Date.now()};
-    state.ratings.push(rating);
-    fbSaveDoc('ratings', rating);
-  }
+  const doc={id:bid+'_'+role,bookingId:bid,raterRole:role,stars:n,ownerId:b.ownerId,renterId:b.renterId,ts:Date.now()};
+  if(CLOUD){db.collection('ratings').doc(bid+'_'+role).set(doc).catch(cloudErr);}
+  else{if(ex){ex.stars=n;ex.ts=Date.now();fbSaveDoc('ratings',ex);}else{state.ratings.push(doc);fbSaveDoc('ratings',doc);}}
   showToast('הדירוג נשמר: '+n+' כוכבים');
   render();
   if(role==='renter'&&$('ov-renter').classList.contains('open'))openRenterArea();
@@ -2031,7 +2120,7 @@ function setRating(bid,n){
   if($('ov-profile').classList.contains('open')&&profOwnerId!==null)openOwnerProfile(profOwnerId);
 }
 function openOwnerProfile(oid){
-  const o=state.owners.find(x=>x.id===oid);
+  const o=userOf(oid);
   if(!o)return;
   profOwnerId=oid;
   const st=ownerStats(oid);
@@ -2042,7 +2131,7 @@ function openOwnerProfile(oid){
     : '<div class="prof-cars">'+cars.map(c=>{
         const si=statusInfo(c);
         const btn = c.status==='available'
-          ? `<button class="mini gold" onclick="closeOv('ov-profile');tryBook(${c.id})">להזמנה</button>`
+          ? `<button class="mini gold" onclick="closeOv('ov-profile');tryBook('${c.id}')">להזמנה</button>`
           : '<button class="mini" disabled style="opacity:.5">מושכר</button>';
         return `<div class="pc-item"><img src="${c.photos[0]}" alt=""><div class="inf"><b>${esc(c.make)} ${esc(c.model)} ${c.yr}</b><div class="sm">${esc(c.color)} · ${money(c.price)}/יום · <span class="pill ${si.cls}" style="font-size:.62rem;padding:1px 8px">${si.txt}</span></div></div>${btn}</div>`;
       }).join('')+'</div>';
@@ -2055,6 +2144,78 @@ function openOwnerProfile(oid){
     <div class="divider">הרכבים של ${esc(o.name.split(' ')[0])} (${cars.length})</div>
     ${carsHtml}`;
   openOv('ov-profile');
+}
+
+
+/* ================= CLOUD FEEDS ================= */
+let userUnsubs=[], bookMap={};
+function stopUserFeeds(){if(!CLOUD)return;userUnsubs.forEach(u=>{try{u()}catch(e){}});userUnsubs=[];bookMap={};state.bookings=[];if(CLOUD)state.msgs=[];}
+function refreshOpenViews(){
+  render();
+  if($('ov-owner').classList.contains('open')){renderAdminList();renderOwnerBookings();renderOwnerReport();}
+  if($('ov-renter').classList.contains('open'))openRenterArea();
+  if($('ov-profile').classList.contains('open')&&profOwnerId!==null)openOwnerProfile(profOwnerId);
+  if($('chat-panel').classList.contains('open')){activeTid?renderMsgs():showChatList();}
+  updateBadge();
+}
+function startGlobalFeeds(){
+  db.collection('users').onSnapshot(sn=>{
+    state.users={};sn.forEach(d=>state.users[d.id]=d.data());
+    render();
+  },cloudErr);
+  db.collection('cars').onSnapshot(sn=>{
+    state.cars=sn.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    refreshOpenViews();
+  },cloudErr);
+  db.collection('ratings').onSnapshot(sn=>{
+    state.ratings=sn.docs.map(d=>({id:d.id,...d.data()}));
+    refreshOpenViews();
+  },cloudErr);
+}
+function applyBookSnap(sn){
+  sn.forEach(d=>bookMap[d.id]={id:d.id,...d.data()});
+  state.bookings=Object.values(bookMap).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  refreshOpenViews();
+}
+function startUserFeeds(uid){
+  stopUserFeeds();
+  userUnsubs.push(db.collection('bookings').where('renterId','==',uid).onSnapshot(applyBookSnap,cloudErr));
+  userUnsubs.push(db.collection('bookings').where('ownerId','==',uid).onSnapshot(applyBookSnap,cloudErr));
+  userUnsubs.push(db.collection('messages').where('participants','array-contains',uid).onSnapshot(sn=>{
+    const mine=sn.docs.map(d=>({id:d.id,...d.data()}));
+    const local=state.msgs.filter(m=>m.role==='support'||(m.tid||'').startsWith('sup-'));
+    state.msgs=mine.concat(local).sort((a,b)=>(a.ts||0)-(b.ts||0));
+    if($('chat-panel').classList.contains('open')){activeTid?renderMsgs():showChatList();}
+    updateBadge();
+  },cloudErr));
+}
+async function buildCloudSession(user){
+  const uid=user.uid;
+  let prof=null;
+  try{const d=await db.collection('users').doc(uid).get();if(d.exists)prof=d.data();}catch(e){}
+  if(!prof && pendingProfile && pendingProfile.uid===uid)prof=pendingProfile.prof;
+  if(!prof){prof={name:user.email||'משתמש',role:'renter',createdAt:Date.now()}}
+  let priv={};
+  try{const d=await db.collection('private').doc(uid).get();if(d.exists)priv=d.data();}catch(e){}
+  if((!priv||!Object.keys(priv).length) && pendingProfile && pendingProfile.uid===uid)priv=pendingProfile.priv||{};
+  state.session={role:prof.role,id:uid,name:prof.name,createdAt:prof.createdAt,email:user.email||'',...priv};
+  startUserFeeds(uid);
+  afterLoginUI();
+}
+if(CLOUD){
+  startGlobalFeeds();
+  fauth.onAuthStateChanged(user=>{
+    if(user){buildCloudSession(user);}
+    else{state.session=null;stopUserFeeds();renderNav();updateBadge();}
+  });
+} else {
+  // Load everything from the Netlify Database, then restore the saved login so
+  // returning visitors on this device stay signed in.
+  bootstrapData().finally(()=>{
+    restoreSession();
+    renderNav();
+    refreshOpenViews();
+  });
 }
 
 /* ---------- SCROLL DYNAMICS ---------- */
@@ -2124,13 +2285,7 @@ document.querySelectorAll('.sec-head,.fleet-side,.how-grid,.foot-cta,.strip-in')
   el.classList.add('reveal');io.observe(el);
 });
 
-initFirebase().finally(()=>{
-  restoreSession();
-  renderNav();
-  render();
-  updateBadge();
-  initSig();
-});
+renderNav();render();initSig();
 </script>
 </body>
 </html>
