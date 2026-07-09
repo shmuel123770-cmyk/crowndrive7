@@ -555,6 +555,19 @@ select option{background:var(--bg2);color:var(--ivory)}
 }
 
 
+#demo-banner{position:fixed;bottom:0;inset-inline:0;z-index:94;background:#8A5A00;color:#fff;font-size:.78rem;text-align:center;padding:7px 44px 7px 14px}
+.linklike{background:none;border:none;color:var(--gold-d);font-size:.78rem;text-decoration:underline;cursor:pointer;padding:2px 0;margin-top:-6px}
+.linklike:hover{color:var(--gold)}
+/* reviews */
+.rv-box{display:flex;gap:6px;margin-top:6px}
+.rv-box input{flex:1;border:1px solid var(--line);border-radius:9px;padding:7px 10px;font-size:.78rem;min-width:120px}
+.my-review{font-size:.76rem;color:var(--mut);margin-top:5px;font-style:italic;max-width:220px}
+.rv-list{display:flex;flex-direction:column;gap:10px}
+.rv-item{background:var(--bg2);border-radius:12px;padding:12px 14px}
+.rv-top{display:flex;align-items:center;gap:10px;margin-bottom:5px}
+.rv-top b{font-size:.85rem}
+.rv-txt{font-size:.85rem;color:#3A4450;line-height:1.55}
+.oc-rv{font-size:.72rem;color:var(--mut)}
 /* ===== ratings-and-profiles styles ===== */
 .stars{position:relative;display:inline-block;line-height:1;color:#CBD3DC;letter-spacing:1px;font-size:.95em;white-space:nowrap}
 .stars>i{position:absolute;inset-inline-start:0;top:0;white-space:nowrap;overflow:hidden;color:#E9A93D;font-style:normal}
@@ -585,6 +598,7 @@ select option{background:var(--bg2);color:var(--ivory)}
 <body>
 
 <div id="progress" aria-hidden="true"></div>
+<div id="demo-banner" style="display:none">מצב הדגמה — הנתונים אינם נשמרים בין רעננים. לחיבור מסד נתונים: הדביקו את מפתחות ה-Firebase במקום המסומן בראש קובץ האתר.</div>
 
 <svg class="citymap" viewBox="0 0 1400 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
   <g fill="none" stroke="#31567A" stroke-width="1.4">
@@ -668,7 +682,7 @@ select option{background:var(--bg2);color:var(--ivory)}
     <div class="hero-stats">
       <div class="hstat"><b id="hs-cars">0</b><span>רכבים בצי</span></div>
       <div class="hstat"><b id="hs-ok">0</b><span>זמינים כעת</span></div>
-      <div class="hstat"><b>24/6</b><span>מענה טלפוני</span></div>
+      <div class="hstat"><b>24/6</b><span>מענה אונליין</span></div>
       <div class="hstat"><b>מבוטח</b><span>ביטוח מקיף</span></div>
     </div>
   </div>
@@ -723,7 +737,7 @@ select option{background:var(--bg2);color:var(--ivory)}
 
 <!-- ticker -->
 <div class="ticker" aria-hidden="true">
-  <div class="ticker-track"><span>איסוף מיידי בקראון הייטס</span><i>◆</i><span>ביטוח מקיף כלול</span><i>◆</i><span>הזמנה מקוונת ב-3 דקות</span><i>◆</i><span>רכבים חדשים ומטופחים</span><i>◆</i><span>מענה 24/6</span><i>◆</i><span>ביטול חינם עד 24 שעות</span><i>◆</i><span>איסוף מיידי בקראון הייטס</span><i>◆</i><span>ביטוח מקיף כלול</span><i>◆</i><span>הזמנה מקוונת ב-3 דקות</span><i>◆</i><span>רכבים חדשים ומטופחים</span><i>◆</i><span>מענה 24/6</span><i>◆</i><span>ביטול חינם עד 24 שעות</span><i>◆</i></div>
+  <div class="ticker-track"><span>איסוף מיידי בקראון הייטס</span><i>◆</i><span>ביטוח מקיף כלול</span><i>◆</i><span>הזמנה מקוונת ב-3 דקות</span><i>◆</i><span>רכבים חדשים ומטופחים</span><i>◆</i><span>מענה אונליין 24/6</span><i>◆</i><span>ביטול חינם עד 24 שעות</span><i>◆</i><span>איסוף מיידי בקראון הייטס</span><i>◆</i><span>ביטוח מקיף כלול</span><i>◆</i><span>הזמנה מקוונת ב-3 דקות</span><i>◆</i><span>רכבים חדשים ומטופחים</span><i>◆</i><span>מענה אונליין 24/6</span><i>◆</i><span>ביטול חינם עד 24 שעות</span><i>◆</i></div>
 </div>
 
 <!-- HOW -->
@@ -732,7 +746,7 @@ select option{background:var(--bg2);color:var(--ivory)}
     <h2>תהליך ההזמנה</h2>
   </div>
   <div class="how-grid">
-    <div class="hstep"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0114 0v1"/></svg></div><span class="num">1</span><h3>הרשמה</h3><p>פרטים אישיים, צילום רישיון נהיגה ואמצעי תשלום עם מסגרת פיקדון.</p></div>
+    <div class="hstep"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0114 0v1"/></svg></div><span class="num">1</span><h3>הרשמה</h3><p>פרטים אישיים וצילום רישיון נהיגה — פחות מ-3 דקות.</p></div>
     <div class="hstep"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 16l1.5-5.5A2 2 0 018.4 9h7.2a2 2 0 011.9 1.5L19 16M5 16h14M5 16v3m14-3v3M7.5 13h.01M16.5 13h.01"/></svg></div><span class="num">2</span><h3>בחירת רכב ותאריכים</h3><p>בחירת רכב זמין וקביעת מועדי איסוף והחזרה. המחיר מחושב מיד.</p></div>
     <div class="hstep"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 19l7-7a2.1 2.1 0 00-3-3l-7 7-1.5 4.5L12 19z"/><path d="M4 21h9"/></svg></div><span class="num">3</span><h3>הסכם וחתימה</h3><p>קריאת תקנון ההשכרה וחתימה דיגיטלית — שם מלא, חתימה ותאריך.</p></div>
     <div class="hstep"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></div><span class="num">4</span><h3>אישור וקבלה</h3><p>מספר הזמנה וקבלה נשלחים לשוכר. הרכב ממתין בנקודת האיסוף.</p></div>
@@ -773,7 +787,7 @@ select option{background:var(--bg2);color:var(--ivory)}
           <div class="role-card" onclick="pickRole('renter')" tabindex="0" role="button">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0114 0v1"/></svg>
             <b>אני שוכר רכב</b>
-            <span>הרשמה עם פרטים אישיים, רישיון נהיגה ואמצעי תשלום</span>
+            <span>הרשמה עם פרטים אישיים ורישיון נהיגה</span>
           </div>
           <div class="role-card" onclick="pickRole('owner')" tabindex="0" role="button">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="1.5" stroke-linecap="round"><path d="M5 16l1.5-5.5A2 2 0 018.4 9h7.2a2 2 0 011.9 1.5L19 16M5 16h14M5 16v3m14-3v3M7.5 13h.01M16.5 13h.01"/></svg>
@@ -795,6 +809,7 @@ select option{background:var(--bg2);color:var(--ivory)}
         <div id="auth-login">
           <div class="field" id="lf-mail"><label>אימייל <span class="req">*</span></label><input id="l-mail" type="email" dir="ltr" style="text-align:right" placeholder="name@email.com"><div class="err-msg">אימייל לא נמצא</div></div>
           <div class="field" id="lf-pass"><label>סיסמה <span class="req">*</span></label><input id="l-pass" type="password"><div class="err-msg">סיסמה שגויה</div></div>
+        <button class="linklike" type="button" onclick="forgotPass()">שכחתי סיסמה — שחזור במייל</button>
           <div class="m-actions"><button class="btn btn-gold grow" onclick="doLogin()">כניסה לחשבון</button></div>
         </div>
 
@@ -827,17 +842,12 @@ select option{background:var(--bg2);color:var(--ivory)}
               </div>
             </div>
 
-            <div class="divider">אמצעי תשלום ומסגרת פיקדון</div>
+
             <div class="card-row">
-              <div class="field" id="sf-card"><label>מספר כרטיס אשראי <span class="req">*</span></label><input id="s-card" dir="ltr" style="text-align:right" inputmode="numeric" placeholder="4580 •••• •••• ••••" maxlength="19"><div class="err-msg">מספר כרטיס לא תקין</div></div>
-              <div class="field" id="sf-exp"><label>תוקף <span class="req">*</span></label><input id="s-exp" dir="ltr" style="text-align:right" placeholder="MM/YY" maxlength="5"><div class="err-msg">תוקף לא תקין</div></div>
-              <div class="field"><label>מסגרת פיקדון <span class="req">*</span></label>
-                <select id="s-frame"><option value="500">$500</option><option value="1000" selected>$1,000</option><option value="1500">$1,500</option><option value="2000">$2,000</option></select>
-              </div>
             </div>
             <div class="note">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-              <div>המסגרת נתפסת כפיקדון בעת ההשכרה ומשוחררת בהחזרת הרכב. <b style="color:var(--soon)">שימו לב:</b> זוהי גרסת הדגמה — באתר אמיתי אין לשמור פרטי אשראי גולמיים; החיוב חייב לעבור דרך סולק מאובטח (Stripe וכדומה).</div>
+              <div>התשלום מוסדר ישירות מול בעל הרכב בעת האיסוף.</div>
             </div>
           </div>
 
@@ -855,9 +865,10 @@ select option{background:var(--bg2);color:var(--ivory)}
     <div class="m-head"><h3>אזור בעלי רכב</h3><button class="m-close" onclick="closeOv('ov-owner')">✕</button></div>
     <div class="m-body">
       <div class="dash-tabs">
-        <button class="on" id="dt-cars" onclick="setDash('cars')">הרכבים שלי</button>
-        <button id="dt-book" onclick="setDash('book')">הזמנות ושוכרים</button>
-        <button id="dt-rep" onclick="setDash('rep')">דוח שבועי</button>
+        <button class="on" id="dt-cars" onclick="setDash('cars')">ניהול הרכבים</button>
+        <button id="dt-book" onclick="setDash('book')">הזמנות</button>
+        <button id="dt-rep" onclick="setDash('rep')">סיכום הכנסות</button>
+        <button id="dt-add" onclick="setDash('add')">+ הוספת רכב</button>
       </div>
 
       <!-- cars tab -->
@@ -867,7 +878,12 @@ select option{background:var(--bg2);color:var(--ivory)}
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 19l7-7a2.1 2.1 0 00-3-3l-7 7-1.5 4.5L12 19z"/></svg>
           <div>המודעות שלך בשליטה מלאה: בכל רגע אפשר <b>לערוך את כל הפרטים</b>, לשנות זמינות או <b>למחוק את המודעה לגמרי</b> — והאתר מתעדכן מיד.</div>
         </div>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:12px"><button class="btn btn-gold" onclick="setDash('add')">+ הוספת רכב חדש</button></div>
         <div class="adm-list" id="adm-list"></div>
+      </div>
+
+      <!-- add/edit car tab -->
+      <div id="dash-add" style="display:none">
         <div class="divider" id="form-title">הוספת רכב חדש</div>
         <div class="f-row3">
           <div class="field" id="af-make"><label>יצרן <span class="req">*</span></label><input id="a-make" placeholder="Mercedes-Benz"><div class="err-msg">שדה חובה</div></div>
@@ -879,7 +895,7 @@ select option{background:var(--bg2);color:var(--ivory)}
           <div class="field"><label>קטגוריה</label>
             <select id="a-cat"><option>סדאן יוקרה</option><option>סדאן</option><option>SUV יוקרה</option><option>SUV</option><option>מיניוואן</option><option>קופה ספורט</option><option>קבריולה</option><option>רכב מסחרי</option></select>
           </div>
-          <div class="field" id="af-price"><label>מחיר ליום ($) <span class="req">*</span></label><input id="a-price" type="number" min="1" placeholder="189"><div class="err-msg">יש להזין מחיר</div></div>
+          <div class="field" id="af-price"><label>מחיר לשעה ($) <span class="req">*</span></label><input id="a-price" type="number" min="1" placeholder="12"><div class="err-msg">יש להזין מחיר</div></div>
         </div>
         <div class="f-row3">
           <div class="field"><label>מושבים</label><select id="a-seats"><option>2</option><option>4</option><option selected>5</option><option>7</option><option>8</option></select></div>
@@ -902,7 +918,7 @@ select option{background:var(--bg2);color:var(--ivory)}
           <div class="photo-req bad" id="ph-req">הועלו 0 מתוך 2 תמונות נדרשות</div>
         </div>
         <div class="m-actions">
-          <button class="btn btn-ghost" id="a-cancel" onclick="resetCarForm()" style="display:none">ביטול עריכה</button>
+          <button class="btn btn-ghost" id="a-cancel" onclick="resetCarForm(true)" style="display:none">ביטול עריכה</button>
           <button class="btn btn-gold grow" id="a-save" onclick="saveCar()">פרסום הרכב</button>
         </div>
       </div>
@@ -971,7 +987,7 @@ select option{background:var(--bg2);color:var(--ivory)}
           </ol>
           <h4>3. ביטוח והשתתפות עצמית</h4>
           <ol>
-            <li>הרכב מבוטח בביטוח מקיף. בכל מקרה של נזק חלה השתתפות עצמית בגובה מסגרת הפיקדון.</li>
+            <li>הרכב מבוטח בביטוח מקיף. בכל מקרה של נזק חלה השתתפות עצמית כפי שיסוכם עם בעל הרכב.</li>
             <li>נזק שנגרם עקב נהיגה רשלנית, תחת השפעה, או בניגוד להסכם — באחריות השוכר במלואו.</li>
           </ol>
           <h4>4. שימוש ברכב</h4>
@@ -985,9 +1001,9 @@ select option{background:var(--bg2);color:var(--ivory)}
             <li>איחור של יותר משעה במועד ההחזרה יחויב כיום השכרה נוסף.</li>
             <li>ביטול חינם עד 24 שעות לפני מועד האיסוף. לאחר מכן — חיוב יום השכרה אחד.</li>
           </ol>
-          <h4>6. פיקדון ותשלום</h4>
+          <h4>6. תשלום</h4>
           <ol>
-            <li>מסגרת הפיקדון נתפסת בכרטיס האשראי בעת האיסוף ומשוחררת עד 5 ימי עסקים לאחר החזרה תקינה.</li>
+            <li>התשלום מוסדר ישירות מול בעל הרכב בעת האיסוף, לפי הסכום שאושר בהזמנה.</li>
             <li>התשלום המלא מתבצע בנקודת האיסוף.</li>
           </ol>
         </div>
@@ -1018,7 +1034,7 @@ select option{background:var(--bg2);color:var(--ivory)}
         <div class="summary-box" id="final-sum"></div>
         <div class="note">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>
-          <div>ביטול חינם עד 24 שעות לפני האיסוף · התשלום והפיקדון בנקודת האיסוף · קבלה תישלח לאימייל שלך.</div>
+          <div>ביטול חינם עד 24 שעות לפני האיסוף · התשלום בנקודת האיסוף · קבלה תישלח לאימייל שלך.</div>
         </div>
         <div class="m-actions" style="margin-top:18px"><button class="btn btn-ghost" onclick="goStep(2)">חזרה</button><button class="btn btn-gold grow" onclick="confirmBooking()">אישור וסגירת הזמנה</button></div>
       </div>
@@ -1078,6 +1094,26 @@ select option{background:var(--bg2);color:var(--ivory)}
   </div>
 </div>
 
+<div class="overlay" id="ov-account" role="dialog" aria-modal="true">
+  <div class="modal" style="width:min(560px,100%)">
+    <div class="m-head"><h3>עריכת פרטי החשבון</h3><button class="m-close" onclick="closeOv('ov-account')">✕</button></div>
+    <div class="m-body">
+      <div class="f-row2">
+        <div class="field"><label>שם מלא</label><input id="ac-name"></div>
+        <div class="field"><label>טלפון</label><input id="ac-phone" dir="ltr"></div>
+      </div>
+      <div id="ac-renter-extra" style="display:none">
+        <div class="field"><label>החלפת צילום רישיון (לא חובה)</label><input type="file" id="ac-lic" accept="image/*"></div>
+      </div>
+      <div class="divider">שינוי פרטי התחברות</div>
+      <div class="field"><label>מייל חדש (להשאיר ריק אם אין שינוי)</label><input id="ac-mail" type="email" dir="ltr" placeholder="new@email.com"></div>
+      <div class="field"><label>סיסמה חדשה (להשאיר ריק אם אין שינוי)</label><input id="ac-pass" type="password" placeholder="לפחות 6 תווים"></div>
+      <div class="note" style="margin-top:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><div>שינוי מייל או סיסמה עשוי לדרוש התחברות מחדש מטעמי אבטחה.</div></div>
+      <div class="m-actions"><button class="btn btn-ghost" onclick="closeOv('ov-account')">ביטול</button><button class="btn btn-gold grow" onclick="saveAccount()">שמירת השינויים</button></div>
+    </div>
+  </div>
+</div>
+
 <div class="overlay" id="ov-lic" role="dialog" aria-modal="true">
   <div class="modal" style="width:min(560px,100%)">
     <div class="m-head"><h3>רישיון נהיגה</h3><button class="m-close" onclick="closeOv('ov-lic')">✕</button></div>
@@ -1087,92 +1123,66 @@ select option{background:var(--bg2);color:var(--ivory)}
 
 <div class="toast" id="toast"></div>
 
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script>
+/* ╔════════════════════════════════════════════════════════════════╗
+   ║ הגדרות FIREBASE — הדביקו כאן את הקונפיג מפרויקט ה-Firebase שלכם ║
+   ║ Project settings → General → Your apps → SDK setup and config   ║
+   ╚════════════════════════════════════════════════════════════════╝ */
+const FIREBASE_CONFIG = (typeof window!=='undefined' && window.__FB_CONFIG) || {
+  apiKey: "PASTE_HERE",
+  authDomain: "PASTE_HERE",
+  projectId: "PASTE_HERE",
+  storageBucket: "PASTE_HERE",
+  messagingSenderId: "PASTE_HERE",
+  appId: "PASTE_HERE"
+};
+const CLOUD = !!(FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey.indexOf('PASTE')===-1 && typeof firebase!=='undefined');
+let db=null, fauth=null;
+if(CLOUD){
+  firebase.initializeApp(FIREBASE_CONFIG);
+  db=firebase.firestore();
+  fauth=firebase.auth();
+}
+/* demo persistence (safe: never crashes if storage unavailable) */
+const safeStore={
+  get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+function saveDemo(){
+  if(CLOUD)return;
+  safeStore.set('cd-demo',{owners:state.owners,renters:state.renters,users:state.users,cars:state.cars,
+    bookings:state.bookings,ratings:state.ratings,msgs:state.msgs,session:state.session,seq});
+}
+function loadDemo(){
+  if(CLOUD)return;
+  const d=safeStore.get('cd-demo');
+  if(!d)return;
+  try{
+    state.owners=d.owners||[];state.renters=d.renters||[];state.users=d.users||{};
+    state.cars=d.cars||[];state.bookings=d.bookings||[];state.ratings=d.ratings||[];
+    state.msgs=d.msgs||[];state.session=d.session||null;seq=d.seq||seq;
+  }catch(e){}
+}
+function cloudErr(e){console.error(e);showToast('שגיאה בשמירה: '+((e&&e.message)||e))}
+
 /* ================= STATE ================= */
 const state = {
   owners: [],   // {id,name,phone,email,pass}
-  renters: [],  // {id,name,phone,email,pass,lic,card4,exp,frame}
+  renters: [],  // {id,name,phone,email,pass,lic}
   cars: [],     // {id,ownerId,make,model,yr,color,cat,price,seats,gear,fuel,tags[],status,ret,photos[]}
-  bookings: [], // {id,num,carId,ownerId,renterId,from,tmFrom,to,tmTo,hours,days,total,frame,signName,signDate,sig,createdAt}
+  bookings: [], // {id,num,carId,ownerId,renterId,from,tmFrom,to,tmTo,hours,days,total,signName,signDate,sig,createdAt}
   session: null // {role:'owner'|'renter', id}
 };
-let ids = {owner:1,renter:1,car:1,book:1};
+let seq = 1; const newId = p => p + (seq++) + Math.random().toString(36).slice(2,6);
 let filter='all', currentCar=null, authRole=null, authMode='login', editId=null, formPhotos=[], rlicData=null, lastBooking=null;
-
-/* ================= DATABASE (Netlify DB, via /api/db) ================= */
-const DB_API = '/api/db';
-let dbReady = false;
-
-function cleanForDb(obj){
-  return JSON.parse(JSON.stringify(obj));
-}
-
-async function initFirebase(){
-  try{
-    await loadFirebaseData();
-    dbReady = true;
-    console.log('Database connected successfully');
-  }catch(err){
-    dbReady = false;
-    console.error('Database init failed:', err);
-    setTimeout(()=>showToast('לא הצלחתי להתחבר למסד הנתונים'),500);
-  }
-}
-
-async function loadFirebaseData(){
-  try{
-    const res = await fetch(DB_API);
-    if(!res.ok) throw new Error('DB bootstrap failed: '+res.status);
-    const all = await res.json();
-
-    state.owners = (all.owners||[]).sort((a,b)=>(a.id||0)-(b.id||0));
-    state.renters = (all.renters||[]).sort((a,b)=>(a.id||0)-(b.id||0));
-    state.cars = (all.cars||[]).sort((a,b)=>(a.id||0)-(b.id||0));
-    state.bookings = (all.bookings||[]).sort((a,b)=>(a.id||0)-(b.id||0));
-    state.msgs = (all.messages||[]).sort((a,b)=>(a.ts||0)-(b.ts||0));
-    state.ratings = (all.ratings||[]).sort((a,b)=>(a.ts||0)-(b.ts||0));
-
-    ids.owner = Math.max(0,...state.owners.map(x=>+x.id||0))+1;
-    ids.renter = Math.max(0,...state.renters.map(x=>+x.id||0))+1;
-    ids.car = Math.max(0,...state.cars.map(x=>+x.id||0))+1;
-    ids.book = Math.max(0,...state.bookings.map(x=>+x.id||0))+1;
-  }catch(err){
-    console.error('Database load failed:', err);
-    showToast('לא הצלחתי לטעון נתונים מהמסד');
-  }
-}
-
-async function fbSaveDoc(collectionName, item){
-  if(!item) return;
-  try{
-    const res = await fetch(DB_API, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({collection: collectionName, item: cleanForDb(item)})
-    });
-    if(!res.ok) throw new Error('save failed: '+res.status);
-  }catch(err){
-    console.error('Database save failed:', collectionName, err);
-    showToast('הנתונים לא נשמרו במסד');
-  }
-}
-
-async function fbDeleteDoc(collectionName, id){
-  try{
-    const res = await fetch(`${DB_API}?collection=${encodeURIComponent(collectionName)}&id=${encodeURIComponent(id)}`, {method:'DELETE'});
-    if(!res.ok) throw new Error('delete failed: '+res.status);
-  }catch(err){ console.error('Database delete failed:', collectionName, err); }
-}
-
-function fbSaveUser(role, user){
-  fbSaveDoc(role==='owner' ? 'owners' : 'renters', user);
-}
-
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 const money = n => '$'+n.toLocaleString('en-US');
-const me = () => state.session ? (state.session.role==='owner' ? state.owners : state.renters).find(u=>u.id===state.session.id) : null;
+const me = () => state.session;
 
 const ic = {
   seat:'<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M7 18v-6a5 5 0 015-5h0a5 5 0 015 5v6M5 21h14"/></svg>',
@@ -1191,10 +1201,10 @@ function renderNav(){
     el.innerHTML = `
       <span class="who">שלום, <b>${esc(u.name.split(' ')[0])}</b> · ${role==='owner'?'בעל רכב':'שוכר'}</span>
       <button class="btn btn-gold" onclick="${role==='owner'?'openOwner()':'openRenterArea()'}">${role==='owner'?'אזור בעלי רכב':'האזור שלי'}</button>
-      <button class="btn btn-dark-out" onclick="logout()">יציאה</button>`;
+      <button class="btn btn-dark-out" onclick="openAccount()" title="עריכת פרטי החשבון">⚙ החשבון</button> <button class="btn btn-dark-out" onclick="logout()">יציאה</button>`;
   }
 }
-function logout(){state.session=null;renderNav();toggleChat(false);updateBadge();showToast('התנתקת מהחשבון')}
+function logout(){if(CLOUD){fauth.signOut()}state.session=null;stopUserFeeds();renderNav();toggleChat(false);updateBadge();showToast('התנתקת מהחשבון')}
 
 /* ================= AUTH ================= */
 function openAuth(role){
@@ -1221,18 +1231,102 @@ function setAuthMode(m){
   $('auth-login').style.display = m==='login'?'block':'none';
   $('auth-signup').style.display = m==='signup'?'block':'none';
 }
+let authJustSignedUp=false, pendingProfile=null;
+function afterLoginUI(){
+  closeOv('ov-auth'); renderNav(); updateBadge();
+  const u=me();
+  if(u&&u.name)showToast('ברוך הבא, '+u.name.split(' ')[0]);
+  if(pendingBookCar && state.session && state.session.role==='renter'){const c=pendingBookCar;pendingBookCar=null;openBook(c)}
+  else pendingBookCar=null;
+  if(state.session && state.session.role==='owner' && authJustSignedUp){authJustSignedUp=false;openOwner();}
+}
+let acLicData=null;
+function openAccount(){
+  const u=me(); if(!u)return;
+  $('ac-name').value=u.name||'';
+  $('ac-phone').value=u.phone||'';
+  $('ac-mail').value='';$('ac-pass').value='';
+  acLicData=null;$('ac-lic').value='';
+  $('ac-renter-extra').style.display = u.role==='renter'?'block':'none';
+  openOv('ov-account');
+}
+$('ac-lic').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{acLicData=r.result;showToast('צילום הרישיון החדש נטען')};
+  r.readAsDataURL(f);
+});
+function saveAccount(){
+  const u=me(); if(!u)return;
+  const name=$('ac-name').value.trim(), phone=$('ac-phone').value.trim();
+  const newMail=$('ac-mail').value.trim().toLowerCase(), newPass=$('ac-pass').value;
+  if(!name){showToast('שם מלא הוא שדה חובה');return}
+  if(newPass && newPass.length<6){showToast('סיסמה חדשה חייבת לפחות 6 תווים');return}
+  if(CLOUD){
+    const jobs=[db.collection('users').doc(u.id).update({name})];
+    const priv={phone}; if(acLicData)priv.lic=acLicData;
+    jobs.push(db.collection('private').doc(u.id).update(priv));
+    const au=fauth.currentUser;
+    if(newMail && au)jobs.push(au.updateEmail(newMail));
+    if(newPass && au)jobs.push(au.updatePassword(newPass));
+    Promise.all(jobs).then(()=>{
+      Object.assign(state.session,{name,phone});
+      if(acLicData)state.session.lic=acLicData;
+      if(newMail)state.session.email=newMail;
+      renderNav();closeOv('ov-account');showToast('הפרטים עודכנו בהצלחה');
+    }).catch(e=>{
+      const msg=((e&&e.code)||'').indexOf('requires-recent-login')>-1
+        ? 'מטעמי אבטחה, שינוי מייל/סיסמה דורש התנתקות והתחברות מחדש — ואז לנסות שוב'
+        : 'שגיאה: '+((e&&e.message)||e);
+      showToast(msg);
+    });
+    return;
+  }
+  const pool = u.role==='owner'?state.owners:state.renters;
+  const rec = pool.find(x=>x.id===u.id);
+  if(!rec)return;
+  if(newMail){
+    if(pool.some(x=>x.email===newMail&&x.id!==u.id)){showToast('המייל החדש כבר רשום במערכת');return}
+    rec.email=newMail;
+  }
+  rec.name=name;rec.phone=phone;
+  if(newPass)rec.pass=newPass;
+  if(acLicData)rec.lic=acLicData;
+  state.users[u.id]={...(state.users[u.id]||{}),name};
+  Object.assign(state.session,{name,phone});
+  if(newMail)state.session.email=newMail;
+  if(newPass)state.session.pass=newPass;
+  if(acLicData)state.session.lic=acLicData;
+  renderNav();render();closeOv('ov-account');showToast('הפרטים עודכנו בהצלחה');
+}
+function forgotPass(){
+  const em=$('l-mail').value.trim().toLowerCase();
+  if(!em){mark('lf-mail',true);showToast('הזינו את כתובת המייל ואז לחצו על שחזור');return}
+  if(CLOUD){
+    fauth.sendPasswordResetEmail(em)
+      .then(()=>showToast('נשלח מייל לשחזור הסיסמה — בדקו את תיבת הדואר'))
+      .catch(e=>showToast('שגיאה: '+((e&&e.message)||e)));
+  } else {
+    showToast('שחזור סיסמה במייל יפעל אחרי חיבור מסד הנתונים (Firebase)');
+  }
+}
 function doLogin(){
   const em=$('l-mail').value.trim().toLowerCase(), ps=$('l-pass').value;
+  if(CLOUD){
+    mark('lf-mail',false);mark('lf-pass',false);
+    fauth.signInWithEmailAndPassword(em,ps).catch(e=>{
+      if(((e&&e.code)||'').indexOf('user')>-1)mark('lf-mail',true);else mark('lf-pass',true);
+    });
+    return; /* onAuthStateChanged ממשיך מכאן */
+  }
   const pool = authRole==='owner'?state.owners:state.renters;
   const u = pool.find(x=>x.email===em);
   mark('lf-mail',!u);
   if(!u) return;
   mark('lf-pass',u.pass!==ps);
   if(u.pass!==ps) return;
-  state.session={role:authRole,id:u.id};
-  closeOv('ov-auth'); renderNav();updateBadge();
-  showToast('ברוך הבא, '+u.name.split(' ')[0]);
-  if(pendingBookCar){const c=pendingBookCar;pendingBookCar=null;if(authRole==='renter')openBook(c)}
+  state.session={role:authRole,id:u.id,...u};
+  afterLoginUI();
 }
 function doSignup(){
   const name=$('s-name').value.trim(), phone=$('s-phone').value.replace(/\D/g,'');
@@ -1247,24 +1341,39 @@ function doSignup(){
 
   let extra={};
   if(authRole==='renter'){
-    const card=$('s-card').value.replace(/\D/g,''), exp=$('s-exp').value.trim();
-    mk('sf-card',card.length<12);
-    mk('sf-exp',!/^(0[1-9]|1[0-2])\/\d{2}$/.test(exp));
     if(!rlicData){$('rlic-err').style.display='block';$('drop-rlic').classList.add('err-b');bad=true}
-    extra={lic:rlicData, card4:card.slice(-4), exp, frame:+$('s-frame').value};
+    extra={lic:rlicData};
   }
   if(bad) return;
 
-  const u={id:ids[authRole==='owner'?'owner':'renter']++, name, phone:$('s-phone').value.trim(), email:em, pass:ps, createdAt:Date.now(), ...extra};
+  if(CLOUD){
+    const role=authRole;
+    const prof={name,role,createdAt:Date.now()};
+    const priv={phone:$('s-phone').value.trim(),...extra};
+    fauth.createUserWithEmailAndPassword(em,ps).then(cred=>{
+      const uid=cred.user.uid;
+      authJustSignedUp=(role==='owner');
+      pendingProfile={uid,prof,priv};
+      return Promise.all([
+        db.collection('users').doc(uid).set(prof),
+        db.collection('private').doc(uid).set(priv)
+      ]);
+    }).then(()=>{
+      ['s-name','s-phone','s-mail','s-pass'].forEach(i=>$(i).value='');
+      clearRLic(true);
+      showToast('החשבון נוצר בהצלחה');
+    }).catch(e=>{mark('sf-mail',true);showToast('שגיאה: '+((e&&e.message)||e))});
+    return;
+  }
+  const u={id:newId('u'), name, phone:$('s-phone').value.trim(), email:em, pass:ps, createdAt:Date.now(), ...extra};
   pool.push(u);
-  fbSaveUser(authRole, u);
-  state.session={role:authRole,id:u.id};
-  closeOv('ov-auth'); renderNav();
-  showToast('החשבון נוצר בהצלחה');
-  ['s-name','s-phone','s-mail','s-pass','s-card','s-exp'].forEach(i=>$(i).value='');
+  state.users[u.id]={name:u.name,role:authRole,createdAt:u.createdAt};
+  state.session={role:authRole,id:u.id,...u};
+  ['s-name','s-phone','s-mail','s-pass'].forEach(i=>$(i).value='');
   clearRLic(true);
-  if(pendingBookCar && authRole==='renter'){const c=pendingBookCar;pendingBookCar=null;openBook(c)}
-  if(authRole==='owner') openOwner();
+  showToast('החשבון נוצר בהצלחה');
+  authJustSignedUp=(authRole==='owner');
+  afterLoginUI();
 }
 
 /* renter license upload in signup */
@@ -1276,13 +1385,6 @@ bindDrop('drop-rlic','rlic-file',f=>readImg(f,d=>{
 function clearRLic(s){rlicData=null;$('rlic-file').value='';$('rlic-prev').style.display='none';$('drop-rlic').style.display='block'}
 
 /* card formatting */
-$('s-card').addEventListener('input',e=>{
-  e.target.value = e.target.value.replace(/\D/g,'').slice(0,16).replace(/(.{4})/g,'$1 ').trim();
-});
-$('s-exp').addEventListener('input',e=>{
-  let v=e.target.value.replace(/\D/g,'').slice(0,4);
-  e.target.value = v.length>2 ? v.slice(0,2)+'/'+v.slice(2) : v;
-});
 
 /* ================= FLEET ================= */
 function statusInfo(c){
@@ -1291,6 +1393,7 @@ function statusInfo(c){
   return {cls:'no',txt:'מושכר'};
 }
 function render(){
+  saveDemo();
   const g=$('grid'); g.innerHTML='';
   const list = state.cars.filter(c=>filter==='all'||(filter==='available'?c.status==='available':c.status!=='available'));
   if(state.cars.length===0){
@@ -1302,7 +1405,7 @@ function render(){
     g.innerHTML=`<div class="empty"><h3>אין רכבים בסינון זה</h3><p>נסו סינון אחר.</p></div>`;
   } else list.forEach((c,idx)=>{
     const s=statusInfo(c), off=c.status!=='available';
-    const ow=state.owners.find(o=>o.id===c.ownerId);
+    const ow=userOf(c.ownerId);
     const ost=ownerStats(c.ownerId);
     const el=document.createElement('article');
     el.className='card'+(off?' off':''); el.dataset.id=c.id; el.dataset.ph=0;
@@ -1312,19 +1415,20 @@ function render(){
         <img src="${c.photos[0]}" alt="${esc(c.make)} ${esc(c.model)}">
         <span class="g-status"><span class="pill ${s.cls}">${s.txt}</span></span>
         <span class="g-count">1 / ${c.photos.length}</span>
-        <button class="g-nav g-prev" onclick="slide(${c.id},-1,event)" aria-label="תמונה קודמת">‹</button>
-        <button class="g-nav g-next" onclick="slide(${c.id},1,event)" aria-label="תמונה הבאה">›</button>
+        <button class="g-nav g-prev" onclick="slide('${c.id}',-1,event)" aria-label="תמונה קודמת">‹</button>
+        <button class="g-nav g-next" onclick="slide('${c.id}',1,event)" aria-label="תמונה הבאה">›</button>
         <div class="g-dots">${c.photos.map((_,i)=>`<span class="${i===0?'on':''}"></span>`).join('')}</div>
       </div>
       <div class="card-body">
         <div class="card-title">
           <div><h3>${esc(c.make)} ${esc(c.model)}</h3><span class="meta">${c.yr} · ${esc(c.color)} · ${esc(c.cat)}</span></div>
-          <div class="price"><b>${money(c.price)}</b><span>ליום</span></div>
+          <div class="price"><b>${money(c.price)}</b><span>לשעה</span></div>
         </div>
-        <button class="owner-chip" onclick="openOwnerProfile(${c.ownerId})" title="לצפייה בפרופיל המשכיר">
+        <button class="owner-chip" onclick="openOwnerProfile('${c.ownerId}')" title="לצפייה בפרופיל, בדירוגים ובביקורות">
           <span class="oc-ava">${esc(ow?ow.name[0]:'?')}</span>
           <span class="oc-name">${esc(ow?ow.name.split(' ')[0]:'משכיר')}</span>
           ${starsHTML(ost.avg,ost.count)}
+          <span class="oc-rv">· ${reviewsOf(c.ownerId).length} ביקורות</span>
         </button>
         <div class="specs">
           <span class="spec">${ic.seat} ${c.seats} מושבים</span>
@@ -1334,7 +1438,7 @@ function render(){
         ${c.tags.length?`<div class="tags">${c.tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>`:''}
         ${off&&c.ret?`<div class="ret">${esc(c.ret)}</div>`:''}
         ${off?`<button class="card-btn dis" disabled>לא זמין כרגע</button>`
-             :`<button class="card-btn book" onclick="tryBook(${c.id})">הזמנת רכב זה</button>`}
+             :`<button class="card-btn book" onclick="tryBook('${c.id}')">הזמנת רכב זה</button>`}
       </div>`;
     g.appendChild(el);
   });
@@ -1365,7 +1469,7 @@ function openOwner(){
   setDash('cars'); renderAdminList(); resetCarForm(); openOv('ov-owner');
 }
 function setDash(t){
-  ['cars','book','rep'].forEach(x=>{
+  ['cars','add','book','rep'].forEach(x=>{
     const el=$('dash-'+x);
     el.style.display = x===t?'block':'none';
     if(x===t&&!reduced){el.classList.remove('tab-anim');void el.offsetWidth;el.classList.add('tab-anim')}
@@ -1383,21 +1487,23 @@ function renderAdminList(){
     return `<div class="adm-item">
       <img src="${c.photos[0]}" alt="">
       <div class="inf"><b>${esc(c.make)} ${esc(c.model)} ${c.yr}</b>
-        <div class="sm">${esc(c.color)} · הנעה: ${esc(c.fuel)} · ${esc(c.cat)} · ${money(c.price)}/יום · ${c.photos.length} תמונות · <span class="pill ${s.cls}" style="font-size:.62rem;padding:1px 8px">${s.txt}</span></div>
+        <div class="sm">${esc(c.color)} · הנעה: ${esc(c.fuel)} · ${esc(c.cat)} · ${money(c.price)}/שעה · ${c.photos.length} תמונות · <span class="pill ${s.cls}" style="font-size:.62rem;padding:1px 8px">${s.txt}</span></div>
       </div>
       <div class="acts">
-        <button class="mini" onclick="toggleStatus(${c.id})">${c.status==='available'?'סימון כמושכר':'סימון כזמין'}</button>
-        <button class="mini gold" onclick="editCar(${c.id})">עריכת פרטים</button>
-        <button class="mini danger" onclick="deleteCar(${c.id})">מחיקת המודעה</button>
+        <button class="mini" onclick="toggleStatus('${c.id}')">${c.status==='available'?'סימון כמושכר':'סימון כזמין'}</button>
+        <button class="mini gold" onclick="editCar('${c.id}')">עריכת פרטים</button>
+        <button class="mini danger" onclick="deleteCar('${c.id}')">מחיקת המודעה</button>
       </div>
     </div>`;
   }).join('');
 }
 function toggleStatus(id){
   const c=state.cars.find(x=>x.id===id);
-  c.status=c.status==='available'?'rented':'available';
-  if(c.status==='available')c.ret='';
-  fbSaveDoc('cars', c);
+  if(!c)return;
+  const status=c.status==='available'?'rented':'available';
+  const ret=status==='available'?'':c.ret||'';
+  if(CLOUD){db.collection('cars').doc(id).update({status,ret}).catch(cloudErr);return;}
+  c.status=status;c.ret=ret;
   render();renderAdminList();
 }
 function deleteCar(id){
@@ -1406,13 +1512,14 @@ function deleteCar(id){
   const msg=`למחוק את המודעה של ${c.make} ${c.model} ${c.yr} לגמרי?\n\nהרכב יוסר מהאתר מיד.`+(hasBookings?'\nהיסטוריית ההזמנות שלו תישמר בדוח ההכנסות.':'');
   if(!confirm(msg))return;
   if(editId===id)resetCarForm();
+  if(CLOUD){db.collection('cars').doc(id).delete().then(()=>showToast('המודעה נמחקה מהאתר')).catch(cloudErr);return;}
   state.cars=state.cars.filter(x=>x.id!==id);
-  fbDeleteDoc('cars', id);
   render();renderAdminList();showToast('המודעה נמחקה מהאתר');
 }
 function editCar(id){
   const c=state.cars.find(x=>x.id===id);
   editId=id;
+  setDash('add');
   $('a-make').value=c.make;$('a-model').value=c.model;$('a-yr').value=c.yr;
   $('a-color').value=c.color||'';$('a-cat').value=c.cat;$('a-price').value=c.price;
   $('a-seats').value=c.seats;$('a-gear').value=c.gear;$('a-fuel').value=c.fuel;
@@ -1433,6 +1540,7 @@ function resetCarForm(){
   formPhotos=[];renderPhotoGrid();
   ['af-make','af-model','af-yr','af-price'].forEach(i=>$(i).classList.remove('err'));
   $('form-title').textContent='הוספת רכב חדש';$('a-save').textContent='פרסום הרכב';$('a-cancel').style.display='none';
+  if($('ov-owner').classList.contains('open')&&$('dash-add').style.display==='block'&&arguments[0]===true)setDash('cars');
 }
 bindDrop('drop-photos','ph-file',null,files=>{
   [...files].forEach(f=>{
@@ -1463,45 +1571,91 @@ function saveCar(){
     seats:$('a-seats').value,gear:$('a-gear').value,fuel:$('a-fuel').value,
     tags:$('a-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
     status:$('a-status').value,photos:[...formPhotos]};
+  if(CLOUD){
+    const payload=editId?data:{...data,ownerId:state.session.id,ret:'',createdAt:Date.now()};
+    const op=editId? db.collection('cars').doc(editId).update(payload)
+                   : db.collection('cars').add(payload);
+    op.then(()=>{showToast(editId?'הרכב עודכן':make+' '+model+' נוסף לצי');resetCarForm();if($('ov-owner').classList.contains('open'))setDash('cars');}).catch(cloudErr);
+    return; /* הרשימה מתרעננת דרך המאזין */
+  }
   if(editId){
-    const car = state.cars.find(x=>x.id===editId);
-    Object.assign(car,data);
-    fbSaveDoc('cars', car);
+    Object.assign(state.cars.find(x=>x.id===editId),data);
     showToast('הרכב עודכן');
   } else {
-    const car = {id:ids.car++,ownerId:state.session.id,ret:'',...data};
-    state.cars.push(car);
-    fbSaveDoc('cars', car);
+    state.cars.push({id:newId('c'),createdAt:Date.now(),ownerId:state.session.id,ret:'',...data});
     showToast(make+' '+model+' נוסף לצי');
   }
   render();renderAdminList();resetCarForm();
+  if($('ov-owner').classList.contains('open'))setDash('cars');
+}
+
+/* close a rental: booking marked done, car freed */
+function endRental(bid){
+  const b=state.bookings.find(x=>x.id===bid);
+  if(!b||b.done)return;
+  if(!state.session||state.session.role!=='owner'||b.ownerId!==state.session.id)return;
+  if(!confirm('לסיים את ההשכרה '+b.num+'? הרכב יסומן כזמין להשכרה.'))return;
+  if(CLOUD){
+    db.collection('bookings').doc(bid).update({done:true,doneAt:Date.now()})
+      .then(()=>db.collection('cars').doc(b.carId).update({status:'available',ret:''}))
+      .then(()=>showToast('ההשכרה הסתיימה — הרכב חזר להיות זמין'))
+      .catch(cloudErr);
+    return;
+  }
+  b.done=true;b.doneAt=Date.now();
+  const c=state.cars.find(x=>x.id===b.carId);
+  if(c){c.status='available';c.ret='';}
+  render();renderOwnerBookings();
+  showToast('ההשכרה הסתיימה — הרכב חזר להיות זמין');
 }
 
 /* owner: bookings tab */
 function renderOwnerBookings(){
-  const list=state.bookings.filter(b=>b.ownerId===state.session.id).sort((a,b)=>b.createdAt-a.createdAt);
+  const all=state.bookings.filter(b=>b.ownerId===state.session.id).sort((a,b)=>b.createdAt-a.createdAt);
   const box=$('dash-book');
-  if(list.length===0){box.innerHTML='<div class="adm-empty">עדיין אין הזמנות על הרכבים שלך.</div>';return}
-  box.innerHTML=`<table class="tbl"><thead><tr>
+  if(all.length===0){box.innerHTML='<div class="adm-empty">עדיין אין הזמנות על הרכבים שלך.</div>';return}
+  const active=all.filter(b=>!b.done), list=all.filter(b=>b.done);
+  const activeHtml = active.length===0
+    ? '<div class="adm-empty">אין השכרות פעילות כרגע.</div>'
+    : active.map(b=>{
+        const c=state.cars.find(x=>x.id===b.carId)||{make:'—',model:''};
+        const rst=renterStats(b.renterId);
+        return `<div class="adm-item" style="border:1px solid rgba(28,124,79,.35);background:rgba(28,124,79,.05)">
+          ${b.lic?`<img src="${b.lic}" alt="רישיון" style="cursor:pointer" onclick="viewLic('${b.id}')">`:''}
+          <div class="inf">
+            <b>${esc(c.make)} ${esc(c.model)} · ${esc(b.signName)}</b>
+            <div class="sm">${b.num} · ${fmt(b.from)} ${b.tmFrom} → ${fmt(b.to)} ${b.tmTo} · ${money(b.total)} · דירוג שוכר: </div>
+            <div class="sm">${starsHTML(rst.avg,rst.count)}</div>
+          </div>
+          <div class="acts">
+            <button class="mini gold" onclick="openChatTo('b${b.id}')">💬 צ'אט עם השוכר</button>
+            <button class="mini" style="color:var(--ok);border-color:rgba(28,124,79,.4)" onclick="endRental('${b.id}')">✓ סיום השכרה</button>
+          </div>
+        </div>`;
+      }).join('');
+  const pastHtml = list.length===0
+    ? '<div class="adm-empty">אין עדיין הזמנות שהסתיימו.</div>'
+    : `<table class="tbl"><thead><tr>
     <th>הזמנה</th><th>רכב</th><th>שוכר</th><th>תקופה</th><th>שעות</th><th>סכום</th><th>רישיון</th><th>דירוג</th>
   </tr></thead><tbody>${list.map(b=>{
     const rst=renterStats(b.renterId);
     const mine=myRating(b.id,'owner');
     const c=state.cars.find(x=>x.id===b.carId)||{make:'—',model:''};
-    const r=state.renters.find(x=>x.id===b.renterId)||{};
     return `<tr>
       <td class="num">${b.num}<div class="sm">${new Date(b.createdAt).toLocaleDateString('he-IL')}</div></td>
       <td>${esc(c.make)} ${esc(c.model)}</td>
-      <td>${esc(b.signName)}<div class="sm">התקשורת מתנהלת בצ'אט</div><button class="mini gold" style="margin-top:6px" onclick="openChatTo('b'+${b.id})">💬 צ'אט עם השוכר</button></td>
+      <td>${esc(b.signName)}<div class="sm">התקשורת מתנהלת בצ'אט</div><button class="mini gold" style="margin-top:6px" onclick="openChatTo('b${b.id}')">💬 צ'אט עם השוכר</button></td>
       <td>${fmt(b.from)} ${b.tmFrom}<div class="sm">עד ${fmt(b.to)} ${b.tmTo}</div></td>
       <td class="num">${b.hours}</td>
-      <td class="num">${money(b.total)}<div class="sm">פיקדון ${money(b.frame)}</div></td>
-      <td>${r.lic?`<img class="lic-thumb" src="${r.lic}" alt="רישיון" onclick="viewLic(${b.renterId})">`:'—'}</td>
+      <td class="num">${money(b.total)}</td>
+      <td>${b.lic?`<img class="lic-thumb" src="${b.lic}" alt="רישיון" onclick="viewLic('${b.id}')">`:'—'}</td>
       <td>
         <span class="rate-label">דירוג השוכר בקהילה:</span>${starsHTML(rst.avg,rst.count)}
         <span class="rate-label" style="margin-top:8px">הדירוג שלך לשוכר:</span>${mine?starsHTML(mine.stars,null):ratePicker(b.id)}
       </td>
     </tr>`;}).join('')}</tbody></table>`;
+  box.innerHTML=`<div class="divider">השכרות פעילות (${active.length})</div>${activeHtml}
+    <div class="divider" style="margin-top:26px">הזמנות קודמות (${list.length})</div>${pastHtml}`;
 }
 
 /* owner: weekly report */
@@ -1546,8 +1700,6 @@ function openRenterArea(){
     <div class="summary-box">
       <div class="row"><span>שם</span><span>${esc(u.name)}</span></div>
       <div class="row"><span>אימייל</span><span>${esc(u.email)}</span></div>
-      <div class="row"><span>כרטיס אשראי</span><span dir="ltr">•••• ${esc(u.card4)}</span></div>
-      <div class="row"><span>מסגרת פיקדון</span><span>${money(u.frame)}</span></div>
       <div class="row"><span>רישיון נהיגה</span><span style="color:var(--ok)">✓ מאומת</span></div>
     </div>
     <div class="divider">ההזמנות שלי</div>
@@ -1555,9 +1707,15 @@ function openRenterArea(){
     :`<table class="tbl"><thead><tr><th>הזמנה</th><th>רכב</th><th>תקופה</th><th>סכום</th><th>דירוג המשכיר</th></tr></thead><tbody>
       ${list.map(b=>{const c=state.cars.find(x=>x.id===b.carId)||{make:'—',model:''};
         const mine=myRating(b.id,'renter');
-        return `<tr><td class="num">${b.num}</td><td>${esc(c.make)} ${esc(c.model)}</td>
-        <td>${fmt(b.from)} – ${fmt(b.to)}</td><td class="num">${money(b.total)}<br><button class="mini gold" style="margin-top:6px" onclick="openChatTo('b'+${b.id})">💬 צ'אט עם בעל הרכב</button></td>
-        <td>${mine?`<span class="rate-label">דירגת:</span>${starsHTML(mine.stars,null)}`:`<span class="rate-label">איך היה השירות?</span>${ratePicker(b.id)}`}</td></tr>`;}).join('')}
+        const st=b.done?'<span class="pill ok" style="font-size:.62rem;padding:1px 8px">הסתיימה</span>':'<span class="pill soon" style="font-size:.62rem;padding:1px 8px">פעילה</span>';
+        return `<tr><td class="num">${b.num}<br>${st}</td><td>${esc(c.make)} ${esc(c.model)}</td>
+        <td>${fmt(b.from)} – ${fmt(b.to)}</td><td class="num">${money(b.total)}<br><button class="mini gold" style="margin-top:6px" onclick="openChatTo('b${b.id}')">💬 צ'אט עם בעל הרכב</button></td>
+        <td>${mine
+          ?`<span class="rate-label">דירגת:</span>${starsHTML(mine.stars,null)}
+            ${mine.text
+              ?`<div class="my-review">"${esc(mine.text)}"</div>`
+              :`<div class="rv-box"><input id="rv-${b.id}" placeholder="ספרו איך היה (ביקורת פומבית)" maxlength="220"><button class="mini gold" onclick="setReview('${b.id}')">פרסום</button></div>`}`
+          :`<span class="rate-label">איך היה השירות?</span>${ratePicker(b.id)}`}</td></tr>`;}).join('')}
     </tbody></table>`}`;
   openOv('ov-renter');
 }
@@ -1578,7 +1736,7 @@ function openBook(id){
   const u=me();
   $('m-car').innerHTML=`<img src="${currentCar.photos[0]}" alt="">
     <div><b>${esc(currentCar.make)} ${esc(currentCar.model)} ${currentCar.yr}</b>
-    <div class="p">${esc(currentCar.cat)} · ${money(currentCar.price)} ליום</div></div>`;
+    <div class="p">${esc(currentCar.cat)} · ${money(currentCar.price)} לשעה</div></div>`;
   const today=new Date().toISOString().split('T')[0];
   $('dt-from').min=today;$('dt-to').min=today;
   $('dt-from').value='';$('dt-to').value='';
@@ -1602,9 +1760,9 @@ function daysTotal(){return Math.max(1,Math.ceil(hoursTotal()/24))}
   if(h>0&&currentCar){
     const d=daysTotal();
     box.style.display='block';
-    box.innerHTML=`<div class="row"><span>משך ההשכרה</span><span>${h} שעות (${d} ימי חיוב)</span></div>
-      <div class="row"><span>${d} × ${money(currentCar.price)}</span><span>${money(d*currentCar.price)}</span></div>
-      <div class="row"><span>סה"כ משוער</span><span>${money(d*currentCar.price)}</span></div>`;
+    box.innerHTML=`<div class="row"><span>משך ההשכרה</span><span>${h} שעות</span></div>
+      <div class="row"><span>${h} שעות × ${money(currentCar.price)}</span><span>${money(h*currentCar.price)}</span></div>
+      <div class="row"><span>סה"כ משוער</span><span>${money(h*currentCar.price)}</span></div>`;
   } else box.style.display='none';
 }));
 function mark(id,bad){$(id).classList.toggle('err',bad)}
@@ -1640,12 +1798,10 @@ function buildSummary(){
     <div class="row"><span>רכב</span><span>${esc(currentCar.make)} ${esc(currentCar.model)} ${currentCar.yr}</span></div>
     <div class="row"><span>איסוף</span><span>${fmt($('dt-from').value)} · ${$('tm-from').value}</span></div>
     <div class="row"><span>החזרה</span><span>${fmt($('dt-to').value)} · ${$('tm-to').value}</span></div>
-    <div class="row"><span>משך</span><span>${h} שעות (${d} ימי חיוב)</span></div>
+    <div class="row"><span>משך</span><span>${h} שעות</span></div>
     <div class="row"><span>שוכר</span><span>${esc($('sign-name').value)}</span></div>
-    <div class="row"><span>אמצעי תשלום</span><span dir="ltr">•••• ${esc(u.card4)}</span></div>
-    <div class="row"><span>מסגרת פיקדון</span><span>${money(u.frame)}</span></div>
     <div class="row"><span>הסכם השכרה</span><span style="color:var(--ok)">✓ נחתם ב-${fmt($('sign-date').value)}</span></div>
-    <div class="row"><span>סה"כ לתשלום</span><span>${money(d*currentCar.price)}</span></div>`;
+    <div class="row"><span>סה"כ לתשלום</span><span>${money(h*currentCar.price)}</span></div>`;
 }
 function fmt(d){return new Date(d+'T00:00').toLocaleDateString('he-IL',{day:'numeric',month:'long',year:'numeric'})}
 
@@ -1684,20 +1840,28 @@ function clearSig(){
 
 /* confirm + receipt */
 function confirmBooking(){
-  const u=me(),h=hoursTotal(),d=daysTotal(),total=d*currentCar.price;
+  const u=me(),h=hoursTotal(),d=daysTotal(),total=h*currentCar.price;
   const num='CD-'+Math.floor(100000+Math.random()*900000);
-  const b={id:ids.book++,num,carId:currentCar.id,ownerId:currentCar.ownerId,renterId:u.id,
+  const b={id:newId('bk'),num,carId:currentCar.id,ownerId:currentCar.ownerId,renterId:u.id,
+    lic:u.lic||null,renterName:u.name,
     from:$('dt-from').value,tmFrom:$('tm-from').value,to:$('dt-to').value,tmTo:$('tm-to').value,
-    hours:h,days:d,total,frame:u.frame,
+    hours:h,days:d,total,
     signName:$('sign-name').value.trim(),signDate:$('sign-date').value,sig:$('sig-pad').toDataURL(),
     createdAt:Date.now()};
-  state.bookings.push(b);
-  fbSaveDoc('bookings', b);
+  if(CLOUD){
+    const ref=db.collection('bookings').doc();
+    b.id=ref.id;
+    ref.set(b)
+      .then(()=>db.collection('cars').doc(currentCar.id).update({status:'rented',ret:'מוזמן · איסוף '+fmt(b.from)}))
+      .then(()=>pushMsg('b'+b.id,'system',0,'ההזמנה '+num+' אושרה. כל התקשורת בין השוכר לבעל הרכב מתנהלת כאן, באפליקציה.',[b.renterId,b.ownerId]))
+      .catch(cloudErr);
+  } else {
+    state.bookings.push(b);
+    pushMsg('b'+b.id,'system',0,'ההזמנה '+num+' אושרה. כל התקשורת בין השוכר לבעל הרכב מתנהלת כאן, באפליקציה.');
+    currentCar.status='rented';
+    currentCar.ret='מוזמן · איסוף '+fmt(b.from);
+  }
   lastBooking=b;
-  pushMsg('b'+b.id,'system',0,'ההזמנה '+num+' אושרה. כל התקשורת בין השוכר לבעל הרכב מתנהלת כאן, באפליקציה.');
-  currentCar.status='rented';
-  currentCar.ret='מוזמן · איסוף '+fmt(b.from);
-  fbSaveDoc('cars', currentCar);
   render();
   $('conf-num').textContent=num;
   $('done-txt').textContent=`${currentCar.make} ${currentCar.model} שמור עבורך. איסוף ב-${fmt(b.from)} בשעה ${b.tmFrom}.`;
@@ -1706,7 +1870,8 @@ function confirmBooking(){
   showToast('קבלה מוכנה — ניתן להוריד או לפתוח במייל');
 }
 function receiptHTML(b){
-  const c=state.cars.find(x=>x.id===b.carId),u=state.renters.find(x=>x.id===b.renterId);
+  const c=state.cars.find(x=>x.id===b.carId)||{make:'',model:'',yr:'',color:'',fuel:'',price:0};
+  const u=me()||{email:''};
   return `
     <div class="r-head">
       <div><h4>CROWN DRIVE</h4><div class="sm">השכרת רכבים · קראון הייטס, ברוקלין NY<br>שירות לקוחות: בצ'אט שבאתר</div></div>
@@ -1716,10 +1881,9 @@ function receiptHTML(b){
     <div class="r-row"><span>רכב</span><span>${esc(c.make)} ${esc(c.model)} ${c.yr} · ${esc(c.color)} · הנעה: ${esc(c.fuel)}</span></div>
     <div class="r-row"><span>איסוף</span><span>${fmt(b.from)} · ${b.tmFrom}</span></div>
     <div class="r-row"><span>החזרה</span><span>${fmt(b.to)} · ${b.tmTo}</span></div>
-    <div class="r-row"><span>משך ההשכרה</span><span>${b.hours} שעות (${b.days} ימי חיוב)</span></div>
-    <div class="r-row"><span>תעריף יומי</span><span>${money(c.price)}</span></div>
-    <div class="r-row"><span>אמצעי תשלום</span><span>כרטיס •••• ${esc(u.card4)}</span></div>
-    <div class="r-row"><span>מסגרת פיקדון (משוחררת בהחזרה)</span><span>${money(b.frame)}</span></div>
+    <div class="r-row"><span>משך ההשכרה</span><span>${b.hours} שעות</span></div>
+    <div class="r-row"><span>תעריף שעתי</span><span>${money(c.price)}</span></div>
+    <div class="r-row"><span>תשלום</span><span>מוסדר מול בעל הרכב באיסוף</span></div>
     <div class="r-row"><span>הסכם השכרה</span><span>נחתם דיגיטלית · ${fmt(b.signDate)}</span></div>
     <div class="r-row total"><span>סה"כ לתשלום</span><span>${money(b.total)}</span></div>
     <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:end">
@@ -1748,16 +1912,15 @@ function downloadReceipt(){
 }
 function emailReceipt(){
   if(!lastBooking)return;
-  const b=lastBooking,c=state.cars.find(x=>x.id===b.carId),u=state.renters.find(x=>x.id===b.renterId);
+  const b=lastBooking,c=state.cars.find(x=>x.id===b.carId)||{make:'',model:'',yr:''},u=me()||{email:''};
   const body=[
     'Crown Drive — אישור הזמנה וקבלה','',
     'מספר הזמנה: '+b.num,
     'רכב: '+c.make+' '+c.model+' '+c.yr,
     'איסוף: '+fmt(b.from)+' בשעה '+b.tmFrom,
     'החזרה: '+fmt(b.to)+' בשעה '+b.tmTo,
-    'משך: '+b.hours+' שעות ('+b.days+' ימי חיוב)',
+    'משך: '+b.hours+' שעות',
     'סה"כ לתשלום: '+money(b.total),
-    'מסגרת פיקדון: '+money(b.frame),
     'הסכם השכרה נחתם דיגיטלית בתאריך '+fmt(b.signDate),'',
     'תודה שבחרתם ב-Crown Drive · (718) 555-0123'
   ].join('\n');
@@ -1767,8 +1930,8 @@ function emailReceipt(){
 /* ================= HELPERS ================= */
 function openOv(id){$(id).classList.add('open');document.body.style.overflow='hidden'}
 function closeOv(id){$(id).classList.remove('open');document.body.style.overflow=''}
-['ov-auth','ov-owner','ov-renter','ov-book','ov-lic','ov-profile'].forEach(id=>$(id).addEventListener('click',e=>{if(e.target.id===id)closeOv(id)}));
-document.addEventListener('keydown',e=>{if(e.key==='Escape')['ov-auth','ov-owner','ov-renter','ov-book','ov-lic','ov-profile'].forEach(closeOv)});
+['ov-auth','ov-owner','ov-renter','ov-book','ov-lic','ov-profile','ov-account'].forEach(id=>$(id).addEventListener('click',e=>{if(e.target.id===id)closeOv(id)}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')['ov-auth','ov-owner','ov-renter','ov-book','ov-lic','ov-profile','ov-account'].forEach(closeOv)});
 function bindDrop(dropId,fileId,single,multi){
   const d=$(dropId),f=$(fileId);
   d.addEventListener('click',()=>f.click());
@@ -1789,10 +1952,11 @@ function readImg(f,cb){
   if(f.size>10*1024*1024)return showToast('הקובץ גדול מדי (מקסימום 10MB)');
   const r=new FileReader();r.onload=()=>cb(r.result);r.readAsDataURL(f);
 }
-function viewLic(renterId){
-  const r=state.renters.find(x=>x.id===renterId);
-  if(!r||!r.lic)return;
-  $('lic-full').src=r.lic;
+function viewLic(bid){
+  const b=state.bookings.find(x=>x.id===bid);
+  if(!b||!b.lic)return;
+  if(!state.session||state.session.role!=='owner'||b.ownerId!==state.session.id)return;
+  $('lic-full').src=b.lic;
   openOv('ov-lic');
 }
 function showToast(msg){
@@ -1820,7 +1984,7 @@ function myThreads(){
         const c=state.cars.find(x=>x.id===b.carId);
         const carName=c?`${c.make} ${c.model}`:'רכב';
         if(role==='renter'){
-          const o=state.owners.find(x=>x.id===b.ownerId);
+          const o=userOf(b.ownerId);
           t.push({tid:'b'+b.id,kind:'usr',title:'בעל הרכב · '+carName,sub:'הזמנה '+b.num,ava:(o?o.name[0]:'ב')});
         }else{
           t.push({tid:'b'+b.id,kind:'usr',title:b.signName+' · '+carName,sub:'הזמנה '+b.num,ava:b.signName[0]});
@@ -1900,10 +2064,17 @@ function renderMsgs(){
       }).join('');
   box.scrollTop=box.scrollHeight;
 }
-function pushMsg(tid,role,uid,text){
-  const msg = {id:'m_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),tid,role,uid,text,ts:Date.now()};
-  state.msgs.push(msg);
-  fbSaveDoc('messages', msg);
+function participantsOf(tid){
+  if(tid.startsWith('b')){
+    const b=state.bookings.find(x=>'b'+x.id===tid);
+    return b?[b.renterId,b.ownerId]:[];
+  }
+  return state.session?[state.session.id]:[];
+}
+function pushMsg(tid,role,uid,text,parts){
+  const m={tid,role,uid,text,ts:Date.now(),participants:parts||participantsOf(tid)};
+  if(CLOUD && role!=='support'){db.collection('messages').add(m).catch(cloudErr);}
+  state.msgs.push(m);
   if(activeTid===tid && $('chat-panel').classList.contains('open')){
     state.reads[meKey()+'-'+tid]=Date.now();
     renderMsgs();
@@ -1913,6 +2084,7 @@ function pushMsg(tid,role,uid,text){
 function sendMsg(){
   const inp=$('cp-text'),txt=inp.value.trim();
   if(!txt||!activeTid)return;
+  if(CLOUD && !state.session){showToast('כדי לשלוח הודעה יש להתחבר');openAuth();return;}
   const role=state.session?state.session.role:'guest';
   const uid=state.session?state.session.id:0;
   const isSup=activeTid.startsWith('sup-');
@@ -1927,22 +2099,16 @@ $('cp-text').addEventListener('keydown',e=>{if(e.key==='Enter')sendMsg()});
 
 /* ===== ratings-and-profiles engine ===== */
 state.ratings = [];
+state.users = {};
+const userOf = uid => state.users[uid] || null;
 let profOwnerId=null;
 function ownerStats(oid){
-  const rs=state.ratings.filter(r=>{
-    if(r.raterRole!=='renter')return false;
-    const b=state.bookings.find(x=>x.id===r.bookingId);
-    return b&&b.ownerId===oid;
-  });
+  const rs=state.ratings.filter(r=>r.raterRole==='renter'&&r.ownerId===oid);
   const c=rs.length;
   return{avg:c?rs.reduce((t,r)=>t+r.stars,0)/c:0,count:c};
 }
 function renterStats(rid){
-  const rs=state.ratings.filter(r=>{
-    if(r.raterRole!=='owner')return false;
-    const b=state.bookings.find(x=>x.id===r.bookingId);
-    return b&&b.renterId===rid;
-  });
+  const rs=state.ratings.filter(r=>r.raterRole==='owner'&&r.renterId===rid);
   const c=rs.length;
   return{avg:c?rs.reduce((t,r)=>t+r.stars,0)/c:0,count:c};
 }
@@ -1954,7 +2120,7 @@ function starsHTML(avg,count){
   return `<span class="stars" title="${avg.toFixed(1)} מתוך 5"><i style="width:${pct}%">★★★★★</i>★★★★★</span>`+tail;
 }
 function ratePicker(bid){
-  return `<span class="rate-picker">${[1,2,3,4,5].map(n=>`<button class="rp-star" title="${n} כוכבים" onclick="setRating(${bid},${n})">★</button>`).join('')}</span>`;
+  return `<span class="rate-picker">${[1,2,3,4,5].map(n=>`<button class="rp-star" title="${n} כוכבים" onclick="setRating('${bid}',${n})">★</button>`).join('')}</span>`;
 }
 function setRating(bid,n){
   if(!state.session)return;
@@ -1966,22 +2132,40 @@ function setRating(bid,n){
   n=Math.round(Math.min(5,Math.max(1,+n||0)));
   if(!n)return;
   const ex=myRating(bid,role);
-  if(ex){
-    ex.stars=n; ex.ts=Date.now();
-    fbSaveDoc('ratings', ex);
-  }else{
-    const rating={id:bid+'_'+role,bookingId:bid,raterRole:role,stars:n,ts:Date.now()};
-    state.ratings.push(rating);
-    fbSaveDoc('ratings', rating);
-  }
+  const doc={bookingId:bid,raterRole:role,stars:n,ownerId:b.ownerId,renterId:b.renterId,raterName:(me()&&me().name)||'',text:(ex&&ex.text)||'',ts:Date.now()};
+  if(CLOUD){db.collection('ratings').doc(bid+'_'+role).set(doc).catch(cloudErr);}
+  else{if(ex)ex.stars=n;else state.ratings.push(doc);}
   showToast('הדירוג נשמר: '+n+' כוכבים');
   render();
   if(role==='renter'&&$('ov-renter').classList.contains('open'))openRenterArea();
   if(role==='owner'&&$('ov-owner').classList.contains('open'))renderOwnerBookings();
   if($('ov-profile').classList.contains('open')&&profOwnerId!==null)openOwnerProfile(profOwnerId);
 }
+function setReview(bid){
+  if(!state.session)return;
+  const role=state.session.role;
+  const inp=$('rv-'+bid);
+  if(!inp)return;
+  const text=inp.value.trim();
+  if(!text){showToast('כתבו כמה מילים ואז שלחו');return}
+  const ex=myRating(bid,role);
+  if(!ex){showToast('קודם בחרו דירוג כוכבים, ואז אפשר לצרף ביקורת');return}
+  if(CLOUD){
+    db.collection('ratings').doc(bid+'_'+role).update({text,raterName:(me()&&me().name)||''})
+      .then(()=>showToast('הביקורת פורסמה — תודה!')).catch(cloudErr);
+  } else {
+    ex.text=text;ex.raterName=(me()&&me().name)||'';
+    showToast('הביקורת פורסמה — תודה!');
+    render();
+    if($('ov-renter').classList.contains('open'))openRenterArea();
+  }
+}
+function reviewsOf(oid){
+  return state.ratings.filter(r=>r.raterRole==='renter'&&r.ownerId===oid&&r.text)
+    .sort((a,b)=>b.ts-a.ts);
+}
 function openOwnerProfile(oid){
-  const o=state.owners.find(x=>x.id===oid);
+  const o=userOf(oid);
   if(!o)return;
   profOwnerId=oid;
   const st=ownerStats(oid);
@@ -1992,9 +2176,9 @@ function openOwnerProfile(oid){
     : '<div class="prof-cars">'+cars.map(c=>{
         const si=statusInfo(c);
         const btn = c.status==='available'
-          ? `<button class="mini gold" onclick="closeOv('ov-profile');tryBook(${c.id})">להזמנה</button>`
+          ? `<button class="mini gold" onclick="closeOv('ov-profile');tryBook('${c.id}')">להזמנה</button>`
           : '<button class="mini" disabled style="opacity:.5">מושכר</button>';
-        return `<div class="pc-item"><img src="${c.photos[0]}" alt=""><div class="inf"><b>${esc(c.make)} ${esc(c.model)} ${c.yr}</b><div class="sm">${esc(c.color)} · ${money(c.price)}/יום · <span class="pill ${si.cls}" style="font-size:.62rem;padding:1px 8px">${si.txt}</span></div></div>${btn}</div>`;
+        return `<div class="pc-item"><img src="${c.photos[0]}" alt=""><div class="inf"><b>${esc(c.make)} ${esc(c.model)} ${c.yr}</b><div class="sm">${esc(c.color)} · ${money(c.price)}/שעה · <span class="pill ${si.cls}" style="font-size:.62rem;padding:1px 8px">${si.txt}</span></div></div>${btn}</div>`;
       }).join('')+'</div>';
   $('prof-body').innerHTML=`
     <div class="prof-head">
@@ -2003,8 +2187,81 @@ function openOwnerProfile(oid){
       <div class="prof-stars">${starsHTML(st.avg,st.count)}</div></div>
     </div>
     <div class="divider">הרכבים של ${esc(o.name.split(' ')[0])} (${cars.length})</div>
-    ${carsHtml}`;
+    ${carsHtml}
+    <div class="divider" style="margin-top:22px">ביקורות (${reviewsOf(oid).length})</div>
+    ${reviewsOf(oid).length===0
+      ?'<div class="adm-empty">עדיין אין ביקורות כתובות.</div>'
+      :'<div class="rv-list">'+reviewsOf(oid).map(r=>`<div class="rv-item">
+          <div class="rv-top">${starsHTML(r.stars,null)}<b>${esc((r.raterName||'שוכר').split(' ')[0])}</b><span class="sm">${new Date(r.ts).toLocaleDateString('he-IL',{month:'short',year:'numeric'})}</span></div>
+          <div class="rv-txt">"${esc(r.text)}"</div>
+        </div>`).join('')+'</div>'}`;
   openOv('ov-profile');
+}
+
+
+/* ================= CLOUD FEEDS ================= */
+let userUnsubs=[], bookMap={};
+function stopUserFeeds(){if(!CLOUD)return;userUnsubs.forEach(u=>{try{u()}catch(e){}});userUnsubs=[];bookMap={};state.bookings=[];if(CLOUD)state.msgs=[];}
+function refreshOpenViews(){
+  render();
+  if($('ov-owner').classList.contains('open')){renderAdminList();renderOwnerBookings();renderOwnerReport();}
+  if($('ov-renter').classList.contains('open'))openRenterArea();
+  if($('ov-profile').classList.contains('open')&&profOwnerId!==null)openOwnerProfile(profOwnerId);
+  if($('chat-panel').classList.contains('open')){activeTid?renderMsgs():showChatList();}
+  updateBadge();
+}
+function startGlobalFeeds(){
+  db.collection('users').onSnapshot(sn=>{
+    state.users={};sn.forEach(d=>state.users[d.id]=d.data());
+    render();
+  },cloudErr);
+  db.collection('cars').onSnapshot(sn=>{
+    state.cars=sn.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    refreshOpenViews();
+  },cloudErr);
+  db.collection('ratings').onSnapshot(sn=>{
+    state.ratings=sn.docs.map(d=>({id:d.id,...d.data()}));
+    refreshOpenViews();
+  },cloudErr);
+}
+function applyBookSnap(sn){
+  sn.forEach(d=>bookMap[d.id]={id:d.id,...d.data()});
+  state.bookings=Object.values(bookMap).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  refreshOpenViews();
+}
+function startUserFeeds(uid){
+  stopUserFeeds();
+  userUnsubs.push(db.collection('bookings').where('renterId','==',uid).onSnapshot(applyBookSnap,cloudErr));
+  userUnsubs.push(db.collection('bookings').where('ownerId','==',uid).onSnapshot(applyBookSnap,cloudErr));
+  userUnsubs.push(db.collection('messages').where('participants','array-contains',uid).onSnapshot(sn=>{
+    const mine=sn.docs.map(d=>({id:d.id,...d.data()}));
+    const local=state.msgs.filter(m=>m.role==='support'||(m.tid||'').startsWith('sup-'));
+    state.msgs=mine.concat(local).sort((a,b)=>(a.ts||0)-(b.ts||0));
+    if($('chat-panel').classList.contains('open')){activeTid?renderMsgs():showChatList();}
+    updateBadge();
+  },cloudErr));
+}
+async function buildCloudSession(user){
+  const uid=user.uid;
+  let prof=null;
+  try{const d=await db.collection('users').doc(uid).get();if(d.exists)prof=d.data();}catch(e){}
+  if(!prof && pendingProfile && pendingProfile.uid===uid)prof=pendingProfile.prof;
+  if(!prof){prof={name:user.email||'משתמש',role:'renter',createdAt:Date.now()}}
+  let priv={};
+  try{const d=await db.collection('private').doc(uid).get();if(d.exists)priv=d.data();}catch(e){}
+  if((!priv||!Object.keys(priv).length) && pendingProfile && pendingProfile.uid===uid)priv=pendingProfile.priv||{};
+  state.session={role:prof.role,id:uid,name:prof.name,createdAt:prof.createdAt,email:user.email||'',...priv};
+  startUserFeeds(uid);
+  afterLoginUI();
+}
+if(CLOUD){
+  startGlobalFeeds();
+  fauth.onAuthStateChanged(user=>{
+    if(user){buildCloudSession(user);}
+    else{state.session=null;stopUserFeeds();renderNav();updateBadge();}
+  });
+} else {
+  $('demo-banner').style.display='block';
 }
 
 /* ---------- SCROLL DYNAMICS ---------- */
@@ -2074,11 +2331,8 @@ document.querySelectorAll('.sec-head,.fleet-side,.how-grid,.foot-cta,.strip-in')
   el.classList.add('reveal');io.observe(el);
 });
 
-initFirebase().finally(()=>{
-  renderNav();
-  render();
-  initSig();
-});
+loadDemo();
+renderNav();render();initSig();updateBadge();
 </script>
 </body>
 </html>
