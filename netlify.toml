@@ -1,0 +1,14 @@
+# The "netlify-purge-cloudflare-on-deploy" plugin (installed via the Netlify UI)
+# aborts the whole build in its onPostBuild step with failBuild() whenever it
+# cannot detect a Cloudflare auth method. On deploys where no Cloudflare
+# credentials are configured (e.g. deploy previews) that turns an optional
+# cache-purge into a hard build failure.
+#
+# Defining the variables it looks for lets the plugin's auth-method check pass,
+# so the actual purge runs in onSuccess where a missing/empty credential is
+# handled with the non-fatal failPlugin() instead — the cache purge is simply
+# skipped and the deploy succeeds. Set real values in the Netlify UI
+# (Site settings > Environment variables) to enable the purge in production.
+[build.environment]
+  CLOUDFLARE_ZONE_ID = ""
+  CLOUDFLARE_API_TOKEN = ""

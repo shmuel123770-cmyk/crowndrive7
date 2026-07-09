@@ -1172,7 +1172,14 @@ function fbSaveUser(role, user){
 const $ = id => document.getElementById(id);
 const esc = s => String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 const money = n => '$'+n.toLocaleString('en-US');
-const me = () => state.session ? (state.session.role==='owner' ? state.owners : state.renters).find(u=>u.id===state.session.id) : null;
+const me = () => {
+  if(!state.session) return null;
+  const pool = state.session.role==='owner' ? state.owners : state.renters;
+  const u = pool.find(u=>u.id===state.session.id);
+  // Fall back to the details stored with the session so the signed-in state
+  // still renders if the database is briefly unavailable on this visit.
+  return u || (state.session.name ? state.session : null);
+};
 
 const ic = {
   seat:'<svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M7 18v-6a5 5 0 015-5h0a5 5 0 015 5v6M5 21h14"/></svg>',
@@ -1181,20 +1188,61 @@ const ic = {
 };
 
 /* ================= NAV / SESSION ================= */
+/* Persist the login on this device/browser so returning visitors stay signed
+   in without re-entering email + code. Only a lightweight snapshot (role, id,
+   name, email) is stored locally — never the password. */
+const SESSION_KEY = 'cd-session';
+function saveSession(){
+  try{
+    if(state.session){
+      const u = me();
+      const snap = {
+        role: state.session.role,
+        id: state.session.id,
+        name: u ? u.name : state.session.name,
+        email: u ? u.email : state.session.email
+      };
+      localStorage.setItem(SESSION_KEY, JSON.stringify(snap));
+    } else {
+      localStorage.removeItem(SESSION_KEY);
+    }
+  }catch(err){ console.warn('Session save failed', err); }
+}
+function clearSession(){
+  try{ localStorage.removeItem(SESSION_KEY); }catch(err){ console.warn('Session clear failed', err); }
+}
+function restoreSession(){
+  let saved=null;
+  try{ saved = JSON.parse(localStorage.getItem(SESSION_KEY)||'null'); }catch(err){ saved=null; }
+  if(!saved || !saved.role) return;
+  const pool = saved.role==='owner' ? state.owners : state.renters;
+  const u = pool.find(x=>x.id===saved.id);
+  if(u){
+    state.session = {role:saved.role, id:u.id};
+  } else if(!dbReady){
+    // The database didn't load this visit — keep the saved login and render
+    // from the stored snapshot instead of signing the user out. The account is
+    // re-linked automatically on the next load that succeeds.
+    state.session = {role:saved.role, id:saved.id, name:saved.name, email:saved.email};
+  } else {
+    // Database loaded fine but the account no longer exists: drop the stale login.
+    clearSession();
+  }
+}
 function renderNav(){
   const el = $('nav-side');
-  if(!state.session){
+  const u = state.session ? me() : null;
+  if(!state.session || !u){
     el.innerHTML = `<button class="btn btn-dark-out" onclick="openAuth()">כניסה / הרשמה</button>`;
   } else {
-    const u = me();
     const role = state.session.role;
     el.innerHTML = `
-      <span class="who">שלום, <b>${esc(u.name.split(' ')[0])}</b> · ${role==='owner'?'בעל רכב':'שוכר'}</span>
+      <span class="who">שלום, <b>${esc((u.name||'').split(' ')[0])}</b> · ${role==='owner'?'בעל רכב':'שוכר'}</span>
       <button class="btn btn-gold" onclick="${role==='owner'?'openOwner()':'openRenterArea()'}">${role==='owner'?'אזור בעלי רכב':'האזור שלי'}</button>
       <button class="btn btn-dark-out" onclick="logout()">יציאה</button>`;
   }
 }
-function logout(){state.session=null;renderNav();toggleChat(false);updateBadge();showToast('התנתקת מהחשבון')}
+function logout(){state.session=null;clearSession();renderNav();toggleChat(false);updateBadge();showToast('התנתקת מהחשבון')}
 
 /* ================= AUTH ================= */
 function openAuth(role){
@@ -1230,6 +1278,7 @@ function doLogin(){
   mark('lf-pass',u.pass!==ps);
   if(u.pass!==ps) return;
   state.session={role:authRole,id:u.id};
+  saveSession();
   closeOv('ov-auth'); renderNav();updateBadge();
   showToast('ברוך הבא, '+u.name.split(' ')[0]);
   if(pendingBookCar){const c=pendingBookCar;pendingBookCar=null;if(authRole==='renter')openBook(c)}
@@ -1259,6 +1308,7 @@ function doSignup(){
   pool.push(u);
   fbSaveUser(authRole, u);
   state.session={role:authRole,id:u.id};
+  saveSession();
   closeOv('ov-auth'); renderNav();
   showToast('החשבון נוצר בהצלחה');
   ['s-name','s-phone','s-mail','s-pass','s-card','s-exp'].forEach(i=>$(i).value='');
@@ -2075,8 +2125,10 @@ document.querySelectorAll('.sec-head,.fleet-side,.how-grid,.foot-cta,.strip-in')
 });
 
 initFirebase().finally(()=>{
+  restoreSession();
   renderNav();
   render();
+  updateBadge();
   initSig();
 });
 </script>
