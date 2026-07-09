@@ -580,6 +580,20 @@ select option{background:var(--bg2);color:var(--ivory)}
 .pc-item .inf{flex:1;min-width:0}
 .pc-item b{font-size:.9rem}
 .pc-item .sm{font-size:.76rem;color:var(--mut)}
+.rate-stars-lg{display:flex;gap:6px;direction:ltr;justify-content:center;margin:6px 0}
+.rate-stars-lg button{background:none;border:none;font-size:2.1rem;line-height:1;color:#CBD3DC;cursor:pointer;padding:0;transition:transform .12s,color .12s}
+.rate-stars-lg button:hover{transform:scale(1.15)}
+.rate-stars-lg button.on{color:#E9A93D}
+.rate-text{width:100%;border:1px solid var(--hair);border-radius:12px;padding:11px 13px;font:inherit;font-size:.88rem;resize:vertical;background:var(--bg2);color:var(--ivory)}
+.rate-text:focus{outline:none;border-color:var(--gold);background:#fff}
+.reviews-link{background:none;border:none;color:var(--gold-d);font-size:.74rem;font-weight:600;cursor:pointer;padding:0;margin-inline-start:6px;text-decoration:underline}
+.car-rate{display:flex;align-items:center;gap:2px;flex-wrap:wrap;font-size:.82rem;margin-top:-4px}
+.rev-list{display:flex;flex-direction:column;gap:12px}
+.rev-item{background:var(--bg2);border-radius:12px;padding:13px 15px}
+.rev-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:6px}
+.rev-who{font-weight:600;font-size:.86rem}
+.rev-date{font-size:.72rem;color:var(--mut)}
+.rev-text{font-size:.85rem;color:var(--ivory);line-height:1.5}
 
 </style>
 </head>
@@ -670,7 +684,7 @@ select option{background:var(--bg2);color:var(--ivory)}
     <div class="hero-stats">
       <div class="hstat"><b id="hs-cars">0</b><span>רכבים בצי</span></div>
       <div class="hstat"><b id="hs-ok">0</b><span>זמינים כעת</span></div>
-      <div class="hstat"><b>24/6</b><span>מענה בצ'אט</span></div>
+      <div class="hstat"><b>24/6</b><span>מענה אונליין</span></div>
       <div class="hstat"><b>מבוטח</b><span>ביטוח מקיף</span></div>
     </div>
   </div>
@@ -725,7 +739,7 @@ select option{background:var(--bg2);color:var(--ivory)}
 
 <!-- ticker -->
 <div class="ticker" aria-hidden="true">
-  <div class="ticker-track"><span>איסוף מיידי בקראון הייטס</span><i>◆</i><span>ביטוח מקיף כלול</span><i>◆</i><span>הזמנה מקוונת ב-3 דקות</span><i>◆</i><span>רכבים חדשים ומטופחים</span><i>◆</i><span>מענה 24/6</span><i>◆</i><span>ביטול חינם עד 24 שעות</span><i>◆</i><span>איסוף מיידי בקראון הייטס</span><i>◆</i><span>ביטוח מקיף כלול</span><i>◆</i><span>הזמנה מקוונת ב-3 דקות</span><i>◆</i><span>רכבים חדשים ומטופחים</span><i>◆</i><span>מענה 24/6</span><i>◆</i><span>ביטול חינם עד 24 שעות</span><i>◆</i></div>
+  <div class="ticker-track"><span>איסוף מיידי בקראון הייטס</span><i>◆</i><span>ביטוח מקיף כלול</span><i>◆</i><span>הזמנה מקוונת ב-3 דקות</span><i>◆</i><span>רכבים חדשים ומטופחים</span><i>◆</i><span>מענה אונליין 24/6</span><i>◆</i><span>ביטול חינם עד 24 שעות</span><i>◆</i><span>איסוף מיידי בקראון הייטס</span><i>◆</i><span>ביטוח מקיף כלול</span><i>◆</i><span>הזמנה מקוונת ב-3 דקות</span><i>◆</i><span>רכבים חדשים ומטופחים</span><i>◆</i><span>מענה אונליין 24/6</span><i>◆</i><span>ביטול חינם עד 24 שעות</span><i>◆</i></div>
 </div>
 
 <!-- HOW -->
@@ -734,7 +748,7 @@ select option{background:var(--bg2);color:var(--ivory)}
     <h2>תהליך ההזמנה</h2>
   </div>
   <div class="how-grid">
-    <div class="hstep"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0114 0v1"/></svg></div><span class="num">1</span><h3>הרשמה</h3><p>פרטים אישיים, צילום רישיון נהיגה ואמצעי תשלום עם מסגרת פיקדון.</p></div>
+    <div class="hstep"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0114 0v1"/></svg></div><span class="num">1</span><h3>הרשמה</h3><p>פרטים אישיים וצילום רישיון נהיגה בתוקף — ללא כרטיס אשראי וללא פיקדון.</p></div>
     <div class="hstep"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 16l1.5-5.5A2 2 0 018.4 9h7.2a2 2 0 011.9 1.5L19 16M5 16h14M5 16v3m14-3v3M7.5 13h.01M16.5 13h.01"/></svg></div><span class="num">2</span><h3>בחירת רכב ותאריכים</h3><p>בחירת רכב זמין וקביעת מועדי איסוף והחזרה. המחיר מחושב מיד.</p></div>
     <div class="hstep"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 19l7-7a2.1 2.1 0 00-3-3l-7 7-1.5 4.5L12 19z"/><path d="M4 21h9"/></svg></div><span class="num">3</span><h3>הסכם וחתימה</h3><p>קריאת תקנון ההשכרה וחתימה דיגיטלית — שם מלא, חתימה ותאריך.</p></div>
     <div class="hstep"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></div><span class="num">4</span><h3>אישור וקבלה</h3><p>מספר הזמנה וקבלה נשלחים לשוכר. הרכב ממתין בנקודת האיסוף.</p></div>
@@ -748,7 +762,7 @@ select option{background:var(--bg2);color:var(--ivory)}
       <path d="M0 120V78h34V58h22v20h30V40h26v78h40V64h30v-18h24v18h26v56h44V52h36v68h30V30h20l6-12 6 12h20v90h48V70h34v50h36V44h28v76h42V58h26v62h38V36h30v84h44V66h32v54h50V48h30v72h40V60h30v60h44V42h28v78h58V70h36v50H1200V120z" fill="rgba(255,255,255,.05)"/>
     </svg>
     <h2>שירות לקוחות</h2>
-    <p>כל התקשורת מתנהלת כאן, באתר — מענה מהיר בצ'אט בכל שעות היום (למעט שבת וחג)</p>
+    <p>אין מוקד טלפוני — כל התקשורת מתנהלת אונליין כאן באתר, במענה מהיר בצ'אט בכל שעות היום (למעט שבת וחג)</p>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
       <button class="btn btn-gold" style="padding:14px 34px;font-size:.95rem" onclick="openChatTo(supTid())">💬 פתיחת צ'אט עם שירות הלקוחות</button>
     </div>
@@ -829,16 +843,6 @@ select option{background:var(--bg2);color:var(--ivory)}
               </div>
             </div>
 
-            <div class="divider">מסגרת פיקדון</div>
-            <div class="card-row">
-              <div class="field"><label>מסגרת פיקדון <span class="req">*</span></label>
-                <select id="s-frame"><option value="500">$500</option><option value="1000" selected>$1,000</option><option value="1500">$1,500</option><option value="2000">$2,000</option></select>
-              </div>
-            </div>
-            <div class="note">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-              <div>המסגרת נתפסת כפיקדון בעת האיסוף ומשוחררת בהחזרת הרכב. פרטי התשלום נמסרים בעת איסוף הרכב — אין צורך למסור פרטי כרטיס אשראי בהרשמה.</div>
-            </div>
           </div>
 
           <div class="m-actions" style="margin-top:18px"><button class="btn btn-gold grow" onclick="doSignup()">יצירת חשבון</button></div>
@@ -977,7 +981,7 @@ select option{background:var(--bg2);color:var(--ivory)}
           </ol>
           <h4>3. ביטוח והשתתפות עצמית</h4>
           <ol>
-            <li>הרכב מבוטח בביטוח מקיף. בכל מקרה של נזק חלה השתתפות עצמית בגובה מסגרת הפיקדון.</li>
+            <li>הרכב מבוטח בביטוח מקיף. בכל מקרה של נזק חלה השתתפות עצמית בהתאם לחוות דעת שמאי.</li>
             <li>נזק שנגרם עקב נהיגה רשלנית, תחת השפעה, או בניגוד להסכם — באחריות השוכר במלואו.</li>
           </ol>
           <h4>4. שימוש ברכב</h4>
@@ -991,9 +995,9 @@ select option{background:var(--bg2);color:var(--ivory)}
             <li>איחור של יותר משעה במועד ההחזרה יחויב כיום השכרה נוסף.</li>
             <li>ביטול חינם עד 24 שעות לפני מועד האיסוף. לאחר מכן — חיוב יום השכרה אחד.</li>
           </ol>
-          <h4>6. פיקדון ותשלום</h4>
+          <h4>6. תשלום</h4>
           <ol>
-            <li>מסגרת הפיקדון נתפסת בכרטיס האשראי בעת האיסוף ומשוחררת עד 5 ימי עסקים לאחר החזרה תקינה.</li>
+            <li>ההשכרה ללא פיקדון וללא תפיסת מסגרת אשראי מראש.</li>
             <li>התשלום המלא מתבצע בנקודת האיסוף.</li>
           </ol>
         </div>
@@ -1024,7 +1028,7 @@ select option{background:var(--bg2);color:var(--ivory)}
         <div class="summary-box" id="final-sum"></div>
         <div class="note">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>
-          <div>ביטול חינם עד 24 שעות לפני האיסוף · התשלום והפיקדון בנקודת האיסוף · קבלה תישלח לאימייל שלך.</div>
+          <div>ביטול חינם עד 24 שעות לפני האיסוף · התשלום בנקודת האיסוף · קבלה תישלח לאימייל שלך.</div>
         </div>
         <div class="m-actions" style="margin-top:18px"><button class="btn btn-ghost" onclick="goStep(2)">חזרה</button><button class="btn btn-gold grow" onclick="confirmBooking()">אישור וסגירת הזמנה</button></div>
       </div>
@@ -1088,6 +1092,29 @@ select option{background:var(--bg2);color:var(--ivory)}
   <div class="modal" style="width:min(560px,100%)">
     <div class="m-head"><h3>רישיון נהיגה</h3><button class="m-close" onclick="closeOv('ov-lic')">✕</button></div>
     <div class="m-body"><img id="lic-full" alt="רישיון נהיגה" style="width:100%;border-radius:12px"></div>
+  </div>
+</div>
+
+<!-- rating + review modal -->
+<div class="overlay" id="ov-rate" role="dialog" aria-modal="true">
+  <div class="modal" style="width:min(480px,100%)">
+    <div class="m-head"><h3 id="rate-title">דירוג וביקורת</h3><button class="m-close" onclick="closeOv('ov-rate')">✕</button></div>
+    <div class="m-body">
+      <p class="sm" id="rate-sub" style="color:var(--mut);margin-bottom:14px"></p>
+      <div class="rate-stars-lg" id="rate-stars"></div>
+      <div class="err-msg" id="rate-err" style="display:none;margin:8px 0">יש לבחור דירוג בכוכבים</div>
+      <label class="rate-label" style="margin-top:16px">ביקורת (אופציונלי)</label>
+      <textarea id="rate-text" class="rate-text" rows="4" maxlength="400" placeholder="ספרו על החוויה — מה היה טוב ומה ניתן לשפר"></textarea>
+      <div class="m-actions" style="margin-top:16px"><button class="btn btn-gold grow" onclick="submitRating()">שליחת הדירוג</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- reviews list modal -->
+<div class="overlay" id="ov-reviews" role="dialog" aria-modal="true">
+  <div class="modal" style="width:min(560px,100%)">
+    <div class="m-head"><h3 id="reviews-title">ביקורות</h3><button class="m-close" onclick="closeOv('ov-reviews')">✕</button></div>
+    <div class="m-body" id="reviews-body"></div>
   </div>
 </div>
 
@@ -1159,9 +1186,9 @@ function fbSaveUser(role, user){ fbSaveDoc(role==='owner' ? 'owners' : 'renters'
 /* ================= STATE ================= */
 const state = {
   owners: [],   // {id,name,phone,email,pass}
-  renters: [],  // {id,name,phone,email,pass,lic,frame}
+  renters: [],  // {id,name,phone,email,pass,lic}
   cars: [],     // {id,ownerId,make,model,yr,color,cat,price,seats,gear,fuel,tags[],status,ret,photos[]}
-  bookings: [], // {id,num,carId,ownerId,renterId,from,tmFrom,to,tmTo,hours,days,total,frame,signName,signDate,sig,createdAt}
+  bookings: [], // {id,num,carId,ownerId,renterId,from,tmFrom,to,tmTo,hours,days,total,signName,signDate,sig,createdAt}
   session: null // {role:'owner'|'renter', id}
 };
 let seq = 1; const newId = p => p + (seq++) + Math.random().toString(36).slice(2,6);
@@ -1296,7 +1323,7 @@ function doSignup(){
   let extra={};
   if(authRole==='renter'){
     if(!rlicData){$('rlic-err').style.display='block';$('drop-rlic').classList.add('err-b');bad=true}
-    extra={lic:rlicData, frame:+$('s-frame').value};
+    extra={lic:rlicData};
   }
   if(bad) return;
 
@@ -1360,6 +1387,7 @@ function render(){
     const s=statusInfo(c), off=c.status!=='available';
     const ow=userOf(c.ownerId);
     const ost=ownerStats(c.ownerId);
+    const cst=carStats(c.id);
     const el=document.createElement('article');
     el.className='card'+(off?' off':''); el.dataset.id=c.id; el.dataset.ph=0;
     el.style.animationDelay=(idx*70)+'ms';
@@ -1376,6 +1404,11 @@ function render(){
         <div class="card-title">
           <div><h3>${esc(c.make)} ${esc(c.model)}</h3><span class="meta">${c.yr} · ${esc(c.color)} · ${esc(c.cat)}</span></div>
           <div class="price"><b>${money(c.price)}</b><span>ליום</span></div>
+        </div>
+        <div class="car-rate">
+          <span class="rate-label" style="display:inline;margin:0">דירוג הרכב:</span>
+          ${starsHTML(cst.avg,cst.count)}
+          ${cst.count?`<button class="reviews-link" onclick="openCarReviews('${c.id}')">קראו ביקורות (${cst.count})</button>`:''}
         </div>
         <button class="owner-chip" onclick="openOwnerProfile('${c.ownerId}')" title="לצפייה בפרופיל המשכיר">
           <span class="oc-ava">${esc(ow?ow.name[0]:'?')}</span>
@@ -1585,7 +1618,7 @@ function renderOwnerBookings(){
           <div class="inf">
             <b>${esc(c.make)} ${esc(c.model)} · ${esc(b.signName)}</b>
             <div class="sm">${b.num} · ${fmt(b.from)} ${b.tmFrom} → ${fmt(b.to)} ${b.tmTo} · ${money(b.total)} · דירוג שוכר: </div>
-            <div class="sm">${starsHTML(rst.avg,rst.count)}</div>
+            <div class="sm">${starsHTML(rst.avg,rst.count)}${rst.count?`<button class="reviews-link" onclick="openRenterReviews('${b.renterId}')">ביקורות (${rst.count})</button>`:''}</div>
           </div>
           <div class="acts">
             <button class="mini gold" onclick="openChatTo('b${b.id}')">💬 צ'אט עם השוכר</button>
@@ -1607,11 +1640,11 @@ function renderOwnerBookings(){
       <td>${esc(b.signName)}<div class="sm">התקשורת מתנהלת בצ'אט</div><button class="mini gold" style="margin-top:6px" onclick="openChatTo('b${b.id}')">💬 צ'אט עם השוכר</button></td>
       <td>${fmt(b.from)} ${b.tmFrom}<div class="sm">עד ${fmt(b.to)} ${b.tmTo}</div></td>
       <td class="num">${b.hours}</td>
-      <td class="num">${money(b.total)}<div class="sm">פיקדון ${money(b.frame)}</div></td>
+      <td class="num">${money(b.total)}</td>
       <td>${b.lic?`<img class="lic-thumb" src="${b.lic}" alt="רישיון" onclick="viewLic('${b.id}')">`:'—'}</td>
       <td>
-        <span class="rate-label">דירוג השוכר בקהילה:</span>${starsHTML(rst.avg,rst.count)}
-        <span class="rate-label" style="margin-top:8px">הדירוג שלך לשוכר:</span>${mine?starsHTML(mine.stars,null):ratePicker(b.id)}
+        <span class="rate-label">דירוג השוכר בקהילה:</span>${starsHTML(rst.avg,rst.count)}${rst.count?`<button class="reviews-link" onclick="openRenterReviews('${b.renterId}')">ביקורות (${rst.count})</button>`:''}
+        <span class="rate-label" style="margin-top:8px">הדירוג שלך לשוכר:</span>${mine?`${starsHTML(mine.stars,null)}<button class="reviews-link" onclick="openRateModal('${b.id}')">עריכה</button>`:ratePicker(b.id)}
       </td>
     </tr>`;}).join('')}</tbody></table>`;
   box.innerHTML=`<div class="divider">השכרות פעילות (${active.length})</div>${activeHtml}
@@ -1660,7 +1693,6 @@ function openRenterArea(){
     <div class="summary-box">
       <div class="row"><span>שם</span><span>${esc(u.name)}</span></div>
       <div class="row"><span>אימייל</span><span>${esc(u.email)}</span></div>
-      <div class="row"><span>מסגרת פיקדון</span><span>${money(u.frame)}</span></div>
       <div class="row"><span>רישיון נהיגה</span><span style="color:var(--ok)">✓ מאומת</span></div>
     </div>
     <div class="divider">ההזמנות שלי</div>
@@ -1671,7 +1703,7 @@ function openRenterArea(){
         const st=b.done?'<span class="pill ok" style="font-size:.62rem;padding:1px 8px">הסתיימה</span>':'<span class="pill soon" style="font-size:.62rem;padding:1px 8px">פעילה</span>';
         return `<tr><td class="num">${b.num}<br>${st}</td><td>${esc(c.make)} ${esc(c.model)}</td>
         <td>${fmt(b.from)} – ${fmt(b.to)}</td><td class="num">${money(b.total)}<br><button class="mini gold" style="margin-top:6px" onclick="openChatTo('b${b.id}')">💬 צ'אט עם בעל הרכב</button></td>
-        <td>${mine?`<span class="rate-label">דירגת:</span>${starsHTML(mine.stars,null)}`:`<span class="rate-label">איך היה השירות?</span>${ratePicker(b.id)}`}</td></tr>`;}).join('')}
+        <td>${mine?`<span class="rate-label">דירגת:</span>${starsHTML(mine.stars,null)}<button class="reviews-link" onclick="openRateModal('${b.id}')">עריכה</button>`:`<span class="rate-label">איך היה השירות?</span>${ratePicker(b.id)}`}</td></tr>`;}).join('')}
     </tbody></table>`}`;
   openOv('ov-renter');
 }
@@ -1756,7 +1788,6 @@ function buildSummary(){
     <div class="row"><span>החזרה</span><span>${fmt($('dt-to').value)} · ${$('tm-to').value}</span></div>
     <div class="row"><span>משך</span><span>${h} שעות (${d} ימי חיוב)</span></div>
     <div class="row"><span>שוכר</span><span>${esc($('sign-name').value)}</span></div>
-    <div class="row"><span>מסגרת פיקדון</span><span>${money(u.frame)}</span></div>
     <div class="row"><span>הסכם השכרה</span><span style="color:var(--ok)">✓ נחתם ב-${fmt($('sign-date').value)}</span></div>
     <div class="row"><span>סה"כ לתשלום</span><span>${money(d*currentCar.price)}</span></div>`;
 }
@@ -1802,7 +1833,7 @@ function confirmBooking(){
   const b={id:newId('bk'),num,carId:currentCar.id,ownerId:currentCar.ownerId,renterId:u.id,
     lic:u.lic||null,renterName:u.name,
     from:$('dt-from').value,tmFrom:$('tm-from').value,to:$('dt-to').value,tmTo:$('tm-to').value,
-    hours:h,days:d,total,frame:u.frame,
+    hours:h,days:d,total,
     signName:$('sign-name').value.trim(),signDate:$('sign-date').value,sig:$('sig-pad').toDataURL(),
     createdAt:Date.now()};
   if(CLOUD){
@@ -1842,7 +1873,6 @@ function receiptHTML(b){
     <div class="r-row"><span>החזרה</span><span>${fmt(b.to)} · ${b.tmTo}</span></div>
     <div class="r-row"><span>משך ההשכרה</span><span>${b.hours} שעות (${b.days} ימי חיוב)</span></div>
     <div class="r-row"><span>תעריף יומי</span><span>${money(c.price)}</span></div>
-    <div class="r-row"><span>מסגרת פיקדון (משוחררת בהחזרה)</span><span>${money(b.frame)}</span></div>
     <div class="r-row"><span>הסכם השכרה</span><span>נחתם דיגיטלית · ${fmt(b.signDate)}</span></div>
     <div class="r-row total"><span>סה"כ לתשלום</span><span>${money(b.total)}</span></div>
     <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:end">
@@ -1880,9 +1910,8 @@ function emailReceipt(){
     'החזרה: '+fmt(b.to)+' בשעה '+b.tmTo,
     'משך: '+b.hours+' שעות ('+b.days+' ימי חיוב)',
     'סה"כ לתשלום: '+money(b.total),
-    'מסגרת פיקדון: '+money(b.frame),
     'הסכם השכרה נחתם דיגיטלית בתאריך '+fmt(b.signDate),'',
-    'תודה שבחרתם ב-Crown Drive · (718) 555-0123'
+    'תודה שבחרתם ב-Crown Drive · שירות לקוחות אונליין בצ׳אט שבאתר'
   ].join('\n');
   location.href='mailto:'+encodeURIComponent(u.email)+'?subject='+encodeURIComponent('קבלה ואישור הזמנה '+b.num+' — Crown Drive')+'&body='+encodeURIComponent(body);
 }
@@ -1890,8 +1919,8 @@ function emailReceipt(){
 /* ================= HELPERS ================= */
 function openOv(id){$(id).classList.add('open');document.body.style.overflow='hidden'}
 function closeOv(id){$(id).classList.remove('open');document.body.style.overflow=''}
-['ov-auth','ov-owner','ov-renter','ov-book','ov-lic','ov-profile'].forEach(id=>$(id).addEventListener('click',e=>{if(e.target.id===id)closeOv(id)}));
-document.addEventListener('keydown',e=>{if(e.key==='Escape')['ov-auth','ov-owner','ov-renter','ov-book','ov-lic','ov-profile'].forEach(closeOv)});
+['ov-auth','ov-owner','ov-renter','ov-book','ov-lic','ov-profile','ov-rate','ov-reviews'].forEach(id=>$(id).addEventListener('click',e=>{if(e.target.id===id)closeOv(id)}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')['ov-auth','ov-owner','ov-renter','ov-book','ov-lic','ov-profile','ov-rate','ov-reviews'].forEach(closeOv)});
 function bindDrop(dropId,fileId,single,multi){
   const d=$(dropId),f=$(fileId);
   d.addEventListener('click',()=>f.click());
@@ -2073,6 +2102,21 @@ function renterStats(rid){
   const c=rs.length;
   return{avg:c?rs.reduce((t,r)=>t+r.stars,0)/c:0,count:c};
 }
+/* a renter's rating after a booking counts for the specific car too */
+function carStats(cid){
+  const rs=state.ratings.filter(r=>r.raterRole==='renter'&&r.carId===cid);
+  const c=rs.length;
+  return{avg:c?rs.reduce((t,r)=>t+r.stars,0)/c:0,count:c};
+}
+/* written reviews (rating docs that carry text), newest first */
+function carReviews(cid){
+  return state.ratings.filter(r=>r.raterRole==='renter'&&r.carId===cid&&r.text&&r.text.trim())
+    .sort((a,b)=>(b.ts||0)-(a.ts||0));
+}
+function renterReviews(rid){
+  return state.ratings.filter(r=>r.raterRole==='owner'&&r.renterId===rid&&r.text&&r.text.trim())
+    .sort((a,b)=>(b.ts||0)-(a.ts||0));
+}
 function myRating(bid,role){return state.ratings.find(r=>r.bookingId===bid&&r.raterRole===role)}
 function starsHTML(avg,count){
   if(count===0)return '<span class="new-tag">חדש · ללא דירוג</span>';
@@ -2081,26 +2125,85 @@ function starsHTML(avg,count){
   return `<span class="stars" title="${avg.toFixed(1)} מתוך 5"><i style="width:${pct}%">★★★★★</i>★★★★★</span>`+tail;
 }
 function ratePicker(bid){
-  return `<span class="rate-picker">${[1,2,3,4,5].map(n=>`<button class="rp-star" title="${n} כוכבים" onclick="setRating('${bid}',${n})">★</button>`).join('')}</span>`;
+  return `<button class="mini gold" onclick="openRateModal('${bid}')">★ דרגו וכתבו ביקורת</button>`;
 }
-function setRating(bid,n){
+
+/* ----- rating + review modal ----- */
+let rateBid=null, rateRole=null, rateStars=0;
+function openRateModal(bid){
   if(!state.session)return;
   const b=state.bookings.find(x=>x.id===bid);
   if(!b)return;
   const role=state.session.role;
   if(role==='renter'&&b.renterId!==state.session.id)return;
   if(role==='owner'&&b.ownerId!==state.session.id)return;
-  n=Math.round(Math.min(5,Math.max(1,+n||0)));
-  if(!n)return;
+  rateBid=bid; rateRole=role;
   const ex=myRating(bid,role);
-  const doc={id:bid+'_'+role,bookingId:bid,raterRole:role,stars:n,ownerId:b.ownerId,renterId:b.renterId,ts:Date.now()};
-  if(CLOUD){db.collection('ratings').doc(bid+'_'+role).set(doc).catch(cloudErr);}
-  else{if(ex){ex.stars=n;ex.ts=Date.now();fbSaveDoc('ratings',ex);}else{state.ratings.push(doc);fbSaveDoc('ratings',doc);}}
-  showToast('הדירוג נשמר: '+n+' כוכבים');
+  rateStars=ex?ex.stars:0;
+  const c=state.cars.find(x=>x.id===b.carId)||{make:'',model:''};
+  if(role==='renter'){
+    $('rate-title').textContent='דירוג הרכב והמשכיר';
+    $('rate-sub').textContent=`${c.make} ${c.model} · הזמנה ${b.num}`;
+    $('rate-text').placeholder='איך היה הרכב והשירות? הביקורת תוצג לשוכרים אחרים';
+  }else{
+    $('rate-title').textContent='דירוג השוכר';
+    $('rate-sub').textContent=`${esc(b.signName)} · הזמנה ${b.num}`;
+    $('rate-text').placeholder='איך התנהלה ההשכרה מול השוכר? הביקורת תוצג למשכירים אחרים';
+  }
+  $('rate-text').value=ex&&ex.text?ex.text:'';
+  $('rate-err').style.display='none';
+  renderRateStars();
+  openOv('ov-rate');
+}
+function renderRateStars(){
+  $('rate-stars').innerHTML=[1,2,3,4,5].map(n=>
+    `<button class="${n<=rateStars?'on':''}" title="${n} כוכבים" onclick="pickRateStar(${n})">★</button>`).join('');
+}
+function pickRateStar(n){rateStars=n;$('rate-err').style.display='none';renderRateStars()}
+function submitRating(){
+  if(!rateBid||!rateStars){$('rate-err').style.display='block';return}
+  const b=state.bookings.find(x=>x.id===rateBid);
+  if(!b){closeOv('ov-rate');return}
+  const role=rateRole;
+  const text=$('rate-text').value.trim().slice(0,400);
+  const ex=myRating(rateBid,role);
+  const doc={id:rateBid+'_'+role,bookingId:rateBid,raterRole:role,stars:rateStars,
+    ownerId:b.ownerId,renterId:b.renterId,carId:b.carId,text,ts:Date.now()};
+  if(ex){Object.assign(ex,doc);fbSaveDoc('ratings',ex);}
+  else{state.ratings.push(doc);fbSaveDoc('ratings',doc);}
+  closeOv('ov-rate');
+  showToast('הדירוג נשמר · תודה על הביקורת');
   render();
   if(role==='renter'&&$('ov-renter').classList.contains('open'))openRenterArea();
   if(role==='owner'&&$('ov-owner').classList.contains('open'))renderOwnerBookings();
   if($('ov-profile').classList.contains('open')&&profOwnerId!==null)openOwnerProfile(profOwnerId);
+}
+
+/* ----- reviews list modal ----- */
+function reviewsHTML(list,who){
+  if(!list.length)return '<div class="adm-empty">אין עדיין ביקורות.</div>';
+  return '<div class="rev-list">'+list.map(r=>{
+    const name=who==='car'?(userOf(r.renterId)?.name||'שוכר'):(userOf(r.ownerId)?.name||'משכיר');
+    const d=new Date(r.ts||0).toLocaleDateString('he-IL',{day:'numeric',month:'long',year:'numeric'});
+    return `<div class="rev-item">
+      <div class="rev-top"><span class="rev-who">${esc(name)}</span><span class="rev-date">${d}</span></div>
+      <div>${starsHTML(r.stars,null)}</div>
+      <div class="rev-text" style="margin-top:6px">${esc(r.text)}</div>
+    </div>`;}).join('')+'</div>';
+}
+function openCarReviews(cid){
+  const c=state.cars.find(x=>x.id===cid)||{make:'',model:''};
+  const st=carStats(cid);
+  $('reviews-title').textContent=`ביקורות · ${c.make} ${c.model}`;
+  $('reviews-body').innerHTML=`<div class="prof-stars" style="margin-bottom:14px">${starsHTML(st.avg,st.count)}</div>${reviewsHTML(carReviews(cid),'car')}`;
+  openOv('ov-reviews');
+}
+function openRenterReviews(rid){
+  const u=userOf(rid)||{name:'שוכר'};
+  const st=renterStats(rid);
+  $('reviews-title').textContent=`ביקורות על ${esc(u.name)}`;
+  $('reviews-body').innerHTML=`<div class="prof-stars" style="margin-bottom:14px">${starsHTML(st.avg,st.count)}</div>${reviewsHTML(renterReviews(rid),'renter')}`;
+  openOv('ov-reviews');
 }
 function openOwnerProfile(oid){
   const o=userOf(oid);
@@ -2113,10 +2216,11 @@ function openOwnerProfile(oid){
     ? '<div class="adm-empty">אין כרגע רכבים פעילים.</div>'
     : '<div class="prof-cars">'+cars.map(c=>{
         const si=statusInfo(c);
+        const cst=carStats(c.id);
         const btn = c.status==='available'
           ? `<button class="mini gold" onclick="closeOv('ov-profile');tryBook('${c.id}')">להזמנה</button>`
           : '<button class="mini" disabled style="opacity:.5">מושכר</button>';
-        return `<div class="pc-item"><img src="${c.photos[0]}" alt=""><div class="inf"><b>${esc(c.make)} ${esc(c.model)} ${c.yr}</b><div class="sm">${esc(c.color)} · ${money(c.price)}/יום · <span class="pill ${si.cls}" style="font-size:.62rem;padding:1px 8px">${si.txt}</span></div></div>${btn}</div>`;
+        return `<div class="pc-item"><img src="${c.photos[0]}" alt=""><div class="inf"><b>${esc(c.make)} ${esc(c.model)} ${c.yr}</b><div class="sm">${esc(c.color)} · ${money(c.price)}/יום · <span class="pill ${si.cls}" style="font-size:.62rem;padding:1px 8px">${si.txt}</span></div><div class="sm" style="margin-top:3px">${starsHTML(cst.avg,cst.count)}${cst.count?`<button class="reviews-link" onclick="openCarReviews('${c.id}')">ביקורות (${cst.count})</button>`:''}</div></div>${btn}</div>`;
       }).join('')+'</div>';
   $('prof-body').innerHTML=`
     <div class="prof-head">
