@@ -1647,7 +1647,30 @@ input,select,textarea{font-size:16px!important}
 @media(prefers-reduced-motion:reduce){#ov-admin .admin-modal,#ov-owner .modal,#ov-renter .modal,#ov-account .modal{animation:none!important}}
 </style>
 
-</head>
+\n<style id="crowndrive-final-project-fixes-v3">
+/* Stable car photos: never stretch across the page */
+#grid,.cars-grid,#search-grid{align-items:start!important}
+.card-new{width:100%!important;max-width:430px!important;justify-self:center!important;overflow:hidden!important}
+.card-new .gallery{position:relative!important;width:100%!important;aspect-ratio:16/10!important;min-height:220px!important;max-height:300px!important;overflow:hidden!important;background:#e9edf2!important}
+.card-new .gallery>img{display:block!important;width:100%!important;height:100%!important;max-width:none!important;object-fit:cover!important;object-position:center!important;transition:opacity .18s ease!important}
+.card-new .g-nav{display:flex!important;align-items:center!important;justify-content:center!important;width:38px!important;height:38px!important;opacity:.94!important}
+.card-new .g-dots{display:flex!important}
+.card-new .g-count{font-size:.72rem!important;padding:4px 9px!important}
+/* Large, clear rented badge. Overrides the old mobile shrinking rule. */
+#grid .pill,.card-new .pill,.g-status .pill{font-size:.84rem!important;font-weight:900!important;padding:7px 15px!important;line-height:1.1!important;box-shadow:0 5px 16px rgba(0,0,0,.16)!important}
+.g-status{top:12px!important;right:12px!important}
+.car-rating-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:12px 0 2px;padding:10px 12px;border:1px solid rgba(188,145,55,.25);border-radius:13px;background:rgba(188,145,55,.07)}
+.car-rating-row .label{font-size:.78rem;font-weight:900;color:#25303b;white-space:nowrap}
+.car-rating-row .rate-picker{margin-inline-start:auto}
+.car-rating-row .rp-star{font-size:1.25rem}
+.renter-profile-btn{white-space:nowrap}
+.renter-profile-rating{margin-top:8px}
+@media(max-width:700px){
+ .card-new{max-width:100%!important}
+ .card-new .gallery{min-height:205px!important;max-height:260px!important}
+ #grid .pill,.card-new .pill,.g-status .pill{font-size:.8rem!important;padding:7px 14px!important}
+}
+</style>\n</head>
 <body>
 
 <div id="progress" aria-hidden="true"></div>
@@ -2529,7 +2552,7 @@ function restoreSessionFromFirebaseUser(fbUser, roleHint){
     state.users[fbUser.uid]={...(state.users[fbUser.uid]||{}),role:'admin',name:'מנהל האתר',email:email||ADMIN_EMAIL,updatedAt:Date.now()};
     rememberAuthIdentity(fbUser.uid,email||ADMIN_EMAIL);
     persistSessionCookie();
-    try{localStorage.setItem(LOCAL_KEY, JSON.stringify({owners:state.owners||[],renters:state.renters||[],cars:state.cars||[],bookings:state.bookings||[],session:state.session,msgs:state.msgs||[],ratings:state.ratings||[],users:state.users||{},seq}))}catch(e){}
+    try{persistState()}catch(e){} // FIX: שמירה מלאה (כולל התראות ו-tombstones) במקום עותק חלקי שהשמיט נתונים
     renderNav(); renderMyAreaFab(); updateBadge();
     return true;
   }
@@ -2547,7 +2570,7 @@ function restoreSessionFromFirebaseUser(fbUser, roleHint){
   state.session={role,id:fbUser.uid,...u};
   rememberAuthIdentity(fbUser.uid,u.email||email);
   persistSessionCookie();
-  try{localStorage.setItem(LOCAL_KEY, JSON.stringify({owners:state.owners||[],renters:state.renters||[],cars:state.cars||[],bookings:state.bookings||[],session:state.session,msgs:state.msgs||[],ratings:state.ratings||[],users:state.users||{},seq}))}catch(e){}
+  try{persistState()}catch(e){} // FIX: שמירה מלאה (כולל התראות ו-tombstones) במקום עותק חלקי שהשמיט נתונים
   renderNav(); renderMyAreaFab(); updateBadge();
   return true;
 }
@@ -2640,20 +2663,26 @@ function migrateLocalIdToFirebaseUid(role, oldId, uid, email){
   if(!uid || !oldId || oldId===uid) return;
   const pool = role==='owner' ? state.owners : (role==='renter' ? state.renters : []);
   const u = pool.find(x=>x.id===oldId || normalizeEmail(x.email)===normalizeEmail(email));
+  // FIX: מעבירים רק רשומות ששייכות ל-id הישן של המשתמש הזה.
+  // הבאג הקודם השווה מייל בלי קשר לרכב הספציפי, וכך העביר את כל הרכבים באתר לבעלים החדש.
+  const prevIds=new Set([oldId]); if(u&&u.id) prevIds.add(u.id);
+  prevIds.delete(uid);
   if(u) u.id = uid;
   if(role==='owner'){
-    state.cars.forEach(c=>{ if(c.ownerId===oldId || normalizeEmail(u&&u.email)===normalizeEmail(email)) c.ownerId=uid; });
-    state.bookings.forEach(b=>{ if(b.ownerId===oldId) b.ownerId=uid; });
+    state.cars.forEach(c=>{ if(prevIds.has(c.ownerId)) c.ownerId=uid; });
+    state.bookings.forEach(b=>{ if(prevIds.has(b.ownerId)) b.ownerId=uid; });
   }
   if(role==='renter'){
-    state.bookings.forEach(b=>{ if(b.renterId===oldId) b.renterId=uid; });
+    state.bookings.forEach(b=>{ if(prevIds.has(b.renterId)) b.renterId=uid; });
   }
   state.msgs.forEach(m=>{
-    if(m.uid===oldId) m.uid=uid;
-    if(Array.isArray(m.participants)) m.participants=m.participants.map(p=>p===oldId?uid:p);
-    if((m.tid||'').includes(oldId)) m.tid=m.tid.replaceAll(oldId,uid);
+    if(prevIds.has(m.uid)) m.uid=uid;
+    if(Array.isArray(m.participants)) m.participants=m.participants.map(p=>prevIds.has(p)?uid:p);
+    prevIds.forEach(pid=>{ if((m.tid||'').includes(pid)) m.tid=m.tid.replaceAll(pid,uid); });
   });
-  if(state.users && state.users[oldId]){ state.users[uid]=state.users[oldId]; delete state.users[oldId]; }
+  prevIds.forEach(pid=>{
+    if(state.users && state.users[pid]){ state.users[uid]={...(state.users[pid]||{}),...(state.users[uid]||{})}; delete state.users[pid]; }
+  });
 }
 async function ensureFirebaseSessionForLocalUser(role, user, pass){
   if(!REALTIME || !firebaseAuthReady() || !user || !user.email || !pass) return user;
@@ -2689,6 +2718,7 @@ function cleanFirebaseValue(v, seen){
     const o={};
     Object.keys(v).forEach(k=>{
       if(k.startsWith('_')) return;
+      if(k==='pass') return; // FIX אבטחה: סיסמאות לעולם לא נשלחות ל-Firebase. נשמרות רק מקומית במכשיר.
       const cv=cleanFirebaseValue(v[k], seen);
       if(cv!==undefined) o[k]=cv;
     });
@@ -2699,7 +2729,8 @@ function cleanFirebaseValue(v, seen){
 function realtimeData(){
   const data={
     owners:state.owners||[], renters:state.renters||[], cars:state.cars||[], bookings:state.bookings||[],
-    msgs:state.msgs||[], ratings:state.ratings||[], notifications:state.notifications||[], users:state.users||{}, seq:seq||1,
+    msgs:state.msgs||[], ratings:state.ratings||[], notifications:state.notifications||[], users:state.users||{},
+    deleted:state.deleted||{}, seq:seq||1,
     updatedAt:Date.now()
   };
   return cleanFirebaseValue(data);
@@ -2716,7 +2747,36 @@ function mergeById(localArr, remoteArr, key){
   return Array.from(map.values()).sort((a,b)=>(+(b.updatedAt||b.createdAt||0))-(+(a.updatedAt||a.createdAt||0)));
 }
 function mergeUsers(localUsers, remoteUsers){
-  return {...(remoteUsers||{}), ...(localUsers||{})};
+  // FIX: מיזוג לפי updatedAt במקום "המקומי תמיד מנצח".
+  // קודם, משתמש חסום יכול היה לדרוס את החסימה שלו מהמכשיר שלו.
+  const out={...(localUsers||{})};
+  Object.entries(remoteUsers||{}).forEach(([id,ru])=>{
+    if(!ru) return;
+    const lu=out[id];
+    if(!lu || (+(ru.updatedAt||0)) >= (+(lu.updatedAt||0))) out[id]={...(lu||{}),...ru};
+  });
+  return out;
+}
+function markDeleted(id){
+  if(!id) return;
+  state.deleted=(state.deleted&&typeof state.deleted==='object')?state.deleted:{};
+  state.deleted[String(id)]=Date.now();
+}
+function applyTombstones(){
+  const del=(state.deleted&&typeof state.deleted==='object')?state.deleted:{};
+  const gone=x=>{ if(!x||!x.id)return false; const ts=+del[x.id]||0; return !!ts && ts>=(+(x.updatedAt||x.createdAt||0)); };
+  ['owners','renters','cars','bookings','msgs','ratings','notifications'].forEach(k=>{ state[k]=safeArr(state[k]).filter(x=>!gone(x)); });
+  Object.keys(state.users||{}).forEach(id=>{
+    const ts=+del[id]||0; const u=state.users[id];
+    if(ts && u && ts>=(+(u.updatedAt||u.createdAt||0))) delete state.users[id];
+  });
+}
+function pruneTombstones(){
+  try{
+    const del=(state.deleted&&typeof state.deleted==='object')?state.deleted:{};
+    const cutoff=Date.now()-90*24*60*60*1000;
+    Object.keys(del).forEach(id=>{ if(+del[id]<cutoff) delete del[id]; });
+  }catch(e){}
 }
 function applyRealtimeData(d){
   if(!d || typeof d!=='object')return;
@@ -2724,6 +2784,11 @@ function applyRealtimeData(d){
   try{
     // Merge instead of blind overwrite. This prevents a fresh local action, such as adding a second car,
     // from being erased by a slightly older Firebase snapshot arriving a moment later.
+    // FIX: מיזוג tombstones לפני מיזוג הרשומות, כדי שמחיקות יתפשטו בין מכשירים.
+    if(d.deleted && typeof d.deleted==='object'){
+      state.deleted=(state.deleted&&typeof state.deleted==='object')?state.deleted:{};
+      Object.entries(d.deleted).forEach(([id,ts])=>{ if(+ts>(+state.deleted[id]||0)) state.deleted[id]=+ts; });
+    }
     state.owners=mergeById(state.owners,d.owners,'id');
     state.renters=mergeById(state.renters,d.renters,'id');
     state.cars=mergeById(state.cars,d.cars,'id');
@@ -2733,10 +2798,11 @@ function applyRealtimeData(d){
     state.notifications=mergeById(state.notifications,d.notifications,'id');
     if(d.users && typeof d.users==='object')state.users=mergeUsers(state.users,d.users);
     if(d.seq && Number.isFinite(+d.seq))seq=Math.max(seq,+d.seq);
+    applyTombstones();
     ensureStateIntegrity();
     try{ localStorage.setItem(LOCAL_KEY, JSON.stringify({
       owners:state.owners||[], renters:state.renters||[], cars:state.cars||[], bookings:state.bookings||[],
-      session:state.session||null, msgs:state.msgs||[], ratings:state.ratings||[], notifications:state.notifications||[], users:state.users||{}, seq
+      session:state.session||null, msgs:state.msgs||[], ratings:state.ratings||[], notifications:state.notifications||[], users:state.users||{}, deleted:state.deleted||{}, seq
     })); }catch(e){}
     renderNav(); renderMyAreaFab(); refreshOpenViews(); if(!window.CROWNDRIVE_MODAL_IS_OPEN || !window.CROWNDRIVE_MODAL_IS_OPEN()) render(); updateBadge();
   }catch(e){console.error('Realtime apply failed',e)}
@@ -2798,6 +2864,25 @@ async function pushRealtimeNow(){
     return false;
   });
 }
+
+async function flushAdminChanges(){
+  // שמירה מיידית + ניסיון נוסף לאחר שה-Auth והשינויים המקומיים התייצבו.
+  // מחזיר true רק כאשר Firebase אישר את הכתיבה.
+  try{
+    clearTimeout(rtWriteTimer);
+    const first=await pushRealtimeNow();
+    if(!first){
+      await new Promise(r=>setTimeout(r,220));
+      return !!(await pushRealtimeNow());
+    }
+    return true;
+  }catch(e){
+    console.error('Admin cloud flush failed',e);
+    return false;
+  }
+}
+window.flushAdminChanges=flushAdminChanges;
+
 function initRealtime(){
   const cfg=(window.CROWNDRIVE_FIREBASE_CONFIG||window.CROWNFIREBASE_CONFIG||window.FIREBASE_CONFIG||null);
   const ready=cfg && cfg.apiKey && cfg.databaseURL && cfg.projectId;
@@ -2851,13 +2936,23 @@ function initRealtime(){
 }
 function persistState(){
   try{
+    pruneTombstones();
     const copy={
       owners:state.owners||[], renters:state.renters||[], cars:state.cars||[], bookings:state.bookings||[],
-      session:state.session||null, msgs:state.msgs||[], ratings:state.ratings||[], notifications:state.notifications||[], users:state.users||{}, seq
+      session:state.session||null, msgs:state.msgs||[], ratings:state.ratings||[], notifications:state.notifications||[], users:state.users||{}, deleted:state.deleted||{}, seq
     };
     persistSessionCookie();
     localStorage.setItem(LOCAL_KEY, JSON.stringify(copy));
-    if(!rtApplying && !window.CROWNDRIVE_SUPPRESS_REALTIME_WRITE) scheduleRealtimeSave();
+    if(!rtApplying && !window.CROWNDRIVE_SUPPRESS_REALTIME_WRITE){
+      // פעולות מנהל חייבות להיכתב מיד לענן. שמירה מושהית עלולה להיאבד
+      // כאשר המנהל יוצא/נכנס מחדש או מרענן מיד אחרי השינוי.
+      if(state.session && state.session.role==='admin' && REALTIME && RT_REF){
+        clearTimeout(rtWriteTimer);
+        Promise.resolve(pushRealtimeNow()).then(ok=>{
+          if(ok) window.CROWNDRIVE_LAST_ADMIN_SAVE_OK=Date.now();
+        }).catch(e=>console.error('Immediate admin save failed',e));
+      }else scheduleRealtimeSave();
+    }
     return true;
   }catch(e){
     console.error('local save failed', e);
@@ -2872,6 +2967,7 @@ function loadState(){
     const d=JSON.parse(raw);
     ['owners','renters','cars','bookings','msgs','ratings','notifications'].forEach(k=>{ if(Array.isArray(d[k])) state[k]=d[k]; });
     if(d.users&&typeof d.users==='object')state.users=d.users;
+    if(d.deleted&&typeof d.deleted==='object')state.deleted=d.deleted;
     if(d.session)state.session=d.session;
     if(!state.session){ const cs=getCookieJSON(COOKIE_SESSION_KEY); if(cs&&cs.role&&cs.id)state.session=cs; }
     if(d.seq&&Number.isFinite(+d.seq))seq=+d.seq;
@@ -2886,6 +2982,7 @@ const state = {
   cars: [],     // {id,ownerId,make,model,yr,color,cat,price,priceHourly,priceDaily,priceWeekly,rentalTypes[],seats,gear,fuel,tags[],status,ret,photos[]}
   bookings: [], // {id,num,status:'pending'|'approved'|'rejected'|'done',carId,ownerId,renterId,from,tmFrom,to,tmTo,hours,days,total,signName,signDate,sig,createdAt}
   notifications: [], // admin notifications, e.g. new user signups
+  deleted: {},  // FIX: tombstones — id שנמחק לא "קם לתחייה" ממיזוג עם Firebase
   session: null // {role:'owner'|'renter', id}
 };
 let seq = 1; const newId = p => p + (seq++) + Math.random().toString(36).slice(2,6);
@@ -3031,7 +3128,12 @@ function ensureStateIntegrity(){
   try{
     state.owners=safeArr(state.owners); state.renters=safeArr(state.renters); state.cars=safeArr(state.cars);
     state.bookings=safeArr(state.bookings); state.msgs=safeArr(state.msgs); state.ratings=safeArr(state.ratings);
+    state.notifications=safeArr(state.notifications);
     state.users=(state.users&&typeof state.users==='object')?state.users:{}; state.reads=(state.reads&&typeof state.reads==='object')?state.reads:{};
+    state.deleted=(state.deleted&&typeof state.deleted==='object')?state.deleted:{};
+    // FIX: הודעות ודירוגים חייבים id — בלעדיו המיזוג עם Firebase מחק את כולם בכל סנכרון.
+    state.msgs.forEach(m=>{ if(m&&!m.id) m.id='m_'+(m.ts||Date.now())+'_'+Math.random().toString(36).slice(2,7); });
+    state.ratings.forEach(r=>{ if(r&&!r.id) r.id=(r.bookingId||'b')+'_'+(r.raterRole||'x'); });
     state.owners.forEach(u=>{ if(u&&u.id) state.users[u.id]={...(state.users[u.id]||{}),...u,role:'owner'}; });
     state.renters.forEach(u=>{ if(u&&u.id) state.users[u.id]={...(state.users[u.id]||{}),...u,role:'renter'}; });
     state.cars.forEach(c=>{
@@ -3232,7 +3334,42 @@ window.addEventListener('keydown',e=>{
   // אין קיצור מקשים גלוי/נסתר לכניסת מנהל.
 });
 
-const ADMIN_EMAIL='shmuel123770@icloud.com', ADMIN_PASS='amarZ770@';
+const ADMIN_EMAIL='shmuel123770@icloud.com';
+// FIX אבטחה: סיסמת המנהל כבר לא כתובה בקוד המקור.
+// האימות הראשי נעשה מול Firebase Authentication; יש גם גיבוי מקומי מבוסס SHA-256 בלבד.
+const ADMIN_PASS_SHA256='507e48b4e645070140e211f0902c82203f695d2ba4539b545aa209d4f8649b76';
+async function verifyAdminPassword(ps){
+  try{
+    if(window.crypto && crypto.subtle && crypto.subtle.digest){
+      const buf=await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(ps||'')));
+      const hex=[...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+      return hex===ADMIN_PASS_SHA256;
+    }
+  }catch(e){console.warn('verifyAdminPassword failed',e)}
+  return false;
+}
+async function adminFirebaseLogin(em,ps){
+  // כניסה כמנהל: קודם ניסיון כניסה אמיתי ב-Firebase (בלי יצירה אוטומטית).
+  // אם חשבון המנהל עדיין לא קיים ב-Firebase — נוצר רק אחרי אימות הסיסמה מול ה-hash המקומי.
+  if(!(REALTIME && firebaseAuthReady())) return {ok:await verifyAdminPassword(ps), uid:'admin'};
+  try{
+    allowExplicitAuthAction && allowExplicitAuthAction();
+    const cred=await RT_AUTH.signInWithEmailAndPassword(em,ps);
+    if(cred && cred.user) return {ok:true, uid:cred.user.uid};
+  }catch(e){
+    const code=(e&&e.code)||'';
+    const missing=['auth/user-not-found','auth/invalid-login-credentials','auth/invalid-credential'].includes(code);
+    if(missing && await verifyAdminPassword(ps)){
+      try{
+        allowExplicitAuthAction && allowExplicitAuthAction();
+        const cred=await RT_AUTH.createUserWithEmailAndPassword(em,ps);
+        if(cred && cred.user) return {ok:true, uid:cred.user.uid};
+      }catch(e2){console.warn('admin firebase create failed',e2)}
+      return {ok:true, uid:'admin'};
+    }
+  }
+  return {ok:false, uid:'admin'};
+}
 let authJustSignedUp=false, pendingProfile=null;
 function afterLoginUI(){
   persistState();
@@ -3295,15 +3432,16 @@ function saveAccount(){
     if(pool.some(x=>x.email===newMail&&x.id!==u.id)){showToast('המייל החדש כבר רשום במערכת');return}
     rec.email=newMail;
   }
-  rec.name=name;rec.phone=phone;
+  rec.name=name;rec.phone=phone;rec.updatedAt=Date.now();
   if(newPass)rec.pass=newPass;
   if(acLicData)rec.lic=acLicData;
-  state.users[u.id]={...(state.users[u.id]||{}),name};
+  state.users[u.id]={...(state.users[u.id]||{}),name,updatedAt:Date.now()};
   Object.assign(state.session,{name,phone});
   if(newMail)state.session.email=newMail;
   if(newPass)state.session.pass=newPass;
   if(newMail||newPass) rememberLogin(u.role, state.session.email||rec.email, newPass||rec.pass);
   if(acLicData)state.session.lic=acLicData;
+  persistState(); // FIX: עדכון פרטי חשבון נשמר ומסתנכרן
   renderNav();render();closeOv('ov-account');showToast('הפרטים עודכנו בהצלחה');
 }
 function forgotPass(){
@@ -3331,13 +3469,11 @@ async function doLogin(){
 
   try{
     // כניסת מנהל מוסתרת: בוחרים 'אני בעל רכב' ומזינים את פרטי המנהל.
-    if((authRole==='owner' || adminSecretMode) && em===ADMIN_EMAIL && ps===ADMIN_PASS){
+    if((authRole==='owner' || adminSecretMode) && em===ADMIN_EMAIL){
+      const adm=await adminFirebaseLogin(em,ps);
+      if(!adm.ok){ noteLoginFail(em); mark('lf-pass',true); showToast('פרטי מנהל שגויים'); return; }
       clearLoginFail(em); rememberLogin('admin',em,ps);
-      let uid='admin';
-      if(REALTIME && firebaseAuthReady()){
-        const fbUser=await firebaseLoginOrCreate(em,ps,true);
-        if(fbUser && fbUser.uid) uid=fbUser.uid;
-      }
+      let uid=adm.uid||'admin';
       state.session={role:'admin',id:uid,name:'מנהל האתר',email:ADMIN_EMAIL};
       state.users[uid]={name:'מנהל האתר',role:'admin',email:ADMIN_EMAIL,updatedAt:Date.now()};
       rememberAuthIdentity(uid,ADMIN_EMAIL);
@@ -3579,12 +3715,10 @@ async function doLogin(){
     const role=authRoleOrDefault();
 
     // Admin still uses the owner/admin path, but also signs into Firebase if possible.
-    if((role==='owner' || role==='admin' || adminSecretMode) && em===ADMIN_EMAIL && ps===ADMIN_PASS){
-      let uid='admin';
-      if(REALTIME){
-        const fbUser=await firebaseLoginOrCreate(em, ps, true);
-        if(fbUser && fbUser.uid) uid=fbUser.uid;
-      }
+    if(em===ADMIN_EMAIL){
+      const adm=await adminFirebaseLogin(em,ps);
+      if(!adm.ok){ noteLoginFail(em); mark('lf-pass',true); showToast('פרטי מנהל שגויים'); return; }
+      let uid=adm.uid||'admin';
       clearLoginFail(em);
       rememberLogin('admin',em,ps);
       state.session={role:'admin',id:uid,name:'מנהל האתר',email:ADMIN_EMAIL};
@@ -3954,7 +4088,8 @@ function toggleStatus(id){
   const status=c.status==='available'?'rented':'available';
   const ret=status==='available'?'':c.ret||'';
   if(CLOUD){db.collection('cars').doc(id).update({status,ret}).catch(cloudErr);return;}
-  c.status=status;c.ret=ret;
+  c.status=status;c.ret=ret;c.updatedAt=Date.now();
+  persistState(); // FIX: שינוי סטטוס נשמר ומסתנכרן מיד
   render();renderAdminList();
 }
 function deleteCar(id){
@@ -3965,6 +4100,8 @@ function deleteCar(id){
   if(editId===id)resetCarForm();
   if(CLOUD){db.collection('cars').doc(id).delete().then(()=>showToast('המודעה נמחקה מהאתר')).catch(cloudErr);return;}
   state.cars=state.cars.filter(x=>x.id!==id);
+  markDeleted(id); // FIX: מחיקה מסומנת ב-tombstone כדי שלא תחזור ממיזוג הענן
+  persistState();
   render();renderAdminList();showToast('המודעה נמחקה מהאתר');
 }
 function editCar(id){
@@ -3990,7 +4127,7 @@ function resetCarForm(){
   ['a-make','a-model','a-yr','a-color','a-price-hourly','a-price-daily','a-price-weekly','a-tags','a-engine','a-size','a-location','a-make-other','a-model-other','a-color-other','a-engine-other'].forEach(i=>{if($(i))$(i).value=''});initOwnerChoiceLists();document.querySelectorAll('.other-input').forEach(x=>x.classList.remove('show'));
   $('a-cat').selectedIndex=0;$('a-seats').value='5';$('a-gear').selectedIndex=0;$('a-fuel').selectedIndex=0;$('a-status').value='available';setRentalChecks(['hourly']);
   formPhotos=[];renderPhotoGrid();
-  ['af-make','af-model','af-yr','af-rentals','af-price-hourly','af-price-daily','af-price-weekly'].forEach(i=>$(i)&&$(i).classList.remove('err'));
+  ['af-make','af-model','af-yr','af-color','af-rentals','af-price-hourly','af-price-daily','af-price-weekly'].forEach(i=>$(i)&&$(i).classList.remove('err'));
   $('form-title').textContent='הוספת רכב חדש';$('a-save').textContent='פרסום הרכב';$('a-cancel').style.display='none';
   if($('ov-owner').classList.contains('open')&&$('dash-add').style.display==='block'&&arguments[0]===true)setDash('cars');
 }
@@ -4065,9 +4202,10 @@ function endRental(bid){
       .catch(cloudErr);
     return;
   }
-  b.done=true;b.status='done';b.doneAt=Date.now();
+  b.done=true;b.status='done';b.doneAt=Date.now();b.updatedAt=Date.now();
   const c=state.cars.find(x=>x.id===b.carId);
-  if(c){c.status='available';c.ret='';}
+  if(c){c.status='available';c.ret='';c.updatedAt=Date.now();}
+  persistState(); // FIX
   render();renderOwnerBookings();
   showToast('ההשכרה הסתיימה — הרכב חזר להיות זמין');
 }
@@ -4297,15 +4435,16 @@ function adminSetBooking(id,status){
       if(status==='done')return db.collection('cars').doc(b.carId).update({status:'available',ret:''});
     }).then(()=>showToast('ההזמנה עודכנה')).catch(cloudErr);return;
   }
-  b.status=status; if(status==='done'){b.done=true;b.doneAt=Date.now()} else b[status+'At']=Date.now();
-  const c=state.cars.find(x=>x.id===b.carId); if(c&&status==='approved'){c.status='rented';c.ret='זמין שוב: '+fmt(b.to)+' בשעה '+b.tmTo} if(c&&status==='done'){c.status='available';c.ret=''}
+  b.status=status; b.updatedAt=Date.now(); if(status==='done'){b.done=true;b.doneAt=Date.now()} else b[status+'At']=Date.now();
+  const c=state.cars.find(x=>x.id===b.carId); if(c&&status==='approved'){c.status='rented';c.ret='זמין שוב: '+fmt(b.to)+' בשעה '+b.tmTo;c.updatedAt=Date.now()} if(c&&status==='done'){c.status='available';c.ret='';c.updatedAt=Date.now()}
+  persistState(); // FIX
   render();renderAdminDashboard();showToast('ההזמנה עודכנה');
 }
 function adminDeleteBooking(id){
   const b=state.bookings.find(x=>x.id===id); if(!b)return;
   if(!confirm('למחוק לגמרי את ההזמנה '+b.num+'?'))return;
   if(CLOUD){db.collection('bookings').doc(id).delete().then(()=>showToast('ההזמנה נמחקה')).catch(cloudErr);return;}
-  state.bookings=state.bookings.filter(x=>x.id!==id);render();renderAdminDashboard();showToast('ההזמנה נמחקה');
+  state.bookings=state.bookings.filter(x=>x.id!==id);markDeleted(id);persistState();render();renderAdminDashboard();showToast('ההזמנה נמחקה');
 }
 function adminToggleCar(id){toggleStatus(id);setTimeout(renderAdminDashboard,50)}
 function adminDeleteCar(id){deleteCar(id);setTimeout(renderAdminDashboard,50)}
@@ -4445,7 +4584,7 @@ function uploadPaymentProof(bid,input){
   r.onload=()=>{
     const data=r.result;
     const b=state.bookings.find(x=>x.id===bid); if(!b)return;
-    b.paymentProof=data; b.paymentProofAt=Date.now();
+    b.paymentProof=data; b.paymentProofAt=Date.now(); b.updatedAt=Date.now();
     const txt='השוכר שלח צילום מסך של העברת תשלום עבור הזמנה '+b.num+'.';
     if(CLOUD){
       db.collection('bookings').doc(bid).update({paymentProof:data,paymentProofAt:b.paymentProofAt}).catch(cloudErr);
@@ -4618,6 +4757,7 @@ function confirmBooking(){
   } else {
     state.bookings.push(b);
     pushMsg('b'+b.id,'system',0,msg);
+    persistState(); // FIX קריטי: ההזמנה נשמרת ומסתנכרנת מיד — בעל הרכב רואה אותה בזמן אמת
   }
   lastBooking=b;
   render();
@@ -4644,9 +4784,10 @@ function approveBooking(bid){
       .then(()=>pushMsg('b'+b.id,'system',0,'בעל הרכב אישר את ההזמנה '+b.num+'. עכשיו השוכר צריך לשלוח בצ׳אט צילום מסך של העברת הכסף לבעל הרכב.',[b.renterId,b.ownerId]))
       .catch(cloudErr);return;
   }
-  b.status='approved';b.approvedAt=Date.now();
-  if(c){c.status='rented';c.ret='זמין שוב: '+fmt(b.to)+' בשעה '+b.tmTo;}
+  b.status='approved';b.approvedAt=Date.now();b.updatedAt=Date.now();
+  if(c){c.status='rented';c.ret='זמין שוב: '+fmt(b.to)+' בשעה '+b.tmTo;c.updatedAt=Date.now();}
   pushMsg('b'+b.id,'system',0,'בעל הרכב אישר את ההזמנה '+b.num+'. עכשיו השוכר צריך לשלוח בצ׳אט צילום מסך של העברת הכסף לבעל הרכב.');
+  persistState(); // FIX
   render();renderOwnerBookings();showToast('ההזמנה אושרה');
 }
 function rejectBooking(bid){
@@ -4663,8 +4804,9 @@ function rejectBooking(bid){
       .then(()=>pushMsg('b'+b.id,'system',0,'בעל הרכב דחה את בקשת ההזמנה '+b.num+'. אפשר להתכתב בצ׳אט או לבחור רכב אחר.',[b.renterId,b.ownerId]))
       .catch(cloudErr);return;
   }
-  b.status='rejected';b.rejectedAt=Date.now();
+  b.status='rejected';b.rejectedAt=Date.now();b.updatedAt=Date.now();
   pushMsg('b'+b.id,'system',0,'בעל הרכב דחה את בקשת ההזמנה '+b.num+'. אפשר להתכתב בצ׳אט או לבחור רכב אחר.');
+  persistState(); // FIX
   render();renderOwnerBookings();showToast('הבקשה נדחתה');
 }
 
@@ -4924,9 +5066,11 @@ function participantsOf(tid){
   return state.session?[state.session.id]:[];
 }
 function pushMsg(tid,role,uid,text,parts,extra){
-  const m={tid,role,uid,text,ts:Date.now(),participants:parts||participantsOf(tid),...(extra||{})};
+  // FIX: כל הודעה מקבלת id — בלעדיו המיזוג עם Firebase מחק את כל הצ׳אטים.
+  const m={id:newId('m'),tid,role,uid,text,ts:Date.now(),updatedAt:Date.now(),participants:parts||participantsOf(tid),...(extra||{})};
   if(CLOUD){db.collection('messages').add(m).then(()=>{ if(tid.startsWith('b')){const b=state.bookings.find(x=>'b'+x.id===tid); if(b)bumpCarActivity(b.carId);} }).catch(cloudErr);}
   state.msgs.push(m);
+  persistState(); // FIX: הודעות נשמרות ומסתנכרנות מיד
   if(activeTid===tid && $('chat-panel').classList.contains('open')){
     state.reads[meKey()+'-'+tid]=Date.now();
     renderMsgs();
@@ -4997,9 +5141,9 @@ function setRating(bid,n){
   n=Math.round(Math.min(5,Math.max(1,+n||0)));
   if(!n)return;
   const ex=myRating(bid,role);
-  const doc={bookingId:bid,raterRole:role,stars:n,ownerId:b.ownerId,renterId:b.renterId,raterName:(me()&&me().name)||'',text:(ex&&ex.text)||'',ts:Date.now()};
+  const doc={id:bid+'_'+role,bookingId:bid,raterRole:role,stars:n,ownerId:b.ownerId,renterId:b.renterId,raterName:(me()&&me().name)||'',text:(ex&&ex.text)||'',ts:Date.now(),updatedAt:Date.now()};
   if(CLOUD){db.collection('ratings').doc(bid+'_'+role).set(doc).catch(cloudErr);}
-  else{if(ex)ex.stars=n;else state.ratings.push(doc);}
+  else{if(ex){ex.stars=n;ex.updatedAt=Date.now();}else state.ratings.push(doc); persistState();} // FIX
   showToast('הדירוג נשמר: '+n+' כוכבים');
   render();
   if(role==='renter'&&$('ov-renter').classList.contains('open'))openRenterArea();
@@ -5019,7 +5163,8 @@ function setReview(bid){
     db.collection('ratings').doc(bid+'_'+role).update({text,raterName:(me()&&me().name)||''})
       .then(()=>showToast('הביקורת פורסמה — תודה!')).catch(cloudErr);
   } else {
-    ex.text=text;ex.raterName=(me()&&me().name)||'';
+    ex.text=text;ex.raterName=(me()&&me().name)||'';ex.updatedAt=Date.now();
+    persistState(); // FIX
     showToast('הביקורת פורסמה — תודה!');
     render();
     if($('ov-renter').classList.contains('open'))openRenterArea();
@@ -5140,7 +5285,13 @@ if(CLOUD){
   startGlobalFeeds();
   fauth.onAuthStateChanged(user=>{
     if(user){buildCloudSession(user);}
-    else{state.session=null;stopUserFeeds();stopAdminFeeds();renderNav();updateBadge();}
+    else{
+      // Firebase may emit null briefly during refresh/private browsing before persistence is restored.
+      // Never erase a valid locally restored session here; explicit logout already clears it safely.
+      setTimeout(()=>{
+        if(!fauth.currentUser && !state.session){ renderNav(); renderMyAreaFab(); updateBadge(); }
+      },1200);
+    }
   });
 } else {
   console.warn('CrownDrive: CLOUD auth is off. Firebase realtime can still run through firebase-config.js.');
@@ -5693,6 +5844,8 @@ setInterval(()=>{
       extra={lic:(typeof rlicData!=='undefined'?rlicData:null),licFront:(typeof rlicData!=='undefined'?rlicData:null),licBack:(typeof rlicBackData!=='undefined'?rlicBackData:null),licenseState:licState};
     }
     if(bad)return;
+    // FIX: אי אפשר להירשם עם מייל המנהל.
+    if(em===normalizeEmail(ADMIN_EMAIL)){ markSafe('sf-mail',true); writeSignupError('sf-mail','לא ניתן להירשם עם המייל הזה'); safeToast&&safeToast('לא ניתן להירשם עם המייל הזה'); return; }
 
     setSignupBusy(true);
     try{
@@ -5713,7 +5866,8 @@ setInterval(()=>{
         u.id=uid; u.name=name; u.phone=phoneRaw.trim(); u.email=em; u.pass=ps; u.updatedAt=Date.now();
         Object.assign(u,extra);
       }
-      state.users[uid]={...(state.users[uid]||{}),...u,role,email:em,blocked:false,updatedAt:Date.now()};
+      // FIX: הרשמה מחדש לא משחררת חסימה של מנהל.
+      state.users[uid]={...(state.users[uid]||{}),...u,role,email:em,blocked:!!(state.users[uid]&&state.users[uid].blocked),updatedAt:Date.now()};
       state.session={role,id:uid,...u};
       rememberLogin && rememberLogin(role,em,ps);
       rememberAuthIdentity && rememberAuthIdentity(uid,em);
@@ -5740,14 +5894,16 @@ setInterval(()=>{
     const ps=(document.getElementById('l-pass')||{}).value || '';
     if(!validEmail(em)){markSafe('lf-mail',true);safeToast&&safeToast('נא להזין מייל תקין');return;}
     if(!ps || ps.length<6){markSafe('lf-pass',true);safeToast&&safeToast('נא להזין סיסמה של לפחות 6 תווים');return;}
+    // FIX: החזרת נעילת ניסיונות הכניסה שנעלמה בגרסה קודמת.
+    if(isLoginLocked(em)){ safeToast&&safeToast('יותר מדי ניסיונות כניסה. נסה שוב בעוד '+loginLockSeconds(em)+' שניות.'); return; }
     setLoginBusy && setLoginBusy(true);
     try{
-      if((role==='owner'||role==='admin'||adminSecretMode) && em===normalizeEmail(ADMIN_EMAIL) && ps===ADMIN_PASS){
-        let uid='admin';
-        if(REALTIME){
-          const res=await createOrLoginFirebase(em,ps);
-          if(res&&res.user&&res.user.uid)uid=res.user.uid;
-        }
+      if(em===normalizeEmail(ADMIN_EMAIL)){
+        // FIX: מייל המנהל תמיד עובר אימות מנהל (בלי יצירת חשבון אוטומטית ובלי סיסמה בקוד).
+        const adm=await adminFirebaseLogin(em,ps);
+        if(!adm.ok){ noteLoginFail(em); markSafe('lf-pass',true); safeToast&&safeToast('פרטי מנהל שגויים'); return; }
+        let uid=adm.uid||'admin';
+        clearLoginFail(em);
         rememberLogin('admin',em,ps); rememberAuthIdentity(uid,em);
         state.session={role:'admin',id:uid,name:'מנהל האתר',email:em};
         state.users[uid]={...(state.users[uid]||{}),name:'מנהל האתר',role:'admin',email:em,updatedAt:Date.now()};
@@ -5756,6 +5912,11 @@ setInterval(()=>{
       if(role!=='owner' && role!=='renter'){safeToast&&safeToast('בחר קודם אם אתה שוכר או בעל רכב'); backToRoles&&backToRoles();return;}
       const pool=role==='owner'?state.owners:state.renters;
       let u=pool.find(x=>normalizeEmail(x.email)===em);
+      // FIX: כשאין Firebase — חייבים לאמת סיסמה מול הרשומה המקומית (קודם אפשר היה להיכנס לכל חשבון).
+      if(!REALTIME && u){
+        if(!u.pass){ markSafe('lf-pass',true); safeToast&&safeToast('אימות החשבון דורש חיבור אינטרנט — נסה שוב עוד רגע'); return; }
+        if(u.pass!==ps){ noteLoginFail(em); markSafe('lf-pass',true); safeToast&&safeToast('הסיסמה לא תואמת למייל הזה'); return; }
+      }
       let fb=null, created=false;
       if(REALTIME){
         const res=await createOrLoginFirebase(em,ps);
@@ -5772,10 +5933,12 @@ setInterval(()=>{
       }
       state.users[uid]={...(state.users[uid]||{}),...u,role,email:em,updatedAt:Date.now()};
       state.session={role,id:uid,...u};
+      clearLoginFail(em);
       rememberLogin(role,em,ps); rememberAuthIdentity(uid,em); persistSessionCookie&&persistSessionCookie();
       afterLoginUI(); pushRealtimeNow&&pushRealtimeNow();
     }catch(e){
       console.error('login failed',e);
+      noteLoginFail(em);
       const code=(e&&e.code)||'';
       if(code==='auth/email-exists-wrong-password'||code==='auth/wrong-password'||code==='auth/wrong-password-friendly'||code==='auth/email-already-in-use') markSafe('lf-pass',true);
       else markSafe('lf-mail',true);
@@ -5806,64 +5969,14 @@ setInterval(()=>{
   }
 })();
 
-/* ===== URGENT AUTH/ADMIN HOTFIX: stable refresh, clickable login, admin signup alerts ===== */
-(function(){
-  window.CROWNDRIVE_HOTFIX_AUTH_REFRESH_ALERTS='v1';
-  // Keep Chrome from running stale cached app code. Stability beats installable PWA for the live rental app.
-  try{
-    if('serviceWorker' in navigator){
-      navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister().catch(()=>{}))).catch(()=>{});
-    }
-    if(window.caches){ caches.keys().then(keys=>keys.forEach(k=>caches.delete(k))).catch(()=>{}); }
-  }catch(e){}
-
-  function unlockAuthButtons(){
-    document.querySelectorAll('button,[onclick],.nav-guest-login,.nav-area-bubble').forEach(el=>{
-      try{ el.disabled=false; el.style.pointerEvents='auto'; el.style.touchAction='manipulation'; }catch(e){}
-    });
-  }
-  document.addEventListener('DOMContentLoaded',unlockAuthButtons);
-  window.addEventListener('pageshow',()=>{ unlockAuthButtons(); reviveSessionBeforeFirstRender&&reviveSessionBeforeFirstRender(); try{renderNav();renderMyAreaFab();}catch(e){} });
-  setTimeout(unlockAuthButtons,350);
-  setTimeout(unlockAuthButtons,1200);
-
-  // Delegated backup handler: even if inline onclick is blocked by a stale browser state, login/personal buttons still work.
-  document.addEventListener('click',function(e){
-    const btn=e.target && e.target.closest && e.target.closest('.nav-guest-login,.nav-area-bubble,[data-open-auth],[data-open-myarea]');
-    if(!btn) return;
-    try{
-      if(btn.classList.contains('nav-guest-login') || btn.hasAttribute('data-open-auth')){ e.preventDefault(); e.stopPropagation(); openAuth(); }
-      if(btn.classList.contains('nav-area-bubble') || btn.hasAttribute('data-open-myarea')){ e.preventDefault(); e.stopPropagation(); openMyArea(); }
-    }catch(err){ console.error('backup nav click failed',err); }
-  },true);
-
-  // Make the guest login button explicit for delegated handler too.
-  const oldRenderNav=window.renderNav;
-  window.renderNav=function(){
-    const r=oldRenderNav.apply(this,arguments);
-    try{
-      const b=document.querySelector('.nav-guest-login'); if(b){b.setAttribute('data-open-auth','1'); b.disabled=false;}
-      const a=document.querySelector('.nav-area-bubble'); if(a){a.setAttribute('data-open-myarea','1'); a.disabled=false;}
-    }catch(e){}
-    return r;
-  };
-
-  // When Firebase restores the user after refresh, rebuild the local session and nav instead of appearing logged out.
-  setTimeout(()=>{
-    try{
-      reviveSessionBeforeFirstRender&&reviveSessionBeforeFirstRender();
-      if(RT_AUTH && RT_AUTH.currentUser) restoreSessionFromFirebaseUser(RT_AUTH.currentUser, (savedLogin()||{}).role || (state.session&&state.session.role));
-      renderNav(); renderMyAreaFab(); updateBadge(); unlockAuthButtons();
-    }catch(e){console.warn('post-refresh auth repair failed',e)}
-  },900);
-})();
+/* (הוסר: עותק כפול של ה-hotfix — הוא רץ כבר בתוך הסקריפט הראשי) */
 
 </script>
 
 <script id="mobile-admin-control-upgrade-js">
 (function(){
   'use strict';
-  window.CROWNDRIVE_MOBILE_ADMIN_UPGRADE='v1-mobile-admin-control';
+  window.CROWNDRIVE_MOBILE_ADMIN_UPGRADE='v2-mobile-admin-persistent-save';
   function now(){return Date.now()}
   function userList(){
     const m=new Map();
@@ -5891,7 +6004,7 @@ setInterval(()=>{
     if(u.role==='admin'){safeToast('לא ניתן לחסום מנהל');return;}
     const blocked=!isUserBlocked(id);
     syncUserRecord(id,{blocked,status:blocked?'blocked':'active',blockedAt:blocked?now():null});
-    persistState(); renderAdminDashboard(); safeToast(blocked?'המשתמש נחסם':'החסימה הוסרה');
+    persistState(); renderAdminDashboard(); flushAdminChanges().then(ok=>safeToast(ok?(blocked?'המשתמש נחסם ונשמר':'החסימה הוסרה ונשמרה'):'השינוי נשמר במכשיר אך Firebase לא אישר שמירה'));
   };
   window.adminEditUser=function(id){
     const u=userList().find(x=>x.id===id); if(!u)return;
@@ -5902,7 +6015,7 @@ setInterval(()=>{
     syncUserRecord(id,{name:name.trim(),phone:phone.trim(),role:cleanRole});
     if(cleanRole==='owner' && !state.owners.some(x=>x.id===id)) state.owners.push({id,name:name.trim(),phone:phone.trim(),email:u.email||'',createdAt:u.createdAt||now()});
     if(cleanRole==='renter' && !state.renters.some(x=>x.id===id)) state.renters.push({id,name:name.trim(),phone:phone.trim(),email:u.email||'',createdAt:u.createdAt||now()});
-    persistState(); renderAdminDashboard(); safeToast('פרטי המשתמש עודכנו');
+    persistState(); renderAdminDashboard(); flushAdminChanges().then(ok=>safeToast(ok?'פרטי המשתמש עודכנו ונשמרו':'הפרטים נשמרו במכשיר אך Firebase לא אישר שמירה'));
   };
   window.adminDeleteUser=function(id){
     const u=userList().find(x=>x.id===id); if(!u)return;
@@ -5913,7 +6026,8 @@ setInterval(()=>{
     delete state.users[id];
     state.owners=state.owners.filter(x=>x.id!==id); state.renters=state.renters.filter(x=>x.id!==id);
     if(state.session&&state.session.id===id) state.session=null;
-    persistState(); renderAdminDashboard(); renderNav(); renderMyAreaFab(); safeToast('המשתמש נמחק מהרשימות המקומיות');
+    markDeleted(id); // FIX: שהמשתמש לא יחזור ממיזוג הענן
+    persistState(); renderAdminDashboard(); renderNav(); renderMyAreaFab(); flushAdminChanges().then(ok=>safeToast(ok?'המשתמש נמחק ונשמר':'המחיקה נשמרה במכשיר אך Firebase לא אישר שמירה'));
   };
   window.adminViewUser=function(id){
     const u=userList().find(x=>x.id===id); if(!u)return;
@@ -5926,7 +6040,7 @@ setInterval(()=>{
     const status=prompt('סטטוס: available / rented / soon',c.status||'available'); if(status===null)return;
     const ret=prompt('טקסט זמינות / חזרה',c.ret||''); if(ret===null)return;
     c.priceDaily=price; c.price=price; c.status=['available','rented','soon'].includes(status)?status:c.status; c.ret=ret; c.updatedAt=now();
-    persistState(); render(); renderAdminDashboard(); safeToast('הרכב עודכן');
+    persistState(); render(); renderAdminDashboard(); flushAdminChanges().then(ok=>safeToast(ok?'הרכב עודכן ונשמר':'הרכב עודכן במכשיר אך Firebase לא אישר שמירה'));
   };
   window.adminChangeCarOwner=function(id){
     const c=state.cars.find(x=>x.id===id); if(!c)return;
@@ -5935,7 +6049,7 @@ setInterval(()=>{
     if(!email)return;
     const o=owners.find(x=>normalizeEmail(x.email)===normalizeEmail(email) || x.id===email.trim());
     if(!o){safeToast('לא נמצא בעל רכב כזה');return;}
-    c.ownerId=o.id; c.updatedAt=now(); persistState(); render(); renderAdminDashboard(); safeToast('הרכב הועבר לבעל רכב אחר');
+    c.ownerId=o.id; c.updatedAt=now(); persistState(); render(); renderAdminDashboard(); flushAdminChanges().then(ok=>safeToast(ok?'הרכב הועבר ונשמר':'ההעברה נשמרה במכשיר אך Firebase לא אישר שמירה'));
   };
   window.adminSetBookingStatusPrompt=function(id){
     const b=state.bookings.find(x=>x.id===id); if(!b)return;
@@ -5947,7 +6061,7 @@ setInterval(()=>{
     const b=state.bookings.find(x=>x.id===id); if(!b)return;
     const total=prompt('סכום ההזמנה',b.total||''); if(total===null)return;
     const note=prompt('הערת מנהל להזמנה',b.adminNote||''); if(note===null)return;
-    b.total=+total||b.total; b.adminNote=note; b.updatedAt=now(); persistState(); renderAdminDashboard(); safeToast('ההזמנה עודכנה');
+    b.total=+total||b.total; b.adminNote=note; b.updatedAt=now(); persistState(); renderAdminDashboard(); flushAdminChanges().then(ok=>safeToast(ok?'ההזמנה עודכנה ונשמרה':'ההזמנה עודכנה במכשיר אך Firebase לא אישר שמירה'));
   };
   window.adminUsersHTML=function(){
     const list=userList();
@@ -6003,57 +6117,7 @@ setInterval(()=>{
   try{renderNav(); renderMyAreaFab(); if(document.getElementById('ov-admin')&&document.getElementById('ov-admin').classList.contains('open')) renderAdminDashboard();}catch(e){console.warn('mobile admin upgrade post-render failed',e)}
 })();
 
-/* ===== URGENT AUTH/ADMIN HOTFIX: stable refresh, clickable login, admin signup alerts ===== */
-(function(){
-  window.CROWNDRIVE_HOTFIX_AUTH_REFRESH_ALERTS='v1';
-  // Keep Chrome from running stale cached app code. Stability beats installable PWA for the live rental app.
-  try{
-    if('serviceWorker' in navigator){
-      navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister().catch(()=>{}))).catch(()=>{});
-    }
-    if(window.caches){ caches.keys().then(keys=>keys.forEach(k=>caches.delete(k))).catch(()=>{}); }
-  }catch(e){}
-
-  function unlockAuthButtons(){
-    document.querySelectorAll('button,[onclick],.nav-guest-login,.nav-area-bubble').forEach(el=>{
-      try{ el.disabled=false; el.style.pointerEvents='auto'; el.style.touchAction='manipulation'; }catch(e){}
-    });
-  }
-  document.addEventListener('DOMContentLoaded',unlockAuthButtons);
-  window.addEventListener('pageshow',()=>{ unlockAuthButtons(); reviveSessionBeforeFirstRender&&reviveSessionBeforeFirstRender(); try{renderNav();renderMyAreaFab();}catch(e){} });
-  setTimeout(unlockAuthButtons,350);
-  setTimeout(unlockAuthButtons,1200);
-
-  // Delegated backup handler: even if inline onclick is blocked by a stale browser state, login/personal buttons still work.
-  document.addEventListener('click',function(e){
-    const btn=e.target && e.target.closest && e.target.closest('.nav-guest-login,.nav-area-bubble,[data-open-auth],[data-open-myarea]');
-    if(!btn) return;
-    try{
-      if(btn.classList.contains('nav-guest-login') || btn.hasAttribute('data-open-auth')){ e.preventDefault(); e.stopPropagation(); openAuth(); }
-      if(btn.classList.contains('nav-area-bubble') || btn.hasAttribute('data-open-myarea')){ e.preventDefault(); e.stopPropagation(); openMyArea(); }
-    }catch(err){ console.error('backup nav click failed',err); }
-  },true);
-
-  // Make the guest login button explicit for delegated handler too.
-  const oldRenderNav=window.renderNav;
-  window.renderNav=function(){
-    const r=oldRenderNav.apply(this,arguments);
-    try{
-      const b=document.querySelector('.nav-guest-login'); if(b){b.setAttribute('data-open-auth','1'); b.disabled=false;}
-      const a=document.querySelector('.nav-area-bubble'); if(a){a.setAttribute('data-open-myarea','1'); a.disabled=false;}
-    }catch(e){}
-    return r;
-  };
-
-  // When Firebase restores the user after refresh, rebuild the local session and nav instead of appearing logged out.
-  setTimeout(()=>{
-    try{
-      reviveSessionBeforeFirstRender&&reviveSessionBeforeFirstRender();
-      if(RT_AUTH && RT_AUTH.currentUser) restoreSessionFromFirebaseUser(RT_AUTH.currentUser, (savedLogin()||{}).role || (state.session&&state.session.role));
-      renderNav(); renderMyAreaFab(); updateBadge(); unlockAuthButtons();
-    }catch(e){console.warn('post-refresh auth repair failed',e)}
-  },900);
-})();
+/* (הוסר: עותק כפול נוסף של ה-hotfix) */
 
 </script>
 
@@ -6255,6 +6319,167 @@ setInterval(()=>{
   window.addEventListener('pageshow',markDrawerState);
 })();
 </script>
+\n<script id="crowndrive-final-functional-fixes-v3">
+(function(){
+  window.CROWNDRIVE_FUNCTIONAL_FIXES='2026-07-10-v3';
+  const completedBooking=b=>!!b&&(b.done===true||b.status==='done');
+  const bookingCar=b=>state.cars.find(c=>c.id===b.carId)||null;
 
+  window.carStats=function(carId){
+    const rs=(state.ratings||[]).filter(r=>r.raterRole==='renter'&&r.carId===carId);
+    const count=rs.length;
+    return {avg:count?rs.reduce((sum,r)=>sum+(+r.stars||0),0)/count:0,count};
+  };
+  window.carReviewsOf=function(carId){
+    return (state.ratings||[]).filter(r=>r.raterRole==='renter'&&r.carId===carId&&r.text).sort((a,b)=>(b.ts||0)-(a.ts||0));
+  };
+  window.eligibleCarBooking=function(carId){
+    if(!state.session||state.session.role!=='renter')return null;
+    return (state.bookings||[]).find(b=>b.carId===carId&&b.renterId===state.session.id&&completedBooking(b)&&b.ownerId!==b.renterId)||null;
+  };
+  window.carRatingHTML=function(carId){
+    const st=carStats(carId);
+    const b=eligibleCarBooking(carId);
+    const mine=b?myRating(b.id,'renter'):null;
+    if(mine) return `<div class="car-rating-row"><span class="label">דירוג הרכב</span>${starsHTML(st.avg,st.count)}</div>`;
+    if(b) return `<div class="car-rating-row"><span class="label">דרג את הרכב</span>${ratePicker(b.id)}</div>`;
+    return `<button class="car-rating-row" style="width:100%;cursor:pointer" onclick="carRatingUnavailable('${carId}')"><span class="label">דירוג הרכב</span>${starsHTML(st.avg,st.count)}</button>`;
+  };
+  window.carRatingUnavailable=function(carId){
+    if(!state.session){showToast('כדי לדרג יש להתחבר כשוכר');openAuth('renter');return;}
+    showToast('רק משתמש ששכר את הרכב בפועל יכול לדרג אותו');
+  };
+
+  const originalCarCardHTML=window.carCardHTML;
+  if(typeof originalCarCardHTML==='function'){
+    window.carCardHTML=function(c,idx){
+      let html=originalCarCardHTML(c,idx);
+      const marker='<div class="specs">';
+      html=html.replace(marker,carRatingHTML(c.id)+marker);
+      return html;
+    };
+  }
+
+  window.setRating=function(bid,n){
+    if(!state.session){showToast('כדי לדרג יש להתחבר');openAuth();return;}
+    const b=(state.bookings||[]).find(x=>x.id===bid);
+    if(!b){showToast('ההזמנה לא נמצאה');return;}
+    const role=state.session.role;
+    if(!completedBooking(b)){showToast('אפשר לדרג רק אחרי שההשכרה הסתיימה בפועל');return;}
+    if(b.ownerId===b.renterId||state.session.id===undefined){showToast('אי אפשר לדרג את עצמך');return;}
+    if(role==='renter'&&b.renterId!==state.session.id){showToast('רק משתמש ששכר את הרכב בפועל יכול לדרג אותו');return;}
+    if(role==='owner'&&b.ownerId!==state.session.id){showToast('רק בעל הרכב של ההזמנה יכול לדרג את השוכר');return;}
+    if(role!=='renter'&&role!=='owner')return;
+    n=Math.round(Math.min(5,Math.max(1,+n||0)));
+    if(!n)return;
+    const ex=myRating(bid,role);
+    const car=bookingCar(b);
+    const doc={
+      id:bid+'_'+role,bookingId:bid,raterRole:role,stars:n,ownerId:b.ownerId,renterId:b.renterId,
+      carId:b.carId||'',carName:car?((car.make||'')+' '+(car.model||'')).trim():'',
+      target:role==='renter'?'car_and_owner':'renter',raterName:(me()&&me().name)||'',
+      text:(ex&&ex.text)||'',ts:(ex&&ex.ts)||Date.now(),updatedAt:Date.now()
+    };
+    if(CLOUD){
+      db.collection('ratings').doc(doc.id).set(doc).then(()=>{
+        showToast('הדירוג נשמר: '+n+' כוכבים');
+      }).catch(cloudErr);
+    }else{
+      if(ex)Object.assign(ex,doc);else state.ratings.push(doc);
+      persistState();
+      showToast('הדירוג נשמר: '+n+' כוכבים');
+    }
+    window._renderHash='';
+    try{_renderHash='';}catch(e){}
+    render();
+    if(role==='renter'&&$('ov-renter').classList.contains('open'))openRenterArea();
+    if(role==='owner'&&$('ov-owner').classList.contains('open'))renderOwnerBookings();
+  };
+
+  const originalSetReview=window.setReview;
+  window.setReview=function(bid){
+    const b=(state.bookings||[]).find(x=>x.id===bid);
+    if(!completedBooking(b)){showToast('אפשר לפרסם ביקורת רק אחרי שההשכרה הסתיימה בפועל');return;}
+    return originalSetReview.apply(this,arguments);
+  };
+
+  window.openRenterProfile=function(renterId){
+    const r=userOf(renterId)||(state.renters||[]).find(x=>x.id===renterId);
+    if(!r){showToast('פרופיל השוכר עדיין לא נטען');return;}
+    const st=renterStats(renterId);
+    const reviews=(state.ratings||[]).filter(x=>x.raterRole==='owner'&&x.renterId===renterId&&x.text).sort((a,b)=>(b.ts||0)-(a.ts||0));
+    const completed=(state.bookings||[]).filter(b=>b.renterId===renterId&&completedBooking(b)).length;
+    const since=new Date(r.createdAt||Date.now()).toLocaleDateString('he-IL',{month:'long',year:'numeric'});
+    const title=document.querySelector('#ov-profile .m-head h3');if(title)title.textContent='פרופיל שוכר';
+    $('prof-body').innerHTML=`
+      <div class="prof-head"><div class="prof-ava">${esc((r.name||'ש')[0])}</div><div><b>${esc(r.name||'שוכר')}</b><span class="sm">שוכר · חבר מאז ${since}</span><div class="prof-stars renter-profile-rating">${starsHTML(st.avg,st.count)}</div></div></div>
+      <div class="kpis"><div class="kpi"><b>${completed}</b><span>השכרות שהושלמו</span></div><div class="kpi"><b>${st.count}</b><span>דירוגים מבעלי רכבים</span></div></div>
+      <div class="divider">ביקורות על השוכר (${reviews.length})</div>
+      ${reviews.length?'<div class="rv-list">'+reviews.map(x=>`<div class="rv-item"><div class="rv-top">${starsHTML(x.stars,null)}<b>${esc((x.raterName||'בעל רכב').split(' ')[0])}</b></div><div class="rv-txt">&quot;${esc(x.text)}&quot;</div></div>`).join('')+'</div>':'<div class="adm-empty">עדיין אין ביקורות כתובות על השוכר.</div>'}`;
+    openOv('ov-profile');
+  };
+
+  const originalOpenOwnerProfile=window.openOwnerProfile;
+  window.openOwnerProfile=function(){
+    const title=document.querySelector('#ov-profile .m-head h3');if(title)title.textContent='פרופיל משכיר';
+    return originalOpenOwnerProfile.apply(this,arguments);
+  };
+
+  const originalRenderOwnerBookings=window.renderOwnerBookings;
+  window.renderOwnerBookings=function(){
+    const result=originalRenderOwnerBookings.apply(this,arguments);
+    const box=$('dash-book');if(!box)return result;
+    box.querySelectorAll('.adm-item').forEach((item,index)=>{
+      const all=(state.bookings||[]).filter(b=>b.ownerId===state.session.id).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+      const visible=[...all.filter(b=>(b.status||'approved')==='pending'),...all.filter(b=>(b.status||'approved')==='approved'&&!b.done)];
+      const b=visible[index];
+      if(!b||item.querySelector('.renter-profile-btn'))return;
+      const acts=item.querySelector('.acts');
+      if(acts)acts.insertAdjacentHTML('afterbegin',`<button class="mini renter-profile-btn" onclick="openRenterProfile('${b.renterId}')">פרופיל שוכר</button>`);
+    });
+    box.querySelectorAll('tbody tr').forEach(tr=>{
+      const num=(tr.querySelector('td')?.textContent||'').trim().split(/\\s/)[0];
+      const b=(state.bookings||[]).find(x=>String(x.num)===num&&x.ownerId===state.session.id);
+      if(!b)return;
+      const renterCell=tr.children[3];
+      if(renterCell&&!renterCell.querySelector('button'))renterCell.insertAdjacentHTML('beforeend',`<div><button class="mini renter-profile-btn" onclick="openRenterProfile('${b.renterId}')">פרופיל שוכר</button></div>`);
+      const ratingCell=tr.lastElementChild;
+      if(ratingCell&&!completedBooking(b))ratingCell.innerHTML='<span class="sm">דירוג זמין רק אחרי סיום השכרה</span>';
+    });
+    return result;
+  };
+
+  // Refresh/private-mode recovery: wait for Firebase persistence and never let a transient null log the UI out.
+  let authReady=false;
+  function recoverSession(){
+    try{
+      if(state.session&&state.session.id){renderNav();renderMyAreaFab();return true;}
+      const saved=typeof savedLogin==='function'?savedLogin():null;
+      const user=(window.RT_AUTH&&RT_AUTH.currentUser)||(window.fauth&&fauth.currentUser);
+      if(user&&typeof restoreSessionFromFirebaseUser==='function'){
+        restoreSessionFromFirebaseUser(user,(saved&&saved.role)||'');renderNav();renderMyAreaFab();return true;
+      }
+      if(typeof buildSessionFromStorage==='function'&&buildSessionFromStorage('functional-v3')){renderNav();renderMyAreaFab();return true;}
+    }catch(e){console.warn('session recovery v3',e);}
+    return false;
+  }
+  function attachStableAuth(auth){
+    if(!auth||!auth.onAuthStateChanged||auth.__cdStableWatcher)return;
+    auth.__cdStableWatcher=true;
+    auth.onAuthStateChanged(user=>{
+      authReady=true;
+      if(user)recoverSession();
+      else if(state.session){renderNav();renderMyAreaFab();}
+      else setTimeout(recoverSession,500);
+    });
+  }
+  document.addEventListener('DOMContentLoaded',()=>{attachStableAuth(window.RT_AUTH);attachStableAuth(window.fauth);recoverSession();});
+  window.addEventListener('pageshow',()=>{attachStableAuth(window.RT_AUTH);attachStableAuth(window.fauth);recoverSession();});
+  [100,400,1000,2200,4500].forEach(ms=>setTimeout(()=>{attachStableAuth(window.RT_AUTH);attachStableAuth(window.fauth);recoverSession();},ms));
+
+  // Re-render cards after all overrides are installed.
+  try{_renderHash='';render();}catch(e){}
+})();
+</script>\n
 </body>
 </html>
