@@ -1794,33 +1794,21 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;ba
 const CLOUD = true;
 const API_URL = '/.netlify/functions/db';
 let db=null, fauth=null;
-const CLOUD_POLL_MS = 10000; // מצב חירום יציב: סנכרון ענן כל 10 שניות כדי לא להציף את Netlify
+const CLOUD_POLL_MS = 10000; // גרסה יציבה: סנכרון ענן כל 10 שניות כדי לא להציף את Netlify
 
 async function api(action, payload={}){
   const token = localStorage.getItem('cd_token') || '';
-  const ctrl = new AbortController();
-  const t = setTimeout(()=>ctrl.abort(), 12000);
-  let res, txt='', data={};
-  try{
-    res = await fetch(API_URL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json','Cache-Control':'no-store'},
-      cache:'no-store',
-      signal: ctrl.signal,
-      body:JSON.stringify({action,token,...payload})
-    });
-    txt = await res.text();
-    try{ data = txt ? JSON.parse(txt) : {}; }catch(e){ data={error:txt||'Invalid JSON'}; }
-    if(!res.ok) throw new Error(data.error || ('שגיאת סנכרון '+res.status));
-    window.__cdCloudFailCount = 0;
-    window.__cdCloudOkAt = Date.now();
-    return data;
-  }catch(e){
-    if(e && e.name === 'AbortError') throw new Error('החיבור לענן איטי מדי');
-    throw e;
-  }finally{
-    clearTimeout(t);
-  }
+  const res = await fetch(API_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action,token,...payload})
+  });
+  const txt = await res.text();
+  let data={};
+  try{ data = txt ? JSON.parse(txt) : {}; }catch(e){ data={error:txt||'Invalid JSON'}; }
+  if(!res.ok) throw new Error(data.error || ('שגיאת סנכרון '+res.status));
+  window.__cdCloudFailCount = 0;
+  return data;
 }
 
 function plainDateTime(d,t){return `${fmt(d)} בשעה ${t||''}`.trim();}
@@ -1955,13 +1943,11 @@ function loadState(){ /* נטען אוטומטית דרך onSnapshot */ }
 function cloudErr(e){
   console.warn('Cloud sync issue',e);
   window.__cdCloudFailCount=(window.__cdCloudFailCount||0)+1;
-  // מצב חירום: לא תוקעים את האתר ולא מציגים הודעת “מתאושש” על כל נפילה קטנה.
-  // האתר ממשיך לעבוד ומנסה שוב אוטומטית בסנכרון הבא.
-  if(window.__cdCloudFailCount<10) return;
+  if(window.__cdCloudFailCount<3) return; // לא מקפיצים הודעה על תקלה רגעית
   if(!window.__cdCloudWarned){
     window.__cdCloudWarned=true;
-    showToast('החיבור לענן איטי — האתר ממשיך לנסות אוטומטית');
-    setTimeout(()=>{window.__cdCloudWarned=false},60000);
+    showToast('הענן מנסה להתחבר שוב — אם זה לא נעלם אחרי דקה, בדוק /.netlify/functions/db');
+    setTimeout(()=>{window.__cdCloudWarned=false},20000);
   }
 }
 

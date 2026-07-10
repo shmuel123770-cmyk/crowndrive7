@@ -1,28 +1,7 @@
-import { getConnectionString } from "@netlify/database";
-import pg from "pg";
+import { getStore } from "@netlify/blobs";
 import crypto from "crypto";
 
-const { Pool } = pg;
-let pool: any = null;
-function getPool() {
-  if (pool) return pool;
-  const connectionString =
-    process.env.NETLIFY_DB_URL ||
-    process.env.DATABASE_URL ||
-    process.env.NETLIFY_DATABASE_URL ||
-    getConnectionString();
-  if (!connectionString) {
-    throw new Error("DB_CONNECTION_STRING_MISSING: Add NETLIFY_DB_URL in Netlify Environment variables with the production database connection string.");
-  }
-  pool = new Pool({ connectionString });
-  return pool;
-}
-
-// חובה להגדיר ב-Netlify Environment variables:
-// ADMIN_EMAIL=...
-// ADMIN_PASS=...
-// פרטי מנהל ברירת מחדל — כדי שהכניסה למנהל תעבוד גם בלי Environment Variables.
-// עדיף עדיין להגדיר ADMIN_EMAIL ו-ADMIN_PASS ב-Netlify כדי שלא להשאיר סיסמה בקוד ציבורי.
+const STORE_NAME = "crowndrive-data";
 const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || "shmuel123770@icloud.com").toLowerCase().trim();
 const ADMIN_PASS = process.env.ADMIN_PASS || "amarZ770@";
 const SESSION_DAYS = Number(process.env.SESSION_DAYS || 30);
@@ -32,14 +11,22 @@ const headers = {
   "access-control-allow-origin": "*",
   "access-control-allow-headers": "Content-Type",
   "access-control-allow-methods": "GET, POST, OPTIONS",
+  "cache-control": "no-store",
 };
 
 function json(data: unknown, statusCode = 200) {
   return { statusCode, headers, body: JSON.stringify(data ?? {}) };
 }
-function bad(message: string, statusCode = 400) { return json({ error: message }, statusCode); }
+function bad(message: string, statusCode = 400, extra: any = {}) { return json({ ok: false, error: message, ...extra }, statusCode); }
+function sha(s: string) { return crypto.createHash("sha256").update(String(s)).digest("hex"); }
 function id(prefix = "id") { return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`; }
-function sha(s: string) { return crypto.createHash("sha256").update(s).digest("hex"); }
+function cleanCollection(s: string) { return String(s || "").replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 80); }
+function recKey(collection: string, rid: string) { return `records/${cleanCollection(collection)}/${encodeURIComponent(rid)}`; }
+function authEmailKey(email: string) { return `auth/email/${sha(String(email).toLowerCase().trim())}`; }
+function authUidKey(uid: string) { return `auth/uid/${encodeURIComponent(uid)}`; }
+function sessionKey(tokenHash: string) { return `sessions/${tokenHash}`; }
+function store() { return getStore({ name: STORE_NAME, consistency: "strong" }); }
+
 function hashPassword(pass: string, salt = crypto.randomBytes(16).toString("hex")) {
   const hash = crypto.scryptSync(pass, salt, 64).toString("hex");
   return `${salt}:${hash}`;
@@ -52,94 +39,85 @@ function verifyPassword(pass: string, stored?: string | null) {
   return real.length === test.length && crypto.timingSafeEqual(real, test);
 }
 
-async function ensureTables() {
-  await getPool().query(`
-    CREATE TABLE IF NOT EXISTS crown_records (
-      collection TEXT NOT NULL,
-      id TEXT NOT NULL,
-      data JSONB NOT NULL DEFAULT '{}'::jsonb,
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      PRIMARY KEY(collection, id)
-    );
-    CREATE TABLE IF NOT EXISTS crown_auth (
-      uid TEXT PRIMARY KEY,
-      email TEXT UNIQUE NOT NULL,
-      pass TEXT,
-      pass_hash TEXT,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    );
-    CREATE TABLE IF NOT EXISTS crown_sessions (
-      token_hash TEXT PRIMARY KEY,
-      uid TEXT NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      expires_at TIMESTAMPTZ NOT NULL
-    );
-  `);
-  await getPool().query(`ALTER TABLE crown_auth ADD COLUMN IF NOT EXISTS pass_hash TEXT;`);
-
-  if (ADMIN_EMAIL && ADMIN_PASS) {
-    await getPool().query(
-      `INSERT INTO crown_auth(uid,email,pass,pass_hash)
-       VALUES($1,$2,NULL,$3)
-       ON CONFLICT(email) DO UPDATE SET uid=EXCLUDED.uid, pass=NULL, pass_hash=EXCLUDED.pass_hash, updated_at=NOW()`,
-      ["admin", ADMIN_EMAIL, hashPassword(ADMIN_PASS)]
-    );
-    await getPool().query(
-      `INSERT INTO crown_records(collection,id,data)
-       VALUES('users','admin',$1::jsonb)
-       ON CONFLICT(collection,id) DO UPDATE SET data=crown_records.data || EXCLUDED.data, updated_at=NOW()`,
-      [JSON.stringify({ name: "מנהל האתר", role: "admin", email: ADMIN_EMAIL, createdAt: Date.now() })]
-    );
-
-  }
+async function getJSON<T=any>(key: string): Promise<T | null> {
+  return await store().get(key, { type: "json", consistency: "strong" }) as any;
 }
-
-async function forceAdminAccount() {
-  if (!ADMIN_EMAIL || !ADMIN_PASS) return;
-  const adminHash = hashPassword(ADMIN_PASS);
-  // אם המייל כבר נרשם כבעל רכב/שוכר, מוחקים את הרשומת התחברות הישנה כדי שלא תחסום את כניסת המנהל.
-  await getPool().query(`DELETE FROM crown_auth WHERE email=$1 AND uid <> 'admin'`, [ADMIN_EMAIL]);
-  await getPool().query(
-    `INSERT INTO crown_auth(uid,email,pass,pass_hash)
-     VALUES('admin',$1,NULL,$2)
-     ON CONFLICT(uid) DO UPDATE SET email=EXCLUDED.email, pass=NULL, pass_hash=EXCLUDED.pass_hash, updated_at=NOW()`,
-    [ADMIN_EMAIL, adminHash]
-  );
-  await getPool().query(
-    `INSERT INTO crown_records(collection,id,data)
-     VALUES('users','admin',$1::jsonb)
-     ON CONFLICT(collection,id) DO UPDATE SET data=crown_records.data || EXCLUDED.data, updated_at=NOW()`,
-    [JSON.stringify({ name: "מנהל האתר", role: "admin", email: ADMIN_EMAIL, createdAt: Date.now(), fixedAdminLogin: true })]
-  );
+async function setJSON(key: string, value: any) {
+  await store().setJSON(key, value, { metadata: { updatedAt: String(Date.now()) } });
 }
+async function deleteKey(key: string) { await store().delete(key); }
 
 async function getRecord(collection: string, rid: string) {
-  const { rows } = await getPool().query(`SELECT id, data FROM crown_records WHERE collection=$1 AND id=$2`, [collection, rid]);
-  return rows[0] || null;
+  const entry = await getJSON<any>(recKey(collection, rid));
+  if (!entry) return null;
+  return { id: rid, data: entry.data || {}, updated_at: entry.updated_at || 0 };
 }
+async function setRecord(collection: string, rid: string, data: any, merge = false) {
+  const existing = merge ? await getRecord(collection, rid) : null;
+  const next = merge ? { ...(existing?.data || {}), ...(data || {}) } : (data || {});
+  await setJSON(recKey(collection, rid), { id: rid, data: next, updated_at: Date.now() });
+  return next;
+}
+async function listRecords(collection: string) {
+  const prefix = `records/${cleanCollection(collection)}/`;
+  const { blobs } = await store().list({ prefix });
+  const rows: any[] = [];
+  for (const b of blobs || []) {
+    try {
+      const entry = await getJSON<any>(b.key);
+      if (!entry) continue;
+      const rid = decodeURIComponent(String(b.key).slice(prefix.length));
+      rows.push({ id: entry.id || rid, data: entry.data || {}, updated_at: entry.updated_at || 0 });
+    } catch {}
+  }
+  rows.sort((a,b)=>(b.updated_at||0)-(a.updated_at||0));
+  return rows;
+}
+
+async function setAuthUser(uid: string, email: string, passHash: string) {
+  const cleanEmail = String(email).toLowerCase().trim();
+  const user = { uid, email: cleanEmail, pass_hash: passHash, updated_at: Date.now() };
+  await setJSON(authEmailKey(cleanEmail), user);
+  await setJSON(authUidKey(uid), { uid, email: cleanEmail, updated_at: Date.now() });
+}
+async function getAuthByEmail(email: string) { return await getJSON<any>(authEmailKey(String(email).toLowerCase().trim())); }
+async function getAuthByUid(uid: string) {
+  const u = await getJSON<any>(authUidKey(uid));
+  if (!u?.email) return null;
+  return await getAuthByEmail(u.email);
+}
+async function updateAuth(uid: string, fields: any) {
+  const current = await getAuthByUid(uid);
+  if (!current) return false;
+  const nextEmail = fields.email ? String(fields.email).toLowerCase().trim() : current.email;
+  const nextHash = fields.pass ? hashPassword(String(fields.pass)) : current.pass_hash;
+  await setAuthUser(uid, nextEmail, nextHash);
+  if (nextEmail !== current.email) await deleteKey(authEmailKey(current.email)).catch(()=>null);
+  return true;
+}
+
 async function getUser(uid: string) {
   const r = await getRecord("users", uid);
   return r ? { id: uid, ...(r.data || {}) } : { id: uid, role: "renter" };
 }
+async function ensureAdmin() {
+  if (!ADMIN_EMAIL || !ADMIN_PASS) return;
+  await setAuthUser("admin", ADMIN_EMAIL, hashPassword(ADMIN_PASS));
+  await setRecord("users", "admin", { name: "מנהל האתר", role: "admin", email: ADMIN_EMAIL, createdAt: Date.now(), engine: "blobs-stable" }, true);
+}
 async function createSession(uid: string) {
   const token = crypto.randomBytes(32).toString("hex");
-  await getPool().query(
-    `INSERT INTO crown_sessions(token_hash,uid,expires_at)
-     VALUES($1,$2,NOW()+($3 || ' days')::interval)`,
-    [sha(token), uid, String(SESSION_DAYS)]
-  );
+  const tokenHash = sha(token);
+  const expiresAt = Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000;
+  await setJSON(sessionKey(tokenHash), { uid, createdAt: Date.now(), expiresAt });
   return token;
 }
 async function authFromToken(token?: string) {
   if (!token) return null;
-  const { rows } = await getPool().query(
-    `SELECT uid FROM crown_sessions WHERE token_hash=$1 AND expires_at>NOW() LIMIT 1`,
-    [sha(String(token))]
-  );
-  if (!rows[0]) return null;
-  const u = await getUser(rows[0].uid);
-  return { uid: rows[0].uid, role: u.role || "renter", email: u.email || "", name: u.name || "" };
+  const s = await getJSON<any>(sessionKey(sha(String(token))));
+  if (!s || !s.uid || (s.expiresAt && s.expiresAt < Date.now())) return null;
+  const u = await getUser(s.uid);
+  return { uid: s.uid, role: u.role || "renter", email: u.email || "", name: u.name || "" };
 }
 function isAdmin(auth: any) { return auth && auth.role === "admin"; }
 function participant(data: any, uid: string) {
@@ -147,7 +125,6 @@ function participant(data: any, uid: string) {
 }
 function sanitizeUser(id: string, data: any, auth: any) {
   if (isAdmin(auth) || (auth && auth.uid === id)) return data || {};
-  // מידע ציבורי בלבד — בלי טלפון, רישיון, כתובת, סיסמה או פרטי תשלום.
   return { name: data?.name || "משתמש", role: data?.role || "renter", createdAt: data?.createdAt || null };
 }
 function canRead(collection: string, rid: string, data: any, auth: any) {
@@ -162,24 +139,10 @@ function canRead(collection: string, rid: string, data: any, auth: any) {
 function canWrite(collection: string, rid: string, data: any, auth: any, existing?: any) {
   if (!auth) return false;
   if (isAdmin(auth)) return true;
-  if (collection === "users") {
-    if (rid !== auth.uid) return false;
-    if (data?.role === "admin") return false;
-    return true;
-  }
+  if (collection === "users") return rid === auth.uid && data?.role !== "admin";
   if (collection === "private") return rid === auth.uid;
-  if (collection === "cars") {
-    const ownerId = existing?.ownerId || data?.ownerId;
-    return ownerId === auth.uid;
-  }
-  if (collection === "bookings") {
-    const p = existing || data;
-    return participant(p, auth.uid);
-  }
-  if (collection === "messages") {
-    const p = existing || data;
-    return participant(p, auth.uid);
-  }
+  if (collection === "cars") return (existing?.ownerId || data?.ownerId) === auth.uid;
+  if (["bookings", "messages"].includes(collection)) return participant(existing || data, auth.uid);
   if (collection === "ratings") return data?.raterId === auth.uid || data?.uid === auth.uid || participant(data, auth.uid);
   return false;
 }
@@ -197,7 +160,7 @@ async function sendEmailMessage(to: string | string[], subject: string, html: st
   const pass = process.env.SMTP_PASS;
   const port = Number(process.env.SMTP_PORT || 587);
   if (!host || !user || !pass) {
-    await getPool().query(`INSERT INTO crown_records(collection,id,data) VALUES('email_queue',$1,$2::jsonb)`, [id("em"), JSON.stringify({ to: recipients, subject, html, text, status: "missing_smtp_env", createdAt: Date.now() })]);
+    await setRecord("email_queue", id("em"), { to: recipients, subject, html, text, status: "missing_smtp_env", createdAt: Date.now() }, false);
     return { ok: true, queued: true, warning: "Missing SMTP variables" };
   }
   const nodemailer = await import("nodemailer");
@@ -210,71 +173,61 @@ export const handler = async (event: any) => {
   try {
     if (event.httpMethod === "OPTIONS") return json({ ok: true });
     if (event.httpMethod === "GET") {
-      try { await ensureTables(); } catch (e:any) { return json({ ok:false, function:"db", error:"DB_NOT_READY", details:e?.message || String(e) }, 500); }
-      return json({ ok:true, function:"db", message:"Crown Drive DB function is alive", time:new Date().toISOString() });
+      await ensureAdmin();
+      return json({ ok: true, function: "db", engine: "netlify-blobs", message: "CrownDrive stable backend is alive" });
     }
     if (event.httpMethod !== "POST") return bad("POST only", 405);
-    await ensureTables();
+    await ensureAdmin();
     let body: any = {};
     try { body = event.body ? JSON.parse(event.body) : {}; } catch { return bad("Invalid JSON"); }
-    const action = body.action;
-    const collection = String(body.collection || "");
+    const action = String(body.action || "");
+    const collection = cleanCollection(body.collection || "");
     const rid = String(body.id || "");
     const auth = await authFromToken(body.token);
 
-    try {
     if (action === "list") {
-      let rows: any[] = [];
+      let rows = await listRecords(collection);
       if (body.where && body.where.field) {
         const field = String(body.where.field);
         const op = String(body.where.op || "==");
         const value = body.where.value;
-        if (op === "array-contains") {
-          const q = await getPool().query(`SELECT id,data FROM crown_records WHERE collection=$1 AND (data -> $2) @> $3::jsonb ORDER BY updated_at DESC`, [collection, field, JSON.stringify([value])]);
-          rows = q.rows;
-        } else {
-          const q = await getPool().query(`SELECT id,data FROM crown_records WHERE collection=$1 AND data ->> $2 = $3 ORDER BY updated_at DESC`, [collection, field, String(value)]);
-          rows = q.rows;
-        }
-      } else {
-        const q = await getPool().query(`SELECT id,data FROM crown_records WHERE collection=$1 ORDER BY updated_at DESC`, [collection]);
-        rows = q.rows;
+        rows = rows.filter((r:any) => {
+          const v = r.data?.[field];
+          if (op === "array-contains") return Array.isArray(v) && v.includes(value);
+          return String(v ?? "") === String(value ?? "");
+        });
       }
-      const allowed = rows.filter((r: any) => canRead(collection, r.id, r.data, auth));
-      return json({ records: allowed.map((r: any) => ({ id: r.id, data: publicData(collection, r.id, r.data, auth) })) });
+      rows = rows.filter((r:any)=>canRead(collection, r.id, r.data, auth));
+      return json({ ok: true, records: rows.map((r:any)=>({ id: r.id, data: publicData(collection, r.id, r.data, auth) })) });
     }
 
     if (action === "get") {
       const r = await getRecord(collection, rid);
-      if (!r) return json({ record: null });
+      if (!r) return json({ ok: true, record: null });
       if (!canRead(collection, rid, r.data, auth)) return bad("Forbidden", 403);
-      return json({ record: publicData(collection, rid, r.data, auth) });
+      return json({ ok: true, record: publicData(collection, rid, r.data, auth) });
     }
 
     if (action === "add") {
       const data = body.data || {};
       if (!canWrite(collection, "", data, auth)) return bad("Forbidden", 403);
       const newId = id(collection.slice(0, 3) || "rec");
-      await getPool().query(`INSERT INTO crown_records(collection,id,data) VALUES($1,$2,$3::jsonb)`, [collection, newId, JSON.stringify(data)]);
-      return json({ id: newId });
+      await setRecord(collection, newId, data, false);
+      return json({ ok: true, id: newId });
     }
 
     if (action === "set" || action === "update") {
       const data = body.data || {};
       const existing = await getRecord(collection, rid);
       if (!canWrite(collection, rid, data, auth, existing?.data)) return bad("Forbidden", 403);
-      if (action === "set" && !body.merge) {
-        await getPool().query(`INSERT INTO crown_records(collection,id,data) VALUES($1,$2,$3::jsonb) ON CONFLICT(collection,id) DO UPDATE SET data=EXCLUDED.data, updated_at=NOW()`, [collection, rid, JSON.stringify(data)]);
-      } else {
-        await getPool().query(`INSERT INTO crown_records(collection,id,data) VALUES($1,$2,$3::jsonb) ON CONFLICT(collection,id) DO UPDATE SET data=crown_records.data || EXCLUDED.data, updated_at=NOW()`, [collection, rid, JSON.stringify(data)]);
-      }
+      await setRecord(collection, rid, data, action !== "set" || !!body.merge);
       return json({ ok: true });
     }
 
     if (action === "delete") {
       const existing = await getRecord(collection, rid);
       if (!existing || !canWrite(collection, rid, {}, auth, existing.data)) return bad("Forbidden", 403);
-      await getPool().query(`DELETE FROM crown_records WHERE collection=$1 AND id=$2`, [collection, rid]);
+      await deleteKey(recKey(collection, rid));
       return json({ ok: true });
     }
 
@@ -283,34 +236,32 @@ export const handler = async (event: any) => {
       const pass = String(body.pass || "");
       if (!email || !pass) return bad("Missing email/password");
       if (pass.length < 6) return bad("Password too short");
+      if (await getAuthByEmail(email)) return bad("Email already exists", 409);
       const uid = id("u");
-      await getPool().query(`INSERT INTO crown_auth(uid,email,pass,pass_hash) VALUES($1,$2,NULL,$3)`, [uid, email, hashPassword(pass)]);
+      await setAuthUser(uid, email, hashPassword(pass));
       const token = await createSession(uid);
-      return json({ user: { uid, email }, token });
+      return json({ ok: true, user: { uid, email }, token });
     }
 
     if (action === "login") {
       const email = String(body.email || "").toLowerCase().trim();
       const pass = String(body.pass || "");
-      // כניסת מנהל קשיחה: גם אם המייל נשמר בעבר כבעל רכב/שוכר או עם hash ישן,
-      // פרטי המנהל המצורפים תמיד יאפסו את הרשומה ויכניסו ללוח מנהל.
       if (email === ADMIN_EMAIL && pass === ADMIN_PASS) {
-        await forceAdminAccount();
+        await ensureAdmin();
         const token = await createSession("admin");
-        return json({ user: { uid: "admin", email: ADMIN_EMAIL, role: "admin" }, token });
+        return json({ ok: true, user: { uid: "admin", email: ADMIN_EMAIL, role: "admin" }, token });
       }
-      const { rows } = await getPool().query(`SELECT uid,email,pass,pass_hash FROM crown_auth WHERE email=$1 LIMIT 1`, [email]);
-      const u = rows[0];
+      const u = await getAuthByEmail(email);
       if (!u) return bad("Invalid login", 401);
       const ok = verifyPassword(pass, u.pass_hash) || (!!u.pass && u.pass === pass);
       if (!ok) return bad("Invalid login", 401);
-      if (!u.pass_hash || u.pass) await getPool().query(`UPDATE crown_auth SET pass=NULL, pass_hash=$1, updated_at=NOW() WHERE uid=$2`, [hashPassword(pass), u.uid]);
+      if (!u.pass_hash || u.pass) await setAuthUser(u.uid, u.email, hashPassword(pass));
       const token = await createSession(u.uid);
-      return json({ user: { uid: u.uid, email: u.email }, token });
+      return json({ ok: true, user: { uid: u.uid, email: u.email }, token });
     }
 
     if (action === "logout") {
-      if (body.token) await getPool().query(`DELETE FROM crown_sessions WHERE token_hash=$1`, [sha(String(body.token))]);
+      if (body.token) await deleteKey(sessionKey(sha(String(body.token)))).catch(()=>null);
       return json({ ok: true });
     }
 
@@ -318,36 +269,25 @@ export const handler = async (event: any) => {
       if (!auth) return bad("Forbidden", 403);
       const uid = String(body.uid || "");
       if (!uid || (uid !== auth.uid && !isAdmin(auth))) return bad("Forbidden", 403);
-      if (body.email) await getPool().query(`UPDATE crown_auth SET email=$1, updated_at=NOW() WHERE uid=$2`, [String(body.email).toLowerCase().trim(), uid]);
-      if (body.pass) await getPool().query(`UPDATE crown_auth SET pass=NULL, pass_hash=$1, updated_at=NOW() WHERE uid=$2`, [hashPassword(String(body.pass)), uid]);
+      await updateAuth(uid, { email: body.email, pass: body.pass });
       return json({ ok: true });
     }
 
     if (action === "sendEmail") {
       if (!auth) return bad("Forbidden", 403);
-      const to = body.to;
-      const subject = String(body.subject || "Crown Drive");
-      const html = String(body.html || "");
-      const text = body.text ? String(body.text) : undefined;
-      if (!to || !subject || !html) return bad("Missing email fields");
-      const result = await sendEmailMessage(to, subject, html, text);
-      return json(result);
+      const result = await sendEmailMessage(body.to, String(body.subject || "Crown Drive"), String(body.html || ""), body.text ? String(body.text) : undefined);
+      return json({ ok: true, ...result });
     }
 
     if (action === "resetPassword") {
       const email = String(body.email || "").toLowerCase().trim();
-      if (email) await getPool().query(`INSERT INTO crown_records(collection,id,data) VALUES('password_resets',$1,$2::jsonb)`, [id("pw"), JSON.stringify({ email, createdAt: Date.now(), status: "requested" })]);
+      if (email) await setRecord("password_resets", id("pw"), { email, createdAt: Date.now(), status: "requested" }, false);
       return json({ ok: true, message: "Password reset request saved." });
     }
 
     return bad("Unknown action");
-    } catch (e: any) {
-      const msg = e && e.code === "23505" ? "Email already exists" : (e?.message || String(e));
-      return bad(msg, 500);
-    }
   } catch (e: any) {
-    // Always return valid JSON so Netlify will not show a Lambda 502 / invalid response.
     const msg = e?.message || String(e || "Unknown server error");
-    return json({ error: "שגיאת שרת במסד הנתונים", details: msg }, 500);
+    return json({ ok: false, function: "db", engine: "netlify-blobs", error: "BACKEND_ERROR", details: msg }, 500);
   }
 };
