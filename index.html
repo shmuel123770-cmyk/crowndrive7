@@ -95,235 +95,6 @@ input,select,textarea{font-family:inherit}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:22px}
 .card{background:#fff;border:1px solid var(--hair);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;transition:transform .25s,box-shadow .25s}
 .card:hover{transform:translateY(-4px)}
-.gallery{position:relative;aspect-ratio:16/10;background:var(--bg3);overflow:hidden}
-.gallery img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s ease}
-.card:hover .gallery img{transform:scale(1.04)}
-.card.off .gallery img{filter:grayscale(1) brightness(.55)}
-.g-nav{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border:none;border-radius:50%;background:rgba(255,255,255,.85);color:#1D1D1F;font-size:1rem;display:grid;place-items:center;opacity:0;transition:opacity .2s;box-shadow:0 2px 10px rgba(0,0,0,.18)}
-.gallery:hover .g-nav{opacity:1}
-.g-prev{inset-inline-start:12px}.g-next{inset-inline-end:12px}
-.g-dots{position:absolute;bottom:12px;inset-inline:0;display:flex;justify-content:center;gap:6px}
-.g-dots span{width:5px;height:5px;border-radius:50%;background:rgba(244,239,230,.4)}
-.g-dots span.on{background:var(--gold-l);width:18px;border-radius:99px}
-.g-count{position:absolute;top:12px;inset-inline-end:12px;background:rgba(0,0,0,.55);border-radius:99px;color:#fff;font-size:.7rem;padding:3px 10px;letter-spacing:.02em}
-.g-status{position:absolute;top:12px;inset-inline-start:12px}
-.pill{font-size:.72rem;font-weight:600;letter-spacing:.02em;padding:4px 13px;border:1px solid;border-radius:99px}
-.pill.ok{color:var(--ok);background:var(--ok-bg);border-color:rgba(127,191,158,.4)}
-.pill.no{color:var(--no);background:var(--no-bg);border-color:rgba(217,138,128,.4)}
-.pill.soon{color:var(--soon);background:var(--soon-bg);border-color:rgba(217,190,128,.4)}
-.card-body{padding:24px;display:flex;flex-direction:column;gap:15px;flex:1}
-.card-title{display:flex;justify-content:space-between;gap:12px;align-items:start}
-.card-title h3{font-size:1.2rem;font-weight:700}
-.card-title .meta{color:var(--mut);font-size:.8rem;font-weight:300;letter-spacing:.03em}
-.price{text-align:left;flex:none}
-.price b{font-family:'Heebo';font-weight:800;font-size:1.35rem;color:var(--gold-d);font-weight:700}
-.price span{font-size:.7rem;color:var(--mut);display:block;letter-spacing:.08em}
-.specs{display:flex;gap:18px;flex-wrap:wrap;border-top:1px solid var(--hair);padding-top:15px}
-.spec{display:flex;align-items:center;gap:7px;font-size:.79rem;color:var(--mut)}
-.spec svg{width:15px;height:15px;stroke:var(--gold-d)}
-.tags{display:flex;gap:7px;flex-wrap:wrap}
-.tag{background:var(--bg2);border-radius:99px;font-size:.72rem;font-weight:500;color:var(--mut);padding:3px 12px}
-.card-btn{margin-top:auto;border:none;background:#232A33;color:#fff;font-weight:600;font-size:.92rem;border-radius:10px;padding:13px;transition:all .2s}
-.card-btn.book:hover{background:#33404E}
-.card-btn.dis{background:var(--bg2);color:var(--mut2);cursor:not-allowed}
-.ret{font-size:.75rem;color:var(--soon);letter-spacing:.04em}
-.empty{grid-column:1/-1;background:var(--bg2);border-radius:18px;padding:90px 30px;text-align:center}
-.empty h3{font-size:1.3rem;font-weight:700;margin-bottom:8px}
-.empty p{color:var(--mut);font-size:.9rem;margin-bottom:26px;font-weight:200}
-
-/* ---------- STATUS STRIP ---------- */
-.strip{border-block:1px solid var(--hair);background:#fff}
-.strip-in{max-width:1200px;margin:auto;padding:16px 28px;display:flex;justify-content:center;gap:44px;flex-wrap:wrap;font-size:.82rem;letter-spacing:.05em}
-.strip .it{display:flex;gap:9px;align-items:center;color:var(--mut)}
-.strip .it b{font-family:'Heebo';font-weight:800;font-size:1.05rem;color:var(--ivory)}
-.strip .dot{width:7px;height:7px;border-radius:50%}
-.dot.ok{background:var(--ok)}.dot.no{background:var(--no)}.dot.soon{background:var(--soon)}
-
-/* ---------- HOW ---------- */
-.how-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px}
-.hstep{background:var(--bg2);border-radius:18px;padding:36px 28px}
-.hstep .num{font-family:'Heebo';font-weight:800;font-size:2rem;color:var(--gold-d);font-weight:700;display:block;margin-bottom:14px}
-.hstep h3{font-size:1rem;font-weight:700;margin-bottom:7px;letter-spacing:.02em}
-.hstep p{font-size:.84rem;color:var(--mut);font-weight:200}
-
-/* ---------- CTA / FOOTER ---------- */
-.foot-cta{background:#1B222B;border-radius:20px;padding:64px 40px;text-align:center;color:#fff;position:relative;overflow:hidden}
-.foot-cta::after{content:"";position:absolute;inset:0;background:radial-gradient(700px 340px at 85% -30%, rgba(120,155,185,.14), transparent 60%);pointer-events:none}
-.foot-cta>*{position:relative;z-index:1}
-
-.foot-cta h2{font-size:1.8rem;font-weight:700;margin-bottom:8px}
-.foot-cta p{color:#b9b9b9;font-weight:300;margin-bottom:28px}
-footer{border-top:1px solid var(--hair);color:var(--mut2);padding:34px 28px;font-size:.78rem;letter-spacing:.05em}
-.foot-in{max-width:1200px;margin:auto;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
-footer a{color:var(--mut);text-decoration:none}
-
-/* ---------- OVERLAYS ---------- */
-.overlay{position:fixed;inset:0;background:rgba(5,5,7,.82);backdrop-filter:blur(6px);z-index:100;display:none;align-items:center;justify-content:center;padding:18px}
-.overlay.open{display:flex}
-.modal{background:#fff;border-radius:20px;width:min(640px,100%);max-height:92vh;overflow:auto;box-shadow:0 30px 80px rgba(0,0,0,.25);animation:up .25s ease-out}
-.modal.wide{width:min(940px,100%)}
-@keyframes up{from{transform:translateY(18px);opacity:0}to{transform:none;opacity:1}}
-.m-head{border-bottom:1px solid var(--hair);padding:20px 26px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:rgba(255,255,255,.9);backdrop-filter:blur(14px);z-index:3}
-.m-head h3{font-size:1.1rem;font-weight:700;letter-spacing:.03em}
-.m-close{background:var(--bg2);border:none;border-radius:50%;color:var(--mut);width:32px;height:32px;font-size:.95rem}
-.m-close:hover{color:var(--ivory);border-color:var(--mut2)}
-.m-body{padding:26px}
-.steps-bar{display:flex;gap:5px;margin-bottom:24px}
-.sb{flex:1;height:2px;background:var(--hair);transition:background .3s}
-.sb.on{background:var(--gold)}
-.m-car{display:flex;gap:15px;align-items:center;background:var(--bg2);border-radius:14px;padding:12px 16px;margin-bottom:22px}
-.m-car img{width:92px;height:60px;object-fit:cover;flex:none;border-radius:9px}
-.m-car b{font-weight:600}
-.m-car .p{font-size:.8rem;color:var(--mut)}
-
-.f-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.f-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
-@media(max-width:560px){.f-row,.f-row3{grid-template-columns:1fr}}
-.field{margin-bottom:15px}
-.field label{display:block;font-weight:500;font-size:.8rem;letter-spacing:.06em;margin-bottom:7px;color:var(--ivory)}
-.field label .req{color:var(--no)}
-.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ivory);padding:11px 14px;font-size:.95rem;font-weight:400;transition:border-color .2s,box-shadow .2s}
-.field input:focus,.field select:focus{border-color:var(--gold);outline:none;box-shadow:0 0 0 4px rgba(63,107,142,.13)}
-.field input::placeholder{color:var(--mut2)}
-.field .hint{font-size:.72rem;color:var(--mut2);margin-top:5px}
-.field.err input,.field.err select{border-color:var(--no)}
-.err-msg{color:var(--no);font-size:.74rem;font-weight:500;margin-top:5px;display:none}
-.field.err .err-msg{display:block}
-select option{background:var(--bg2);color:var(--ivory)}
-
-.summary-box{background:var(--bg2);border-radius:14px;padding:18px;margin-bottom:18px}
-.summary-box .row{display:flex;justify-content:space-between;padding:8px 0;font-size:.88rem;border-bottom:1px solid var(--hair)}
-.summary-box .row:last-child{border:none;font-weight:600;color:var(--gold-l);font-size:1rem}
-.m-actions{display:flex;gap:10px;margin-top:10px}
-.m-actions .grow{flex:1;padding:14px}
-.note{display:flex;gap:10px;align-items:start;background:var(--bg2);border-radius:12px;padding:12px 14px;font-size:.78rem;color:var(--mut);margin-top:14px}
-.note svg{width:16px;height:16px;flex:none;margin-top:3px;stroke:var(--gold-d)}
-
-/* uploads */
-.drop{border:1.5px dashed var(--line2);border-radius:14px;padding:28px 18px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg2)}
-.drop:hover,.drop.drag{border-color:var(--gold);background:#EFF5FD}
-.drop svg{width:34px;height:34px;stroke:var(--gold-d);margin-bottom:9px}
-.drop b{display:block;font-size:.88rem;font-weight:500}
-.drop span{font-size:.74rem;color:var(--mut)}
-.drop.err-b{border-color:var(--no);background:var(--no-bg)}
-.lic-prev{display:none;position:relative;border-radius:14px;border:1px solid rgba(28,124,79,.4);overflow:hidden}
-.lic-prev img{width:100%;display:block;max-height:220px;object-fit:cover}
-.lic-prev .ok-band{position:absolute;bottom:0;inset-inline:0;background:rgba(20,40,32,.92);color:var(--ok);font-weight:500;font-size:.8rem;padding:8px 14px;display:flex;justify-content:space-between;align-items:center}
-.lic-prev button{background:transparent;border:1px solid rgba(127,191,158,.5);color:var(--ok);padding:3px 12px;font-size:.75rem}
-
-.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px;margin-top:12px}
-.ph{position:relative;aspect-ratio:4/3;overflow:hidden;border-radius:10px;border:1px solid var(--hair)}
-.ph img{width:100%;height:100%;object-fit:cover}
-.ph button{position:absolute;top:5px;inset-inline-end:5px;width:22px;height:22px;border:none;background:rgba(11,11,13,.8);color:var(--ivory);font-size:.72rem}
-.ph .main-tag{position:absolute;bottom:0;inset-inline:0;background:rgba(11,11,13,.8);color:var(--gold-l);font-size:.64rem;text-align:center;padding:2px;letter-spacing:.08em}
-.photo-req{font-size:.76rem;font-weight:500;margin-top:9px;letter-spacing:.03em}
-.photo-req.bad{color:var(--no)}
-.photo-req.good{color:var(--ok)}
-
-/* terms + signature */
-.terms-box{border:1px solid var(--hair);border-radius:12px;background:var(--bg2);max-height:220px;overflow:auto;padding:18px;font-size:.8rem;color:var(--mut);font-weight:300;margin-bottom:16px}
-.terms-box h4{color:var(--ivory);font-weight:600;font-size:.85rem;margin:14px 0 5px}
-.terms-box h4:first-child{margin-top:0}
-.terms-box ol{padding-inline-start:18px;display:flex;flex-direction:column;gap:4px}
-.sig-wrap{border:1.5px dashed var(--line2);border-radius:14px;background:#FAFAFC;position:relative;overflow:hidden}
-.sig-wrap canvas{display:block;width:100%;height:150px;touch-action:none;cursor:crosshair}
-.sig-hint{position:absolute;inset:0;display:grid;place-items:center;color:#B9B2A2;font-size:.85rem;pointer-events:none;letter-spacing:.1em}
-.sig-tools{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
-.sig-clear{background:transparent;border:1px solid var(--hair);color:var(--mut);font-size:.76rem;padding:5px 14px}
-.sig-x{position:absolute;bottom:26px;inset-inline:24px;border-bottom:1px solid #C9C2B2;pointer-events:none}
-.check-line{display:flex;gap:11px;align-items:start;font-size:.83rem;margin:14px 0}
-.check-line input{width:17px;height:17px;margin-top:3px;accent-color:var(--gold)}
-
-/* success + receipt */
-.success{text-align:center;padding:14px 6px}
-.success .big-ok{width:74px;height:74px;margin:0 auto 16px;border:1px solid rgba(127,191,158,.5);border-radius:50%;display:grid;place-items:center;background:var(--ok-bg)}
-.success .big-ok svg{width:34px;height:34px;stroke:var(--ok);stroke-width:2.4}
-.success h3{font-size:1.4rem;font-weight:700;margin-bottom:6px}
-.success p{color:var(--mut);font-size:.9rem;font-weight:200}
-.conf-num{font-family:'Heebo';font-weight:800;font-size:1.3rem;background:var(--bg2);border-radius:12px;padding:11px;margin:16px auto;max-width:260px;letter-spacing:.2em;color:var(--ivory)}
-
-.receipt{background:#FBF8F2;color:#242018;padding:30px;margin-top:20px;text-align:right;font-weight:400}
-.receipt .r-head{display:flex;justify-content:space-between;align-items:start;border-bottom:2px solid #242018;padding-bottom:14px;margin-bottom:14px}
-.receipt .r-head h4{font-family:'Heebo';font-weight:800;font-weight:900;font-size:1.25rem}
-.receipt .r-head .sm{font-size:.72rem;color:#7A7264}
-.receipt .r-row{display:flex;justify-content:space-between;padding:6px 0;font-size:.84rem;border-bottom:1px dotted #D8D1C2}
-.receipt .r-row.total{border-bottom:none;border-top:2px solid #242018;margin-top:8px;padding-top:10px;font-weight:700;font-size:1rem}
-.receipt .r-foot{font-size:.7rem;color:#7A7264;margin-top:16px;text-align:center;border-top:1px solid #D8D1C2;padding-top:10px}
-
-/* auth */
-.role-pick{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:8px}
-@media(max-width:560px){.role-pick{grid-template-columns:1fr}}
-.role-card{background:var(--bg2);border:1.5px solid transparent;border-radius:18px;padding:26px 20px;text-align:center;cursor:pointer;transition:all .2s}
-.role-card:hover{border-color:var(--gold);background:#fff;box-shadow:0 10px 30px rgba(0,0,0,.08)}
-.role-card svg{width:34px;height:34px;stroke:var(--gold);margin-bottom:12px}
-.role-card b{display:block;font-weight:600;font-size:.98rem;margin-bottom:5px}
-.role-card span{font-size:.78rem;color:var(--mut);font-weight:200}
-.auth-tabs{display:flex;background:var(--bg2);border-radius:99px;padding:4px;margin-bottom:22px}
-.auth-tabs button{flex:1;border:none;background:transparent;color:var(--mut);font-weight:500;font-size:.88rem;padding:10px;border-radius:99px}
-.auth-tabs button.on{background:#232A33;color:#fff;font-weight:600}
-.auth-back{background:none;border:none;color:var(--mut);font-size:.78rem;margin-bottom:16px;letter-spacing:.05em}
-.auth-back:hover{color:var(--gold-d)}
-.card-row{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}
-@media(max-width:560px){.card-row{grid-template-columns:1fr}}
-
-/* dashboard */
-.dash-tabs{display:flex;border-bottom:1px solid var(--hair);margin-bottom:24px;overflow-x:auto}
-.dash-tabs button{border:none;background:transparent;color:var(--mut);font-weight:500;font-size:.85rem;padding:12px 20px;letter-spacing:.05em;border-bottom:2px solid transparent;white-space:nowrap}
-.dash-tabs button.on{color:var(--gold-d);border-bottom-color:var(--gold)}
-.adm-list{display:flex;flex-direction:column;gap:8px;margin-bottom:22px}
-.adm-item{display:flex;gap:13px;align-items:center;background:var(--bg2);border-radius:14px;padding:11px 14px;flex-wrap:wrap}
-.adm-item img{width:78px;height:52px;object-fit:cover;flex:none;background:var(--bg3);border-radius:8px}
-.adm-item .inf{flex:1;min-width:180px}
-.adm-item b{font-weight:600;font-size:.92rem}
-.adm-item .sm{font-size:.76rem;color:var(--mut)}
-.adm-item .acts{display:flex;gap:6px;flex-wrap:wrap}
-.mini{border:1px solid var(--line);background:#fff;border-radius:99px;font-size:.76rem;font-weight:500;padding:6px 13px;color:var(--mut)}
-.mini:hover{color:var(--ivory);border-color:var(--mut2)}
-.mini.gold{color:var(--gold-d);border-color:var(--line2)}
-.mini.danger{color:var(--no);border-color:rgba(215,0,21,.3)}
-.adm-empty{text-align:center;color:var(--mut);font-size:.88rem;padding:30px;background:var(--bg2);border-radius:14px}
-.divider{display:flex;align-items:center;gap:14px;color:var(--gold-d);font-size:.72rem;font-weight:600;letter-spacing:.3em;margin:10px 0 20px}
-.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--hair)}
-.tbl{width:100%;border-collapse:collapse;font-size:.83rem}
-.tbl th{text-align:right;color:var(--gold-d);font-weight:600;font-size:.72rem;letter-spacing:.12em;padding:9px 10px;border-bottom:1px solid var(--line)}
-.tbl td{padding:10px;border-bottom:1px solid var(--hair);color:var(--ivory);font-weight:300;vertical-align:top}
-.tbl td .sm{color:var(--mut);font-size:.75rem}
-.tbl .num{font-family:'Heebo';font-weight:800;font-weight:700;color:var(--gold-d)}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:24px}
-.kpi{background:var(--bg2);border-radius:16px;padding:20px}
-.kpi b{font-family:'Heebo';font-weight:800;font-size:1.6rem;color:var(--gold-d);font-weight:700;display:block}
-.kpi span{font-size:.72rem;color:var(--mut);letter-spacing:.08em}
-.lic-thumb{width:56px;height:38px;object-fit:cover;border:1px solid var(--hair);cursor:pointer}
-
-.toast{position:fixed;bottom:22px;inset-inline-start:50%;transform:translateX(50%) translateY(80px);background:#1D1D1F;color:#fff;border-radius:99px;padding:12px 26px;font-weight:500;font-size:.88rem;z-index:300;opacity:0;transition:all .3s}
-.toast.show{transform:translateX(50%) translateY(0);opacity:1}
-
-/* ---------- COLOR & MOTION LAYER ---------- */
-:root{--blue:#4C7DFF;--blue-d:#2A4DC4;--violet:#8B6CFF}
-
-
-
-
-
-/* colorful accents */
-.hero h1 em{font-style:normal;background:none;color:#9FB6C9}
-.btn-gold{background:var(--gold);color:#fff;border:none;box-shadow:none}
-.btn-gold:hover{background:var(--gold-l);transform:none;filter:none;box-shadow:none}
-
-.hero::before{background:radial-gradient(1000px 500px at 80% -20%, rgba(120,155,185,.12), transparent 60%)}
-
-.card:hover{box-shadow:0 22px 48px rgba(0,0,0,.12)}
-.card-btn.book:hover{background:#33404E}
-.strip{background:var(--bg2)}
-.hstep .num{background:none;color:var(--mut2)}
-.dash-tabs button.on{border-bottom-color:var(--gold)}
-
-.foot-cta{background:#101010}
-
-/* scroll reveal */
-.reveal{opacity:0;transform:translateY(34px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
-.reveal.in{opacity:1;transform:none}
-@keyframes cardIn{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
 .card{animation:cardIn .55s cubic-bezier(.2,.7,.2,1) both}
 
 /* hero entrance */
@@ -703,6 +474,29 @@ select option{background:var(--bg2);color:var(--ivory)}
 .badge-status.approved{color:var(--ok);background:var(--ok-bg);border-color:rgba(28,124,79,.24)}
 .badge-status.rejected{color:var(--no);background:var(--no-bg);border-color:rgba(215,0,21,.24)}
 .badge-status.done{color:var(--mut);background:var(--bg2)}
+.booking-board{display:grid;gap:14px}
+.booking-section{background:#fff;border:1px solid rgba(63,107,142,.14);border-radius:18px;padding:14px;box-shadow:0 12px 30px rgba(20,28,40,.06)}
+.booking-section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.booking-section-head h4{margin:0;font-size:1rem;color:var(--ivory)}
+.booking-count{border:1px solid var(--hair);background:var(--bg2);border-radius:99px;padding:4px 10px;font-size:.72rem;font-weight:800;color:var(--gold-d)}
+.booking-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(285px,1fr));gap:12px}
+.booking-card{position:relative;background:linear-gradient(180deg,#fff,#F8FAFC);border:1px solid rgba(63,107,142,.14);border-radius:17px;padding:14px;box-shadow:0 8px 22px rgba(20,28,40,.06);overflow:hidden}
+.booking-card.pending{border-color:rgba(160,90,0,.28);background:linear-gradient(180deg,#fff,#FFF9EE)}
+.booking-card.approved{border-color:rgba(28,124,79,.25);background:linear-gradient(180deg,#fff,#F1FBF6)}
+.booking-card.rejected{border-color:rgba(215,0,21,.22);background:linear-gradient(180deg,#fff,#FFF4F4)}
+.booking-card.done{opacity:.9}
+.booking-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
+.booking-title{font-weight:900;color:var(--ivory);font-size:1rem;line-height:1.25}
+.booking-sub{font-size:.74rem;color:var(--mut);margin-top:3px}
+.booking-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.booking-meta .cell{background:rgba(255,255,255,.74);border:1px solid rgba(31,41,53,.08);border-radius:12px;padding:8px 9px}
+.booking-meta .cell span{display:block;font-size:.68rem;color:var(--mut);font-weight:700}
+.booking-meta .cell b{display:block;font-size:.82rem;color:var(--ivory);margin-top:2px}
+.booking-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}
+.booking-actions .mini{background:#fff}
+.booking-note{font-size:.73rem;color:var(--mut);line-height:1.45;margin-top:8px}
+@media(max-width:560px){.booking-cards{grid-template-columns:1fr}.booking-meta{grid-template-columns:1fr}.booking-section{padding:12px}}
+
 .home-chat-note{font-size:.73rem;color:var(--mut);margin-top:6px}
 @media(max-width:940px){.search-row.two{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.search-row.two{grid-template-columns:1fr}.rent-pick,.car-type-pick,.rent-checks{grid-template-columns:1fr}.rent-chip,.type-chip{font-size:.8rem;padding:11px 4px}.card-actions{grid-template-columns:1fr}}
@@ -1267,14 +1061,16 @@ body::after{
         </div>
         <div class="f-row">
           <div class="field" id="f-from"><label>תאריך איסוף <span class="req">*</span></label><input type="date" id="dt-from"><div class="err-msg">יש לבחור תאריך איסוף</div></div>
-          <div class="field"><label>שעת איסוף</label>
-            <select id="tm-from"><option>09:00</option><option>10:00</option><option>11:00</option><option>12:00</option><option>14:00</option><option>16:00</option><option>18:00</option><option>20:00</option></select>
+          <div class="field"><label>שעת איסוף — זמין 24 שעות</label>
+            <select id="tm-from" class="time-24"></select>
+            <div class="hint">אפשר לבחור כל שעה ביממה, 00:00–23:00.</div>
           </div>
         </div>
         <div class="f-row">
           <div class="field" id="f-to"><label>תאריך החזרה <span class="req">*</span></label><input type="date" id="dt-to"><div class="err-msg">מועד ההחזרה חייב להיות אחרי האיסוף</div></div>
-          <div class="field"><label>שעת החזרה</label>
-            <select id="tm-to"><option>09:00</option><option>10:00</option><option>11:00</option><option selected>12:00</option><option>14:00</option><option>16:00</option><option>18:00</option><option>20:00</option></select>
+          <div class="field"><label>שעת החזרה — זמין 24 שעות</label>
+            <select id="tm-to" class="time-24"></select>
+            <div class="hint">אפשר להחזיר בכל שעה ביממה.</div>
           </div>
         </div>
         <div class="summary-box" id="price-live" style="display:none"></div>
@@ -2266,47 +2062,66 @@ function endRental(bid){
 }
 
 /* owner: bookings tab */
+function bookingStatusKey(b){return b.done?'done':(b.status||'approved')}
+function bookingPersonName(b,side){
+  if(side==='owner')return esc(b.signName||b.renterName||'שוכר');
+  const o=userOf(b.ownerId)||{};return esc(o.name||'בעל הרכב');
+}
+function bookingCarTitle(b){const c=state.cars.find(x=>x.id===b.carId)||{make:'—',model:'',yr:''};return `${esc(c.make)} ${esc(c.model)} ${c.yr?esc(c.yr):''}`.trim();}
+function bookingPeriodText(b){return `${fmt(b.from)} ${esc(b.tmFrom||'')} → ${fmt(b.to)} ${esc(b.tmTo||'')}`;}
+function bookingCardHTML(b,side){
+  const st=bookingStatusKey(b);
+  const other=bookingPersonName(b,side);
+  const rental=b.rentalType?rentalLabel(b.rentalType):'השכרה';
+  const ratingSide=side==='owner'?'owner':'renter';
+  const mine=myRating(b.id,ratingSide);
+  let actions=`<button class="mini gold" onclick="openChatTo('b${b.id}')">💬 צ׳אט</button>`;
+  if(side==='owner'){
+    if(st==='pending')actions+=`<button class="mini" style="color:var(--ok);border-color:rgba(28,124,79,.4)" onclick="approveBooking('${b.id}')">✓ אישור</button><button class="mini danger" onclick="rejectBooking('${b.id}')">דחייה</button>`;
+    if(st==='approved')actions+=`<button class="mini" style="color:var(--ok);border-color:rgba(28,124,79,.4)" onclick="endRental('${b.id}')">✓ סיום השכרה</button>`;
+    if(b.lic)actions+=`<button class="mini" onclick="viewLic('${b.id}')">רישיון</button>`;
+  } else {
+    if(st==='approved')actions+=`<span class="booking-note">${paymentProofCell(b)}</span>`;
+    if(st==='done')actions+= mine?`<span class="rate-label">דירגת:</span>${starsHTML(mine.stars,null)}`:`<span class="rate-label">איך היה השירות?</span>${ratePicker(b.id)}`;
+  }
+  const note=st==='pending'?'ההזמנה עדיין ממתינה לאישור בעל הרכב. אפשר להמשיך לדבר בצ׳אט.':st==='approved'?'ההזמנה מאושרת. ודא תשלום ותיאום איסוף בצ׳אט.':st==='rejected'?'הבקשה נדחתה. אפשר לבחור רכב אחר או לדבר בצ׳אט.':'ההשכרה הסתיימה ונשמרה בהיסטוריה.';
+  return `<div class="booking-card ${st}">
+    <div class="booking-card-top">
+      <div><div class="booking-title">${bookingCarTitle(b)}</div><div class="booking-sub">${esc(b.num)} · ${rental}</div></div>
+      ${bookingStatusHTML(b)}
+    </div>
+    <div class="booking-meta">
+      <div class="cell"><span>${side==='owner'?'שוכר':'בעל הרכב'}</span><b>${other}</b></div>
+      <div class="cell"><span>סכום</span><b>${money(+b.total||0)}</b></div>
+      <div class="cell"><span>תקופה</span><b>${bookingPeriodText(b)}</b></div>
+      <div class="cell"><span>נוצרה</span><b>${b.createdAt?new Date(b.createdAt).toLocaleDateString('he-IL'):'—'}</b></div>
+    </div>
+    <div class="booking-note">${note}</div>
+    <div class="booking-actions">${actions}</div>
+  </div>`;
+}
+function bookingSectionHTML(title,list,empty,side){
+  return `<div class="booking-section"><div class="booking-section-head"><h4>${title}</h4><span class="booking-count">${list.length}</span></div>${list.length?`<div class="booking-cards">${list.map(b=>bookingCardHTML(b,side)).join('')}</div>`:`<div class="adm-empty">${empty}</div>`}</div>`;
+}
 function renderOwnerBookings(){
-  const all=state.bookings.filter(b=>b.ownerId===state.session.id).sort((a,b)=>b.createdAt-a.createdAt);
+  const all=state.bookings.filter(b=>b.ownerId===state.session.id).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
   const box=$('dash-book');
-  if(all.length===0){box.innerHTML='<div class="adm-empty">עדיין אין הזמנות על הרכבים שלך.</div>';return}
-  const pending=all.filter(b=>(b.status||'approved')==='pending');
-  const approved=all.filter(b=>(b.status||'approved')==='approved'&&!b.done);
-  const history=all.filter(b=>b.done || ['rejected'].includes(b.status));
-  const pendingHtml=pending.length===0?'<div class="adm-empty">אין בקשות חדשות שממתינות לאישור.</div>':pending.map(b=>{
-    const c=state.cars.find(x=>x.id===b.carId)||{make:'—',model:''};
-    const rst=renterStats(b.renterId);
-    return `<div class="adm-item" style="border:1px solid rgba(160,90,0,.35);background:rgba(160,90,0,.06)">
-      ${b.lic?`<img src="${b.lic}" alt="רישיון" style="cursor:pointer" onclick="viewLic('${b.id}')">`:''}
-      <div class="inf"><b>${esc(c.make)} ${esc(c.model)} · ${esc(b.signName)}</b>
-        <div class="sm">${b.num} · ${fmt(b.from)} ${b.tmFrom} → ${fmt(b.to)} ${b.tmTo} · ${money(b.total)}</div>
-        <div class="sm">סטטוס: ${bookingStatusHTML(b)} · דירוג שוכר: ${starsHTML(rst.avg,rst.count)}</div>
-      </div>
-      <div class="acts">
-        <button class="mini gold" onclick="openChatTo('b${b.id}')">💬 צ'אט</button>
-        <button class="mini" style="color:var(--ok);border-color:rgba(28,124,79,.4)" onclick="approveBooking('${b.id}')">✓ אישור</button>
-        <button class="mini danger" onclick="rejectBooking('${b.id}')">דחייה</button>
-      </div>
+  const pending=all.filter(b=>bookingStatusKey(b)==='pending');
+  const approved=all.filter(b=>bookingStatusKey(b)==='approved'&&!b.done);
+  const history=all.filter(b=>b.done || ['rejected','done'].includes(bookingStatusKey(b)));
+  const totalIncome=all.filter(b=>['approved','done'].includes(bookingStatusKey(b))||b.done).reduce((s,b)=>s+(+b.total||0),0);
+  box.innerHTML=`
+    <div class="kpis">
+      <div class="kpi"><b>${all.length}</b><span>סה״כ הזמנות</span></div>
+      <div class="kpi"><b>${pending.length}</b><span>ממתינות לאישור</span></div>
+      <div class="kpi"><b>${approved.length}</b><span>מאושרות / פעילות</span></div>
+      <div class="kpi"><b>${money(totalIncome)}</b><span>סכום מאושר/היסטורי</span></div>
+    </div>
+    <div class="booking-board">
+      ${bookingSectionHTML('בקשות חדשות שממתינות לאישור שלך',pending,'אין בקשות חדשות כרגע.','owner')}
+      ${bookingSectionHTML('הזמנות מאושרות / פעילות',approved,'אין השכרות פעילות שאושרו כרגע.','owner')}
+      ${bookingSectionHTML('היסטוריית הזמנות',history,'אין עדיין היסטוריית הזמנות.','owner')}
     </div>`;
-  }).join('');
-  const approvedHtml=approved.length===0?'<div class="adm-empty">אין השכרות פעילות שאושרו כרגע.</div>':approved.map(b=>{
-    const c=state.cars.find(x=>x.id===b.carId)||{make:'—',model:''};
-    const rst=renterStats(b.renterId);
-    return `<div class="adm-item" style="border:1px solid rgba(28,124,79,.35);background:rgba(28,124,79,.05)">
-      ${b.lic?`<img src="${b.lic}" alt="רישיון" style="cursor:pointer" onclick="viewLic('${b.id}')">`:''}
-      <div class="inf"><b>${esc(c.make)} ${esc(c.model)} · ${esc(b.signName)}</b>
-        <div class="sm">${b.num} · ${fmt(b.from)} ${b.tmFrom} → ${fmt(b.to)} ${b.tmTo} · ${money(b.total)}</div>
-        <div class="sm">${bookingStatusHTML(b)} · דירוג שוכר: ${starsHTML(rst.avg,rst.count)}</div>
-      </div>
-      <div class="acts"><button class="mini gold" onclick="openChatTo('b${b.id}')">💬 צ'אט עם השוכר</button><button class="mini" style="color:var(--ok);border-color:rgba(28,124,79,.4)" onclick="endRental('${b.id}')">✓ סיום השכרה</button></div>
-    </div>`;
-  }).join('');
-  const histHtml=history.length===0?'<div class="adm-empty">אין עדיין היסטוריית הזמנות.</div>':`<table class="tbl"><thead><tr><th>הזמנה</th><th>סטטוס</th><th>רכב</th><th>שוכר</th><th>תקופה</th><th>סכום</th><th>דירוג</th></tr></thead><tbody>${history.map(b=>{
-    const c=state.cars.find(x=>x.id===b.carId)||{make:'—',model:''};
-    const mine=myRating(b.id,'owner');
-    return `<tr><td class="num">${b.num}<div class="sm">${new Date(b.createdAt).toLocaleDateString('he-IL')}</div></td><td>${bookingStatusHTML(b)}</td><td>${esc(c.make)} ${esc(c.model)}</td><td>${esc(b.signName||b.renterName||'')}</td><td>${fmt(b.from)} – ${fmt(b.to)}</td><td class="num">${money(b.total)}</td><td>${mine?starsHTML(mine.stars,null):ratePicker(b.id)}</td></tr>`;
-  }).join('')}</tbody></table>`;
-  box.innerHTML=`<div class="divider">ממתין לאישור שלך</div>${pendingHtml}<div class="divider">מאושר / פעיל</div>${approvedHtml}<div class="divider">היסטוריה</div>${histHtml}`;
 }
 
 
@@ -2552,42 +2367,41 @@ function openRenterArea(){
   if(!state.session||state.session.role!=='renter')return openAuth('renter');
   const u=me();
   const prefs=u.prefs||{};
-  const list=state.bookings.filter(b=>b.renterId===u.id).sort((a,b)=>b.createdAt-a.createdAt);
+  const list=state.bookings.filter(b=>b.renterId===u.id).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  const pending=list.filter(b=>bookingStatusKey(b)==='pending');
+  const approved=list.filter(b=>bookingStatusKey(b)==='approved'&&!b.done);
+  const history=list.filter(b=>b.done || ['rejected','done'].includes(bookingStatusKey(b)));
   $('renter-body').innerHTML=`
     <div class="kpis">
       <div class="kpi"><b>${list.length}</b><span>סה״כ הזמנות</span></div>
-      <div class="kpi"><b>${list.filter(b=>(b.status||'approved')==='pending').length}</b><span>ממתינות לאישור</span></div>
-      <div class="kpi"><b>${list.filter(b=>(b.status||'approved')==='approved').length}</b><span>מאושרות</span></div>
+      <div class="kpi"><b>${pending.length}</b><span>ממתינות לאישור</span></div>
+      <div class="kpi"><b>${approved.length}</b><span>מאושרות / פעילות</span></div>
+      <div class="kpi"><b>${history.length}</b><span>היסטוריה</span></div>
     </div>
     <div class="summary-box">
       <div class="row"><span>שם</span><span>${esc(u.name)}</span></div>
       <div class="row"><span>אימייל</span><span>${esc(u.email)}</span></div>
-      <div class="row"><span>רישיון נהיגה</span><span style="color:var(--ok)">✓ מאומת</span></div>
+      <div class="row"><span>רישיון נהיגה</span><span style="color:var(--ok)">✓ נשמר במערכת</span></div>
     </div>
     <div class="divider">העדפות אישיות</div>
     <div class="pref-grid">
       <div class="field"><label>שפת תקשורת</label><input id="rp-lang" value="${esc(prefs.lang||'עברית / English')}"></div>
+      <div class="field"><label>תקציב מועדף</label><input id="rp-budget" value="${esc(prefs.budget||'')}" placeholder="לדוגמה: עד $120 ליום"></div>
+      <div class="field"><label>צבע מועדף</label><input id="rp-color" value="${esc(prefs.color||'')}" placeholder="לבן / שחור / כסף"></div>
+      <div class="field"><label>מספר מושבים</label><input id="rp-seats" value="${esc(prefs.seats||'')}" placeholder="5 / 7 / 8"></div>
+      <div class="field" style="grid-column:1/-1"><label>הערות</label><input id="rp-notes" value="${esc(prefs.notes||'')}" placeholder="צרכים מיוחדים, איסוף, תינוק וכו׳"></div>
     </div>
     <div class="m-actions" style="margin-bottom:20px"><button class="btn btn-gold grow" onclick="saveRenterPrefs()">שמירת העדפות</button></div>
-    <div class="divider">ההזמנות שלי</div>
-    ${list.length===0?'<div class="adm-empty">עדיין אין הזמנות.</div>'
-    :`<table class="tbl"><thead><tr><th>הזמנה</th><th>סטטוס</th><th>רכב</th><th>תקופה</th><th>סכום</th><th>צילום תשלום</th><th>דירוג המשכיר</th></tr></thead><tbody>
-      ${list.map(b=>{const c=state.cars.find(x=>x.id===b.carId)||{make:'—',model:''};
-        const mine=myRating(b.id,'renter');
-        return `<tr><td class="num">${b.num}</td><td>${bookingStatusHTML(b)}</td><td>${esc(c.make)} ${esc(c.model)}</td>
-        <td>${fmt(b.from)} – ${fmt(b.to)}</td><td class="num">${money(b.total)}<br><button class="mini gold" style="margin-top:6px" onclick="openChatTo('b${b.id}')">💬 צ'אט עם בעל הרכב</button></td>
-        <td>${paymentProofCell(b)}</td>
-        <td>${mine
-          ?`<span class="rate-label">דירגת:</span>${starsHTML(mine.stars,null)}
-            ${mine.text
-              ?`<div class="my-review">&quot;${esc(mine.text)}&quot;</div>`
-              :`<div class="rv-box"><input id="rv-${b.id}" placeholder="ספרו איך היה (ביקורת פומבית)" maxlength="220"><button class="mini gold" onclick="setReview('${b.id}')">פרסום</button></div>`}`
-          :`<span class="rate-label">איך היה השירות?</span>${ratePicker(b.id)}`}</td></tr>`;}).join('')}
-    </tbody></table>`}`;
+    <div class="divider">אזור הזמנות מסודר</div>
+    <div class="booking-board">
+      ${bookingSectionHTML('בקשות ממתינות לאישור בעל הרכב',pending,'אין כרגע בקשות שממתינות לאישור.','renter')}
+      ${bookingSectionHTML('הזמנות מאושרות / פעילות',approved,'אין כרגע הזמנות מאושרות.','renter')}
+      ${bookingSectionHTML('היסטוריית הזמנות',history,'אין עדיין היסטוריית הזמנות.','renter')}
+    </div>`;
   openOv('ov-renter');
 }
 function saveRenterPrefs(){
-  const prefs={lang:$('rp-lang').value.trim()};
+  const prefs={lang:$('rp-lang').value.trim(),budget:$('rp-budget')?$('rp-budget').value.trim():'',color:$('rp-color')?$('rp-color').value.trim():'',seats:$('rp-seats')?$('rp-seats').value.trim():'',notes:$('rp-notes')?$('rp-notes').value.trim():''};
   savePrefs(prefs,'העדפות השוכר נשמרו');
 }
 
@@ -2638,7 +2452,18 @@ function tryBook(id){
   }
   openBook(id);
 }
+function fill24HourBookingTimes(){
+  const opts=Array.from({length:24},(_,h)=>`${String(h).padStart(2,'0')}:00`);
+  [['tm-from','09:00'],['tm-to','12:00']].forEach(([id,def])=>{
+    const el=$(id); if(!el)return;
+    const cur=el.value||def;
+    el.innerHTML=opts.map(t=>`<option value="${t}">${t}</option>`).join('');
+    el.value=opts.includes(cur)?cur:def;
+  });
+}
+
 function openBook(id){
+  fill24HourBookingTimes();
   currentCar=state.cars.find(c=>c.id===id);
   const u=me();
   $('m-car').innerHTML=`<img src="${currentCar.photos[0]}" alt="">
@@ -2788,34 +2613,47 @@ function confirmBooking(){
 }
 function approveBooking(bid){
   const b=state.bookings.find(x=>x.id===bid);
-  if(!b||!state.session||!((state.session.role==='owner'&&b.ownerId===state.session.id)||state.session.role==='admin'))return;
+  if(!b){showToast('ההזמנה לא נמצאה');return;}
+  if(!state.session||!((state.session.role==='owner'&&b.ownerId===state.session.id)||state.session.role==='admin')){showToast('אין הרשאה לאשר את ההזמנה הזאת');return;}
   const c=state.cars.find(x=>x.id===b.carId);
-  if(!confirm('לאשר את ההזמנה '+b.num+'? הרכב יסומן כמושכר.'))return;
+  if(!confirm('לאשר את ההזמנה '+b.num+'?'))return;
+
+  const now=Date.now();
+  b.status='approved';
+  b.approvedAt=now;
+  if(c){c.status='rented';c.ret='זמין שוב: '+fmt(b.to)+' בשעה '+b.tmTo;c.updatedAt=now;}
+  refreshOpenViews();
+  showToast('ההזמנה אושרה');
+
+  const msg='בעל הרכב אישר את ההזמנה '+b.num+'. עכשיו השוכר צריך לשלוח בצ׳אט צילום מסך של העברת הכסף לבעל הרכב.';
   if(CLOUD){
-    db.collection('bookings').doc(bid).update({status:'approved',approvedAt:Date.now()})
-      .then(()=>db.collection('cars').doc(b.carId).update({status:'rented',ret:'זמין שוב: '+fmt(b.to)+' בשעה '+b.tmTo,updatedAt:Date.now()}))
-      .then(()=>pushMsg('b'+b.id,'system',0,'בעל הרכב אישר את ההזמנה '+b.num+'. עכשיו השוכר צריך לשלוח בצ׳אט צילום מסך של העברת הכסף לבעל הרכב.',[b.renterId,b.ownerId]))
-      .catch(cloudErr);return;
+    db.collection('bookings').doc(bid).update({status:'approved',approvedAt:now})
+      .then(()=> c ? db.collection('cars').doc(b.carId).update({status:'rented',ret:'זמין שוב: '+fmt(b.to)+' בשעה '+b.tmTo,updatedAt:now}) : null)
+      .then(()=>pushMsg('b'+b.id,'system',0,msg,[b.renterId,b.ownerId]))
+      .catch(e=>{cloudErr(e);});
+    return;
   }
-  b.status='approved';b.approvedAt=Date.now();
-  if(c){c.status='rented';c.ret='זמין שוב: '+fmt(b.to)+' בשעה '+b.tmTo;}
-  pushMsg('b'+b.id,'system',0,'בעל הרכב אישר את ההזמנה '+b.num+'. עכשיו השוכר צריך לשלוח בצ׳אט צילום מסך של העברת הכסף לבעל הרכב.');
-  render();renderOwnerBookings();showToast('ההזמנה אושרה');
+  pushMsg('b'+b.id,'system',0,msg,[b.renterId,b.ownerId]);
 }
 function rejectBooking(bid){
   const b=state.bookings.find(x=>x.id===bid);
-  if(!b||!state.session||!((state.session.role==='owner'&&b.ownerId===state.session.id)||state.session.role==='admin'))return;
+  if(!b){showToast('ההזמנה לא נמצאה');return;}
+  if(!state.session||!((state.session.role==='owner'&&b.ownerId===state.session.id)||state.session.role==='admin')){showToast('אין הרשאה לדחות את ההזמנה הזאת');return;}
   if(!confirm('לדחות את בקשת ההזמנה '+b.num+'?'))return;
+  const now=Date.now();
+  b.status='rejected';
+  b.rejectedAt=now;
+  refreshOpenViews();
+  showToast('ההזמנה נדחתה');
+  const msg='בעל הרכב דחה את בקשת ההזמנה '+b.num+'. אפשר להתכתב בצ׳אט או לבחור רכב אחר.';
   if(CLOUD){
-    db.collection('bookings').doc(bid).update({status:'rejected',rejectedAt:Date.now()})
-      .then(()=>pushMsg('b'+b.id,'system',0,'בעל הרכב דחה את בקשת ההזמנה '+b.num+'. אפשר להתכתב בצ׳אט או לבחור רכב אחר.',[b.renterId,b.ownerId]))
-      .catch(cloudErr);return;
+    db.collection('bookings').doc(bid).update({status:'rejected',rejectedAt:now})
+      .then(()=>pushMsg('b'+b.id,'system',0,msg,[b.renterId,b.ownerId]))
+      .catch(e=>{cloudErr(e);});
+    return;
   }
-  b.status='rejected';b.rejectedAt=Date.now();
-  pushMsg('b'+b.id,'system',0,'בעל הרכב דחה את בקשת ההזמנה '+b.num+'. אפשר להתכתב בצ׳אט או לבחור רכב אחר.');
-  render();renderOwnerBookings();showToast('הבקשה נדחתה');
+  pushMsg('b'+b.id,'system',0,msg,[b.renterId,b.ownerId]);
 }
-
 function receiptHTML(b){
   const c=state.cars.find(x=>x.id===b.carId)||{make:'',model:'',yr:'',color:'',fuel:'',price:0};
   const u=me()||{email:''};
@@ -3052,7 +2890,15 @@ function participantsOf(tid){
 }
 function pushMsg(tid,role,uid,text,parts,extra){
   const m={tid,role,uid,text,ts:Date.now(),participants:parts||participantsOf(tid),...(extra||{})};
-  if(CLOUD){db.collection('messages').add(m).then(()=>{ if(tid.startsWith('b')){const b=state.bookings.find(x=>'b'+x.id===tid); if(b)bumpCarActivity(b.carId);} }).catch(cloudErr);}
+  if(CLOUD){
+    db.collection('messages').add(m).then(()=>{
+      if(tid.startsWith('b')){const b=state.bookings.find(x=>'b'+x.id===tid); if(b)bumpCarActivity(b.carId);}
+      if(tid.startsWith('o-')){
+        const oid=participantsOf(tid).find(x=>x && (!state.session || x!==state.session.id));
+        const car=state.cars.find(c=>c.ownerId===oid); if(car)bumpCarActivity(car.id);
+      }
+    }).catch(cloudErr);
+  }
   state.msgs.push(m);
   if(activeTid===tid && $('chat-panel').classList.contains('open')){
     state.reads[meKey()+'-'+tid]=Date.now();
@@ -3229,8 +3075,9 @@ function startUserFeeds(uid){
   userUnsubs.push(db.collection('bookings').where('ownerId','==',uid).onSnapshot(applyBookSnap,cloudErr));
   userUnsubs.push(db.collection('messages').where('participants','array-contains',uid).onSnapshot(sn=>{
     const mine=sn.docs.map(d=>({id:d.id,...d.data()}));
-    const local=state.msgs.filter(m=>m.role==='support'||(m.tid||'').startsWith('sup-'));
-    state.msgs=mine.concat(local).sort((a,b)=>(a.ts||0)-(b.ts||0));
+    const keepLocal=state.msgs.filter(m=>!m.id && (Date.now()-(m.ts||0)<15000));
+    const support=state.msgs.filter(m=>(m.tid||'').startsWith('sup-') && !mine.some(x=>x.id&&x.id===m.id));
+    state.msgs=mine.concat(keepLocal, support).sort((a,b)=>(a.ts||0)-(b.ts||0));
     if($('chat-panel').classList.contains('open')){activeTid?renderMsgs():showChatList();}
     updateBadge();
   },cloudErr));
