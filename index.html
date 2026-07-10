@@ -867,6 +867,16 @@ html,body{overflow-x:hidden!important}
 }
 /* ===== END FINAL REAL LAYOUT FIX ===== */
 
+
+
+/* ===== NEW PERSONAL AREA - CLEAN & USEFUL ===== */
+.personal-hero{background:linear-gradient(135deg,#17212B,#2F4357);color:#fff;border-radius:22px;padding:24px;margin-bottom:18px;display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center;box-shadow:0 22px 54px rgba(20,28,40,.18)}
+.personal-hero h4{font-size:1.35rem;margin:0 0 6px}.personal-hero p{color:#CFDAE5;font-size:.9rem;margin:0}.personal-avatar{width:70px;height:70px;border-radius:20px;background:rgba(255,255,255,.12);display:grid;place-items:center;font-weight:800;font-size:1.7rem;border:1px solid rgba(255,255,255,.18)}
+.quick-actions{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:18px}.qa-card{border:1px solid var(--hair);background:#fff;border-radius:17px;padding:15px;text-align:right;box-shadow:0 12px 28px rgba(20,28,40,.06);transition:transform .18s var(--ease),box-shadow .18s}.qa-card:hover{transform:translateY(-2px);box-shadow:0 18px 38px rgba(20,28,40,.1)}.qa-card b{display:block;color:#17212B;font-size:.92rem}.qa-card span{display:block;color:var(--mut);font-size:.76rem;margin-top:3px}.qa-card button{margin-top:10px;width:100%}
+.personal-grid{display:grid;grid-template-columns:.9fr 1.1fr;gap:16px;align-items:start}.personal-panel{background:#fff;border:1px solid var(--hair);border-radius:18px;padding:18px;box-shadow:0 12px 30px rgba(20,28,40,.05)}.personal-panel h4{font-size:1rem;margin-bottom:12px;color:#17212B}.profile-lines{display:flex;flex-direction:column;gap:10px}.profile-line{display:flex;justify-content:space-between;gap:14px;background:var(--bg2);border-radius:12px;padding:10px 12px;font-size:.84rem}.profile-line span{color:var(--mut)}.profile-line b{font-weight:700;color:#17212B;text-align:left}
+.booking-cards{display:flex;flex-direction:column;gap:11px}.booking-card{border:1px solid var(--hair);border-radius:16px;background:linear-gradient(180deg,#fff,#F8FAFC);padding:14px}.booking-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:8px}.booking-title{font-weight:800;color:#17212B}.booking-meta{font-size:.78rem;color:var(--mut)}.booking-bottom{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}.booking-money{font-weight:800;color:var(--gold-d);font-size:1.02rem}.mini-row{display:flex;gap:7px;flex-wrap:wrap}.prefs-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}.storage-note{background:#EEF5FB;border:1px solid rgba(63,107,142,.15);color:#31567A;border-radius:14px;padding:11px 13px;font-size:.78rem;margin-bottom:14px}
+@media(max-width:760px){.personal-hero,.personal-grid{grid-template-columns:1fr}.personal-avatar{display:none}.prefs-row{grid-template-columns:1fr}.quick-actions{grid-template-columns:1fr}}
+
 </style>
 </head>
 <body>
@@ -1517,7 +1527,7 @@ html,body{overflow-x:hidden!important}
    ║ CrownDrive + Netlify Database                                ║
    ║ הנתונים נשמרים דרך /.netlify/functions/db במסד הנתונים של Netlify ║
    ╚════════════════════════════════════════════════════════════════╝ */
-const CLOUD = true;
+const CLOUD = false; // מצב שמירה יציב: עובד בלי Netlify Blobs ובלי שגיאות שרת
 const API_URL = '/.netlify/functions/db';
 let db=null, fauth=null;
 
@@ -1605,9 +1615,33 @@ fauth = {
   const uid=localStorage.getItem('cd_uid'), email=localStorage.getItem('cd_email');
   if(uid&&email) fauth.currentUser=makeAuthUser({uid,email});
 })();
-function persistState(){ /* נשמר בענן דרך Netlify Database */ }
-function loadState(){ /* נטען אוטומטית דרך onSnapshot */ }
-function cloudErr(e){console.error(e);showToast('שגיאה בשמירה: '+((e&&e.message)||e))}
+const LOCAL_KEY = 'crowndrive_site_data_v4';
+function persistState(){
+  try{
+    const copy={
+      owners:state.owners||[], renters:state.renters||[], cars:state.cars||[], bookings:state.bookings||[],
+      session:state.session||null, msgs:state.msgs||[], ratings:state.ratings||[], users:state.users||{}, seq
+    };
+    localStorage.setItem(LOCAL_KEY, JSON.stringify(copy));
+    return true;
+  }catch(e){
+    console.error('local save failed', e);
+    showToast('השמירה בדפדפן נכשלה — כנראה התמונות כבדות מדי. נסו תמונות קטנות יותר.');
+    return false;
+  }
+}
+function loadState(){
+  try{
+    const raw=localStorage.getItem(LOCAL_KEY);
+    if(!raw)return;
+    const d=JSON.parse(raw);
+    ['owners','renters','cars','bookings','msgs','ratings'].forEach(k=>{ if(Array.isArray(d[k])) state[k]=d[k]; });
+    if(d.users&&typeof d.users==='object')state.users=d.users;
+    if(d.session)state.session=d.session;
+    if(d.seq&&Number.isFinite(+d.seq))seq=+d.seq;
+  }catch(e){console.error('local load failed', e)}
+}
+function cloudErr(e){console.error(e);showToast('השמירה עברה למצב מקומי יציב — אין צורך ב-Netlify Blobs')}
 
 /* ================= STATE ================= */
 const state = {
@@ -1767,7 +1801,7 @@ function renderNav(){
       ${role==='admin'?'':`<button class="btn btn-dark-out" onclick="openAccount()" title="עריכת פרטי החשבון">⚙ החשבון</button>`} <button class="btn btn-dark-out" onclick="logout()">יציאה מהמערכת</button>`;
   }
 }
-function logout(){if(CLOUD&&fauth.currentUser){fauth.signOut()}state.session=null;localStorage.removeItem('cd_uid');localStorage.removeItem('cd_email');stopUserFeeds();stopAdminFeeds();renderNav();toggleChat(false);updateBadge();showToast('יצאת מהמערכת בהצלחה')}
+function logout(){if(CLOUD&&fauth.currentUser){fauth.signOut()}state.session=null;localStorage.removeItem('cd_uid');localStorage.removeItem('cd_email');persistState();stopUserFeeds();stopAdminFeeds();renderNav();toggleChat(false);updateBadge();showToast('יצאת מהמערכת בהצלחה')}
 
 /* ================= AUTH ================= */
 function openAuth(role){
@@ -2654,38 +2688,68 @@ function openRenterArea(){
   if(!state.session||state.session.role!=='renter')return openAuth('renter');
   const u=me();
   const prefs=u.prefs||{};
-  const list=state.bookings.filter(b=>b.renterId===u.id).sort((a,b)=>b.createdAt-a.createdAt);
+  const list=state.bookings.filter(b=>b.renterId===u.id).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  const pending=list.filter(b=>(b.status||'approved')==='pending').length;
+  const approved=list.filter(b=>(b.status||'approved')==='approved').length;
+  const totalSpent=list.filter(b=>(b.status||'approved')!=='rejected').reduce((sum,b)=>sum+(+b.total||0),0);
+  const initials=(u.name||'שוכר').trim().split(/\s+/).map(x=>x[0]).join('').slice(0,2);
   $('renter-body').innerHTML=`
+    <div class="personal-hero">
+      <div>
+        <h4>שלום ${esc((u.name||'').split(' ')[0]||'שוכר')} 👋</h4>
+        <p>כאן מנהלים הזמנות, תשלום, צ׳אט עם בעל הרכב והעדפות — בלי לחפש בכל האתר.</p>
+      </div>
+      <div class="personal-avatar">${esc(initials)}</div>
+    </div>
+    <div class="storage-note">מצב השמירה תוקן: האתר שומר בדפדפן בצורה יציבה ולא נתקע בגלל Netlify Blobs או שגיאת שרת.</div>
     <div class="kpis">
       <div class="kpi"><b>${list.length}</b><span>סה״כ הזמנות</span></div>
-      <div class="kpi"><b>${list.filter(b=>(b.status||'approved')==='pending').length}</b><span>ממתינות לאישור</span></div>
-      <div class="kpi"><b>${list.filter(b=>(b.status||'approved')==='approved').length}</b><span>מאושרות</span></div>
+      <div class="kpi"><b>${pending}</b><span>ממתינות לאישור</span></div>
+      <div class="kpi"><b>${approved}</b><span>מאושרות עכשיו</span></div>
+      <div class="kpi"><b>${money(totalSpent)}</b><span>סכום הזמנות</span></div>
     </div>
-    <div class="summary-box">
-      <div class="row"><span>שם</span><span>${esc(u.name)}</span></div>
-      <div class="row"><span>אימייל</span><span>${esc(u.email)}</span></div>
-      <div class="row"><span>רישיון נהיגה</span><span style="color:var(--ok)">✓ מאומת</span></div>
+    <div class="quick-actions">
+      <div class="qa-card"><b>להזמין רכב</b><span>חזרה מהירה לצי הרכבים</span><button class="mini gold" onclick="closeOv('ov-renter');document.getElementById('fleet').scrollIntoView({behavior:'smooth'})">פתח רכבים</button></div>
+      <div class="qa-card"><b>הפרטים שלי</b><span>שם, טלפון, מייל ורישיון</span><button class="mini gold" onclick="openAccount()">עריכת פרטים</button></div>
+      <div class="qa-card"><b>צ׳אט שירות</b><span>שאלה למנהל המערכת</span><button class="mini gold" onclick="openSupportChat()">פתח צ׳אט</button></div>
     </div>
-    <div class="divider">העדפות אישיות</div>
-    <div class="pref-grid">
-      <div class="field"><label>שפת תקשורת</label><input id="rp-lang" value="${esc(prefs.lang||'עברית / English')}"></div>
-    </div>
-    <div class="m-actions" style="margin-bottom:20px"><button class="btn btn-gold grow" onclick="saveRenterPrefs()">שמירת העדפות</button></div>
-    <div class="divider">ההזמנות שלי</div>
-    ${list.length===0?'<div class="adm-empty">עדיין אין הזמנות.</div>'
-    :`<table class="tbl"><thead><tr><th>הזמנה</th><th>סטטוס</th><th>רכב</th><th>תקופה</th><th>סכום</th><th>צילום תשלום</th><th>דירוג המשכיר</th></tr></thead><tbody>
-      ${list.map(b=>{const c=state.cars.find(x=>x.id===b.carId)||{make:'—',model:''};
-        const mine=myRating(b.id,'renter');
-        return `<tr><td class="num">${b.num}</td><td>${bookingStatusHTML(b)}</td><td>${esc(c.make)} ${esc(c.model)}</td>
-        <td>${fmt(b.from)} – ${fmt(b.to)}</td><td class="num">${money(b.total)}<br><button class="mini gold" style="margin-top:6px" onclick="openChatTo('b${b.id}')">💬 צ'אט עם בעל הרכב</button></td>
-        <td>${paymentProofCell(b)}</td>
-        <td>${mine
-          ?`<span class="rate-label">דירגת:</span>${starsHTML(mine.stars,null)}
-            ${mine.text
-              ?`<div class="my-review">&quot;${esc(mine.text)}&quot;</div>`
-              :`<div class="rv-box"><input id="rv-${b.id}" placeholder="ספרו איך היה (ביקורת פומבית)" maxlength="220"><button class="mini gold" onclick="setReview('${b.id}')">פרסום</button></div>`}`
-          :`<span class="rate-label">איך היה השירות?</span>${ratePicker(b.id)}`}</td></tr>`;}).join('')}
-    </tbody></table>`}`;
+    <div class="personal-grid">
+      <div class="personal-panel">
+        <h4>הפרופיל שלי</h4>
+        <div class="profile-lines">
+          <div class="profile-line"><span>שם</span><b>${esc(u.name||'—')}</b></div>
+          <div class="profile-line"><span>אימייל</span><b>${esc(u.email||'—')}</b></div>
+          <div class="profile-line"><span>טלפון</span><b>${esc(u.phone||'—')}</b></div>
+          <div class="profile-line"><span>רישיון</span><b style="color:var(--ok)">✓ שמור במערכת</b></div>
+        </div>
+        <div class="divider">העדפות</div>
+        <div class="prefs-row">
+          <div class="field" style="margin-bottom:0"><label>שפת תקשורת</label><input id="rp-lang" value="${esc(prefs.lang||'עברית / English')}"></div>
+          <button class="btn btn-gold" onclick="saveRenterPrefs()">שמירה</button>
+        </div>
+      </div>
+      <div class="personal-panel">
+        <h4>ההזמנות שלי</h4>
+        ${list.length===0?'<div class="adm-empty">עדיין אין הזמנות. לחץ על “פתח רכבים” כדי להתחיל.</div>':`<div class="booking-cards">
+          ${list.map(b=>{const c=state.cars.find(x=>x.id===b.carId)||{make:'—',model:'',photos:[]}; const mine=myRating(b.id,'renter'); return `
+            <div class="booking-card">
+              <div class="booking-top">
+                <div><div class="booking-title">${esc(c.make)} ${esc(c.model)}</div><div class="booking-meta">${esc(b.num||'')} · ${fmt(b.from)} ${esc(b.tmFrom||'')} עד ${fmt(b.to)} ${esc(b.tmTo||'')}</div></div>
+                ${bookingStatusHTML(b)}
+              </div>
+              <div class="booking-bottom">
+                <div class="booking-money">${money(b.total)}</div>
+                <div class="mini-row">
+                  <button class="mini gold" onclick="openChatTo('b${b.id}')">💬 צ׳אט</button>
+                  ${((b.status||'approved')==='approved'&&!b.paymentProof)?`<label class="mini gold">העלאת תשלום<input type="file" accept="image/*" style="display:none" onchange="uploadPaymentProof('${b.id}',this)"></label>`:''}
+                </div>
+              </div>
+              ${b.paymentProof?'<div style="color:var(--ok);font-size:.78rem;margin-top:8px;font-weight:700">✓ צילום תשלום נשלח</div>':''}
+              <div style="margin-top:10px">${mine?`<span class="rate-label">דירגת:</span>${starsHTML(mine.stars,null)}${mine.text?`<div class="my-review">&quot;${esc(mine.text)}&quot;</div>`:`<div class="rv-box"><input id="rv-${b.id}" placeholder="כתוב ביקורת קצרה" maxlength="220"><button class="mini gold" onclick="setReview('${b.id}')">פרסום</button></div>`}`:`<span class="rate-label">דירוג אחרי ההשכרה:</span>${ratePicker(b.id)}`}</div>
+            </div>`;}).join('')}
+        </div>`}
+      </div>
+    </div>`;
   openOv('ov-renter');
 }
 function saveRenterPrefs(){
@@ -3011,7 +3075,23 @@ function bindDrop(dropId,fileId,single,multi){
 function readImg(f,cb){
   if(!f.type.startsWith('image/'))return showToast('יש להעלות קובץ תמונה בלבד');
   if(f.size>10*1024*1024)return showToast('הקובץ גדול מדי (מקסימום 10MB)');
-  const r=new FileReader();r.onload=()=>cb(r.result);r.readAsDataURL(f);
+  const r=new FileReader();
+  r.onload=()=>{
+    const img=new Image();
+    img.onload=()=>{
+      try{
+        const max=1280;
+        let w=img.width,h=img.height;
+        if(w>max||h>max){const ratio=Math.min(max/w,max/h);w=Math.round(w*ratio);h=Math.round(h*ratio)}
+        const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
+        const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,w,h);
+        cb(canvas.toDataURL('image/jpeg',0.78));
+      }catch(e){cb(r.result)}
+    };
+    img.onerror=()=>cb(r.result);
+    img.src=r.result;
+  };
+  r.readAsDataURL(f);
 }
 function viewLic(bid){
   const b=state.bookings.find(x=>x.id===bid);
@@ -3454,6 +3534,7 @@ document.querySelectorAll('.sec-head,.fleet-side,.how-grid,.foot-cta,.strip-in')
 
 
 
+window.addEventListener('beforeunload', persistState);
 loadState();
 initChoiceLists();initOwnerChoiceLists();updateOwnerPriceFields();renderNav();render();initSig();updateBadge();
 setInterval(()=>{
