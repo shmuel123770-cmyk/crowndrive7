@@ -1794,19 +1794,33 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;ba
 const CLOUD = true;
 const API_URL = '/.netlify/functions/db';
 let db=null, fauth=null;
+const CLOUD_POLL_MS = 10000; // מצב חירום יציב: סנכרון ענן כל 10 שניות כדי לא להציף את Netlify
 
 async function api(action, payload={}){
   const token = localStorage.getItem('cd_token') || '';
-  const res = await fetch(API_URL, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({action,token,...payload})
-  });
-  const txt = await res.text();
-  let data={};
-  try{ data = txt ? JSON.parse(txt) : {}; }catch(e){ data={error:txt||'Invalid JSON'}; }
-  if(!res.ok) throw new Error(data.error || ('שגיאת סנכרון '+res.status));
-  return data;
+  const ctrl = new AbortController();
+  const t = setTimeout(()=>ctrl.abort(), 12000);
+  let res, txt='', data={};
+  try{
+    res = await fetch(API_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Cache-Control':'no-store'},
+      cache:'no-store',
+      signal: ctrl.signal,
+      body:JSON.stringify({action,token,...payload})
+    });
+    txt = await res.text();
+    try{ data = txt ? JSON.parse(txt) : {}; }catch(e){ data={error:txt||'Invalid JSON'}; }
+    if(!res.ok) throw new Error(data.error || ('שגיאת סנכרון '+res.status));
+    window.__cdCloudFailCount = 0;
+    window.__cdCloudOkAt = Date.now();
+    return data;
+  }catch(e){
+    if(e && e.name === 'AbortError') throw new Error('החיבור לענן איטי מדי');
+    throw e;
+  }finally{
+    clearTimeout(t);
+  }
 }
 
 function plainDateTime(d,t){return `${fmt(d)} בשעה ${t||''}`.trim();}
@@ -1892,7 +1906,7 @@ function makeCollection(name){
               if(key!==last){ last=key; cb(snapFrom(r.records)); }
             }catch(e){ if(err)err(e); else console.error(e); }
           };
-          run(); timer=setInterval(run,1000);
+          run(); timer=setInterval(run,CLOUD_POLL_MS);
           return ()=>{stop=true; if(timer)clearInterval(timer)};
         }
       };
@@ -1907,7 +1921,7 @@ function makeCollection(name){
           if(key!==last){ last=key; cb(snapFrom(r.records)); }
         }catch(e){ if(err)err(e); else console.error(e); }
       };
-      run(); timer=setInterval(run,1000);
+      run(); timer=setInterval(run,CLOUD_POLL_MS);
       return ()=>{stop=true; if(timer)clearInterval(timer)};
     }
   };
@@ -1938,7 +1952,18 @@ fauth = {
 })();
 function persistState(){ /* נשמר בענן דרך Netlify Database */ }
 function loadState(){ /* נטען אוטומטית דרך onSnapshot */ }
-function cloudErr(e){console.warn('Cloud sync issue',e); if(!window.__cdCloudWarned){window.__cdCloudWarned=true; showToast('הסנכרון בענן מתאושש — נסה לרענן בעוד רגע'); setTimeout(()=>{window.__cdCloudWarned=false},12000);} }
+function cloudErr(e){
+  console.warn('Cloud sync issue',e);
+  window.__cdCloudFailCount=(window.__cdCloudFailCount||0)+1;
+  // מצב חירום: לא תוקעים את האתר ולא מציגים הודעת “מתאושש” על כל נפילה קטנה.
+  // האתר ממשיך לעבוד ומנסה שוב אוטומטית בסנכרון הבא.
+  if(window.__cdCloudFailCount<10) return;
+  if(!window.__cdCloudWarned){
+    window.__cdCloudWarned=true;
+    showToast('החיבור לענן איטי — האתר ממשיך לנסות אוטומטית');
+    setTimeout(()=>{window.__cdCloudWarned=false},60000);
+  }
+}
 
 /* ================= STATE ================= */
 const state = {
@@ -3788,7 +3813,7 @@ initChoiceLists();updateOwnerPriceFields();renderNav();render();initSig();update
 setInterval(()=>{
   if(document.activeElement && ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))return;
   refreshOpenViews();
-},1000);
+},1000); // ריענון תצוגה מקומי בלבד; קריאות הענן נעשות חכם יותר
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

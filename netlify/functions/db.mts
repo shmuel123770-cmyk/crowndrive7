@@ -24,7 +24,7 @@ const headers = {
   "content-type": "application/json; charset=utf-8",
   "access-control-allow-origin": "*",
   "access-control-allow-headers": "Content-Type",
-  "access-control-allow-methods": "POST, OPTIONS",
+  "access-control-allow-methods": "GET, POST, OPTIONS",
 };
 
 function json(data: unknown, statusCode = 200) {
@@ -202,6 +202,10 @@ async function sendEmailMessage(to: string | string[], subject: string, html: st
 export const handler = async (event: any) => {
   try {
     if (event.httpMethod === "OPTIONS") return json({ ok: true });
+    if (event.httpMethod === "GET") {
+      try { await ensureTables(); } catch (e:any) { return json({ ok:false, function:"db", error:"DB_NOT_READY", details:e?.message || String(e) }, 500); }
+      return json({ ok:true, function:"db", message:"Crown Drive DB function is alive", time:new Date().toISOString() });
+    }
     if (event.httpMethod !== "POST") return bad("POST only", 405);
     await ensureTables();
     let body: any = {};
