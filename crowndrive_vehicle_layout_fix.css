@@ -1,0 +1,108 @@
+/* CrownDrive vehicle cards layout fix
+   Paste this at the END of your <style> block, right before </style>.
+   It fixes vehicles stretching across the page and disables jumping/animation. */
+
+/* Keep the fleet section centered and prevent card stretching */
+#fleet .grid,
+.grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 360px)) !important;
+  justify-content: center !important;
+  align-items: stretch !important;
+  gap: 24px !important;
+  width: 100% !important;
+  max-width: 1200px !important;
+  margin-inline: auto !important;
+  padding-inline: 0 !important;
+}
+
+/* Card should behave like a normal fixed-width card, not a full-page block */
+#fleet .card,
+.card {
+  width: 100% !important;
+  max-width: 360px !important;
+  min-width: 0 !important;
+  position: relative !important;
+  transform: none !important;
+  animation: none !important;
+  transition: box-shadow .2s ease, border-color .2s ease !important;
+}
+
+#fleet .card:hover,
+.card:hover {
+  transform: none !important;
+}
+
+/* Image area gets a normal fixed visual height */
+#fleet .gallery,
+.gallery {
+  width: 100% !important;
+  height: 220px !important;
+  aspect-ratio: auto !important;
+  overflow: hidden !important;
+}
+
+#fleet .gallery img,
+.gallery img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+  transform: none !important;
+  animation: none !important;
+  transition: none !important;
+}
+
+#fleet .card:hover .gallery img,
+.card:hover .gallery img {
+  transform: none !important;
+}
+
+/* Stop any floating / bouncing / reveal behavior on car cards */
+#fleet .card,
+#fleet .card *,
+.card,
+.card * {
+  animation-name: none !important;
+}
+
+/* Empty state can still span the whole grid */
+#fleet .empty,
+.empty {
+  grid-column: 1 / -1 !important;
+  max-width: none !important;
+}
+
+/* Tablet */
+@media (max-width: 900px) {
+  #fleet .grid,
+  .grid {
+    grid-template-columns: repeat(2, minmax(260px, 1fr)) !important;
+    gap: 18px !important;
+  }
+
+  #fleet .card,
+  .card {
+    max-width: none !important;
+  }
+}
+
+/* Phone */
+@media (max-width: 600px) {
+  #fleet .grid,
+  .grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+    padding-inline: 14px !important;
+  }
+
+  #fleet .card,
+  .card {
+    max-width: 100% !important;
+  }
+
+  #fleet .gallery,
+  .gallery {
+    height: 190px !important;
+  }
+}
