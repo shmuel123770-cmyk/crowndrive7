@@ -1,8 +1,11 @@
-const { getStore } = require('@netlify/blobs');
+const fs = require('fs');
+const path = require('path');
 const crypto = require('crypto');
 
-const STORE_NAME = 'crowndrive-data';
-const DB_KEY = 'main-db-v1';
+// חשוב: בלי Netlify Blobs. אין צורך ב-siteID/token ואין תלות חיצונית.
+const DB_PATH = '/tmp/crowndrive-db.json';
+let memoryDb = null;
+let writeQueue = Promise.resolve();
 
 function json(statusCode, body) {
   return {
@@ -17,6 +20,8 @@ function json(statusCode, body) {
   };
 }
 
+function emptyDb(){ return { collections: {}, auth: {} }; }
+
 function newId(prefix = 'id') {
   return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
 }
@@ -25,15 +30,38 @@ function hashPass(pass) {
   return crypto.createHash('sha256').update(String(pass || '')).digest('hex');
 }
 
+function safeReadJson(file) {
+  try {
+    if (!fs.existsSync(file)) return null;
+    const txt = fs.readFileSync(file, 'utf8');
+    return txt ? JSON.parse(txt) : null;
+  } catch (e) {
+    console.error('DB read failed:', e);
+    return null;
+  }
+}
+
 async function loadDb() {
-  const store = getStore(STORE_NAME);
-  const data = await store.get(DB_KEY, { type: 'json' });
-  return data && typeof data === 'object' ? data : { collections: {}, auth: {} };
+  if (memoryDb && typeof memoryDb === 'object') return memoryDb;
+  const fromFile = safeReadJson(DB_PATH);
+  memoryDb = fromFile && typeof fromFile === 'object' ? fromFile : emptyDb();
+  memoryDb.collections = memoryDb.collections || {};
+  memoryDb.auth = memoryDb.auth || {};
+  return memoryDb;
 }
 
 async function saveDb(db) {
-  const store = getStore(STORE_NAME);
-  await store.setJSON(DB_KEY, db);
+  memoryDb = db;
+  writeQueue = writeQueue.then(async () => {
+    try {
+      fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
+      fs.writeFileSync(DB_PATH, JSON.stringify(db), 'utf8');
+    } catch (e) {
+      console.error('DB write failed:', e);
+      // לא מפילים את האתר בגלל כתיבה לקובץ זמני
+    }
+  });
+  await writeQueue;
 }
 
 function ensureCollection(db, name) {
@@ -64,6 +92,10 @@ exports.handler = async (event) => {
     const db = await loadDb();
     db.auth = db.auth || {};
 
+    if (action === 'health') {
+      return json(200, { ok: true, storage: 'netlify-function-memory-tmp', blobs: false });
+    }
+
     if (action === 'signup') {
       const email = String(body.email || '').trim().toLowerCase();
       const pass = String(body.pass || '');
@@ -85,10 +117,7 @@ exports.handler = async (event) => {
       return json(200, { user: publicUser(user) });
     }
 
-    if (action === 'resetPassword') {
-      // אין כאן שליחת מייל אמיתית. שינוי סיסמה נעשה מתוך החשבון לאחר כניסה.
-      return json(200, { ok: true });
-    }
+    if (action === 'resetPassword') return json(200, { ok: true });
 
     if (action === 'updateAuth') {
       const uid = String(body.uid || '');
