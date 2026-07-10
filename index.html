@@ -951,6 +951,34 @@ img{max-width:100%;}
   @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 }
 
+
+
+/* ===== OFFICIAL RENTAL BRAND INSPIRED ELEMENTS ===== */
+.rental-command{max-width:1180px;margin:-46px auto 28px;padding:0 22px;position:relative;z-index:6}
+.rental-command-card{background:rgba(255,255,255,.94);backdrop-filter:blur(18px);border:1px solid rgba(63,107,142,.16);border-radius:22px;box-shadow:0 28px 70px rgba(10,18,28,.18);overflow:hidden}
+.rc-tabs{display:flex;background:#F2F5F8;border-bottom:1px solid var(--hair);padding:8px;gap:8px}
+.rc-tab{border:none;background:transparent;color:#5B6978;border-radius:14px;padding:12px 18px;font-weight:800;font-size:.86rem;transition:.2s}
+.rc-tab.on,.rc-tab:hover{background:#1B222B;color:#fff;box-shadow:0 12px 28px rgba(27,34,43,.18)}
+.rc-form{display:grid;grid-template-columns:1.35fr 1fr 1fr .9fr auto;gap:10px;padding:16px;align-items:end}
+.rc-field{border:1px solid rgba(31,41,53,.1);border-radius:16px;background:#fff;padding:11px 13px;min-height:68px;box-shadow:0 8px 18px rgba(15,30,45,.04)}
+.rc-field span{display:block;font-size:.68rem;color:#6E7B88;font-weight:800;letter-spacing:.07em;text-transform:uppercase;margin-bottom:2px}
+.rc-field b{display:block;font-size:.96rem;color:#1B222B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc-field small{display:block;font-size:.72rem;color:#8B97A3;margin-top:1px}
+.rc-action{height:68px;border:none;border-radius:16px;background:linear-gradient(135deg,var(--gold),#244D72);color:#fff;font-weight:900;padding:0 22px;box-shadow:0 18px 36px rgba(63,107,142,.24);transition:.2s}
+.rc-action:hover{transform:translateY(-2px);filter:brightness(1.05)}
+.rc-benefits{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--hair);background:linear-gradient(180deg,#fff,#F8FAFC)}
+.rc-benefit{padding:13px 16px;border-inline-start:1px solid var(--hair);display:flex;gap:9px;align-items:center;font-size:.8rem;color:#465565;font-weight:700}
+.rc-benefit:first-child{border-inline-start:none}.rc-benefit i{font-style:normal;width:25px;height:25px;border-radius:8px;background:rgba(63,107,142,.1);display:grid;place-items:center;color:var(--gold-d);font-weight:900}
+.rental-experience{max-width:1180px;margin:0 auto;padding:0 22px 34px;display:grid;grid-template-columns:1.1fr .9fr;gap:18px;position:relative;z-index:2}
+.pro-grade-panel{background:#fff;border:1px solid rgba(63,107,142,.14);border-radius:22px;padding:22px;box-shadow:0 16px 44px rgba(21,31,43,.08);overflow:hidden;position:relative}
+.pro-grade-panel::after{content:"";position:absolute;inset-inline-end:-40px;top:-60px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(63,107,142,.16),transparent 68%);pointer-events:none}
+.pro-title{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}.pro-title h3{font-size:1.15rem}.pro-title span{font-size:.76rem;color:var(--mut)}
+.pro-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.pro-step{background:#F4F7FA;border:1px solid var(--hair);border-radius:16px;padding:14px 10px;text-align:center;min-height:106px}.pro-step b{display:grid;place-items:center;margin:0 auto 8px;width:34px;height:34px;border-radius:50%;background:#1B222B;color:#fff;font-size:.86rem}.pro-step strong{display:block;font-size:.86rem}.pro-step span{display:block;font-size:.7rem;color:var(--mut);line-height:1.35;margin-top:4px}
+.pro-class-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.pro-class{background:#F4F7FA;border:1px solid var(--hair);border-radius:16px;padding:13px;display:flex;gap:10px;align-items:center}.pro-class i{font-style:normal;width:40px;height:40px;border-radius:13px;background:#fff;display:grid;place-items:center;font-size:1.15rem;box-shadow:0 6px 16px rgba(10,18,28,.06)}.pro-class b{font-size:.9rem}.pro-class span{display:block;color:var(--mut);font-size:.72rem;line-height:1.3}
+.trust-strip-pro{max-width:1180px;margin:0 auto 28px;padding:0 22px}.trust-inner{background:#1B222B;color:#fff;border-radius:22px;padding:18px 20px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;box-shadow:0 20px 50px rgba(10,18,28,.18)}.trust-item{display:flex;gap:10px;align-items:center;min-width:0}.trust-item i{font-style:normal;width:34px;height:34px;border-radius:12px;background:rgba(255,255,255,.08);display:grid;place-items:center}.trust-item b{display:block;font-size:.86rem}.trust-item span{display:block;font-size:.72rem;color:#B9C5D0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:900px){.rental-command{margin:-26px auto 24px}.rc-tabs{overflow:auto}.rc-form{grid-template-columns:1fr 1fr}.rc-action{grid-column:1/-1}.rc-benefits{grid-template-columns:1fr 1fr}.rental-experience{grid-template-columns:1fr}.pro-steps{grid-template-columns:1fr 1fr}.trust-inner{grid-template-columns:1fr 1fr}}
+@media(max-width:540px){.rental-command{padding:0 12px;margin:-18px auto 20px}.rc-tabs{padding:6px}.rc-tab{padding:10px 12px;font-size:.78rem;white-space:nowrap}.rc-form{grid-template-columns:1fr;padding:12px}.rc-field,.rc-action{min-height:58px;height:auto}.rc-benefits{grid-template-columns:1fr}.rc-benefit{padding:11px 13px}.rental-experience,.trust-strip-pro{padding-left:12px;padding-right:12px}.pro-grade-panel{padding:16px;border-radius:18px}.pro-steps,.pro-class-grid,.trust-inner{grid-template-columns:1fr}.trust-inner{padding:14px;border-radius:18px}}
+
 </style>
 
 <link rel="manifest" href="/manifest.json">
@@ -1070,6 +1098,61 @@ img{max-width:100%;}
     <span class="it" style="color:var(--mut2);font-size:.74rem" id="last-upd"></span>
   </div>
 </div>
+
+<!-- OFFICIAL RENTAL STYLE COMMAND BAR -->
+<section class="rental-command" aria-label="סרגל הזמנה מהיר">
+  <div class="rental-command-card">
+    <div class="rc-tabs" role="tablist" aria-label="אפשרויות השכרה">
+      <button class="rc-tab on" type="button">השכרה עכשיו</button>
+      <button class="rc-tab" type="button">הזמנה ממתינה לאישור</button>
+      <button class="rc-tab" type="button">השכרה ארוכה</button>
+    </div>
+    <div class="rc-form">
+      <div class="rc-field"><span>אזור איסוף</span><b>קראון הייטס · ברוקלין</b><small>בעל הרכב מציין נקודת מסירה מדויקת</small></div>
+      <div class="rc-field"><span>תחילת השכרה</span><b>בחר תאריך ושעה</b><small>לפי שעות / ימים / שבוע</small></div>
+      <div class="rc-field"><span>החזרת רכב</span><b>זמין שוב אוטומטית</b><small>מוצג במודעה לפי ההזמנות</small></div>
+      <div class="rc-field"><span>תשלום</span><b>Pay after approval</b><small>צילום העברה בצ׳אט</small></div>
+      <button class="rc-action" type="button" onclick="scrollToFleet()">חפש רכבים</button>
+    </div>
+    <div class="rc-benefits">
+      <div class="rc-benefit"><i>✓</i> אישור בעל רכב לפני סגירה</div>
+      <div class="rc-benefit"><i>₪</i> מחיר לפי שעה / יום / שבוע</div>
+      <div class="rc-benefit"><i>💬</i> צ׳אט ישיר עם בעל הרכב</div>
+      <div class="rc-benefit"><i>🔒</i> רישיון ותמונות באחסון ענן</div>
+    </div>
+  </div>
+</section>
+
+<section class="rental-experience" aria-label="חוויית השכרה מקצועית">
+  <div class="pro-grade-panel">
+    <div class="pro-title"><div><h3>תהליך בסגנון חברות השכרה גדולות</h3><span>בחירה, אישור, תשלום ותיעוד — בלי בלגן בווטסאפ</span></div></div>
+    <div class="pro-steps">
+      <div class="pro-step"><b>1</b><strong>בחר רכב</strong><span>סינון לפי יצרן, דגם, מושבים וסוג רכב</span></div>
+      <div class="pro-step"><b>2</b><strong>שלח בקשה</strong><span>ההזמנה ממתינה לאישור בעל הרכב</span></div>
+      <div class="pro-step"><b>3</b><strong>שלח תשלום</strong><span>צילום העברה נשמר בצ׳אט ההזמנה</span></div>
+      <div class="pro-step"><b>4</b><strong>איסוף</strong><span>כל הפרטים והמסמכים באזור האישי</span></div>
+    </div>
+  </div>
+  <div class="pro-grade-panel">
+    <div class="pro-title"><div><h3>קטגוריות רכב ברורות</h3><span>כמו באתרים רשמיים: סדאן, SUV, פיקאפ ומיניוואן</span></div></div>
+    <div class="pro-class-grid">
+      <div class="pro-class"><i>🚘</i><div><b>סדאן</b><span>נסיעות עירוניות, מחיר נמוך ונוחות</span></div></div>
+      <div class="pro-class"><i>🚙</i><div><b>SUV</b><span>משפחה, מזוודות ונסיעות ארוכות</span></div></div>
+      <div class="pro-class"><i>🛻</i><div><b>פיקאפ</b><span>הובלות קלות, ציוד ועבודה</span></div></div>
+      <div class="pro-class"><i>🚐</i><div><b>מיניוואן</b><span>קבוצות, משפחות ושדה תעופה</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="trust-strip-pro" aria-label="יתרונות האתר">
+  <div class="trust-inner">
+    <div class="trust-item"><i>⚡</i><div><b>עדכון כל שנייה</b><span>זמינות, צ׳אטים והזמנות</span></div></div>
+    <div class="trust-item"><i>☁️</i><div><b>אחסון ענן</b><span>תמונות לא מכבידות על האתר</span></div></div>
+    <div class="trust-item"><i>🧾</i><div><b>תיעוד הזמנה</b><span>מספר הזמנה, סטטוס ותאריכים</span></div></div>
+    <div class="trust-item"><i>🛡️</i><div><b>פרטיות והרשאות</b><span>כל משתמש רואה רק את שלו</span></div></div>
+  </div>
+</section>
+
 
 <!-- FLEET -->
 <section class="section" id="fleet">
