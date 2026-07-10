@@ -95,6 +95,241 @@ input,select,textarea{font-family:inherit}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:22px}
 .card{background:#fff;border:1px solid var(--hair);border-radius:18px;overflow:hidden;display:flex;flex-direction:column;transition:transform .25s,box-shadow .25s}
 .card:hover{transform:translateY(-4px)}
+.gallery{position:relative;aspect-ratio:16/10;background:var(--bg3);overflow:hidden}
+.gallery img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s ease}
+.card:hover .gallery img{transform:scale(1.04)}
+.card.off .gallery img{filter:grayscale(1) brightness(.55)}
+.g-nav{position:absolute;top:50%;transform:translateY(-50%);width:34px;height:34px;border:none;border-radius:50%;background:rgba(255,255,255,.85);color:#1D1D1F;font-size:1rem;display:grid;place-items:center;opacity:0;transition:opacity .2s;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+.gallery:hover .g-nav{opacity:1}
+.g-prev{inset-inline-start:12px}.g-next{inset-inline-end:12px}
+.g-dots{position:absolute;bottom:12px;inset-inline:0;display:flex;justify-content:center;gap:6px}
+.g-dots span{width:5px;height:5px;border-radius:50%;background:rgba(244,239,230,.4)}
+.g-dots span.on{background:var(--gold-l);width:18px;border-radius:99px}
+.g-count{position:absolute;top:12px;inset-inline-end:12px;background:rgba(0,0,0,.55);border-radius:99px;color:#fff;font-size:.7rem;padding:3px 10px;letter-spacing:.02em}
+.g-status{position:absolute;top:12px;inset-inline-start:12px}
+.pill{font-size:.72rem;font-weight:600;letter-spacing:.02em;padding:4px 13px;border:1px solid;border-radius:99px}
+.pill.ok{color:var(--ok);background:var(--ok-bg);border-color:rgba(127,191,158,.4)}
+.pill.no{color:var(--no);background:var(--no-bg);border-color:rgba(217,138,128,.4)}
+.pill.soon{color:var(--soon);background:var(--soon-bg);border-color:rgba(217,190,128,.4)}
+.card-body{padding:24px;display:flex;flex-direction:column;gap:15px;flex:1}
+.card-title{display:flex;justify-content:space-between;gap:12px;align-items:start}
+.card-title h3{font-size:1.2rem;font-weight:700}
+.card-title .meta{color:var(--mut);font-size:.8rem;font-weight:300;letter-spacing:.03em}
+.price{text-align:left;flex:none}
+.price b{font-family:'Heebo';font-weight:800;font-size:1.35rem;color:var(--gold-d);font-weight:700}
+.price span{font-size:.7rem;color:var(--mut);display:block;letter-spacing:.08em}
+.specs{display:flex;gap:18px;flex-wrap:wrap;border-top:1px solid var(--hair);padding-top:15px}
+.spec{display:flex;align-items:center;gap:7px;font-size:.79rem;color:var(--mut)}
+.spec svg{width:15px;height:15px;stroke:var(--gold-d)}
+.tags{display:flex;gap:7px;flex-wrap:wrap}
+.tag{background:var(--bg2);border-radius:99px;font-size:.72rem;font-weight:500;color:var(--mut);padding:3px 12px}
+.card-btn{margin-top:auto;border:none;background:#232A33;color:#fff;font-weight:600;font-size:.92rem;border-radius:10px;padding:13px;transition:all .2s}
+.card-btn.book:hover{background:#33404E}
+.card-btn.dis{background:var(--bg2);color:var(--mut2);cursor:not-allowed}
+.ret{font-size:.75rem;color:var(--soon);letter-spacing:.04em}
+.empty{grid-column:1/-1;background:var(--bg2);border-radius:18px;padding:90px 30px;text-align:center}
+.empty h3{font-size:1.3rem;font-weight:700;margin-bottom:8px}
+.empty p{color:var(--mut);font-size:.9rem;margin-bottom:26px;font-weight:200}
+
+/* ---------- STATUS STRIP ---------- */
+.strip{border-block:1px solid var(--hair);background:#fff}
+.strip-in{max-width:1200px;margin:auto;padding:16px 28px;display:flex;justify-content:center;gap:44px;flex-wrap:wrap;font-size:.82rem;letter-spacing:.05em}
+.strip .it{display:flex;gap:9px;align-items:center;color:var(--mut)}
+.strip .it b{font-family:'Heebo';font-weight:800;font-size:1.05rem;color:var(--ivory)}
+.strip .dot{width:7px;height:7px;border-radius:50%}
+.dot.ok{background:var(--ok)}.dot.no{background:var(--no)}.dot.soon{background:var(--soon)}
+
+/* ---------- HOW ---------- */
+.how-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:18px}
+.hstep{background:var(--bg2);border-radius:18px;padding:36px 28px}
+.hstep .num{font-family:'Heebo';font-weight:800;font-size:2rem;color:var(--gold-d);font-weight:700;display:block;margin-bottom:14px}
+.hstep h3{font-size:1rem;font-weight:700;margin-bottom:7px;letter-spacing:.02em}
+.hstep p{font-size:.84rem;color:var(--mut);font-weight:200}
+
+/* ---------- CTA / FOOTER ---------- */
+.foot-cta{background:#1B222B;border-radius:20px;padding:64px 40px;text-align:center;color:#fff;position:relative;overflow:hidden}
+.foot-cta::after{content:"";position:absolute;inset:0;background:radial-gradient(700px 340px at 85% -30%, rgba(120,155,185,.14), transparent 60%);pointer-events:none}
+.foot-cta>*{position:relative;z-index:1}
+
+.foot-cta h2{font-size:1.8rem;font-weight:700;margin-bottom:8px}
+.foot-cta p{color:#b9b9b9;font-weight:300;margin-bottom:28px}
+footer{border-top:1px solid var(--hair);color:var(--mut2);padding:34px 28px;font-size:.78rem;letter-spacing:.05em}
+.foot-in{max-width:1200px;margin:auto;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+footer a{color:var(--mut);text-decoration:none}
+.footer-link{background:none;border:none;color:var(--mut);text-decoration:underline;font:inherit;cursor:pointer;padding:0 2px}
+.footer-link:hover{color:var(--gold-d)}
+.legal-block{display:flex;flex-direction:column;gap:14px;color:#2E3641;font-size:.9rem;line-height:1.75}
+.legal-block h4{font-size:1rem;color:#1B222B;margin:8px 0 2px}
+.legal-block ul{padding-inline-start:22px}
+.legal-small{background:var(--bg2);border:1px solid var(--hair);border-radius:12px;padding:12px 14px;color:var(--mut);font-size:.82rem}
+
+/* ---------- OVERLAYS ---------- */
+.overlay{position:fixed;inset:0;background:rgba(5,5,7,.82);backdrop-filter:blur(6px);z-index:100;display:none;align-items:center;justify-content:center;padding:18px}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:20px;width:min(640px,100%);max-height:92vh;overflow:auto;box-shadow:0 30px 80px rgba(0,0,0,.25);animation:up .25s ease-out}
+.modal.wide{width:min(940px,100%)}
+@keyframes up{from{transform:translateY(18px);opacity:0}to{transform:none;opacity:1}}
+.m-head{border-bottom:1px solid var(--hair);padding:20px 26px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:rgba(255,255,255,.9);backdrop-filter:blur(14px);z-index:3}
+.m-head h3{font-size:1.1rem;font-weight:700;letter-spacing:.03em}
+.m-close{background:var(--bg2);border:none;border-radius:50%;color:var(--mut);width:32px;height:32px;font-size:.95rem}
+.m-close:hover{color:var(--ivory);border-color:var(--mut2)}
+.m-body{padding:26px}
+.steps-bar{display:flex;gap:5px;margin-bottom:24px}
+.sb{flex:1;height:2px;background:var(--hair);transition:background .3s}
+.sb.on{background:var(--gold)}
+.m-car{display:flex;gap:15px;align-items:center;background:var(--bg2);border-radius:14px;padding:12px 16px;margin-bottom:22px}
+.m-car img{width:92px;height:60px;object-fit:cover;flex:none;border-radius:9px}
+.m-car b{font-weight:600}
+.m-car .p{font-size:.8rem;color:var(--mut)}
+
+.f-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.f-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+@media(max-width:560px){.f-row,.f-row3{grid-template-columns:1fr}}
+.field{margin-bottom:15px}
+.field label{display:block;font-weight:500;font-size:.8rem;letter-spacing:.06em;margin-bottom:7px;color:var(--ivory)}
+.field label .req{color:var(--no)}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ivory);padding:11px 14px;font-size:.95rem;font-weight:400;transition:border-color .2s,box-shadow .2s}
+.field input:focus,.field select:focus{border-color:var(--gold);outline:none;box-shadow:0 0 0 4px rgba(63,107,142,.13)}
+.field input::placeholder{color:var(--mut2)}
+.field .hint{font-size:.72rem;color:var(--mut2);margin-top:5px}
+.field.err input,.field.err select{border-color:var(--no)}
+.err-msg{color:var(--no);font-size:.74rem;font-weight:500;margin-top:5px;display:none}
+.field.err .err-msg{display:block}
+select option{background:var(--bg2);color:var(--ivory)}
+
+.summary-box{background:var(--bg2);border-radius:14px;padding:18px;margin-bottom:18px}
+.summary-box .row{display:flex;justify-content:space-between;padding:8px 0;font-size:.88rem;border-bottom:1px solid var(--hair)}
+.summary-box .row:last-child{border:none;font-weight:600;color:var(--gold-l);font-size:1rem}
+.m-actions{display:flex;gap:10px;margin-top:10px}
+.m-actions .grow{flex:1;padding:14px}
+.note{display:flex;gap:10px;align-items:start;background:var(--bg2);border-radius:12px;padding:12px 14px;font-size:.78rem;color:var(--mut);margin-top:14px}
+.note svg{width:16px;height:16px;flex:none;margin-top:3px;stroke:var(--gold-d)}
+
+/* uploads */
+.drop{border:1.5px dashed var(--line2);border-radius:14px;padding:28px 18px;text-align:center;cursor:pointer;transition:all .2s;background:var(--bg2)}
+.drop:hover,.drop.drag{border-color:var(--gold);background:#EFF5FD}
+.drop svg{width:34px;height:34px;stroke:var(--gold-d);margin-bottom:9px}
+.drop b{display:block;font-size:.88rem;font-weight:500}
+.drop span{font-size:.74rem;color:var(--mut)}
+.drop.err-b{border-color:var(--no);background:var(--no-bg)}
+.lic-prev{display:none;position:relative;border-radius:14px;border:1px solid rgba(28,124,79,.4);overflow:hidden}
+.lic-prev img{width:100%;display:block;max-height:220px;object-fit:cover}
+.lic-prev .ok-band{position:absolute;bottom:0;inset-inline:0;background:rgba(20,40,32,.92);color:var(--ok);font-weight:500;font-size:.8rem;padding:8px 14px;display:flex;justify-content:space-between;align-items:center}
+.lic-prev button{background:transparent;border:1px solid rgba(127,191,158,.5);color:var(--ok);padding:3px 12px;font-size:.75rem}
+
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(105px,1fr));gap:8px;margin-top:12px}
+.ph{position:relative;aspect-ratio:4/3;overflow:hidden;border-radius:10px;border:1px solid var(--hair)}
+.ph img{width:100%;height:100%;object-fit:cover}
+.ph button{position:absolute;top:5px;inset-inline-end:5px;width:22px;height:22px;border:none;background:rgba(11,11,13,.8);color:var(--ivory);font-size:.72rem}
+.ph .main-tag{position:absolute;bottom:0;inset-inline:0;background:rgba(11,11,13,.8);color:var(--gold-l);font-size:.64rem;text-align:center;padding:2px;letter-spacing:.08em}
+.photo-req{font-size:.76rem;font-weight:500;margin-top:9px;letter-spacing:.03em}
+.photo-req.bad{color:var(--no)}
+.photo-req.good{color:var(--ok)}
+
+/* terms + signature */
+.terms-box{border:1px solid var(--hair);border-radius:12px;background:var(--bg2);max-height:220px;overflow:auto;padding:18px;font-size:.8rem;color:var(--mut);font-weight:300;margin-bottom:16px}
+.terms-box h4{color:var(--ivory);font-weight:600;font-size:.85rem;margin:14px 0 5px}
+.terms-box h4:first-child{margin-top:0}
+.terms-box ol{padding-inline-start:18px;display:flex;flex-direction:column;gap:4px}
+.sig-wrap{border:1.5px dashed var(--line2);border-radius:14px;background:#FAFAFC;position:relative;overflow:hidden}
+.sig-wrap canvas{display:block;width:100%;height:150px;touch-action:none;cursor:crosshair}
+.sig-hint{position:absolute;inset:0;display:grid;place-items:center;color:#B9B2A2;font-size:.85rem;pointer-events:none;letter-spacing:.1em}
+.sig-tools{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.sig-clear{background:transparent;border:1px solid var(--hair);color:var(--mut);font-size:.76rem;padding:5px 14px}
+.sig-x{position:absolute;bottom:26px;inset-inline:24px;border-bottom:1px solid #C9C2B2;pointer-events:none}
+.check-line{display:flex;gap:11px;align-items:start;font-size:.83rem;margin:14px 0}
+.check-line input{width:17px;height:17px;margin-top:3px;accent-color:var(--gold)}
+
+/* success + receipt */
+.success{text-align:center;padding:14px 6px}
+.success .big-ok{width:74px;height:74px;margin:0 auto 16px;border:1px solid rgba(127,191,158,.5);border-radius:50%;display:grid;place-items:center;background:var(--ok-bg)}
+.success .big-ok svg{width:34px;height:34px;stroke:var(--ok);stroke-width:2.4}
+.success h3{font-size:1.4rem;font-weight:700;margin-bottom:6px}
+.success p{color:var(--mut);font-size:.9rem;font-weight:200}
+.conf-num{font-family:'Heebo';font-weight:800;font-size:1.3rem;background:var(--bg2);border-radius:12px;padding:11px;margin:16px auto;max-width:260px;letter-spacing:.2em;color:var(--ivory)}
+
+.receipt{background:#FBF8F2;color:#242018;padding:30px;margin-top:20px;text-align:right;font-weight:400}
+.receipt .r-head{display:flex;justify-content:space-between;align-items:start;border-bottom:2px solid #242018;padding-bottom:14px;margin-bottom:14px}
+.receipt .r-head h4{font-family:'Heebo';font-weight:800;font-weight:900;font-size:1.25rem}
+.receipt .r-head .sm{font-size:.72rem;color:#7A7264}
+.receipt .r-row{display:flex;justify-content:space-between;padding:6px 0;font-size:.84rem;border-bottom:1px dotted #D8D1C2}
+.receipt .r-row.total{border-bottom:none;border-top:2px solid #242018;margin-top:8px;padding-top:10px;font-weight:700;font-size:1rem}
+.receipt .r-foot{font-size:.7rem;color:#7A7264;margin-top:16px;text-align:center;border-top:1px solid #D8D1C2;padding-top:10px}
+
+/* auth */
+.role-pick{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:8px}
+@media(max-width:560px){.role-pick{grid-template-columns:1fr}}
+.role-card{background:var(--bg2);border:1.5px solid transparent;border-radius:18px;padding:26px 20px;text-align:center;cursor:pointer;transition:all .2s}
+.role-card:hover{border-color:var(--gold);background:#fff;box-shadow:0 10px 30px rgba(0,0,0,.08)}
+.role-card svg{width:34px;height:34px;stroke:var(--gold);margin-bottom:12px}
+.role-card b{display:block;font-weight:600;font-size:.98rem;margin-bottom:5px}
+.role-card span{font-size:.78rem;color:var(--mut);font-weight:200}
+.auth-tabs{display:flex;background:var(--bg2);border-radius:99px;padding:4px;margin-bottom:22px}
+.auth-tabs button{flex:1;border:none;background:transparent;color:var(--mut);font-weight:500;font-size:.88rem;padding:10px;border-radius:99px}
+.auth-tabs button.on{background:#232A33;color:#fff;font-weight:600}
+.auth-back{background:none;border:none;color:var(--mut);font-size:.78rem;margin-bottom:16px;letter-spacing:.05em}
+.auth-back:hover{color:var(--gold-d)}
+.card-row{display:grid;grid-template-columns:2fr 1fr 1fr;gap:12px}
+@media(max-width:560px){.card-row{grid-template-columns:1fr}}
+
+/* dashboard */
+.dash-tabs{display:flex;border-bottom:1px solid var(--hair);margin-bottom:24px;overflow-x:auto}
+.dash-tabs button{border:none;background:transparent;color:var(--mut);font-weight:500;font-size:.85rem;padding:12px 20px;letter-spacing:.05em;border-bottom:2px solid transparent;white-space:nowrap}
+.dash-tabs button.on{color:var(--gold-d);border-bottom-color:var(--gold)}
+.adm-list{display:flex;flex-direction:column;gap:8px;margin-bottom:22px}
+.adm-item{display:flex;gap:13px;align-items:center;background:var(--bg2);border-radius:14px;padding:11px 14px;flex-wrap:wrap}
+.adm-item img{width:78px;height:52px;object-fit:cover;flex:none;background:var(--bg3);border-radius:8px}
+.adm-item .inf{flex:1;min-width:180px}
+.adm-item b{font-weight:600;font-size:.92rem}
+.adm-item .sm{font-size:.76rem;color:var(--mut)}
+.adm-item .acts{display:flex;gap:6px;flex-wrap:wrap}
+.mini{border:1px solid var(--line);background:#fff;border-radius:99px;font-size:.76rem;font-weight:500;padding:6px 13px;color:var(--mut)}
+.mini:hover{color:var(--ivory);border-color:var(--mut2)}
+.mini.gold{color:var(--gold-d);border-color:var(--line2)}
+.mini.danger{color:var(--no);border-color:rgba(215,0,21,.3)}
+.adm-empty{text-align:center;color:var(--mut);font-size:.88rem;padding:30px;background:var(--bg2);border-radius:14px}
+.divider{display:flex;align-items:center;gap:14px;color:var(--gold-d);font-size:.72rem;font-weight:600;letter-spacing:.3em;margin:10px 0 20px}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--hair)}
+.tbl{width:100%;border-collapse:collapse;font-size:.83rem}
+.tbl th{text-align:right;color:var(--gold-d);font-weight:600;font-size:.72rem;letter-spacing:.12em;padding:9px 10px;border-bottom:1px solid var(--line)}
+.tbl td{padding:10px;border-bottom:1px solid var(--hair);color:var(--ivory);font-weight:300;vertical-align:top}
+.tbl td .sm{color:var(--mut);font-size:.75rem}
+.tbl .num{font-family:'Heebo';font-weight:800;font-weight:700;color:var(--gold-d)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:24px}
+.kpi{background:var(--bg2);border-radius:16px;padding:20px}
+.kpi b{font-family:'Heebo';font-weight:800;font-size:1.6rem;color:var(--gold-d);font-weight:700;display:block}
+.kpi span{font-size:.72rem;color:var(--mut);letter-spacing:.08em}
+.lic-thumb{width:56px;height:38px;object-fit:cover;border:1px solid var(--hair);cursor:pointer}
+
+.toast{position:fixed;bottom:22px;inset-inline-start:50%;transform:translateX(50%) translateY(80px);background:#1D1D1F;color:#fff;border-radius:99px;padding:12px 26px;font-weight:500;font-size:.88rem;z-index:300;opacity:0;transition:all .3s}
+.toast.show{transform:translateX(50%) translateY(0);opacity:1}
+
+/* ---------- COLOR & MOTION LAYER ---------- */
+:root{--blue:#4C7DFF;--blue-d:#2A4DC4;--violet:#8B6CFF}
+
+
+
+
+
+/* colorful accents */
+.hero h1 em{font-style:normal;background:none;color:#9FB6C9}
+.btn-gold{background:var(--gold);color:#fff;border:none;box-shadow:none}
+.btn-gold:hover{background:var(--gold-l);transform:none;filter:none;box-shadow:none}
+
+.hero::before{background:radial-gradient(1000px 500px at 80% -20%, rgba(120,155,185,.12), transparent 60%)}
+
+.card:hover{box-shadow:0 22px 48px rgba(0,0,0,.12)}
+.card-btn.book:hover{background:#33404E}
+.strip{background:var(--bg2)}
+.hstep .num{background:none;color:var(--mut2)}
+.dash-tabs button.on{border-bottom-color:var(--gold)}
+
+.foot-cta{background:#101010}
+
+/* scroll reveal */
+.reveal{opacity:0;transform:translateY(34px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+.reveal.in{opacity:1;transform:none}
+@keyframes cardIn{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
 .card{animation:cardIn .55s cubic-bezier(.2,.7,.2,1) both}
 
 /* hero entrance */
@@ -474,29 +709,6 @@ input,select,textarea{font-family:inherit}
 .badge-status.approved{color:var(--ok);background:var(--ok-bg);border-color:rgba(28,124,79,.24)}
 .badge-status.rejected{color:var(--no);background:var(--no-bg);border-color:rgba(215,0,21,.24)}
 .badge-status.done{color:var(--mut);background:var(--bg2)}
-.booking-board{display:grid;gap:14px}
-.booking-section{background:#fff;border:1px solid rgba(63,107,142,.14);border-radius:18px;padding:14px;box-shadow:0 12px 30px rgba(20,28,40,.06)}
-.booking-section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
-.booking-section-head h4{margin:0;font-size:1rem;color:var(--ivory)}
-.booking-count{border:1px solid var(--hair);background:var(--bg2);border-radius:99px;padding:4px 10px;font-size:.72rem;font-weight:800;color:var(--gold-d)}
-.booking-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(285px,1fr));gap:12px}
-.booking-card{position:relative;background:linear-gradient(180deg,#fff,#F8FAFC);border:1px solid rgba(63,107,142,.14);border-radius:17px;padding:14px;box-shadow:0 8px 22px rgba(20,28,40,.06);overflow:hidden}
-.booking-card.pending{border-color:rgba(160,90,0,.28);background:linear-gradient(180deg,#fff,#FFF9EE)}
-.booking-card.approved{border-color:rgba(28,124,79,.25);background:linear-gradient(180deg,#fff,#F1FBF6)}
-.booking-card.rejected{border-color:rgba(215,0,21,.22);background:linear-gradient(180deg,#fff,#FFF4F4)}
-.booking-card.done{opacity:.9}
-.booking-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px}
-.booking-title{font-weight:900;color:var(--ivory);font-size:1rem;line-height:1.25}
-.booking-sub{font-size:.74rem;color:var(--mut);margin-top:3px}
-.booking-meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
-.booking-meta .cell{background:rgba(255,255,255,.74);border:1px solid rgba(31,41,53,.08);border-radius:12px;padding:8px 9px}
-.booking-meta .cell span{display:block;font-size:.68rem;color:var(--mut);font-weight:700}
-.booking-meta .cell b{display:block;font-size:.82rem;color:var(--ivory);margin-top:2px}
-.booking-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:11px}
-.booking-actions .mini{background:#fff}
-.booking-note{font-size:.73rem;color:var(--mut);line-height:1.45;margin-top:8px}
-@media(max-width:560px){.booking-cards{grid-template-columns:1fr}.booking-meta{grid-template-columns:1fr}.booking-section{padding:12px}}
-
 .home-chat-note{font-size:.73rem;color:var(--mut);margin-top:6px}
 @media(max-width:940px){.search-row.two{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.search-row.two{grid-template-columns:1fr}.rent-pick,.car-type-pick,.rent-checks{grid-template-columns:1fr}.rent-chip,.type-chip{font-size:.8rem;padding:11px 4px}.card-actions{grid-template-columns:1fr}}
@@ -578,12 +790,383 @@ body::after{
 @media (prefers-reduced-motion: reduce){body::before,body::after,.section,.modal{animation:none!important}.overlay{transition:none!important}}
 
 
-.pass-wrap{position:relative;display:flex;align-items:center}
-.pass-wrap input{width:100%;padding-left:96px}
-.pass-toggle{position:absolute;left:8px;top:50%;transform:translateY(-50%);border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 10px;font-size:.78rem;font-weight:800;cursor:pointer;color:var(--blue)}
-.other-input{margin-top:8px;display:none}
-.other-input.show{display:block}
+
+/* ================= MOBILE PREMIUM FIX =================
+   Improves phone layout, touch spacing, modals, cards, search, admin tables
+   without changing desktop behavior.
+====================================================== */
+@media (max-width: 760px){
+  html,body{width:100%;overflow-x:hidden;}
+  body{font-size:15px;line-height:1.55;background:#EEF2F7;}
+  .nav{position:sticky;top:0;z-index:80;}
+  .nav-in{padding:10px 12px;gap:8px;}
+  .logo-mark{width:34px;height:34px;border-radius:9px;}
+  .logo b{font-size:.98rem;letter-spacing:.04em;}
+  .logo small{font-size:.48rem;letter-spacing:.14em;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .nav-side{gap:6px;}
+  .nav-side .btn,.nav-side button{padding:8px 10px;font-size:.76rem;border-radius:9px;}
+
+  .hero-in{padding:50px 16px 118px!important;text-align:center;}
+  .hero h1{font-size:clamp(2rem,11vw,3rem);line-height:1.05;max-width:11ch;}
+  .hero p{font-size:.95rem;margin:16px auto 24px;max-width:31ch;}
+  .hero-actions{gap:9px;margin-top:24px!important;}
+  .hero-actions .btn{width:100%;max-width:310px;padding:13px 18px;font-size:.9rem;}
+  .hero-stats{display:grid;grid-template-columns:1fr 1fr;margin-top:32px;border-radius:15px;max-width:360px;box-shadow:0 14px 34px rgba(0,0,0,.22);}
+  .hstat{padding:14px 6px;border-bottom:1px solid var(--hair);}
+  .hstat:nth-child(odd){border-inline-start:none;}
+  .hstat b{font-size:1.25rem;}
+  .hstat span{font-size:.67rem;}
+  .road{height:86px;}.asphalt{height:42px}.cars-near .sil{width:104px}.cars-far .sil{bottom:38px;width:66px;}
+
+  .strip-in{padding:10px 12px;gap:10px;display:grid;grid-template-columns:1fr 1fr;justify-items:center;font-size:.72rem;}
+  .strip .it{gap:6px;}
+  .strip .it:last-child{grid-column:1/-1;}
+
+  .section{padding:46px 14px;}
+  .sec-head{margin-bottom:24px;}
+  .sec-head h2{font-size:1.55rem;}
+  .fleet-wrap{display:block;}
+  .fleet-side{position:static;margin-bottom:18px;background:rgba(255,255,255,.72);backdrop-filter:blur(14px);border:1px solid rgba(0,0,0,.06);border-radius:20px;padding:14px;box-shadow:0 12px 30px rgba(35,42,51,.08);}
+  .fleet-side .sec-head{text-align:center;margin-bottom:14px;}
+  .fleet-side .sub{max-width:none;font-size:.82rem;}
+  .filters.vert{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;background:#E7ECF2;border-radius:14px;padding:5px;}
+  .filters.vert button{width:100%;text-align:center;border-radius:11px;padding:9px 6px;font-size:.76rem;}
+  .side-live{margin-top:10px;justify-content:center;padding:9px 10px;font-size:.78rem;}
+
+  /* Smart search / advanced search mobile */
+  .search-box,.smart-search,.advanced-search,.fleet-search,.search-panel{border-radius:20px!important;padding:14px!important;margin:0 0 16px!important;}
+  .search-grid,.smart-search-grid,.advanced-grid,.filters-grid{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;}
+  .car-type-options,.type-options,.vehicle-type-options{display:grid!important;grid-template-columns:repeat(2,1fr)!important;gap:8px!important;}
+  .car-type-options button,.type-options button,.vehicle-type-options button{min-height:44px;border-radius:13px!important;font-size:.86rem!important;}
+
+  #fleet .grid,.grid{grid-template-columns:1fr!important;gap:16px;}
+  .card{border-radius:18px;box-shadow:0 14px 35px rgba(22,30,40,.08);}
+  .gallery{aspect-ratio:16/11;}
+  .card-body{padding:17px;gap:11px;}
+  .card-title{display:block;}
+  .card-title h3{font-size:1.08rem;margin-bottom:4px;}
+  .price{text-align:right;margin-top:8px;}
+  .price b{font-size:1.2rem;}
+  .specs{gap:8px;display:grid;grid-template-columns:1fr 1fr;}
+  .spec{font-size:.74rem;}
+  .tags{gap:5px;}.tag{font-size:.67rem;padding:3px 9px;}
+  .card-btn{min-height:45px;font-size:.88rem;}
+
+  .how-grid{grid-template-columns:1fr;gap:12px;}
+  .hstep{padding:24px 18px;border-radius:18px;}
+  .foot-cta{padding:44px 16px 76px!important;border-radius:20px;}
+  .foot-cta h2{font-size:1.45rem;}
+  .foot-cta p{font-size:.88rem;}
+  footer{padding:22px 14px;text-align:center;}.foot-in{justify-content:center;}
+
+  /* Modals: full-screen app-like on phone */
+  .overlay{padding:0;align-items:flex-end;}
+  .modal,.modal.wide{width:100%!important;max-width:none!important;max-height:94dvh;border-radius:22px 22px 0 0;}
+  .m-head{padding:14px 16px;}
+  .m-head h3{font-size:1rem;}
+  .m-body{padding:16px;}
+  .f-row,.f-row3,.card-row,.role-pick{grid-template-columns:1fr!important;gap:10px;}
+  .field{margin-bottom:11px;}
+  .field label{font-size:.76rem;margin-bottom:5px;}
+  .field input,.field select,.field textarea{font-size:16px;padding:11px 12px;border-radius:12px;}
+  .m-actions{position:sticky;bottom:0;background:linear-gradient(transparent,#fff 18%,#fff);padding-top:12px;margin-inline:-4px;}
+  .m-actions .btn,.m-actions button{min-height:46px;}
+  .m-car{padding:10px;border-radius:13px;}.m-car img{width:76px;height:52px;}
+  .summary-box{padding:14px;border-radius:14px;}
+  .terms-box{max-height:185px;font-size:.76rem;}
+  .sig-wrap canvas{height:125px;}
+  .photo-grid{grid-template-columns:repeat(3,1fr);}
+
+  /* Owner/admin dashboard mobile */
+  .dash-tabs{gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch;margin-inline:-16px;padding-inline:12px;}
+  .dash-tabs button{padding:11px 14px;font-size:.78rem;}
+  .kpis{grid-template-columns:1fr 1fr;gap:10px;}
+  .kpi{padding:14px;border-radius:14px;}.kpi b{font-size:1.25rem;}
+  .adm-item{align-items:flex-start;padding:10px;gap:10px;}
+  .adm-item img{width:68px;height:48px;}
+  .adm-item .acts{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+  .mini{padding:8px 9px;font-size:.72rem;text-align:center;}
+  .tbl{display:block;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;border-radius:12px;background:#fff;}
+  .tbl th,.tbl td{padding:9px 10px;font-size:.76rem;}
+  .admin-shell,.admin-full,.admin-grid,.manager-grid{grid-template-columns:1fr!important;gap:12px!important;}
+  .admin-panel,.admin-card{border-radius:18px!important;padding:14px!important;}
+
+  /* Chat better on mobile */
+  #chat-fab{width:54px;height:54px;bottom:14px;inset-inline-start:14px;z-index:130;}
+  #chat-panel{inset-inline:0!important;bottom:0!important;width:100%!important;height:82dvh!important;border-radius:22px 22px 0 0!important;}
+  .cp-head{padding:12px 14px;}.cp-msgs{padding:13px;}.bub{max-width:86%;font-size:.85rem;}.cp-input{padding:10px;}.cp-input input{font-size:16px;}
+
+  /* Less heavy motion on phones */
+  .aur{filter:blur(70px);opacity:.38;}
+  .blueprint{opacity:.06;width:110vw;}
+  .citymap{opacity:.035;}
+  .card:hover{transform:none;}
+}
+
+@media (max-width: 380px){
+  .hero h1{font-size:2.05rem;}
+  .hero-stats{grid-template-columns:1fr 1fr;}
+  .specs{grid-template-columns:1fr;}
+  .kpis{grid-template-columns:1fr;}
+  .car-type-options,.type-options,.vehicle-type-options{grid-template-columns:1fr!important;}
+}
+
+
+
+/* ===== CrownDrive Pro: desktop + mobile performance polish ===== */
+body{background:
+  radial-gradient(900px 420px at 10% 5%,rgba(63,107,142,.10),transparent 60%),
+  radial-gradient(900px 480px at 90% 18%,rgba(159,182,201,.12),transparent 55%),
+  linear-gradient(180deg,#F4F7FA 0%,#E9EEF4 42%,#F8FAFC 100%);}
+.section{contain:layout paint;}
+.card,.modal,.foot-cta,.fleet-side{backface-visibility:hidden;transform:translateZ(0);}
+.card{box-shadow:0 18px 45px rgba(25,36,48,.08);}
+.card:hover{box-shadow:0 26px 68px rgba(25,36,48,.14);}
+.gallery img{content-visibility:auto;}
+.grid{align-items:stretch;}
+#fleet::before{content:"CROWN DRIVE";position:absolute;inset-inline-start:50%;top:35px;transform:translateX(50%);font-size:clamp(3.2rem,11vw,8rem);font-weight:900;letter-spacing:.08em;color:rgba(49,86,122,.045);white-space:nowrap;pointer-events:none;z-index:0;}
+.hero{box-shadow:inset 0 -80px 110px rgba(255,255,255,.03);}
+.btn,.card-btn,.mini{will-change:transform;}
+.cp-msgs,.modal,.adm-list{overscroll-behavior:contain;}
+img{max-width:100%;}
+@media (min-width:941px){
+  .modal.wide{width:min(1120px,94vw);}
+  #ov-admin .modal.wide{width:min(1280px,96vw);}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(320px,1fr));}
+}
+@media (max-width:720px){
+  body{background:linear-gradient(180deg,#F6F8FB 0%,#EEF3F8 100%);}
+  .nav{position:sticky;}
+  .nav-in{padding:12px 14px;}
+  .logo b{font-size:1rem}.logo small{font-size:.5rem;letter-spacing:.18em}.logo-mark{width:34px;height:34px}
+  .hero-in{padding:54px 16px 132px!important;}
+  .hero h1{font-size:2rem;max-width:12ch;}
+  .hero-actions .btn{width:100%;max-width:320px;}
+  .hero-stats{display:grid;grid-template-columns:1fr 1fr;margin-top:34px;border-radius:18px;}
+  .hstat{padding:15px 8px;border:1px solid var(--hair)!important;}
+  .section{padding:42px 14px;}
+  #fleet::before{top:18px;font-size:3rem;opacity:.9;}
+  .card{min-width:0;}
+  .overlay.open{animation:fadeIn .18s ease both;}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+}
+
+
+
+/* CLEAN HOME FIX — remove duplicate car artwork and keep homepage simple */
+.hero{min-height:auto!important;background:linear-gradient(135deg,#111923 0%,#1B222B 52%,#243140 100%)!important;}
+.hero::after,.blueprint,.road,.cars-far,.cars-near,.asphalt{display:none!important;}
+.hero-in{padding:96px 28px 78px!important;}
+.hero-stats{margin-top:48px!important;}
+@media(max-width:720px){.hero-in{padding:64px 16px 56px!important}.hero-stats{margin-top:30px!important}}
+
+
+/* PROFESSIONAL LIGHT BLUE BACKGROUND */
+body{background:linear-gradient(180deg,#F7FBFF 0%,#EDF6FF 42%,#F8FBFF 100%)!important;}
+body::before{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;background:
+  radial-gradient(900px 380px at 18% 8%,rgba(63,107,142,.16),transparent 60%),
+  radial-gradient(760px 360px at 88% 18%,rgba(148,190,225,.18),transparent 62%),
+  linear-gradient(180deg,#F7FBFF 0%,#EDF6FF 55%,#FFFFFF 100%);}
+body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;opacity:.48;background-image:
+  linear-gradient(rgba(49,86,122,.055) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(49,86,122,.05) 1px,transparent 1px);
+  background-size:72px 72px;mask-image:radial-gradient(900px 520px at 50% 34%,#000 20%,transparent 78%);-webkit-mask-image:radial-gradient(900px 520px at 50% 34%,#000 20%,transparent 78%);}
+.citymap{opacity:.045!important;}
+#fleet{background:linear-gradient(180deg,rgba(247,251,255,.92),rgba(237,246,255,.78));border-top:1px solid rgba(49,86,122,.08);}
+#fleet::before{content:"CROWN DRIVE";position:absolute;inset-inline:0;top:34px;text-align:center;font-size:clamp(4rem,12vw,11rem);font-weight:900;letter-spacing:.08em;color:rgba(49,86,122,.045);pointer-events:none;white-space:nowrap;}
+.section{position:relative;}
+.card,.modal,.hstep,.foot-cta,.summary-box{box-shadow:0 22px 50px rgba(63,107,142,.08);}
+
+.clean-blue-intro{padding:56px 28px 42px;background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(237,246,255,.32));}
+.clean-blue-intro .sec-head{margin-bottom:0}
+.clean-blue-intro h2{color:#1B2733}
+.clean-blue-intro .sub{color:#5F7284}
+@media(max-width:720px){.clean-blue-intro{padding:38px 16px 24px}.clean-blue-intro h2{font-size:1.55rem}}
+
+/* ================= LIGHT PREMIUM RENTAL UI - CSS ONLY ================= */
+:root{
+  --premium-navy:#0D2238;
+  --premium-blue:#31567A;
+  --premium-blue2:#3F78A6;
+  --premium-sky:#EAF6FF;
+  --premium-sky2:#F7FBFF;
+  --premium-gold:#C9A45C;
+  --premium-card:rgba(255,255,255,.82);
+  --premium-border:rgba(49,86,122,.14);
+  --premium-shadow:0 20px 60px rgba(31,56,78,.13);
+}
+html,body{background:
+  radial-gradient(circle at 18% 8%, rgba(63,120,166,.13), transparent 30%),
+  radial-gradient(circle at 88% 18%, rgba(159,203,235,.22), transparent 34%),
+  linear-gradient(180deg,#F6FBFF 0%,#EAF4FB 42%,#F9FCFF 100%)!important;
+}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;background-image:
+  linear-gradient(rgba(49,86,122,.055) 1px, transparent 1px),
+  linear-gradient(90deg, rgba(49,86,122,.055) 1px, transparent 1px),
+  radial-gradient(rgba(63,120,166,.16) 1.2px, transparent 1.6px);
+  background-size:74px 74px,74px 74px,22px 22px;opacity:.62;
+  mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.85) 45%,transparent 100%);
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,rgba(0,0,0,.85) 45%,transparent 100%);
+}
+.nav{background:rgba(9,24,39,.92)!important;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid rgba(255,255,255,.08)!important;box-shadow:0 16px 42px rgba(13,34,56,.20)!important;}
+.logo-mark{background:rgba(255,255,255,.08)!important;border-color:rgba(255,255,255,.16)!important;box-shadow:inset 0 0 0 1px rgba(255,255,255,.03)}
+.nav-links a{position:relative;padding:6px 0}.nav-links a::after{content:"";position:absolute;inset-inline:0;bottom:-4px;height:2px;background:linear-gradient(90deg,transparent,var(--premium-gold),transparent);transform:scaleX(0);transition:transform .25s ease}.nav-links a:hover::after{transform:scaleX(1)}
+.hero{background:transparent!important;overflow:visible!important;min-height:auto!important;}
+.hero::before{background:linear-gradient(180deg,rgba(13,34,56,.94),rgba(13,34,56,.82))!important;inset:0!important;}
+.hero::after{opacity:.45!important;background-image:radial-gradient(rgba(255,255,255,.08) 1px, transparent 1.3px)!important;background-size:26px 26px!important;}
+.aur{display:none!important;}
+.hero-in{padding:72px 28px 54px!important;}
+.hero .kicker{color:#AFC9DE!important;font-weight:600!important;letter-spacing:.05em!important;}
+.hero h1{font-size:clamp(2.4rem,4.4vw,4.15rem)!important;text-shadow:0 10px 34px rgba(0,0,0,.20);}
+.hero h1 em{color:#CFE6F8!important;background:linear-gradient(90deg,#fff,#A7CCE8);-webkit-background-clip:text;background-clip:text;color:transparent!important;}
+.hero-actions .btn{border-radius:14px!important;padding:14px 32px!important;box-shadow:0 16px 35px rgba(0,0,0,.20)!important;}
+.btn-gold{background:linear-gradient(135deg,#31567A,#4B83AE)!important;border:1px solid rgba(255,255,255,.12)!important;color:#fff!important;}
+.btn-gold:hover{filter:brightness(1.04)!important;box-shadow:0 18px 42px rgba(49,86,122,.30)!important;}
+.btn-dark-out{background:rgba(255,255,255,.08)!important;border:1px solid rgba(255,255,255,.18)!important;backdrop-filter:blur(12px)!important;}
+.hero-stats{max-width:min(880px,calc(100% - 28px))!important;margin-top:48px!important;background:rgba(255,255,255,.92)!important;border:1px solid rgba(255,255,255,.75)!important;border-radius:24px!important;box-shadow:0 24px 70px rgba(7,28,47,.22)!important;overflow:hidden!important;}
+.hstat{padding:28px 16px!important;border-color:rgba(49,86,122,.12)!important;}
+.hstat b{color:#102337!important;font-size:1.85rem!important;}
+.hstat span{color:#687C8D!important;font-weight:500!important;}
+.strip{background:rgba(255,255,255,.72)!important;backdrop-filter:blur(16px)!important;border-block:1px solid rgba(49,86,122,.12)!important;box-shadow:0 10px 30px rgba(31,56,78,.07)!important;}
+.strip-in{padding:18px 28px!important;gap:34px!important;}
+.strip .it{background:rgba(255,255,255,.62);border:1px solid rgba(49,86,122,.10);border-radius:999px;padding:8px 15px;}
+#fleet,#how,#contact{background:transparent!important;}
+#fleet::before,#how::before{background:
+  radial-gradient(circle at 8% 16%,rgba(79,140,186,.12),transparent 28%),
+  radial-gradient(circle at 96% 12%,rgba(201,164,92,.09),transparent 24%),
+  linear-gradient(180deg,rgba(255,255,255,.34),rgba(255,255,255,.05))!important;border:1px solid rgba(49,86,122,.08)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.6)!important;}
+#fleet::after{color:#31567A!important;opacity:.028!important;top:108px!important;}
+.fleet-wrap{display:flex!important;flex-direction:column!important;gap:32px!important;align-items:stretch!important;}
+.fleet-side{position:static!important;display:flex!important;flex-direction:column!important;align-items:center!important;width:100%!important;}
+.fleet-side .sec-head{text-align:center!important;margin-bottom:26px!important;}
+.fleet-side .sec-head h2{font-size:clamp(1.8rem,3vw,2.7rem)!important;color:#13283D!important;}
+.fleet-side .sec-head h2::after{inset-inline-start:50%!important;transform:translateX(50%)!important;width:72px!important;background:linear-gradient(90deg,#31567A,#7DAED2)!important;opacity:1!important;height:4px!important;}
+.fleet-side .sub{max-width:none!important;color:#5E7385!important;}
+.filters.vert{width:auto!important;min-width:min(520px,100%)!important;flex-direction:row!important;border-radius:999px!important;padding:6px!important;background:rgba(255,255,255,.74)!important;border:1px solid rgba(49,86,122,.12)!important;box-shadow:0 14px 38px rgba(31,56,78,.08)!important;margin-bottom:16px!important;}
+.filters.vert button{text-align:center!important;width:auto!important;flex:1!important;border-radius:999px!important;color:#466176!important;}
+.filters.vert button.on{background:linear-gradient(135deg,#102A43,#31567A)!important;color:#fff!important;box-shadow:0 8px 20px rgba(49,86,122,.22)!important;}
+.search-panel.smart-search{width:min(1040px,100%)!important;background:rgba(255,255,255,.82)!important;backdrop-filter:blur(18px)!important;-webkit-backdrop-filter:blur(18px)!important;border:1px solid rgba(49,86,122,.14)!important;border-radius:26px!important;box-shadow:0 24px 70px rgba(31,56,78,.12)!important;padding:24px!important;margin:0 auto 14px!important;}
+.search-top{border-bottom:1px solid rgba(49,86,122,.10)!important;padding-bottom:14px!important;margin-bottom:18px!important;}
+.search-top .title{font-size:1.25rem!important;color:#0D2238!important;font-weight:800!important;}
+.search-top .subtitle{color:#6B8193!important;font-weight:400!important;}
+.search-row.two{display:grid!important;grid-template-columns:1fr 1fr!important;gap:16px!important;}
+.search-row.one{display:grid!important;grid-template-columns:1fr!important;gap:16px!important;}
+.search-panel label{background:rgba(255,255,255,.72)!important;border:1px solid rgba(49,86,122,.10)!important;border-radius:18px!important;padding:12px 14px 14px!important;color:#37546A!important;font-weight:700!important;box-shadow:0 8px 22px rgba(31,56,78,.055)!important;}
+.search-panel select,.search-panel input{background:#fff!important;border:1px solid rgba(49,86,122,.14)!important;border-radius:13px!important;color:#102337!important;box-shadow:none!important;}
+.rent-pick,.car-type-pick{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important;margin-top:12px!important;}
+.rent-pick{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
+.rent-chip,.type-chip{border-radius:16px!important;background:rgba(255,255,255,.76)!important;border:1px solid rgba(49,86,122,.15)!important;color:#22415B!important;padding:13px 10px!important;font-weight:800!important;box-shadow:0 10px 24px rgba(31,56,78,.07)!important;}
+.rent-chip.on,.type-chip.on,.rent-chip:hover,.type-chip:hover{background:linear-gradient(135deg,#31567A,#4D87B4)!important;color:#fff!important;border-color:rgba(255,255,255,.45)!important;transform:translateY(-2px)!important;}
+.side-live{background:rgba(255,255,255,.72)!important;border:1px solid rgba(49,86,122,.12)!important;border-radius:999px!important;box-shadow:0 12px 34px rgba(31,56,78,.08)!important;padding:11px 18px!important;margin-top:8px!important;}
+#grid.grid{grid-template-columns:repeat(auto-fill,minmax(280px,1fr))!important;gap:24px!important;width:100%!important;}
+.card{background:rgba(255,255,255,.84)!important;backdrop-filter:blur(16px)!important;-webkit-backdrop-filter:blur(16px)!important;border:1px solid rgba(49,86,122,.13)!important;border-radius:22px!important;box-shadow:0 18px 50px rgba(31,56,78,.105)!important;overflow:hidden!important;}
+.card:hover{transform:translateY(-7px)!important;box-shadow:0 28px 70px rgba(31,56,78,.17)!important;}
+.gallery{background:linear-gradient(145deg,#F7FBFF,#E9F4FC)!important;}
+.card-body{padding:22px!important;}
+.card-title h3{color:#11283C!important;font-size:1.16rem!important;}
+.card-title .meta,.spec,.tag{color:#657D90!important;}
+.price b{color:#0F3A5C!important;}
+.card-btn.book{background:linear-gradient(135deg,#31567A,#4C84AF)!important;color:#fff!important;border-radius:13px!important;box-shadow:0 12px 26px rgba(49,86,122,.22)!important;}
+.owner-chip{background:rgba(255,255,255,.68)!important;border-color:rgba(49,86,122,.14)!important;box-shadow:0 6px 20px rgba(31,56,78,.06)!important;}
+.how-grid{gap:22px!important;}
+.hstep{background:rgba(255,255,255,.74)!important;backdrop-filter:blur(16px)!important;border:1px solid rgba(49,86,122,.12)!important;border-radius:24px!important;box-shadow:0 18px 46px rgba(31,56,78,.09)!important;}
+.hicon{background:linear-gradient(145deg,#fff,#E8F4FC)!important;border:1px solid rgba(49,86,122,.10)!important;box-shadow:0 12px 24px rgba(49,86,122,.10)!important;color:#31567A!important;}
+.foot-cta{background:linear-gradient(135deg,#0C1824,#102B44)!important;border:1px solid rgba(255,255,255,.09)!important;box-shadow:0 24px 70px rgba(13,34,56,.25)!important;border-radius:28px!important;}
+.modal{border-radius:24px!important;box-shadow:0 34px 90px rgba(13,34,56,.30)!important;}
+.m-head{background:rgba(255,255,255,.92)!important;backdrop-filter:blur(18px)!important;}
+#chat-fab{background:linear-gradient(135deg,#0D2238,#31567A)!important;box-shadow:0 16px 40px rgba(13,34,56,.28)!important;}
+#chat-panel{border:1px solid rgba(255,255,255,.45)!important;box-shadow:0 34px 90px rgba(13,34,56,.25)!important;}
+.cp-head{background:linear-gradient(135deg,#0D2238,#1D4261)!important;}
+@media(max-width:900px){
+  .hero-in{padding:58px 16px 42px!important;}
+  .hero-stats{grid-template-columns:1fr 1fr!important;margin-top:34px!important;}
+  .search-panel.smart-search{padding:18px!important;border-radius:22px!important;}
+  .search-row.two{grid-template-columns:1fr!important;}
+  .rent-pick,.car-type-pick{grid-template-columns:1fr 1fr!important;}
+  .filters.vert{min-width:0!important;width:100%!important;}
+  #grid.grid{grid-template-columns:1fr!important;}
+}
+@media(max-width:560px){
+  .nav-in{padding:12px 14px!important;}
+  .hero h1{font-size:2.15rem!important;}
+  .hero-stats{grid-template-columns:1fr 1fr!important;border-radius:18px!important;}
+  .hstat{padding:18px 8px!important;}
+  .strip .it{width:100%;justify-content:center;}
+  .rent-pick,.car-type-pick{grid-template-columns:1fr!important;}
+  .search-panel label{padding:10px 12px!important;}
+}
+
+
+
+/* ===== Cars-first layout: uploaded cars appear immediately in the empty home area ===== */
+#fleet{
+  padding-top:34px!important;
+  padding-bottom:64px!important;
+  min-height:0!important;
+}
+#fleet::before{display:none!important;}
+#fleet .route{opacity:.18!important;}
+.fleet-wrap{
+  display:block!important;
+  max-width:1200px!important;
+  margin:0 auto!important;
+}
+.fleet-side{
+  position:static!important;
+  width:100%!important;
+  margin:0 auto 22px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  gap:14px!important;
+}
+.fleet-side .sec-head{
+  margin-bottom:4px!important;
+  text-align:center!important;
+}
+.fleet-side .sec-head h2{
+  font-size:clamp(1.7rem,3vw,2.55rem)!important;
+}
+.fleet-side .sub{max-width:none!important;}
+.filters.vert{
+  margin:0 auto!important;
+}
+.search-panel.smart-search{
+  margin:4px auto 20px!important;
+}
+#grid.grid{
+  margin-top:6px!important;
+  grid-template-columns:repeat(auto-fill,minmax(285px,1fr))!important;
+  gap:22px!important;
+}
+.empty{
+  padding:44px 24px!important;
+  min-height:180px!important;
+  background:rgba(255,255,255,.78)!important;
+  border:1px solid rgba(49,86,122,.12)!important;
+  box-shadow:0 18px 46px rgba(31,56,78,.09)!important;
+}
+.empty h3::before{
+  content:'🚘';
+  display:block;
+  font-size:2rem;
+  margin-bottom:8px;
+}
+@media(max-width:760px){
+  #fleet{padding-top:22px!important;padding-bottom:42px!important;}
+  .fleet-side{gap:10px!important;margin-bottom:16px!important;}
+  .search-panel.smart-search{margin-bottom:16px!important;}
+  #grid.grid{grid-template-columns:1fr!important;gap:16px!important;}
+  .empty{padding:32px 18px!important;}
+}
+
 </style>
+
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1B222B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/icon-192.png">
 </head>
 <body>
 
@@ -631,38 +1214,9 @@ body::after{
   <div class="aur aur-2" aria-hidden="true"></div>
   <div class="aur aur-3" aria-hidden="true"></div>
 
-  <!-- technical blueprint sketch -->
-  <svg class="blueprint" viewBox="0 0 640 300" aria-hidden="true">
-    <g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
-      <!-- body outline -->
-      <path d="M60 210 q4 -30 36 -36 l52 -8 q28 -40 84 -46 l96 -3 q56 2 92 34 l26 24 q56 6 66 30 q6 16 -6 20 l-24 3"/>
-      <path d="M60 210 q-4 12 10 16 l40 2"/>
-      <path d="M174 228 l180 0"/>
-      <path d="M478 228 l36 -2"/>
-      <!-- glasshouse -->
-      <path d="M172 166 q26 -36 78 -42 l92 -3 q50 3 84 32"/>
-      <path d="M258 124 l6 42 M356 121 l10 44"/>
-      <!-- doors & handle -->
-      <path d="M262 166 l-6 60 M362 165 l-2 62"/>
-      <path d="M286 184 l30 0 M388 183 l30 0"/>
-      <!-- lights -->
-      <path d="M64 196 l34 -6 M528 208 l24 -4"/>
-      <!-- wheels -->
-      <circle cx="204" cy="226" r="34"/><circle cx="204" cy="226" r="21"/><circle cx="204" cy="226" r="3"/>
-      <circle cx="452" cy="226" r="34"/><circle cx="452" cy="226" r="21"/><circle cx="452" cy="226" r="3"/>
-      <path d="M204 205 v42 M183 226 h42 M452 205 v42 M431 226 h42" opacity=".55"/>
-      <!-- blueprint construction marks -->
-      <circle cx="204" cy="226" r="48" stroke-dasharray="4 7" opacity=".5"/>
-      <circle cx="452" cy="226" r="48" stroke-dasharray="4 7" opacity=".5"/>
-      <path d="M60 272 l520 0" stroke-dasharray="4 7" opacity=".5"/>
-      <path d="M60 265 l0 14 M580 265 l0 14" opacity=".6"/>
-      <path d="M110 96 l-18 0 0 18 M540 96 l18 0 0 18" opacity=".5"/>
-    </g>
-  </svg>
-
   <div class="hero-in">
     <span class="kicker">קראון הייטס · ברוקלין</span>
-    <h1>השכרת רכבים <em>בקראון הייטס</em></h1>
+    <h1>השכרת רכבים בקראון הייטס</h1>
     <div class="hero-actions" style="margin-top:36px">
       <button class="btn btn-gold" onclick="scrollToFleet()">לצפייה ברכבים</button>
       <button class="btn btn-dark-out" onclick="openAuth()">כניסה / הרשמה</button>
@@ -675,16 +1229,6 @@ body::after{
     </div>
   </div>
 
-  <!-- layered road scene -->
-  <div class="road" aria-hidden="true">
-    <div class="cars-far">
-      <svg class="sil s1"><use href="#carSil"/></svg>
-    </div>
-    <div class="asphalt"></div>
-    <div class="cars-near">
-      <svg class="sil s3"><use href="#carSil"/></svg>
-    </div>
-  </div>
 </header>
 
 <!-- STATUS STRIP -->
@@ -696,6 +1240,7 @@ body::after{
     <span class="it" style="color:var(--mut2);font-size:.74rem" id="last-upd"></span>
   </div>
 </div>
+
 
 <!-- FLEET -->
 <section class="section" id="fleet">
@@ -810,6 +1355,7 @@ body::after{
   <div class="foot-in">
     <div><b style="color:var(--gold-d);font-family:'Heebo';font-weight:800">CROWN DRIVE</b> · קראון הייטס, ברוקלין NY</div>
     <div>קינגסטון אווניו, קראון הייטס · שירות הלקוחות מחובר למנהל המערכת בצ׳אט</div>
+    <div><button class="footer-link" onclick="openLegal('terms')">תקנון שימוש</button> · <button class="footer-link" onclick="openLegal('privacy')">מדיניות פרטיות</button></div>
     <div>© 2026 כל הזכויות שמורות</div>
   </div>
 </footer>
@@ -847,7 +1393,7 @@ body::after{
         <!-- login -->
         <div id="auth-login">
           <div class="field" id="lf-mail"><label>אימייל <span class="req">*</span></label><input id="l-mail" type="email" dir="ltr" style="text-align:right" placeholder="name@email.com"><div class="err-msg">אימייל לא נמצא</div></div>
-          <div class="field" id="lf-pass"><label>סיסמה <span class="req">*</span></label><div class="pass-wrap"><input id="l-pass" type="password"><button class="pass-toggle" type="button" onclick="togglePassword('l-pass',this)">הצג סיסמה</button></div><div class="err-msg">סיסמה שגויה</div></div>
+          <div class="field" id="lf-pass"><label>סיסמה <span class="req">*</span></label><input id="l-pass" type="password"><div class="err-msg">סיסמה שגויה</div></div>
           <div class="m-actions"><button class="btn btn-gold grow" onclick="doLogin()">כניסה לחשבון</button></div>
           <button class="linklike forgot-link" type="button" onclick="forgotPass()">שכחתי סיסמה</button>
         </div>
@@ -860,7 +1406,7 @@ body::after{
           </div>
           <div class="f-row">
             <div class="field" id="sf-mail"><label>אימייל <span class="req">*</span></label><input id="s-mail" type="email" dir="ltr" style="text-align:right" placeholder="name@email.com"><div class="err-msg">אימייל לא תקין או כבר רשום</div></div>
-            <div class="field" id="sf-pass"><label>סיסמה <span class="req">*</span></label><div class="pass-wrap"><input id="s-pass" type="password"><button class="pass-toggle" type="button" onclick="togglePassword('s-pass',this)">הצג סיסמה</button></div><div class="err-msg">לפחות 6 תווים</div></div>
+            <div class="field" id="sf-pass"><label>סיסמה <span class="req">*</span></label><input id="s-pass" type="password"><div class="err-msg">לפחות 6 תווים</div></div>
           </div>
 
           <!-- renter extras -->
@@ -907,10 +1453,15 @@ body::after{
             </div>
             <div class="note">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-              <div>התשלום מוסדר ישירות מול בעל הרכב בעת האיסוף.</div>
+              <div>התשלום מוסדר ישירות מול בעל הרכב בעת האיסוף. צילום הרישיון נשמר באזור מאובטח ונגיש רק לך, למנהל המערכת ולבעל הרכב בהזמנה רלוונטית לצורך אימות.</div>
             </div>
           </div>
 
+          <label class="check-line" id="sf-legal" style="margin-top:12px">
+            <input id="s-legal" type="checkbox">
+            <span>אני מאשר/ת את <button type="button" class="linklike" onclick="openLegal('terms')">תקנון השימוש</button> ואת <button type="button" class="linklike" onclick="openLegal('privacy')">מדיניות הפרטיות</button>, כולל שמירת פרטי רישיון ותמונות לצורך אימות וניהול השכרות.</span>
+          </label>
+          <div class="err-msg" id="legal-err" style="display:none">חובה לאשר את התקנון ומדיניות הפרטיות</div>
           <div class="m-actions" style="margin-top:18px"><button class="btn btn-gold grow" onclick="doSignup()">יצירת חשבון</button></div>
         </div>
       </div>
@@ -947,12 +1498,12 @@ body::after{
       <div id="dash-add" style="display:none">
         <div class="divider" id="form-title">הוספת רכב חדש</div>
         <div class="f-row3">
-          <div class="field" id="af-make"><label>יצרן <span class="req">*</span></label><select id="a-make" onchange="ownerMakeChanged()"></select><input id="a-make-other" class="other-input" placeholder="הקלד יצרן אחר"><div class="err-msg">שדה חובה</div></div>
-          <div class="field" id="af-model"><label>דגם <span class="req">*</span></label><select id="a-model" onchange="toggleOtherInput('a-model','a-model-other')"></select><input id="a-model-other" class="other-input" placeholder="הקלד דגם אחר"><div class="err-msg">שדה חובה</div></div>
-          <div class="field" id="af-yr"><label>שנה <span class="req">*</span></label><select id="a-yr"></select><div class="err-msg">שנה לא תקינה</div></div>
+          <div class="field" id="af-make"><label>יצרן <span class="req">*</span></label><input id="a-make" placeholder="Mercedes-Benz"><div class="err-msg">שדה חובה</div></div>
+          <div class="field" id="af-model"><label>דגם <span class="req">*</span></label><input id="a-model" placeholder="S-Class"><div class="err-msg">שדה חובה</div></div>
+          <div class="field" id="af-yr"><label>שנה <span class="req">*</span></label><input id="a-yr" type="number" min="2000" max="2027" placeholder="2025"><div class="err-msg">שנה לא תקינה</div></div>
         </div>
         <div class="f-row3">
-          <div class="field" id="af-color"><label>צבע <span class="req">*</span></label><select id="a-color" onchange="toggleOtherInput('a-color','a-color-other')"></select><input id="a-color-other" class="other-input" placeholder="הקלד צבע אחר"><div class="err-msg">שדה חובה</div></div>
+          <div class="field" id="af-color"><label>צבע <span class="req">*</span></label><input id="a-color" placeholder="שחור אובסידיאן"><div class="err-msg">שדה חובה</div></div>
           <div class="field"><label>קטגוריה</label>
             <select id="a-cat"><option>סדאן יוקרה</option><option>סדאן</option><option>SUV יוקרה</option><option>SUV</option><option>מיניוואן</option><option>קופה ספורט</option><option>קבריולה</option><option>רכב מסחרי</option></select>
           </div>
@@ -977,7 +1528,7 @@ body::after{
           <div class="field"><label>סוג הנעה <span class="req">*</span></label><select id="a-fuel"><option selected>בנזין</option><option>היברידי</option><option>היברידי נטען (PHEV)</option><option>חשמלי</option><option>דיזל</option></select></div>
         </div>
         <div class="f-row3">
-          <div class="field"><label>מנוע / נפח מנוע</label><select id="a-engine" onchange="toggleOtherInput('a-engine','a-engine-other')"></select><input id="a-engine-other" class="other-input" placeholder="הקלד מנוע אחר"></div>
+          <div class="field"><label>מנוע / נפח מנוע</label><input id="a-engine" placeholder="2.5L / V6 / Electric"></div>
           <div class="field"><label>גודל רכב</label><input id="a-size" placeholder="קומפקטי / משפחתי / SUV גדול"></div>
           <div class="field"><label>אזור איסוף</label><input id="a-location" placeholder="קראון הייטס / קינגסטון"></div>
         </div>
@@ -1061,16 +1612,14 @@ body::after{
         </div>
         <div class="f-row">
           <div class="field" id="f-from"><label>תאריך איסוף <span class="req">*</span></label><input type="date" id="dt-from"><div class="err-msg">יש לבחור תאריך איסוף</div></div>
-          <div class="field"><label>שעת איסוף — זמין 24 שעות</label>
-            <select id="tm-from" class="time-24"></select>
-            <div class="hint">אפשר לבחור כל שעה ביממה, 00:00–23:00.</div>
+          <div class="field"><label>שעת איסוף</label>
+            <select id="tm-from"><option>09:00</option><option>10:00</option><option>11:00</option><option>12:00</option><option>14:00</option><option>16:00</option><option>18:00</option><option>20:00</option></select>
           </div>
         </div>
         <div class="f-row">
           <div class="field" id="f-to"><label>תאריך החזרה <span class="req">*</span></label><input type="date" id="dt-to"><div class="err-msg">מועד ההחזרה חייב להיות אחרי האיסוף</div></div>
-          <div class="field"><label>שעת החזרה — זמין 24 שעות</label>
-            <select id="tm-to" class="time-24"></select>
-            <div class="hint">אפשר להחזיר בכל שעה ביממה.</div>
+          <div class="field"><label>שעת החזרה</label>
+            <select id="tm-to"><option>09:00</option><option>10:00</option><option>11:00</option><option selected>12:00</option><option>14:00</option><option>16:00</option><option>18:00</option><option>20:00</option></select>
           </div>
         </div>
         <div class="summary-box" id="price-live" style="display:none"></div>
@@ -1214,10 +1763,17 @@ body::after{
       </div>
       <div class="divider">שינוי פרטי התחברות</div>
       <div class="field"><label>מייל חדש (להשאיר ריק אם אין שינוי)</label><input id="ac-mail" type="email" dir="ltr" placeholder="new@email.com"></div>
-      <div class="field"><label>סיסמה חדשה (להשאיר ריק אם אין שינוי)</label><div class="pass-wrap"><input id="ac-pass" type="password" placeholder="לפחות 6 תווים"><button class="pass-toggle" type="button" onclick="togglePassword('ac-pass',this)">הצג סיסמה</button></div></div>
+      <div class="field"><label>סיסמה חדשה (להשאיר ריק אם אין שינוי)</label><input id="ac-pass" type="password" placeholder="לפחות 6 תווים"></div>
       <div class="note" style="margin-top:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><div>שינוי מייל או סיסמה עשוי לדרוש התחברות מחדש מטעמי אבטחה.</div></div>
       <div class="m-actions"><button class="btn btn-ghost" onclick="closeOv('ov-account')">ביטול</button><button class="btn btn-gold grow" onclick="saveAccount()">שמירת השינויים</button></div>
     </div>
+  </div>
+</div>
+
+<div class="overlay" id="ov-legal" role="dialog" aria-modal="true">
+  <div class="modal wide">
+    <div class="m-head"><h3 id="legal-title">תקנון ומדיניות פרטיות</h3><button class="m-close" onclick="closeOv('ov-legal')">✕</button></div>
+    <div class="m-body" id="legal-body"></div>
   </div>
 </div>
 
@@ -1240,25 +1796,76 @@ const API_URL = '/.netlify/functions/db';
 let db=null, fauth=null;
 
 async function api(action, payload={}){
+  const token = localStorage.getItem('cd_token') || '';
   const res = await fetch(API_URL, {
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({action,...payload})
+    body:JSON.stringify({action,token,...payload})
   });
   const txt = await res.text();
   let data={};
   try{ data = txt ? JSON.parse(txt) : {}; }catch(e){ data={error:txt||'Invalid JSON'}; }
-  if(!res.ok) throw new Error(data.error || ('שגיאת שרת '+res.status));
+  if(!res.ok) throw new Error(data.error || ('שגיאת סנכרון '+res.status));
   return data;
 }
+
+function plainDateTime(d,t){return `${fmt(d)} בשעה ${t||''}`.trim();}
+function emailOfUser(uid){
+  const u=userOf(uid)||{};
+  return u.email || '';
+}
+function bookingEmailHTML(title,b,statusText){
+  const c=state.cars.find(x=>x.id===b.carId)||{};
+  const owner=userOf(b.ownerId)||{};
+  const renter=userOf(b.renterId)||{};
+  const total=money(+b.total||0);
+  return `
+  <div dir="rtl" style="font-family:Arial,Heebo,sans-serif;line-height:1.7;color:#1D1D1F;background:#F4F6F8;padding:22px">
+    <div style="max-width:620px;margin:auto;background:white;border-radius:16px;padding:24px;border:1px solid #E5E8EC">
+      <h2 style="margin:0 0 12px;color:#1B222B">${title}</h2>
+      <p style="font-size:16px;margin:0 0 16px">${statusText}</p>
+      <table style="width:100%;border-collapse:collapse;font-size:15px">
+        <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#6E6E73">מספר הזמנה</td><td style="padding:8px;border-bottom:1px solid #eee"><b>${esc(b.num||'')}</b></td></tr>
+        <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#6E6E73">רכב</td><td style="padding:8px;border-bottom:1px solid #eee">${esc(c.make||'')} ${esc(c.model||'')} ${esc(c.yr||'')}</td></tr>
+        <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#6E6E73">שוכר</td><td style="padding:8px;border-bottom:1px solid #eee">${esc(b.signName||b.renterName||renter.name||'')}</td></tr>
+        <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#6E6E73">משכיר</td><td style="padding:8px;border-bottom:1px solid #eee">${esc(owner.name||'')}</td></tr>
+        <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#6E6E73">איסוף</td><td style="padding:8px;border-bottom:1px solid #eee">${plainDateTime(b.from,b.tmFrom)}</td></tr>
+        <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#6E6E73">החזרה</td><td style="padding:8px;border-bottom:1px solid #eee">${plainDateTime(b.to,b.tmTo)}</td></tr>
+        <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#6E6E73">סוג השכרה</td><td style="padding:8px;border-bottom:1px solid #eee">${rentalLabel(b.rentalType||'hourly')}</td></tr>
+        <tr><td style="padding:8px;color:#6E6E73">סה״כ</td><td style="padding:8px"><b>${total}</b></td></tr>
+      </table>
+      <p style="margin-top:18px;color:#6E6E73;font-size:13px">Crown Drive · קראון הייטס</p>
+    </div>
+  </div>`;
+}
+async function sendBookingEmails(kind,b){
+  if(!CLOUD || !b) return;
+  const c=state.cars.find(x=>x.id===b.carId)||{};
+  const ownerEmail=b.ownerEmail || c.ownerEmail || emailOfUser(b.ownerId);
+  const renterEmail=b.renterEmail || emailOfUser(b.renterId) || (me()&&me().email) || '';
+  let subject='', title='', status='';
+  if(kind==='request'){
+    subject=`Crown Drive — בקשת הזמנה חדשה ${b.num}`;
+    title='בקשת הזמנה חדשה נשלחה';
+    status='ההזמנה ממתינה לאישור בעל הרכב. בעל הרכב יכול לאשר או לדחות באזור האישי.';
+  } else if(kind==='approved'){
+    subject=`Crown Drive — ההזמנה אושרה ${b.num}`;
+    title='ההזמנה אושרה';
+    status='בעל הרכב אישר את ההזמנה. השוכר צריך לשלוח בצ׳אט צילום מסך של העברת הכסף.';
+  } else if(kind==='rejected'){
+    subject=`Crown Drive — ההזמנה נדחתה ${b.num}`;
+    title='ההזמנה נדחתה';
+    status='בעל הרכב דחה את בקשת ההזמנה. אפשר לבחור רכב אחר או להתכתב בצ׳אט.';
+  } else { return; }
+  const to=[ownerEmail,renterEmail].filter(Boolean);
+  if(!to.length) return;
+  try{
+    await api('sendEmail',{to,subject,html:bookingEmailHTML(title,b,status)});
+  }catch(e){console.warn('Email send failed',e);}
+}
+
 function snapFrom(rows){
-  const docs=(rows||[]).map(r=>({ id:r.id, data:()=>({...r.data}) }));
-  return {
-    docs,
-    forEach(fn){ docs.forEach(fn); },
-    size: docs.length,
-    empty: docs.length===0
-  };
+  return { docs:(rows||[]).map(r=>({ id:r.id, data:()=>({...r.data}) })) };
 }
 function makeCollection(name){
   return {
@@ -1320,18 +1927,18 @@ db = { collection: makeCollection };
 fauth = {
   currentUser:null,
   onAuthStateChanged(fn){ authListeners.push(fn); setTimeout(()=>fn(this.currentUser),0); return ()=>{}; },
-  async signInWithEmailAndPassword(email,pass){ const r=await api('login',{email,pass}); this.currentUser=makeAuthUser(r.user); localStorage.setItem('cd_uid',r.user.uid); localStorage.setItem('cd_email',r.user.email); notifyAuth(); return {user:this.currentUser}; },
-  async createUserWithEmailAndPassword(email,pass){ const r=await api('signup',{email,pass}); this.currentUser=makeAuthUser(r.user); localStorage.setItem('cd_uid',r.user.uid); localStorage.setItem('cd_email',r.user.email); notifyAuth(); return {user:this.currentUser}; },
+  async signInWithEmailAndPassword(email,pass){ const r=await api('login',{email,pass}); this.currentUser=makeAuthUser(r.user); localStorage.setItem('cd_uid',r.user.uid); localStorage.setItem('cd_email',r.user.email); if(r.token)localStorage.setItem('cd_token',r.token); notifyAuth(); return {user:this.currentUser}; },
+  async createUserWithEmailAndPassword(email,pass){ const r=await api('signup',{email,pass}); this.currentUser=makeAuthUser(r.user); localStorage.setItem('cd_uid',r.user.uid); localStorage.setItem('cd_email',r.user.email); if(r.token)localStorage.setItem('cd_token',r.token); notifyAuth(); return {user:this.currentUser}; },
   async sendPasswordResetEmail(email){ await api('resetPassword',{email}); },
-  async signOut(){ this.currentUser=null; localStorage.removeItem('cd_uid'); localStorage.removeItem('cd_email'); notifyAuth(); }
+  async signOut(){ try{await api('logout')}catch(e){} this.currentUser=null; localStorage.removeItem('cd_uid'); localStorage.removeItem('cd_email'); localStorage.removeItem('cd_token'); notifyAuth(); }
 };
 (function restoreSession(){
-  const uid=localStorage.getItem('cd_uid'), email=localStorage.getItem('cd_email');
-  if(uid&&email) fauth.currentUser=makeAuthUser({uid,email});
+  const uid=localStorage.getItem('cd_uid'), email=localStorage.getItem('cd_email'), token=localStorage.getItem('cd_token');
+  if(uid&&email&&token) fauth.currentUser=makeAuthUser({uid,email});
 })();
 function persistState(){ /* נשמר בענן דרך Netlify Database */ }
 function loadState(){ /* נטען אוטומטית דרך onSnapshot */ }
-function cloudErr(e){console.error(e);showToast('שגיאה בשמירה: '+((e&&e.message)||e))}
+function cloudErr(e){console.warn('Cloud sync issue',e); if(!window.__cdCloudWarned){window.__cdCloudWarned=true; showToast('הסנכרון בענן מתאושש — נסה לרענן בעוד רגע'); setTimeout(()=>{window.__cdCloudWarned=false},12000);} }
 
 /* ================= STATE ================= */
 const state = {
@@ -1382,34 +1989,6 @@ const CAR_MAKES_MODELS={
   "Volvo":["S60","S90","V60","V90","XC40","XC60","XC90","C40","EX30","EX90"]
 };
 const ENGINE_TYPES=["3 צילינדרים טורבו","4 צילינדרים","4 צילינדרים טורבו","V6","V6 טורבו","V8","V8 טורבו","היברידי","היברידי נטען (PHEV)","חשמלי","דיזל","דיזל טורבו","1.5L","1.6L","2.0L","2.4L","2.5L","3.0L","3.5L","5.0L"];
-
-const VEHICLE_COLORS=["שחור","לבן","כסף","אפור","כחול","אדום","ירוק","חום","בז׳","זהב","כתום","צהוב","אחר"];
-const VEHICLE_SIZES=["קומפקטי","משפחתי","סדאן","SUV קטן","SUV","SUV גדול","מיניוואן","פיקאפ","מסחרי","יוקרה","אחר"];
-function yearList(){const y=new Date().getFullYear()+1;let arr=[];for(let i=y;i>=2000;i--)arr.push(String(i));return arr;}
-function fillSelectWithOther(id,items,placeholder){const el=$(id); if(!el)return; const cur=el.value; el.innerHTML=`<option value="">${placeholder}</option>`+items.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')+`<option value="אחר">אחר / Other</option>`; if([...items,'אחר'].includes(cur))el.value=cur;}
-function toggleOtherInput(selId,inputId){const sel=$(selId), inp=$(inputId); if(!sel||!inp)return; inp.classList.toggle('show',sel.value==='אחר');}
-function selectedOrOther(selId,inputId){const sel=$(selId), inp=$(inputId); const v=sel?sel.value:''; return v==='אחר' ? (inp?inp.value.trim():'') : String(v||'').trim();}
-function ownerMakeChanged(){
-  const make=$('a-make')?.value||'';
-  toggleOtherInput('a-make','a-make-other');
-  const models=make && make!=='אחר' ? (CAR_MAKES_MODELS[make]||[]) : [];
-  fillSelectWithOther('a-model',models,make&&make!=='אחר'?'בחר דגם':'בחר דגם / אחר');
-  toggleOtherInput('a-model','a-model-other');
-}
-function setOwnerSelectValue(selId,inputId,value,items){
-  const sel=$(selId), inp=$(inputId); if(!sel)return; value=String(value||'').trim();
-  if(value && items && items.includes(value)){sel.value=value;if(inp){inp.value='';inp.classList.remove('show')}}
-  else if(value){sel.value='אחר';if(inp){inp.value=value;inp.classList.add('show')}}
-  else {sel.value='';if(inp){inp.value='';inp.classList.remove('show')}}
-}
-function initOwnerChoiceLists(){
-  fillSelectWithOther('a-make',Object.keys(CAR_MAKES_MODELS),'בחר יצרן');
-  fillSelectWithOther('a-model',[],'בחר דגם');
-  const yr=$('a-yr'); if(yr)yr.innerHTML='<option value="">בחר שנה</option>'+yearList().map(y=>`<option value="${y}">${y}</option>`).join('');
-  fillSelectWithOther('a-color',VEHICLE_COLORS.filter(x=>x!=='אחר'),'בחר צבע');
-  fillSelectWithOther('a-engine',ENGINE_TYPES,'בחר מנוע');
-}
-
 const US_STATES=["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","District of Columbia","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming","Canada","Israel","Other"];
 const RENTAL_TYPES={hourly:'לפי שעות',daily:'לפי ימים',long:'תקופות ארוכות'};
 function rentalTypesOf(c){return Array.isArray(c.rentalTypes)&&c.rentalTypes.length?c.rentalTypes:['hourly'];}
@@ -1465,7 +2044,6 @@ function initChoiceLists(){fillSelect('q-make',Object.keys(CAR_MAKES_MODELS),'כ
 const $ = id => document.getElementById(id);
 const esc = s => String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
 const money = n => '$'+n.toLocaleString('en-US');
-function togglePassword(id,btn){const el=$(id);if(!el)return;const show=el.type==='password';el.type=show?'text':'password';if(btn)btn.textContent=show?'הסתר סיסמה':'הצג סיסמה';}
 const me = () => state.session;
 
 const ic = {
@@ -1488,10 +2066,52 @@ function renderNav(){
     el.innerHTML = `
       <span class="who">שלום, <b>${esc((u.name||'משתמש').split(' ')[0])}</b> · ${roleTxt}</span>
       <button class="btn btn-gold" onclick="${mainAction}">${mainLabel}</button>
-      ${role==='admin'?'':`<button class="btn btn-dark-out" onclick="openAccount()" title="עריכת פרטי החשבון">⚙ החשבון</button>`} <button class="btn btn-dark-out" onclick="logout()">יציאה מהמערכת</button>`;
+      ${role==='admin'?'':`<button class="btn btn-dark-out" onclick="openAccount()" title="עריכת פרטי החשבון">⚙ החשבון</button>`} <button class="btn btn-dark-out" onclick="logout()">יציאה</button>`;
   }
 }
-function logout(){if(CLOUD&&fauth.currentUser){fauth.signOut()}state.session=null;localStorage.removeItem('cd_uid');localStorage.removeItem('cd_email');stopUserFeeds();stopAdminFeeds();renderNav();toggleChat(false);updateBadge();showToast('יצאת מהמערכת בהצלחה')}
+
+function openLegal(type){
+  const title = type==='privacy' ? 'מדיניות פרטיות · Crown Drive' : 'תקנון שימוש · Crown Drive';
+  $('legal-title').textContent = title;
+  $('legal-body').innerHTML = type==='privacy' ? privacyHTML() : termsHTML();
+  openOv('ov-legal');
+}
+function termsHTML(){return `
+  <div class="legal-block">
+    <div class="legal-small">נוסח זה הוא בסיס תפעולי לאתר השכרות פרטי. לפני פרסום רחב מומלץ שעורך דין יבדוק ויתאים אותו לחוקי ניו יורק ולמודל העסקי הסופי.</div>
+    <h4>1. מהות השירות</h4>
+    <p>Crown Drive היא פלטפורמה המחברת בין שוכרי רכבים לבין בעלי רכבים. ההשכרה עצמה, התשלום, מסירת הרכב והאחריות להסכם ההשכרה מתבצעים בין השוכר לבעל הרכב, אלא אם צוין אחרת בכתב.</p>
+    <h4>2. הרשמה ואימות</h4>
+    <ul><li>שוכר נדרש למסור שם, טלפון, אימייל, מדינת הנפקת רישיון וצילום רישיון קדמי ואחורי.</li><li>בעל רכב נדרש למסור פרטי קשר ופרטי הרכב.</li><li>אסור למסור מידע שקרי או להשתמש ברישיון שאינו שלך.</li></ul>
+    <h4>3. הזמנות ואישורים</h4>
+    <p>בקשת הזמנה אינה סופית עד שבעל הרכב מאשר אותה. לאחר אישור, השוכר מתבקש לשלוח בצ׳אט צילום מסך של העברת התשלום לבעל הרכב.</p>
+    <h4>4. תשלומים ופיקדונות</h4>
+    <p>האתר אינו מעבד כרטיסי אשראי בשלב זה. תשלום, פיקדון, ביטול והחזר מתואמים ישירות בין השוכר לבעל הרכב, לפי מה שסוכם ביניהם.</p>
+    <h4>5. אחריות השוכר</h4>
+    <ul><li>לנהוג כחוק, עם רישיון תקף וביטוח מתאים לפי תנאי בעל הרכב.</li><li>להחזיר את הרכב בזמן ובמצב תקין.</li><li>לדווח מיד על תאונה, נזק, דו״ח או תקלה.</li></ul>
+    <h4>6. אחריות בעל הרכב</h4>
+    <ul><li>לפרסם מידע נכון על הרכב, זמינותו, מחיריו ותנאי ההשכרה.</li><li>לוודא שהרכב תקין, בטוח ומותר להשכרה לפי הדין והביטוח.</li><li>לאשר או לדחות הזמנות בזמן סביר.</li></ul>
+    <h4>7. חסימת משתמשים</h4>
+    <p>מנהל המערכת רשאי להסיר תוכן, לחסום משתמש או לבטל פעילות במקרה של שימוש לרעה, מידע שקרי, הונאה, סיכון בטיחותי או הפרת התקנון.</p>
+  </div>`}
+function privacyHTML(){return `
+  <div class="legal-block">
+    <div class="legal-small">אנחנו אוספים רק מידע שנדרש להפעלת שירות ההשכרות, אימות משתמשים, ניהול הזמנות, צ׳אט ותמיכה.</div>
+    <h4>1. איזה מידע נאסף</h4>
+    <ul><li>שם, טלפון, אימייל וסוג משתמש.</li><li>לשוכרים: מדינת הנפקת רישיון, צילום רישיון קדמי ואחורי.</li><li>למשכירים: פרטי רכב, תמונות רכב, מחירים וזמינות.</li><li>הזמנות, סטטוסים, צ׳אטים, תמונות בצ׳אט וצילום תשלום.</li></ul>
+    <h4>2. מי יכול לראות רישיון נהיגה</h4>
+    <ul><li>השוכר עצמו.</li><li>מנהל המערכת, לצורך תמיכה, בדיקה, מניעת הונאה וניהול מחלוקות.</li><li>בעל הרכב רק בהקשר להזמנה רלוונטית, לצורך אימות השוכר לפני מסירת רכב.</li><li>משתמשים אחרים לא אמורים לראות רישיונות או מידע פרטי של שוכרים.</li></ul>
+    <h4>3. אחסון תמונות וקבצים</h4>
+    <p>תמונות רישיון, רכבים, צ׳אט וצילום תשלום נשמרות באחסון ענן דרך Netlify Blobs או שירות אחסון מחובר אחר. במסד הנתונים נשמר קישור לקובץ במקום לשמור תמונה כבדה בתוך הדפדפן.</p>
+    <h4>4. אבטחה והרשאות</h4>
+    <ul><li>סיסמאות נשמרות בשרת כ־Hash ולא כטקסט רגיל.</li><li>מנהל מזוהה לפי הרשאות שרת ולא לפי כפתור גלוי באתר.</li><li>שוכר אמור לראות רק את ההזמנות והצ׳אטים שלו.</li><li>בעל רכב אמור לראות רק את הרכבים שלו, ההזמנות שלו והצ׳אטים שלו.</li></ul>
+    <h4>5. מיילים והתראות</h4>
+    <p>האתר עשוי לשלוח מיילים על בקשות הזמנה, אישור, דחייה, צ׳אט ותמיכה, אם הוגדר שירות SMTP.</p>
+    <h4>6. מחיקה ועדכון מידע</h4>
+    <p>משתמש יכול לבקש עדכון או מחיקה של מידע דרך שירות הלקוחות. ייתכן שנשמור רשומות מסוימות לתיעוד, אבטחה, מחלוקות או דרישות חוק.</p>
+  </div>`}
+
+function logout(){if(CLOUD&&fauth.currentUser){fauth.signOut()}state.session=null;stopUserFeeds();stopAdminFeeds();renderNav();toggleChat(false);updateBadge();showToast('התנתקת מהחשבון')}
 
 /* ================= AUTH ================= */
 function openAuth(role){
@@ -1554,7 +2174,7 @@ function closeHiddenAdminMode(){
 }
 function shouldOpenAdminFromUrl(){
   // כניסת מנהל מוסתרת: אין פתיחה דרך #admin או ?admin=1.
-  // מנהל נכנס דרך בחירת 'בעל רכב' עם פרטי המנהל בלבד.
+  // מנהל נכנס דרך בחירת 'בעל רכב'. הזיהוי נעשה בשרת, לא בקוד הדפדפן.
   return false;
 }
 function checkAdminUrl(){
@@ -1568,7 +2188,6 @@ window.addEventListener('hashchange',checkAdminUrl);
 window.addEventListener('keydown',e=>{
   // אין קיצור מקשים גלוי/נסתר לכניסת מנהל.
 });
-const ADMIN_EMAIL='shmuel123770@icloud.com', ADMIN_PASS='amarZ770@';
 let authJustSignedUp=false, pendingProfile=null;
 function afterLoginUI(){
   closeOv('ov-auth'); renderNav(); updateBadge();
@@ -1591,9 +2210,7 @@ function openAccount(){
 }
 $('ac-lic').addEventListener('change',e=>{
   const f=e.target.files[0]; if(!f)return;
-  const r=new FileReader();
-  r.onload=()=>{acLicData=r.result;showToast('צילום הרישיון החדש נטען')};
-  r.readAsDataURL(f);
+  readImg(f,url=>{acLicData=url;showToast('צילום הרישיון החדש נשמר בענן')},'licenses');
 });
 function saveAccount(){
   const u=me(); if(!u)return;
@@ -1602,7 +2219,7 @@ function saveAccount(){
   if(!name){showToast('שם מלא הוא שדה חובה');return}
   if(newPass && newPass.length<6){showToast('סיסמה חדשה חייבת לפחות 6 תווים');return}
   if(CLOUD){
-    const jobs=[db.collection('users').doc(u.id).update({name})];
+    const jobs=[db.collection('users').doc(u.id).update({name,...(newMail?{email:newMail}:{})})];
     const priv={phone}; if(acLicData)priv.lic=acLicData;
     jobs.push(db.collection('private').doc(u.id).update(priv));
     const au=fauth.currentUser;
@@ -1641,10 +2258,6 @@ function saveAccount(){
 function forgotPass(){
   const em=$('l-mail').value.trim().toLowerCase();
   if(!em){mark('lf-mail',true);showToast('הזינו את כתובת המייל ואז לחצו על שחזור');return}
-  if(em===ADMIN_EMAIL){
-    showToast('אם זה חשבון מנהל, שינוי הסיסמה נעשה דרך עדכון קובץ האתר.');
-    return;
-  }
   if(CLOUD){
     fauth.sendPasswordResetEmail(em)
       .then(()=>showToast('נשלח מייל לשחזור הסיסמה — בדקו את תיבת הדואר'))
@@ -1655,20 +2268,7 @@ function forgotPass(){
 }
 function doLogin(){
   const em=$('l-mail').value.trim().toLowerCase(), ps=$('l-pass').value;
-  // כניסת מנהל מוסתרת: בוחרים 'אני בעל רכב' ומזינים את פרטי המנהל.
-  // אין כפתור מנהל ואין כתובת #admin.
-  if(authRole==='owner' && em===ADMIN_EMAIL && ps===ADMIN_PASS){
-    state.session={role:'admin',id:'admin',name:'מנהל האתר',email:ADMIN_EMAIL};
-    if(CLOUD)startAdminFeeds();
-    afterLoginUI();
-    return;
-  }
-  if(adminSecretMode && em===ADMIN_EMAIL && ps===ADMIN_PASS){
-    state.session={role:'admin',id:'admin',name:'מנהל האתר',email:ADMIN_EMAIL};
-    if(CLOUD)startAdminFeeds();
-    afterLoginUI();
-    return;
-  }
+  // מנהל נכנס דרך 'אני בעל רכב'; השרת מזהה אם זה חשבון מנהל לפי הרשאות במסד הנתונים.
   if(CLOUD){
     mark('lf-mail',false);mark('lf-pass',false);
     fauth.signInWithEmailAndPassword(em,ps).catch(e=>{
@@ -1695,6 +2295,7 @@ function doSignup(){
   mk('sf-phone',phone.length<9);
   mk('sf-mail',!/^\S+@\S+\.\S+$/.test(em) || pool.some(x=>x.email===em));
   mk('sf-pass',ps.length<6);
+  if($('s-legal') && !$('s-legal').checked){$('legal-err').style.display='block';bad=true}else if($('legal-err')){$('legal-err').style.display='none'}
 
   let extra={};
   if(authRole==='renter'){
@@ -1709,7 +2310,7 @@ function doSignup(){
 
   if(CLOUD){
     const role=authRole;
-    const prof={name,role,createdAt:Date.now(),updatedAt:Date.now()};
+    const prof={name,role,email:em,createdAt:Date.now()};
     const priv={phone:$('s-phone').value.trim(),...extra};
     fauth.createUserWithEmailAndPassword(em,ps).then(cred=>{
       const uid=cred.user.uid;
@@ -1721,17 +2322,17 @@ function doSignup(){
       ]);
     }).then(()=>{
       ['s-name','s-phone','s-mail','s-pass'].forEach(i=>$(i).value='');
-      clearRLic(true);clearRLicBack(true);if($('lic-state'))$('lic-state').value='';
+      clearRLic(true);clearRLicBack(true);if($('lic-state'))$('lic-state').value='';if($('s-legal'))$('s-legal').checked=false;if($('legal-err'))$('legal-err').style.display='none';
       showToast('החשבון נוצר בהצלחה');
     }).catch(e=>{mark('sf-mail',true);showToast('שגיאה: '+((e&&e.message)||e))});
     return;
   }
   const u={id:newId('u'), name, phone:$('s-phone').value.trim(), email:em, pass:ps, createdAt:Date.now(), ...extra};
   pool.push(u);
-  state.users[u.id]={name:u.name,role:authRole,createdAt:u.createdAt};
+  state.users[u.id]={name:u.name,role:authRole,email:u.email,createdAt:u.createdAt};
   state.session={role:authRole,id:u.id,...u};
   ['s-name','s-phone','s-mail','s-pass'].forEach(i=>$(i).value='');
-  clearRLic(true);clearRLicBack(true);if($('lic-state'))$('lic-state').value='';
+  clearRLic(true);clearRLicBack(true);if($('lic-state'))$('lic-state').value='';if($('s-legal'))$('s-legal').checked=false;if($('legal-err'))$('legal-err').style.display='none';
   showToast('החשבון נוצר בהצלחה');
   authJustSignedUp=(authRole==='owner');
   afterLoginUI();
@@ -1742,12 +2343,12 @@ bindDrop('drop-rlic','rlic-file',f=>readImg(f,d=>{
   rlicData=d; $('rlic-img').src=d;
   $('rlic-prev').style.display='block'; $('drop-rlic').style.display='none';
   $('drop-rlic').classList.remove('err-b'); $('rlic-err').style.display='none';
-}));
+},'licenses'));
 bindDrop('drop-rlic-back','rlic-back-file',f=>readImg(f,d=>{
   rlicBackData=d; $('rlic-back-img').src=d;
   $('rlic-back-prev').style.display='block'; $('drop-rlic-back').style.display='none';
   $('drop-rlic-back').classList.remove('err-b'); $('rlic-back-err').style.display='none';
-}));
+},'licenses'));
 function clearRLic(s){rlicData=null;$('rlic-file').value='';$('rlic-prev').style.display='none';$('drop-rlic').style.display='block'}
 function clearRLicBack(s){rlicBackData=null;$('rlic-back-file').value='';$('rlic-back-prev').style.display='none';$('drop-rlic-back').style.display='block'}
 
@@ -1776,7 +2377,7 @@ function statusInfo(c){
 function render(){
   persistState();
   const g=$('grid'); g.innerHTML='';
-  const list = state.cars.filter(matchesSearch).filter(c=>filter==='all'||(filter==='available'?c.status==='available':c.status!=='available')).sort((a,b)=>((b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0)));
+  const list = state.cars.filter(matchesSearch).filter(c=>filter==='all'||(filter==='available'?c.status==='available':c.status!=='available'));
   if(state.cars.length===0){
     g.innerHTML=`<div class="empty">
       <h3>עדיין אין רכבים בצי</h3>
@@ -1962,11 +2563,11 @@ function editCar(id){
   const c=state.cars.find(x=>x.id===id);
   editId=id;
   setDash('add');
-  setOwnerSelectValue('a-make','a-make-other',c.make,Object.keys(CAR_MAKES_MODELS));ownerMakeChanged();setOwnerSelectValue('a-model','a-model-other',c.model,CAR_MAKES_MODELS[$('a-make').value]||[]);$('a-yr').value=c.yr||'';
-  setOwnerSelectValue('a-color','a-color-other',c.color||'',VEHICLE_COLORS);$('a-cat').value=c.cat;$('a-price-hourly').value=c.priceHourly||c.price||'';$('a-price-daily').value=c.priceDaily||'';$('a-price-weekly').value=c.priceWeekly||c.priceLong||'';
+  $('a-make').value=c.make;$('a-model').value=c.model;$('a-yr').value=c.yr;
+  $('a-color').value=c.color||'';$('a-cat').value=c.cat;$('a-price-hourly').value=c.priceHourly||c.price||'';$('a-price-daily').value=c.priceDaily||'';$('a-price-weekly').value=c.priceWeekly||c.priceLong||'';
   $('a-seats').value=c.seats;$('a-gear').value=c.gear;$('a-fuel').value=c.fuel;
   $('a-tags').value=c.tags.join(', ');$('a-status').value=c.status;
-  setOwnerSelectValue('a-engine','a-engine-other',c.engine||'',ENGINE_TYPES);$('a-size').value=c.size||'';$('a-location').value=c.location||'';setRentalChecks(c.rentalTypes);
+  $('a-engine').value=c.engine||'';$('a-size').value=c.size||'';$('a-location').value=c.location||'';setRentalChecks(c.rentalTypes);
   formPhotos=[...c.photos];renderPhotoGrid();
   $('form-title').textContent='עריכת '+c.make+' '+c.model;
   $('a-save').textContent='שמירת שינויים';$('a-cancel').style.display='block';
@@ -1978,7 +2579,7 @@ function editCar(id){
 }
 function resetCarForm(){
   editId=null;
-  ['a-make','a-model','a-yr','a-color','a-price-hourly','a-price-daily','a-price-weekly','a-tags','a-engine','a-size','a-location','a-make-other','a-model-other','a-color-other','a-engine-other'].forEach(i=>{if($(i))$(i).value=''});initOwnerChoiceLists();document.querySelectorAll('.other-input').forEach(x=>x.classList.remove('show'));
+  ['a-make','a-model','a-yr','a-color','a-price-hourly','a-price-daily','a-price-weekly','a-tags','a-engine','a-size','a-location'].forEach(i=>$(i).value='');
   $('a-cat').selectedIndex=0;$('a-seats').value='5';$('a-gear').selectedIndex=0;$('a-fuel').selectedIndex=0;$('a-status').value='available';setRentalChecks(['hourly']);
   formPhotos=[];renderPhotoGrid();
   ['af-make','af-model','af-yr','af-rentals','af-price-hourly','af-price-daily','af-price-weekly'].forEach(i=>$(i)&&$(i).classList.remove('err'));
@@ -1990,7 +2591,7 @@ bindDrop('drop-photos','ph-file',null,files=>{
     if(!f.type.startsWith('image/'))return showToast('ניתן להעלות קבצי תמונה בלבד');
     if(f.size>10*1024*1024)return showToast(f.name+' — גדול מדי (מקס׳ 10MB)');
     if(formPhotos.length>=6)return showToast('עד 6 תמונות לרכב');
-    readImg(f,d=>{formPhotos.push(d);renderPhotoGrid()});
+    readImg(f,d=>{formPhotos.push(d);renderPhotoGrid()},'car-photos');
   });
 });
 function removePhoto(i){formPhotos.splice(i,1);renderPhotoGrid()}
@@ -2003,11 +2604,11 @@ function renderPhotoGrid(){
   $('drop-photos').classList.remove('err-b');
 }
 function saveCar(){
-  const make=selectedOrOther('a-make','a-make-other'),model=selectedOrOther('a-model','a-model-other');
+  const make=$('a-make').value.trim(),model=$('a-model').value.trim();
   const yr=+$('a-yr').value;
   const priceHourly=+$('a-price-hourly').value, priceDaily=+$('a-price-daily').value, priceWeekly=+$('a-price-weekly').value;
   let bad=false;const mk=(id,b)=>{$(id).classList.toggle('err',b);if(b)bad=true};
-  const color=selectedOrOther('a-color','a-color-other');
+  const color=$('a-color').value.trim();
   const rentalTypes=selectedRentalTypes();
   mk('af-rentals',rentalTypes.length===0);
   mk('af-make',!make);mk('af-model',!model);mk('af-yr',!(yr>=2000&&yr<=2027));mk('af-color',!color);
@@ -2017,14 +2618,13 @@ function saveCar(){
   if(formPhotos.length<2){$('drop-photos').classList.add('err-b');showToast('חובה להעלות לפחות 2 תמונות של הרכב');bad=true}
   if(bad)return;
   const price = priceHourly || priceDaily || priceWeekly;
-  const now=Date.now();
-  const data={make,model,yr,price,priceHourly,priceDaily,priceWeekly,color,cat:$('a-cat').value,rentalTypes,updatedAt:now,
+  const data={make,model,yr,price,priceHourly,priceDaily,priceWeekly,color,cat:$('a-cat').value,rentalTypes,
     seats:$('a-seats').value,gear:$('a-gear').value,fuel:$('a-fuel').value,
-    engine:selectedOrOther('a-engine','a-engine-other'),size:$('a-size').value.trim(),location:$('a-location').value.trim(),
+    engine:$('a-engine').value.trim(),size:$('a-size').value.trim(),location:$('a-location').value.trim(),
     tags:$('a-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
     status:$('a-status').value,photos:[...formPhotos]};
   if(CLOUD){
-    const payload=editId?data:{...data,ownerId:state.session.id,ret:'',createdAt:now};
+    const payload=editId?data:{...data,ownerId:state.session.id,ownerEmail:state.session.email||'',ret:'',createdAt:Date.now()};
     const op=editId? db.collection('cars').doc(editId).update(payload)
                    : db.collection('cars').add(payload);
     op.then(()=>{showToast(editId?'הרכב עודכן':make+' '+model+' נוסף לצי');resetCarForm();if($('ov-owner').classList.contains('open'))setDash('cars');}).catch(cloudErr);
@@ -2034,7 +2634,7 @@ function saveCar(){
     Object.assign(state.cars.find(x=>x.id===editId),data);
     showToast('הרכב עודכן');
   } else {
-    state.cars.push({id:newId('c'),createdAt:now,ownerId:state.session.id,ret:'',...data});
+    state.cars.push({id:newId('c'),createdAt:Date.now(),ownerId:state.session.id,ret:'',...data});
     showToast(make+' '+model+' נוסף לצי');
   }
   render();renderAdminList();resetCarForm();
@@ -2062,66 +2662,47 @@ function endRental(bid){
 }
 
 /* owner: bookings tab */
-function bookingStatusKey(b){return b.done?'done':(b.status||'approved')}
-function bookingPersonName(b,side){
-  if(side==='owner')return esc(b.signName||b.renterName||'שוכר');
-  const o=userOf(b.ownerId)||{};return esc(o.name||'בעל הרכב');
-}
-function bookingCarTitle(b){const c=state.cars.find(x=>x.id===b.carId)||{make:'—',model:'',yr:''};return `${esc(c.make)} ${esc(c.model)} ${c.yr?esc(c.yr):''}`.trim();}
-function bookingPeriodText(b){return `${fmt(b.from)} ${esc(b.tmFrom||'')} → ${fmt(b.to)} ${esc(b.tmTo||'')}`;}
-function bookingCardHTML(b,side){
-  const st=bookingStatusKey(b);
-  const other=bookingPersonName(b,side);
-  const rental=b.rentalType?rentalLabel(b.rentalType):'השכרה';
-  const ratingSide=side==='owner'?'owner':'renter';
-  const mine=myRating(b.id,ratingSide);
-  let actions=`<button class="mini gold" onclick="openChatTo('b${b.id}')">💬 צ׳אט</button>`;
-  if(side==='owner'){
-    if(st==='pending')actions+=`<button class="mini" style="color:var(--ok);border-color:rgba(28,124,79,.4)" onclick="approveBooking('${b.id}')">✓ אישור</button><button class="mini danger" onclick="rejectBooking('${b.id}')">דחייה</button>`;
-    if(st==='approved')actions+=`<button class="mini" style="color:var(--ok);border-color:rgba(28,124,79,.4)" onclick="endRental('${b.id}')">✓ סיום השכרה</button>`;
-    if(b.lic)actions+=`<button class="mini" onclick="viewLic('${b.id}')">רישיון</button>`;
-  } else {
-    if(st==='approved')actions+=`<span class="booking-note">${paymentProofCell(b)}</span>`;
-    if(st==='done')actions+= mine?`<span class="rate-label">דירגת:</span>${starsHTML(mine.stars,null)}`:`<span class="rate-label">איך היה השירות?</span>${ratePicker(b.id)}`;
-  }
-  const note=st==='pending'?'ההזמנה עדיין ממתינה לאישור בעל הרכב. אפשר להמשיך לדבר בצ׳אט.':st==='approved'?'ההזמנה מאושרת. ודא תשלום ותיאום איסוף בצ׳אט.':st==='rejected'?'הבקשה נדחתה. אפשר לבחור רכב אחר או לדבר בצ׳אט.':'ההשכרה הסתיימה ונשמרה בהיסטוריה.';
-  return `<div class="booking-card ${st}">
-    <div class="booking-card-top">
-      <div><div class="booking-title">${bookingCarTitle(b)}</div><div class="booking-sub">${esc(b.num)} · ${rental}</div></div>
-      ${bookingStatusHTML(b)}
-    </div>
-    <div class="booking-meta">
-      <div class="cell"><span>${side==='owner'?'שוכר':'בעל הרכב'}</span><b>${other}</b></div>
-      <div class="cell"><span>סכום</span><b>${money(+b.total||0)}</b></div>
-      <div class="cell"><span>תקופה</span><b>${bookingPeriodText(b)}</b></div>
-      <div class="cell"><span>נוצרה</span><b>${b.createdAt?new Date(b.createdAt).toLocaleDateString('he-IL'):'—'}</b></div>
-    </div>
-    <div class="booking-note">${note}</div>
-    <div class="booking-actions">${actions}</div>
-  </div>`;
-}
-function bookingSectionHTML(title,list,empty,side){
-  return `<div class="booking-section"><div class="booking-section-head"><h4>${title}</h4><span class="booking-count">${list.length}</span></div>${list.length?`<div class="booking-cards">${list.map(b=>bookingCardHTML(b,side)).join('')}</div>`:`<div class="adm-empty">${empty}</div>`}</div>`;
-}
 function renderOwnerBookings(){
-  const all=state.bookings.filter(b=>b.ownerId===state.session.id).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  const all=state.bookings.filter(b=>b.ownerId===state.session.id).sort((a,b)=>b.createdAt-a.createdAt);
   const box=$('dash-book');
-  const pending=all.filter(b=>bookingStatusKey(b)==='pending');
-  const approved=all.filter(b=>bookingStatusKey(b)==='approved'&&!b.done);
-  const history=all.filter(b=>b.done || ['rejected','done'].includes(bookingStatusKey(b)));
-  const totalIncome=all.filter(b=>['approved','done'].includes(bookingStatusKey(b))||b.done).reduce((s,b)=>s+(+b.total||0),0);
-  box.innerHTML=`
-    <div class="kpis">
-      <div class="kpi"><b>${all.length}</b><span>סה״כ הזמנות</span></div>
-      <div class="kpi"><b>${pending.length}</b><span>ממתינות לאישור</span></div>
-      <div class="kpi"><b>${approved.length}</b><span>מאושרות / פעילות</span></div>
-      <div class="kpi"><b>${money(totalIncome)}</b><span>סכום מאושר/היסטורי</span></div>
-    </div>
-    <div class="booking-board">
-      ${bookingSectionHTML('בקשות חדשות שממתינות לאישור שלך',pending,'אין בקשות חדשות כרגע.','owner')}
-      ${bookingSectionHTML('הזמנות מאושרות / פעילות',approved,'אין השכרות פעילות שאושרו כרגע.','owner')}
-      ${bookingSectionHTML('היסטוריית הזמנות',history,'אין עדיין היסטוריית הזמנות.','owner')}
+  if(all.length===0){box.innerHTML='<div class="adm-empty">עדיין אין הזמנות על הרכבים שלך.</div>';return}
+  const pending=all.filter(b=>(b.status||'approved')==='pending');
+  const approved=all.filter(b=>(b.status||'approved')==='approved'&&!b.done);
+  const history=all.filter(b=>b.done || ['rejected'].includes(b.status));
+  const pendingHtml=pending.length===0?'<div class="adm-empty">אין בקשות חדשות שממתינות לאישור.</div>':pending.map(b=>{
+    const c=state.cars.find(x=>x.id===b.carId)||{make:'—',model:''};
+    const rst=renterStats(b.renterId);
+    return `<div class="adm-item" style="border:1px solid rgba(160,90,0,.35);background:rgba(160,90,0,.06)">
+      ${b.lic?`<img src="${b.lic}" alt="רישיון" style="cursor:pointer" onclick="viewLic('${b.id}')">`:''}
+      <div class="inf"><b>${esc(c.make)} ${esc(c.model)} · ${esc(b.signName)}</b>
+        <div class="sm">${b.num} · ${fmt(b.from)} ${b.tmFrom} → ${fmt(b.to)} ${b.tmTo} · ${money(b.total)}</div>
+        <div class="sm">סטטוס: ${bookingStatusHTML(b)} · דירוג שוכר: ${starsHTML(rst.avg,rst.count)}</div>
+      </div>
+      <div class="acts">
+        <button class="mini gold" onclick="openChatTo('b${b.id}')">💬 צ'אט</button>
+        <button class="mini" style="color:var(--ok);border-color:rgba(28,124,79,.4)" onclick="approveBooking('${b.id}')">✓ אישור</button>
+        <button class="mini danger" onclick="rejectBooking('${b.id}')">דחייה</button>
+      </div>
     </div>`;
+  }).join('');
+  const approvedHtml=approved.length===0?'<div class="adm-empty">אין השכרות פעילות שאושרו כרגע.</div>':approved.map(b=>{
+    const c=state.cars.find(x=>x.id===b.carId)||{make:'—',model:''};
+    const rst=renterStats(b.renterId);
+    return `<div class="adm-item" style="border:1px solid rgba(28,124,79,.35);background:rgba(28,124,79,.05)">
+      ${b.lic?`<img src="${b.lic}" alt="רישיון" style="cursor:pointer" onclick="viewLic('${b.id}')">`:''}
+      <div class="inf"><b>${esc(c.make)} ${esc(c.model)} · ${esc(b.signName)}</b>
+        <div class="sm">${b.num} · ${fmt(b.from)} ${b.tmFrom} → ${fmt(b.to)} ${b.tmTo} · ${money(b.total)}</div>
+        <div class="sm">${bookingStatusHTML(b)} · דירוג שוכר: ${starsHTML(rst.avg,rst.count)}</div>
+      </div>
+      <div class="acts"><button class="mini gold" onclick="openChatTo('b${b.id}')">💬 צ'אט עם השוכר</button><button class="mini" style="color:var(--ok);border-color:rgba(28,124,79,.4)" onclick="endRental('${b.id}')">✓ סיום השכרה</button></div>
+    </div>`;
+  }).join('');
+  const histHtml=history.length===0?'<div class="adm-empty">אין עדיין היסטוריית הזמנות.</div>':`<table class="tbl"><thead><tr><th>הזמנה</th><th>סטטוס</th><th>רכב</th><th>שוכר</th><th>תקופה</th><th>סכום</th><th>דירוג</th></tr></thead><tbody>${history.map(b=>{
+    const c=state.cars.find(x=>x.id===b.carId)||{make:'—',model:''};
+    const mine=myRating(b.id,'owner');
+    return `<tr><td class="num">${b.num}<div class="sm">${new Date(b.createdAt).toLocaleDateString('he-IL')}</div></td><td>${bookingStatusHTML(b)}</td><td>${esc(c.make)} ${esc(c.model)}</td><td>${esc(b.signName||b.renterName||'')}</td><td>${fmt(b.from)} – ${fmt(b.to)}</td><td class="num">${money(b.total)}</td><td>${mine?starsHTML(mine.stars,null):ratePicker(b.id)}</td></tr>`;
+  }).join('')}</tbody></table>`;
+  box.innerHTML=`<div class="divider">ממתין לאישור שלך</div>${pendingHtml}<div class="divider">מאושר / פעיל</div>${approvedHtml}<div class="divider">היסטוריה</div>${histHtml}`;
 }
 
 
@@ -2302,10 +2883,14 @@ function adminSetBooking(id,status){
     db.collection('bookings').doc(id).update(upd).then(()=>{
       if(status==='approved')return db.collection('cars').doc(b.carId).update({status:'rented',ret:'זמין שוב: '+fmt(b.to)+' בשעה '+b.tmTo});
       if(status==='done')return db.collection('cars').doc(b.carId).update({status:'available',ret:''});
+    }).then(()=>{
+      if(status==='approved')return sendBookingEmails('approved',{...b,status:'approved'});
+      if(status==='rejected')return sendBookingEmails('rejected',{...b,status:'rejected'});
     }).then(()=>showToast('ההזמנה עודכנה')).catch(cloudErr);return;
   }
   b.status=status; if(status==='done'){b.done=true;b.doneAt=Date.now()} else b[status+'At']=Date.now();
   const c=state.cars.find(x=>x.id===b.carId); if(c&&status==='approved'){c.status='rented';c.ret='זמין שוב: '+fmt(b.to)+' בשעה '+b.tmTo} if(c&&status==='done'){c.status='available';c.ret=''}
+  if(status==='approved')sendBookingEmails('approved',b); if(status==='rejected')sendBookingEmails('rejected',b);
   render();renderAdminDashboard();showToast('ההזמנה עודכנה');
 }
 function adminDeleteBooking(id){
@@ -2367,41 +2952,42 @@ function openRenterArea(){
   if(!state.session||state.session.role!=='renter')return openAuth('renter');
   const u=me();
   const prefs=u.prefs||{};
-  const list=state.bookings.filter(b=>b.renterId===u.id).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
-  const pending=list.filter(b=>bookingStatusKey(b)==='pending');
-  const approved=list.filter(b=>bookingStatusKey(b)==='approved'&&!b.done);
-  const history=list.filter(b=>b.done || ['rejected','done'].includes(bookingStatusKey(b)));
+  const list=state.bookings.filter(b=>b.renterId===u.id).sort((a,b)=>b.createdAt-a.createdAt);
   $('renter-body').innerHTML=`
     <div class="kpis">
       <div class="kpi"><b>${list.length}</b><span>סה״כ הזמנות</span></div>
-      <div class="kpi"><b>${pending.length}</b><span>ממתינות לאישור</span></div>
-      <div class="kpi"><b>${approved.length}</b><span>מאושרות / פעילות</span></div>
-      <div class="kpi"><b>${history.length}</b><span>היסטוריה</span></div>
+      <div class="kpi"><b>${list.filter(b=>(b.status||'approved')==='pending').length}</b><span>ממתינות לאישור</span></div>
+      <div class="kpi"><b>${list.filter(b=>(b.status||'approved')==='approved').length}</b><span>מאושרות</span></div>
     </div>
     <div class="summary-box">
       <div class="row"><span>שם</span><span>${esc(u.name)}</span></div>
       <div class="row"><span>אימייל</span><span>${esc(u.email)}</span></div>
-      <div class="row"><span>רישיון נהיגה</span><span style="color:var(--ok)">✓ נשמר במערכת</span></div>
+      <div class="row"><span>רישיון נהיגה</span><span style="color:var(--ok)">✓ מאומת</span></div>
     </div>
     <div class="divider">העדפות אישיות</div>
     <div class="pref-grid">
       <div class="field"><label>שפת תקשורת</label><input id="rp-lang" value="${esc(prefs.lang||'עברית / English')}"></div>
-      <div class="field"><label>תקציב מועדף</label><input id="rp-budget" value="${esc(prefs.budget||'')}" placeholder="לדוגמה: עד $120 ליום"></div>
-      <div class="field"><label>צבע מועדף</label><input id="rp-color" value="${esc(prefs.color||'')}" placeholder="לבן / שחור / כסף"></div>
-      <div class="field"><label>מספר מושבים</label><input id="rp-seats" value="${esc(prefs.seats||'')}" placeholder="5 / 7 / 8"></div>
-      <div class="field" style="grid-column:1/-1"><label>הערות</label><input id="rp-notes" value="${esc(prefs.notes||'')}" placeholder="צרכים מיוחדים, איסוף, תינוק וכו׳"></div>
     </div>
     <div class="m-actions" style="margin-bottom:20px"><button class="btn btn-gold grow" onclick="saveRenterPrefs()">שמירת העדפות</button></div>
-    <div class="divider">אזור הזמנות מסודר</div>
-    <div class="booking-board">
-      ${bookingSectionHTML('בקשות ממתינות לאישור בעל הרכב',pending,'אין כרגע בקשות שממתינות לאישור.','renter')}
-      ${bookingSectionHTML('הזמנות מאושרות / פעילות',approved,'אין כרגע הזמנות מאושרות.','renter')}
-      ${bookingSectionHTML('היסטוריית הזמנות',history,'אין עדיין היסטוריית הזמנות.','renter')}
-    </div>`;
+    <div class="divider">ההזמנות שלי</div>
+    ${list.length===0?'<div class="adm-empty">עדיין אין הזמנות.</div>'
+    :`<table class="tbl"><thead><tr><th>הזמנה</th><th>סטטוס</th><th>רכב</th><th>תקופה</th><th>סכום</th><th>צילום תשלום</th><th>דירוג המשכיר</th></tr></thead><tbody>
+      ${list.map(b=>{const c=state.cars.find(x=>x.id===b.carId)||{make:'—',model:''};
+        const mine=myRating(b.id,'renter');
+        return `<tr><td class="num">${b.num}</td><td>${bookingStatusHTML(b)}</td><td>${esc(c.make)} ${esc(c.model)}</td>
+        <td>${fmt(b.from)} – ${fmt(b.to)}</td><td class="num">${money(b.total)}<br><button class="mini gold" style="margin-top:6px" onclick="openChatTo('b${b.id}')">💬 צ'אט עם בעל הרכב</button></td>
+        <td>${paymentProofCell(b)}</td>
+        <td>${mine
+          ?`<span class="rate-label">דירגת:</span>${starsHTML(mine.stars,null)}
+            ${mine.text
+              ?`<div class="my-review">&quot;${esc(mine.text)}&quot;</div>`
+              :`<div class="rv-box"><input id="rv-${b.id}" placeholder="ספרו איך היה (ביקורת פומבית)" maxlength="220"><button class="mini gold" onclick="setReview('${b.id}')">פרסום</button></div>`}`
+          :`<span class="rate-label">איך היה השירות?</span>${ratePicker(b.id)}`}</td></tr>`;}).join('')}
+    </tbody></table>`}`;
   openOv('ov-renter');
 }
 function saveRenterPrefs(){
-  const prefs={lang:$('rp-lang').value.trim(),budget:$('rp-budget')?$('rp-budget').value.trim():'',color:$('rp-color')?$('rp-color').value.trim():'',seats:$('rp-seats')?$('rp-seats').value.trim():'',notes:$('rp-notes')?$('rp-notes').value.trim():''};
+  const prefs={lang:$('rp-lang').value.trim()};
   savePrefs(prefs,'העדפות השוכר נשמרו');
 }
 
@@ -2414,9 +3000,7 @@ function paymentProofCell(b){
 function uploadPaymentProof(bid,input){
   const f=input.files&&input.files[0]; if(!f)return;
   if(!f.type.startsWith('image/')){showToast('נא להעלות תמונה בלבד');input.value='';return}
-  const r=new FileReader();
-  r.onload=()=>{
-    const data=r.result;
+  readImg(f,data=>{
     const b=state.bookings.find(x=>x.id===bid); if(!b)return;
     b.paymentProof=data; b.paymentProofAt=Date.now();
     const txt='השוכר שלח צילום מסך של העברת תשלום עבור הזמנה '+b.num+'.';
@@ -2424,10 +3008,9 @@ function uploadPaymentProof(bid,input){
       db.collection('bookings').doc(bid).update({paymentProof:data,paymentProofAt:b.paymentProofAt}).catch(cloudErr);
     }
     pushMsg('b'+bid,state.session?state.session.role:'renter',state.session?state.session.id:b.renterId,txt,[b.renterId,b.ownerId],{image:data,kind:'paymentProof'});
-    openRenterArea();
+    input.value=''; openRenterArea();
     showToast('צילום התשלום נשלח בצ׳אט לבעל הרכב');
-  };
-  r.readAsDataURL(f);
+  },'payment-proofs');
 }
 
 function applyPrefsToSearch(){
@@ -2452,18 +3035,7 @@ function tryBook(id){
   }
   openBook(id);
 }
-function fill24HourBookingTimes(){
-  const opts=Array.from({length:24},(_,h)=>`${String(h).padStart(2,'0')}:00`);
-  [['tm-from','09:00'],['tm-to','12:00']].forEach(([id,def])=>{
-    const el=$(id); if(!el)return;
-    const cur=el.value||def;
-    el.innerHTML=opts.map(t=>`<option value="${t}">${t}</option>`).join('');
-    el.value=opts.includes(cur)?cur:def;
-  });
-}
-
 function openBook(id){
-  fill24HourBookingTimes();
   currentCar=state.cars.find(c=>c.id===id);
   const u=me();
   $('m-car').innerHTML=`<img src="${currentCar.photos[0]}" alt="">
@@ -2574,19 +3146,12 @@ function clearSig(){
   sigDrawn=false;$('sig-hint').style.display='grid';
 }
 
-function bumpCarActivity(carId){
-  if(!carId)return Promise.resolve();
-  const ts=Date.now();
-  const c=state.cars.find(x=>x.id===carId); if(c)c.updatedAt=ts;
-  if(CLOUD)return db.collection('cars').doc(carId).update({updatedAt:ts}).catch(()=>{});
-  return Promise.resolve();
-}
 /* confirm + receipt */
 function confirmBooking(){
   const u=me(),h=hoursTotal(),d=daysTotal(),rentType=selectedBookingRentalType(),rate=bookingRate(),units=bookingUnits(),total=units*rate;
   const num='CD-'+Math.floor(100000+Math.random()*900000);
   const b={id:newId('bk'),num,status:'pending',carId:currentCar.id,ownerId:currentCar.ownerId,renterId:u.id,
-    lic:u.lic||null,renterName:u.name,
+    lic:u.lic||null,renterName:u.name,renterEmail:u.email||'',ownerEmail:currentCar.ownerEmail || emailOfUser(currentCar.ownerId),
     from:$('dt-from').value,tmFrom:$('tm-from').value,to:$('dt-to').value,tmTo:$('tm-to').value,
     hours:h,days:d,rentalType:rentType,rate,units,total,
     signName:$('sign-name').value.trim(),signDate:$('sign-date').value,sig:$('sig-pad').toDataURL(),
@@ -2596,12 +3161,13 @@ function confirmBooking(){
     const ref=db.collection('bookings').doc();
     b.id=ref.id;
     ref.set(b)
-      .then(()=>bumpCarActivity(b.carId))
       .then(()=>pushMsg('b'+b.id,'system',0,msg,[b.renterId,b.ownerId]))
+      .then(()=>sendBookingEmails('request',b))
       .catch(cloudErr);
   } else {
     state.bookings.push(b);
     pushMsg('b'+b.id,'system',0,msg);
+    sendBookingEmails('request',b);
   }
   lastBooking=b;
   render();
@@ -2613,47 +3179,38 @@ function confirmBooking(){
 }
 function approveBooking(bid){
   const b=state.bookings.find(x=>x.id===bid);
-  if(!b){showToast('ההזמנה לא נמצאה');return;}
-  if(!state.session||!((state.session.role==='owner'&&b.ownerId===state.session.id)||state.session.role==='admin')){showToast('אין הרשאה לאשר את ההזמנה הזאת');return;}
+  if(!b||!state.session||!((state.session.role==='owner'&&b.ownerId===state.session.id)||state.session.role==='admin'))return;
   const c=state.cars.find(x=>x.id===b.carId);
-  if(!confirm('לאשר את ההזמנה '+b.num+'?'))return;
-
-  const now=Date.now();
-  b.status='approved';
-  b.approvedAt=now;
-  if(c){c.status='rented';c.ret='זמין שוב: '+fmt(b.to)+' בשעה '+b.tmTo;c.updatedAt=now;}
-  refreshOpenViews();
-  showToast('ההזמנה אושרה');
-
-  const msg='בעל הרכב אישר את ההזמנה '+b.num+'. עכשיו השוכר צריך לשלוח בצ׳אט צילום מסך של העברת הכסף לבעל הרכב.';
+  if(!confirm('לאשר את ההזמנה '+b.num+'? הרכב יסומן כמושכר.'))return;
   if(CLOUD){
-    db.collection('bookings').doc(bid).update({status:'approved',approvedAt:now})
-      .then(()=> c ? db.collection('cars').doc(b.carId).update({status:'rented',ret:'זמין שוב: '+fmt(b.to)+' בשעה '+b.tmTo,updatedAt:now}) : null)
-      .then(()=>pushMsg('b'+b.id,'system',0,msg,[b.renterId,b.ownerId]))
-      .catch(e=>{cloudErr(e);});
-    return;
+    db.collection('bookings').doc(bid).update({status:'approved',approvedAt:Date.now()})
+      .then(()=>db.collection('cars').doc(b.carId).update({status:'rented',ret:'זמין שוב: '+fmt(b.to)+' בשעה '+b.tmTo}))
+      .then(()=>pushMsg('b'+b.id,'system',0,'בעל הרכב אישר את ההזמנה '+b.num+'. עכשיו השוכר צריך לשלוח בצ׳אט צילום מסך של העברת הכסף לבעל הרכב.',[b.renterId,b.ownerId]))
+      .then(()=>sendBookingEmails('approved',{...b,status:'approved'}))
+      .catch(cloudErr);return;
   }
-  pushMsg('b'+b.id,'system',0,msg,[b.renterId,b.ownerId]);
+  b.status='approved';b.approvedAt=Date.now();
+  if(c){c.status='rented';c.ret='זמין שוב: '+fmt(b.to)+' בשעה '+b.tmTo;}
+  pushMsg('b'+b.id,'system',0,'בעל הרכב אישר את ההזמנה '+b.num+'. עכשיו השוכר צריך לשלוח בצ׳אט צילום מסך של העברת הכסף לבעל הרכב.');
+  sendBookingEmails('approved',b);
+  render();renderOwnerBookings();showToast('ההזמנה אושרה');
 }
 function rejectBooking(bid){
   const b=state.bookings.find(x=>x.id===bid);
-  if(!b){showToast('ההזמנה לא נמצאה');return;}
-  if(!state.session||!((state.session.role==='owner'&&b.ownerId===state.session.id)||state.session.role==='admin')){showToast('אין הרשאה לדחות את ההזמנה הזאת');return;}
+  if(!b||!state.session||!((state.session.role==='owner'&&b.ownerId===state.session.id)||state.session.role==='admin'))return;
   if(!confirm('לדחות את בקשת ההזמנה '+b.num+'?'))return;
-  const now=Date.now();
-  b.status='rejected';
-  b.rejectedAt=now;
-  refreshOpenViews();
-  showToast('ההזמנה נדחתה');
-  const msg='בעל הרכב דחה את בקשת ההזמנה '+b.num+'. אפשר להתכתב בצ׳אט או לבחור רכב אחר.';
   if(CLOUD){
-    db.collection('bookings').doc(bid).update({status:'rejected',rejectedAt:now})
-      .then(()=>pushMsg('b'+b.id,'system',0,msg,[b.renterId,b.ownerId]))
-      .catch(e=>{cloudErr(e);});
-    return;
+    db.collection('bookings').doc(bid).update({status:'rejected',rejectedAt:Date.now()})
+      .then(()=>pushMsg('b'+b.id,'system',0,'בעל הרכב דחה את בקשת ההזמנה '+b.num+'. אפשר להתכתב בצ׳אט או לבחור רכב אחר.',[b.renterId,b.ownerId]))
+      .then(()=>sendBookingEmails('rejected',{...b,status:'rejected'}))
+      .catch(cloudErr);return;
   }
-  pushMsg('b'+b.id,'system',0,msg,[b.renterId,b.ownerId]);
+  b.status='rejected';b.rejectedAt=Date.now();
+  pushMsg('b'+b.id,'system',0,'בעל הרכב דחה את בקשת ההזמנה '+b.num+'. אפשר להתכתב בצ׳אט או לבחור רכב אחר.');
+  sendBookingEmails('rejected',b);
+  render();renderOwnerBookings();showToast('הבקשה נדחתה');
 }
+
 function receiptHTML(b){
   const c=state.cars.find(x=>x.id===b.carId)||{make:'',model:'',yr:'',color:'',fuel:'',price:0};
   const u=me()||{email:''};
@@ -2716,8 +3273,8 @@ function emailReceipt(){
 /* ================= HELPERS ================= */
 function openOv(id){$(id).classList.add('open');document.body.style.overflow='hidden'}
 function closeOv(id){$(id).classList.remove('open');document.body.style.overflow=''; if(id==='ov-auth') closeHiddenAdminMode()}
-['ov-auth','ov-owner','ov-admin','ov-renter','ov-book','ov-lic','ov-profile','ov-account'].forEach(id=>$(id).addEventListener('click',e=>{if(e.target.id===id)closeOv(id)}));
-document.addEventListener('keydown',e=>{if(e.key==='Escape')['ov-auth','ov-owner','ov-admin','ov-renter','ov-book','ov-lic','ov-profile','ov-account'].forEach(closeOv)});
+['ov-auth','ov-owner','ov-admin','ov-renter','ov-book','ov-lic','ov-profile','ov-account','ov-legal'].forEach(id=>$(id).addEventListener('click',e=>{if(e.target.id===id)closeOv(id)}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')['ov-auth','ov-owner','ov-admin','ov-renter','ov-book','ov-lic','ov-profile','ov-account','ov-legal'].forEach(closeOv)});
 function bindDrop(dropId,fileId,single,multi){
   const d=$(dropId),f=$(fileId);
   d.addEventListener('click',()=>f.click());
@@ -2733,10 +3290,55 @@ function bindDrop(dropId,fileId,single,multi){
     else if(f.files[0])single(f.files[0]);
   });
 }
-function readImg(f,cb){
+function fileToDataUrl(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(reader.result);
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+async function uploadFileToCloud(file, folder='uploads'){
+  const dataUrl=await fileToDataUrl(file);
+  const res=await fetch('/.netlify/functions/upload',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({folder,filename:file.name||'file',type:file.type||'application/octet-stream',dataUrl})
+  });
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok||!data.ok)throw new Error(data.error||'Upload failed');
+  return data.url;
+}
+function compressImageFile(file, max=1600, quality=.82){
+  return new Promise(resolve=>{
+    if(!file.type.startsWith('image/')||file.type==='image/gif')return resolve(file);
+    const img=new Image(); const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      URL.revokeObjectURL(url);
+      let w=img.naturalWidth,h=img.naturalHeight;
+      const scale=Math.min(1,max/Math.max(w,h)); w=Math.round(w*scale); h=Math.round(h*scale);
+      const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      canvas.toBlob(b=>resolve(b?new File([b],(file.name||'image').replace(/\.[^.]+$/,'')+'.webp',{type:'image/webp'}):file),'image/webp',quality);
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url);resolve(file)};
+    img.src=url;
+  });
+}
+function readImg(f,cb,folder='images'){
   if(!f.type.startsWith('image/'))return showToast('יש להעלות קובץ תמונה בלבד');
-  if(f.size>10*1024*1024)return showToast('הקובץ גדול מדי (מקסימום 10MB)');
-  const r=new FileReader();r.onload=()=>cb(r.result);r.readAsDataURL(f);
+  if(f.size>25*1024*1024)return showToast('הקובץ גדול מדי (מקסימום 25MB)');
+  (async()=>{
+    try{
+      const compact=await compressImageFile(f);
+      if(CLOUD){
+        const url=await uploadFileToCloud(compact,folder);
+        cb(url);
+        return;
+      }
+    }catch(e){console.warn('Cloud upload failed, using local preview',e)}
+    const r=new FileReader();r.onload=()=>cb(r.result);r.readAsDataURL(f);
+  })();
 }
 function viewLic(bid){
   const b=state.bookings.find(x=>x.id===bid);
@@ -2890,15 +3492,7 @@ function participantsOf(tid){
 }
 function pushMsg(tid,role,uid,text,parts,extra){
   const m={tid,role,uid,text,ts:Date.now(),participants:parts||participantsOf(tid),...(extra||{})};
-  if(CLOUD){
-    db.collection('messages').add(m).then(()=>{
-      if(tid.startsWith('b')){const b=state.bookings.find(x=>'b'+x.id===tid); if(b)bumpCarActivity(b.carId);}
-      if(tid.startsWith('o-')){
-        const oid=participantsOf(tid).find(x=>x && (!state.session || x!==state.session.id));
-        const car=state.cars.find(c=>c.ownerId===oid); if(car)bumpCarActivity(car.id);
-      }
-    }).catch(cloudErr);
-  }
+  if(CLOUD){db.collection('messages').add(m).catch(cloudErr);}
   state.msgs.push(m);
   if(activeTid===tid && $('chat-panel').classList.contains('open')){
     state.reads[meKey()+'-'+tid]=Date.now();
@@ -2922,16 +3516,14 @@ function sendChatImage(input){
   const f=input.files&&input.files[0]; if(!f||!activeTid)return;
   if(CLOUD && !state.session){showToast('כדי לשלוח תמונה יש להתחבר');openAuth();input.value='';return;}
   if(!f.type.startsWith('image/')){showToast('נא לבחור קובץ תמונה');input.value='';return;}
-  const r=new FileReader();
-  r.onload=()=>{
+  readImg(f,imgUrl=>{
     const role=state.session?state.session.role:'guest';
     const uid=state.session?state.session.id:0;
     const txt=$('cp-text').value.trim()||'תמונה';
-    pushMsg(activeTid,role,uid,txt,undefined,{image:r.result,kind:'image',fileName:f.name});
+    pushMsg(activeTid,role,uid,txt,undefined,{image:imgUrl,kind:'image',fileName:f.name});
     $('cp-text').value=''; input.value='';
-    showToast('התמונה נשלחה בצ׳אט');
-  };
-  r.readAsDataURL(f);
+    showToast('התמונה נשמרה בענן ונשלחה בצ׳אט');
+  },'chat-images');
 }
 $('cp-text').addEventListener('keydown',e=>{if(e.key==='Enter')sendMsg()});
 
@@ -3056,7 +3648,7 @@ function startGlobalFeeds(){
     render();
   },cloudErr);
   db.collection('cars').onSnapshot(sn=>{
-    state.cars=sn.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>((b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0)));
+    state.cars=sn.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
     refreshOpenViews();
   },cloudErr);
   db.collection('ratings').onSnapshot(sn=>{
@@ -3075,9 +3667,8 @@ function startUserFeeds(uid){
   userUnsubs.push(db.collection('bookings').where('ownerId','==',uid).onSnapshot(applyBookSnap,cloudErr));
   userUnsubs.push(db.collection('messages').where('participants','array-contains',uid).onSnapshot(sn=>{
     const mine=sn.docs.map(d=>({id:d.id,...d.data()}));
-    const keepLocal=state.msgs.filter(m=>!m.id && (Date.now()-(m.ts||0)<15000));
-    const support=state.msgs.filter(m=>(m.tid||'').startsWith('sup-') && !mine.some(x=>x.id&&x.id===m.id));
-    state.msgs=mine.concat(keepLocal, support).sort((a,b)=>(a.ts||0)-(b.ts||0));
+    const local=state.msgs.filter(m=>m.role==='support'||(m.tid||'').startsWith('sup-'));
+    state.msgs=mine.concat(local).sort((a,b)=>(a.ts||0)-(b.ts||0));
     if($('chat-panel').classList.contains('open')){activeTid?renderMsgs():showChatList();}
     updateBadge();
   },cloudErr));
@@ -3101,7 +3692,8 @@ async function buildCloudSession(user){
   let prof=null;
   try{const d=await db.collection('users').doc(uid).get();if(d.exists)prof=d.data();}catch(e){}
   if(!prof && pendingProfile && pendingProfile.uid===uid)prof=pendingProfile.prof;
-  if(!prof){prof={name:user.email||'משתמש',role:'renter',createdAt:Date.now()}}
+  if(!prof){prof={name:user.email||'משתמש',role:'renter',email:user.email||'',createdAt:Date.now()}}
+  if(user.email && !prof.email){prof.email=user.email; db.collection('users').doc(uid).update({email:user.email}).catch(()=>{});}
   let priv={};
   try{const d=await db.collection('private').doc(uid).get();if(d.exists)priv=d.data();}catch(e){}
   if((!priv||!Object.keys(priv).length) && pendingProfile && pendingProfile.uid===uid)priv=pendingProfile.priv||{};
@@ -3116,7 +3708,7 @@ if(CLOUD){
     else{state.session=null;stopUserFeeds();stopAdminFeeds();renderNav();updateBadge();}
   });
 } else {
-  console.warn('CrownDrive: Firebase configuration is missing. Connect FIREBASE_CONFIG for live production data.');
+  console.warn('CrownDrive: Netlify Database mode active. Data updates every second.');
 }
 
 /* ---------- SCROLL DYNAMICS ---------- */
@@ -3188,12 +3780,21 @@ document.querySelectorAll('.sec-head,.fleet-side,.how-grid,.foot-cta,.strip-in')
 
 
 
+
+
+
 loadState();
-initChoiceLists();initOwnerChoiceLists();updateOwnerPriceFields();renderNav();render();initSig();updateBadge();
+initChoiceLists();updateOwnerPriceFields();renderNav();render();initSig();updateBadge();
 setInterval(()=>{
   if(document.activeElement && ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))return;
   refreshOpenViews();
 },1000);
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>

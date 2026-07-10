@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CrownDrive · השכרת רכבים בקראון הייטס</title>
+  <meta name="description" content="CrownDrive - פלטפורמה מסודרת להשכרת רכבים בין אנשים בקראון הייטס." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#eef2f6; --bg2:#f7f9fb; --card:#ffffff; --text:#17212b; --muted:#687482;
+      --blue:#3f6b8e; --blue2:#557fa1; --dark:#17212b; --line:rgba(23,33,43,.12);
+      --ok:#18784f; --warn:#aa6500; --bad:#c72d2d; --shadow:0 14px 42px rgba(23,33,43,.10);
+      --radius:18px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:'Heebo',Arial,sans-serif;background:linear-gradient(180deg,#eef2f6 0%,#f8fafc 55%,#eef2f6 100%);color:var(--text);line-height:1.55;min-height:100vh}
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    a{color:inherit;text-decoration:none}
+    .wrap{max-width:1180px;margin:0 auto;padding:0 18px}
+
+    .topbar{position:sticky;top:0;z-index:50;background:rgba(23,33,43,.96);backdrop-filter:blur(12px);color:#fff;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav{height:68px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+    .brand{display:flex;align-items:center;gap:12px;font-weight:900;letter-spacing:.02em}
+    .logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,var(--blue),#9fb6c9);display:grid;place-items:center;color:#fff;font-size:22px;box-shadow:0 8px 22px rgba(0,0,0,.22)}
+    .brand small{display:block;font-size:12px;color:#b9c4ce;font-weight:500;margin-top:-3px}
+    .nav-links{display:flex;align-items:center;gap:18px;color:#d7e0e8;font-size:14px}
+    .nav-actions{display:flex;gap:8px;align-items:center}
+    .btn{border:0;border-radius:12px;padding:11px 16px;font-weight:700;transition:.15s ease;display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap}
+    .btn.primary{background:var(--blue);color:#fff}.btn.primary:hover{background:var(--blue2)}
+    .btn.white{background:#fff;color:var(--dark)}.btn.white:hover{background:#edf2f6}
+    .btn.outline{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.28)}.btn.outline:hover{background:rgba(255,255,255,.08)}
+    .btn.light{background:#eef2f6;color:var(--dark)}.btn.light:hover{background:#dfe7ee}
+    .btn.danger{background:#fff1f1;color:var(--bad)}
+    .btn.ok{background:#eaf8f1;color:var(--ok)}
+    .btn.full{width:100%}
+    .hello{font-size:13px;color:#c9d4de;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+    .hero{background:radial-gradient(900px 420px at 18% 0%,rgba(85,127,161,.25),transparent 65%),linear-gradient(135deg,#17212b,#253444);color:#fff;padding:78px 0 64px;overflow:hidden}
+    .hero-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:34px;align-items:center}
+    .badge{display:inline-flex;gap:8px;align-items:center;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.15);padding:7px 12px;border-radius:99px;font-size:13px;color:#e3edf5;margin-bottom:18px}
+    h1{font-size:clamp(34px,5vw,62px);line-height:1.05;letter-spacing:-.03em;margin-bottom:18px}
+    .hero p{font-size:18px;color:#d3dee8;max-width:650px;margin-bottom:26px}
+    .hero-actions{display:flex;gap:10px;flex-wrap:wrap}
+    .hero-card{background:#fff;color:var(--text);border-radius:26px;box-shadow:0 22px 70px rgba(0,0,0,.22);padding:20px;border:1px solid rgba(255,255,255,.3)}
+    .mini-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+    .stat{background:var(--bg2);border-radius:18px;padding:18px;border:1px solid var(--line)}
+    .stat b{font-size:28px;color:var(--blue);display:block}.stat span{font-size:13px;color:var(--muted)}
+
+    .section{padding:54px 0}.section-head{display:flex;align-items:end;justify-content:space-between;gap:18px;margin-bottom:22px}.section-head h2{font-size:34px;letter-spacing:-.02em}.section-head p{color:var(--muted)}
+    .toolbar{background:#fff;border:1px solid var(--line);border-radius:20px;padding:14px;display:grid;grid-template-columns:1.3fr .8fr .8fr .8fr auto;gap:10px;box-shadow:var(--shadow);margin-bottom:24px}
+    .field label{font-size:13px;color:var(--muted);display:block;margin:0 0 5px}.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:11px 12px;background:#fff;color:var(--text);outline:none}.field textarea{min-height:90px;resize:vertical}.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(63,107,142,.12)}
+
+    #carsGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;align-items:stretch;max-width:1180px;margin:0 auto}
+    .car-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:0 10px 32px rgba(23,33,43,.08);display:flex;flex-direction:column;min-width:0;width:100%;position:relative;transform:none!important;animation:none!important;transition:box-shadow .15s ease,border-color .15s ease}
+    .car-card:hover{box-shadow:0 16px 44px rgba(23,33,43,.14);border-color:rgba(63,107,142,.32);transform:none!important}
+    .car-img{height:215px;width:100%;background:#dfe7ee;overflow:hidden;position:relative;flex:none}.car-img img{width:100%;height:100%;object-fit:cover;display:block;transform:none!important;animation:none!important}.car-img.no-photo{display:grid;place-items:center;color:#7d8c9a;font-weight:700}
+    .status{position:absolute;top:12px;right:12px;border-radius:99px;padding:6px 11px;font-size:12px;font-weight:800;background:#fff;box-shadow:0 8px 20px rgba(0,0,0,.12)}.status.available{color:var(--ok)}.status.pending{color:var(--warn)}.status.rented{color:var(--bad)}
+    .car-body{padding:18px;display:flex;flex-direction:column;gap:13px;flex:1}.car-title{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.car-title h3{font-size:21px;line-height:1.15}.price{text-align:left;white-space:nowrap}.price b{font-size:22px;color:var(--blue)}.price span{display:block;color:var(--muted);font-size:12px}
+    .specs{display:grid;grid-template-columns:1fr 1fr;gap:8px}.spec{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:8px 10px;font-size:13px;color:#475563}.owner-line{display:flex;justify-content:space-between;gap:8px;align-items:center;color:var(--muted);font-size:14px;border-top:1px solid var(--line);padding-top:12px}.card-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:auto}.empty{grid-column:1/-1;background:#fff;border:1px dashed var(--line);border-radius:22px;padding:44px;text-align:center;color:var(--muted)}
+
+    .steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.step{background:#fff;border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:0 10px 30px rgba(23,33,43,.06)}.step b{display:grid;place-items:center;width:38px;height:38px;background:#e8f0f7;color:var(--blue);border-radius:12px;margin-bottom:12px}.step h3{font-size:18px;margin-bottom:6px}.step p{color:var(--muted);font-size:14px}
+
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.58);z-index:100;display:none;align-items:center;justify-content:center;padding:16px}.overlay.open{display:flex}.modal{background:#fff;border-radius:22px;width:min(760px,100%);max-height:92vh;overflow:auto;box-shadow:0 30px 80px rgba(0,0,0,.25)}.modal.wide{width:min(1040px,100%)}.modal-head{position:sticky;top:0;background:#fff;border-bottom:1px solid var(--line);padding:18px 22px;display:flex;align-items:center;justify-content:space-between;z-index:2}.modal-head h3{font-size:22px}.close{width:36px;height:36px;border:0;border-radius:50%;background:#eef2f6;font-size:20px}.modal-body{padding:22px}.tabs{display:flex;background:#eef2f6;padding:4px;border-radius:14px;margin-bottom:18px}.tabs button{flex:1;border:0;background:transparent;border-radius:11px;padding:10px;font-weight:800;color:var(--muted)}.tabs button.active{background:#fff;color:var(--text);box-shadow:0 4px 14px rgba(23,33,43,.08)}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.form-grid .full{grid-column:1/-1}.small{font-size:13px;color:var(--muted)}
+
+    .dash-grid{display:grid;grid-template-columns:230px 1fr;gap:18px}.side{background:#f5f8fb;border:1px solid var(--line);border-radius:18px;padding:12px;height:max-content}.side button{width:100%;border:0;background:transparent;text-align:right;padding:12px;border-radius:12px;font-weight:800;color:#536170}.side button.active{background:#fff;color:var(--blue);box-shadow:0 4px 14px rgba(23,33,43,.08)}.panel{background:#fff;border:1px solid var(--line);border-radius:18px;padding:18px}.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}.kpi{background:#f5f8fb;border:1px solid var(--line);border-radius:16px;padding:16px}.kpi b{font-size:28px;color:var(--blue);display:block}.list{display:flex;flex-direction:column;gap:10px}.list-item{display:grid;grid-template-columns:70px 1fr auto;gap:12px;align-items:center;background:#f8fafc;border:1px solid var(--line);border-radius:16px;padding:10px}.list-item img{width:70px;height:50px;object-fit:cover;border-radius:10px;background:#dfe7ee}.actions{display:flex;gap:7px;flex-wrap:wrap}.pill{border-radius:99px;padding:5px 10px;font-size:12px;font-weight:800}.pill.pending{background:#fff3df;color:var(--warn)}.pill.approved{background:#e8f7ef;color:var(--ok)}.pill.rejected{background:#fff0f0;color:var(--bad)}
+
+    .chat{position:fixed;left:18px;bottom:18px;z-index:80}.chat-btn{width:60px;height:60px;border:0;border-radius:50%;background:var(--blue);color:#fff;font-size:25px;box-shadow:0 16px 40px rgba(63,107,142,.35)}.chat-panel{display:none;position:absolute;bottom:74px;left:0;width:min(380px,calc(100vw - 36px));height:540px;background:#fff;border:1px solid var(--line);border-radius:22px;box-shadow:0 24px 70px rgba(0,0,0,.2);overflow:hidden}.chat-panel.open{display:flex;flex-direction:column}.chat-head{background:var(--dark);color:#fff;padding:14px 16px;display:flex;justify-content:space-between;align-items:center}.chat-messages{flex:1;overflow:auto;padding:14px;background:#f5f7fa}.bubble{max-width:82%;margin:7px 0;padding:10px 12px;border-radius:16px;background:#fff;border:1px solid var(--line);font-size:14px}.bubble.me{margin-right:auto;background:#e7f0f8;border-color:#c9ddeb}.bubble.system{margin-inline:auto;background:#fff7e7;color:#76500b;text-align:center;font-size:12px}.chat-send{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}.chat-send input{flex:1;border:1px solid var(--line);border-radius:12px;padding:10px}.thread-select{padding:10px;border-bottom:1px solid var(--line);background:#fff}.thread-select select{width:100%;border:1px solid var(--line);border-radius:12px;padding:9px}
+
+    footer{background:#17212b;color:#c8d2dc;padding:32px 0;margin-top:40px}.foot{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}.notice{background:#fff8e9;border:1px solid #efd8a9;color:#74510d;border-radius:16px;padding:12px 14px;margin:14px 0;font-size:14px}
+
+    @media(max-width:980px){.hero-grid{grid-template-columns:1fr}.toolbar{grid-template-columns:1fr 1fr}.toolbar .btn{grid-column:1/-1}#carsGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.steps{grid-template-columns:1fr 1fr}.dash-grid{grid-template-columns:1fr}.cards{grid-template-columns:1fr 1fr}.nav-links{display:none}}
+    @media(max-width:640px){.wrap{padding:0 14px}.nav{height:auto;min-height:64px;flex-wrap:wrap;padding:10px 0}.nav-actions{width:100%;justify-content:space-between}.hello{display:none}.hero{padding:46px 0}.hero-card{display:none}.toolbar{grid-template-columns:1fr}.section-head{display:block}.section-head h2{font-size:28px}#carsGrid{grid-template-columns:1fr;gap:16px}.car-img{height:190px}.steps{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.form-grid .full{grid-column:auto}.card-actions{grid-template-columns:1fr}.list-item{grid-template-columns:56px 1fr}.list-item img{width:56px;height:44px}.list-item .actions{grid-column:1/-1}.cards{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="wrap nav">
+      <a class="brand" href="#top"><span class="logo">♛</span><span>CrownDrive<small>השכרת רכבים בקראון הייטס</small></span></a>
+      <nav class="nav-links"><a href="#cars">רכבים</a><a href="#how">איך זה עובד</a><a href="#owner">לבעלי רכבים</a></nav>
+      <div class="nav-actions"><span id="hello" class="hello"></span><button class="btn outline" onclick="openAuth()" id="authBtn">כניסה / הרשמה</button><button class="btn white" onclick="openDashboard()" id="dashBtn" style="display:none">אזור אישי</button></div>
+    </div>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div><span class="badge">🚗 זמינות 24 שעות · הזמנה באישור בעל הרכב</span><h1>השכרת רכבים מסודרת, בלי בלגן בווצאפ.</h1><p>שוכרים מוצאים רכב, שולחים בקשה, בעל הרכב מאשר או דוחה, ושני הצדדים רואים הכל באזור האישי.</p><div class="hero-actions"><a class="btn primary" href="#cars">חפש רכב עכשיו</a><button class="btn outline" onclick="openAuth('owner')">הוסף רכב כבעל רכב</button></div></div>
+        <div class="hero-card"><h2>מה מסודר באתר?</h2><div class="mini-grid"><div class="stat"><b id="statCars">0</b><span>רכבים</span></div><div class="stat"><b id="statAvailable">0</b><span>זמינים</span></div><div class="stat"><b>24/7</b><span>זמינות השכרה</span></div><div class="stat"><b>✓</b><span>אישור בעל רכב</span></div></div></div>
+      </div>
+    </section>
+
+    <section id="cars" class="section">
+      <div class="wrap">
+        <div class="section-head"><div><h2>רכבים זמינים</h2><p>כרטיסים מסודרים, לא מרוחים, בלי קפיצות על המסך.</p></div><button class="btn primary" onclick="openAuth('owner')">+ הוסף רכב</button></div>
+        <div class="toolbar">
+          <div class="field"><label>חיפוש</label><input id="q" placeholder="חפש לפי דגם, אזור, צבע..." oninput="renderCars()"></div>
+          <div class="field"><label>סוג</label><select id="typeFilter" onchange="renderCars()"><option value="all">כל הסוגים</option><option>Sedan</option><option>SUV</option><option>Minivan</option><option>Luxury</option></select></div>
+          <div class="field"><label>סטטוס</label><select id="statusFilter" onchange="renderCars()"><option value="all">הכל</option><option value="available">זמין</option><option value="rented">מושכר</option></select></div>
+          <div class="field"><label>תקציב ליום</label><select id="priceFilter" onchange="renderCars()"><option value="9999">כל מחיר</option><option value="80">עד $80</option><option value="120">עד $120</option><option value="180">עד $180</option></select></div>
+          <button class="btn light" onclick="resetFilters()">נקה</button>
+        </div>
+        <div id="carsGrid"></div>
+      </div>
+    </section>
+
+    <section id="how" class="section">
+      <div class="wrap"><div class="section-head"><div><h2>איך זה עובד</h2><p>הכל ברור לשני הצדדים.</p></div></div><div class="steps"><div class="step"><b>1</b><h3>שוכר בוחר רכב</h3><p>בודק מחיר, מושבים, אזור ותנאים.</p></div><div class="step"><b>2</b><h3>שולח הזמנה</h3><p>ההזמנה נכנסת לסטטוס ממתינה לאישור.</p></div><div class="step"><b>3</b><h3>בעל הרכב מאשר</h3><p>באזור האישי הוא מאשר או דוחה.</p></div><div class="step"><b>4</b><h3>צ׳אט מסודר</h3><p>שיחה בין השוכר לבעל הרכב לכל הזמנה.</p></div></div></div>
+    </section>
+
+    <section id="owner" class="section"><div class="wrap"><div class="notice"><b>חשוב:</b> האתר הזה שומר נתונים בדפדפן. כדי שכל המשתמשים יראו את אותם נתונים מכל מכשיר, צריך לחבר למסד נתונים ב־Netlify/Firebase/Supabase. המבנה כאן כבר מסודר ומוכן לחיבור.</div></div></section>
+  </main>
+
+  <footer><div class="wrap foot"><b>CrownDrive</b><span>© כל הזכויות שמורות · השכרת רכבים קהילתית מסודרת</span></div></footer>
+
+  <div class="overlay" id="authModal"><div class="modal"><div class="modal-head"><h3>כניסה / הרשמה</h3><button class="close" onclick="closeModal('authModal')">×</button></div><div class="modal-body"><div class="tabs"><button id="tabRenter" class="active" onclick="setRole('renter')">שוכר</button><button id="tabOwner" onclick="setRole('owner')">בעל רכב</button></div><div class="form-grid"><div class="field"><label>שם מלא</label><input id="authName" placeholder="לדוגמה: שמואל כהן"></div><div class="field"><label>טלפון</label><input id="authPhone" placeholder="050 / 347..."></div><div class="field full"><label>אימייל</label><input id="authEmail" type="email" placeholder="name@email.com"></div><div class="field full"><label>סיסמה</label><input id="authPass" type="password" placeholder="לפחות 4 תווים"></div></div><button class="btn primary full" onclick="loginOrSignup()">כניסה / יצירת חשבון</button><p class="small" style="margin-top:10px">בדמו הזה אפשר להיכנס עם כל אימייל וסיסמה. אם האימייל חדש — החשבון נוצר.</p></div></div></div>
+
+  <div class="overlay" id="bookingModal"><div class="modal"><div class="modal-head"><h3>שליחת הזמנה</h3><button class="close" onclick="closeModal('bookingModal')">×</button></div><div class="modal-body"><div id="bookingCarBox"></div><div class="form-grid"><div class="field"><label>מתאריך</label><input id="bookFrom" type="datetime-local"></div><div class="field"><label>עד תאריך</label><input id="bookTo" type="datetime-local"></div><div class="field"><label>איסוף</label><input id="bookPickup" placeholder="כתובת / אזור"></div><div class="field"><label>החזרה</label><input id="bookReturn" placeholder="כתובת / אזור"></div><div class="field full"><label>הערות לבעל הרכב</label><textarea id="bookNotes" placeholder="שעות, יעד, שאלות, בקשות מיוחדות..."></textarea></div></div><button class="btn primary full" onclick="submitBooking()">שלח הזמנה לאישור בעל הרכב</button><p class="small" style="margin-top:10px">ההזמנה לא נסגרת מיד. בעל הרכב צריך לאשר.</p></div></div></div>
+
+  <div class="overlay" id="dashboardModal"><div class="modal wide"><div class="modal-head"><h3>אזור אישי</h3><button class="close" onclick="closeModal('dashboardModal')">×</button></div><div class="modal-body"><div class="dash-grid"><aside class="side" id="dashSide"></aside><section class="panel" id="dashContent"></section></div></div></div></div>
+
+  <div class="overlay" id="carModal"><div class="modal"><div class="modal-head"><h3 id="carFormTitle">הוספת רכב</h3><button class="close" onclick="closeModal('carModal')">×</button></div><div class="modal-body"><div class="form-grid"><div class="field"><label>שם הרכב</label><input id="carName" placeholder="Toyota Camry 2022"></div><div class="field"><label>סוג</label><select id="carType"><option>Sedan</option><option>SUV</option><option>Minivan</option><option>Luxury</option></select></div><div class="field"><label>מחיר ליום</label><input id="carPrice" type="number" placeholder="95"></div><div class="field"><label>מושבים</label><input id="carSeats" type="number" placeholder="5"></div><div class="field"><label>אזור</label><input id="carArea" placeholder="Crown Heights"></div><div class="field"><label>צבע</label><input id="carColor" placeholder="לבן"></div><div class="field full"><label>קישור תמונה</label><input id="carImage" placeholder="https://..."></div><div class="field full"><label>תיאור</label><textarea id="carDesc" placeholder="נקי, חסכוני, מתאים למשפחה..."></textarea></div></div><button class="btn primary full" onclick="saveCar()">שמור רכב</button></div></div></div>
+
+  <div class="chat"><div class="chat-panel" id="chatPanel"><div class="chat-head"><b>צ׳אט</b><button class="close" onclick="toggleChat()">×</button></div><div class="thread-select"><select id="threadSelect" onchange="renderChat()"></select></div><div class="chat-messages" id="chatMessages"></div><div class="chat-send"><input id="chatInput" placeholder="כתוב הודעה..." onkeydown="if(event.key==='Enter')sendMessage()"><button class="btn primary" onclick="sendMessage()">שלח</button></div></div><button class="chat-btn" onclick="toggleChat()">💬</button></div>
+
+  <script>
+    const LS='crowndrive_clean_site_v1';
+    const sampleImg='https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?q=80&w=1200&auto=format&fit=crop';
+    let rolePick='renter', selectedCarId=null, editingCarId=null, dashTab='overview';
+    const seed={users:[{id:'u_owner1',role:'owner',name:'מנדי לוי',phone:'347-000-1111',email:'owner@crowndrive.com',pass:'1234'}],session:null,cars:[
+      {id:'c1',ownerId:'u_owner1',name:'Toyota Camry 2022',type:'Sedan',price:95,seats:5,area:'Crown Heights',color:'לבן',status:'available',image:sampleImg,desc:'רכב נקי וחסכוני, זמין 24 שעות בתיאום.'},
+      {id:'c2',ownerId:'u_owner1',name:'Honda Odyssey 2021',type:'Minivan',price:145,seats:8,area:'Brooklyn',color:'אפור',status:'available',image:'https://images.unsplash.com/photo-1609521263047-f8f205293f24?q=80&w=1200&auto=format&fit=crop',desc:'מיניוואן למשפחה, הרבה מקום למזוודות.'},
+      {id:'c3',ownerId:'u_owner1',name:'Infiniti QX60 2026',type:'SUV',price:180,seats:7,area:'Crown Heights',color:'שחור',status:'rented',image:'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?q=80&w=1200&auto=format&fit=crop',desc:'SUV מפנק, מתאים לנסיעות ארוכות.'}
+    ],bookings:[],messages:[]};
+    let state=load();
+    function load(){try{return JSON.parse(localStorage.getItem(LS))||seed}catch(e){return seed}}
+    function save(){localStorage.setItem(LS,JSON.stringify(state));updateTop()}
+    function $(id){return document.getElementById(id)}
+    function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+    function id(p){return p+Math.random().toString(36).slice(2,9)}
+    function me(){return state.session?state.users.find(u=>u.id===state.session.id):null}
+    function user(id){return state.users.find(u=>u.id===id)||{name:'משתמש'} }
+    function closeModal(id){$(id).classList.remove('open')}
+    function openModal(id){$(id).classList.add('open')}
+    function money(n){return '$'+Number(n||0).toLocaleString('en-US')}
+
+    function updateTop(){const u=me();$('hello').textContent=u?'שלום, '+u.name:'';$('authBtn').style.display=u?'none':'inline-flex';$('dashBtn').style.display=u?'inline-flex':'none';$('statCars').textContent=state.cars.length;$('statAvailable').textContent=state.cars.filter(c=>c.status==='available').length}
+    function openAuth(role){if(role)setRole(role);openModal('authModal')}
+    function setRole(r){rolePick=r;$('tabRenter').classList.toggle('active',r==='renter');$('tabOwner').classList.toggle('active',r==='owner')}
+    function loginOrSignup(){const name=$('authName').value.trim()||'משתמש';const phone=$('authPhone').value.trim();const email=$('authEmail').value.trim().toLowerCase();const pass=$('authPass').value.trim();if(!email||pass.length<4)return alert('תכניס אימייל וסיסמה לפחות 4 תווים');let u=state.users.find(x=>x.email===email);if(u){if(u.pass!==pass)return alert('סיסמה לא נכונה')}else{u={id:id('u_'),role:rolePick,name,phone,email,pass};state.users.push(u)}state.session={id:u.id};save();closeModal('authModal');renderCars();openDashboard()}
+    function logout(){state.session=null;save();closeModal('dashboardModal');renderCars()}
+
+    function resetFilters(){$('q').value='';$('typeFilter').value='all';$('statusFilter').value='all';$('priceFilter').value='9999';renderCars()}
+    function renderCars(){const q=$('q').value.toLowerCase();const type=$('typeFilter').value;const st=$('statusFilter').value;const max=Number($('priceFilter').value);let list=state.cars.filter(c=>(type==='all'||c.type===type)&&(st==='all'||c.status===st)&&Number(c.price)<=max);if(q)list=list.filter(c=>[c.name,c.type,c.area,c.color,c.desc,user(c.ownerId).name].join(' ').toLowerCase().includes(q));$('carsGrid').innerHTML=list.length?list.map(carHTML).join(''):'<div class="empty"><h3>לא נמצאו רכבים</h3><p>נסה לשנות סינון או חיפוש.</p></div>';updateTop()}
+    function carHTML(c){const owner=user(c.ownerId);const statusText=c.status==='available'?'זמין עכשיו':'מושכר';const canBook=c.status==='available';return `<article class="car-card"><div class="car-img ${c.image?'':'no-photo'}">${c.image?`<img src="${esc(c.image)}" alt="${esc(c.name)}">`:'אין תמונה'}<span class="status ${esc(c.status)}">${statusText}</span></div><div class="car-body"><div class="car-title"><div><h3>${esc(c.name)}</h3><div class="small">${esc(c.type)} · ${esc(c.area)}</div></div><div class="price"><b>${money(c.price)}</b><span>ליום</span></div></div><div class="specs"><div class="spec">👥 ${esc(c.seats)} מושבים</div><div class="spec">🎨 ${esc(c.color)}</div><div class="spec">📍 ${esc(c.area)}</div><div class="spec">🕒 24 שעות</div></div><p class="small">${esc(c.desc||'')}</p><div class="owner-line"><span>בעל הרכב: <b>${esc(owner.name)}</b></span><span>${esc(owner.phone||'')}</span></div><div class="card-actions"><button class="btn light" onclick="openOwnerChat('${c.id}')">צ׳אט עם בעל הרכב</button><button class="btn ${canBook?'primary':'light'}" ${canBook?'':'disabled'} onclick="openBooking('${c.id}')">${canBook?'שלח הזמנה':'לא זמין'}</button></div></div></article>`}
+
+    function openBooking(carId){const u=me();if(!u)return openAuth('renter');if(u.role!=='renter')return alert('רק שוכר יכול לשלוח הזמנה');selectedCarId=carId;const c=state.cars.find(x=>x.id===carId);$('bookingCarBox').innerHTML=`<div class="list-item" style="grid-template-columns:80px 1fr"><img src="${esc(c.image||'')}" alt=""><div><b>${esc(c.name)}</b><div class="small">${money(c.price)} ליום · בעל הרכב: ${esc(user(c.ownerId).name)}</div></div></div>`;openModal('bookingModal')}
+    function submitBooking(){const u=me();const c=state.cars.find(x=>x.id===selectedCarId);if(!u||!c)return;const b={id:id('b_'),carId:c.id,ownerId:c.ownerId,renterId:u.id,from:$('bookFrom').value,to:$('bookTo').value,pickup:$('bookPickup').value,returnPlace:$('bookReturn').value,notes:$('bookNotes').value,status:'pending',createdAt:Date.now()};state.bookings.push(b);state.messages.push({id:id('m_'),threadId:'booking_'+b.id,from:'system',text:'הזמנה חדשה נפתחה וממתינה לאישור בעל הרכב.',ts:Date.now()});save();closeModal('bookingModal');alert('ההזמנה נשלחה וממתינה לאישור בעל הרכב');openDashboard()}
+    function setBookingStatus(bid,status){const b=state.bookings.find(x=>x.id===bid);if(!b)return;b.status=status;state.messages.push({id:id('m_'),threadId:'booking_'+bid,from:'system',text:status==='approved'?'בעל הרכב אישר את ההזמנה.':'בעל הרכב דחה את ההזמנה.',ts:Date.now()});save();renderDashboard();renderCars()}
+
+    function openDashboard(){if(!me())return openAuth();openModal('dashboardModal');renderDashboard()}
+    function setDash(t){dashTab=t;renderDashboard()}
+    function renderDashboard(){const u=me();if(!u)return;const tabs=u.role==='owner'?[['overview','סקירה'],['bookings','הזמנות שקיבלתי'],['cars','הרכבים שלי'],['profile','פרטי חשבון']]:[['overview','סקירה'],['bookings','ההזמנות שלי'],['profile','פרטי חשבון']];$('dashSide').innerHTML=tabs.map(t=>`<button class="${dashTab===t[0]?'active':''}" onclick="setDash('${t[0]}')">${t[1]}</button>`).join('')+`<button onclick="logout()">יציאה</button>`;$('dashContent').innerHTML=dashTab==='overview'?overviewHTML(u):dashTab==='bookings'?bookingsHTML(u):dashTab==='cars'?carsManageHTML(u):profileHTML(u)}
+    function overviewHTML(u){const myB=state.bookings.filter(b=>u.role==='owner'?b.ownerId===u.id:b.renterId===u.id);return `<div class="cards"><div class="kpi"><b>${myB.length}</b><span>הזמנות</span></div><div class="kpi"><b>${myB.filter(b=>b.status==='pending').length}</b><span>ממתינות</span></div><div class="kpi"><b>${myB.filter(b=>b.status==='approved').length}</b><span>מאושרות</span></div></div><h3>ברוך הבא, ${esc(u.name)}</h3><p class="small">כאן תראה את כל מה שקשור אליך: הזמנות, צ׳אטים, רכבים ופרטי חשבון.</p>`}
+    function bookingsHTML(u){const list=state.bookings.filter(b=>u.role==='owner'?b.ownerId===u.id:b.renterId===u.id).sort((a,b)=>b.createdAt-a.createdAt);if(!list.length)return '<div class="empty"><h3>אין הזמנות עדיין</h3><p>הזמנות חדשות יופיעו כאן.</p></div>';return `<div class="list">${list.map(b=>{const c=state.cars.find(x=>x.id===b.carId)||{};const other=u.role==='owner'?user(b.renterId):user(b.ownerId);return `<div class="list-item"><img src="${esc(c.image||'')}" alt=""><div><b>${esc(c.name||'רכב')}</b><div class="small">${u.role==='owner'?'שוכר':'בעל הרכב'}: ${esc(other.name)} · ${esc(b.from||'ללא תאריך')} עד ${esc(b.to||'')}</div><span class="pill ${b.status}">${b.status==='pending'?'ממתינה לאישור':b.status==='approved'?'מאושרת':'נדחתה'}</span><div class="small">${esc(b.notes||'')}</div></div><div class="actions"><button class="btn light" onclick="openBookingThread('${b.id}')">צ׳אט</button>${u.role==='owner'&&b.status==='pending'?`<button class="btn ok" onclick="setBookingStatus('${b.id}','approved')">אשר</button><button class="btn danger" onclick="setBookingStatus('${b.id}','rejected')">דחה</button>`:''}</div></div>`}).join('')}</div>`}
+    function carsManageHTML(u){const cars=state.cars.filter(c=>c.ownerId===u.id);return `<button class="btn primary" onclick="openCarForm()">+ הוסף רכב</button><div style="height:14px"></div>${cars.length?`<div class="list">${cars.map(c=>`<div class="list-item"><img src="${esc(c.image||'')}" alt=""><div><b>${esc(c.name)}</b><div class="small">${money(c.price)} ליום · ${esc(c.status)}</div></div><div class="actions"><button class="btn light" onclick="editCar('${c.id}')">ערוך</button><button class="btn light" onclick="toggleCar('${c.id}')">${c.status==='available'?'סמן כמושכר':'סמן כזמין'}</button><button class="btn danger" onclick="deleteCar('${c.id}')">מחק</button></div></div>`).join('')}</div>`:'<div class="empty"><h3>אין רכבים</h3><p>לחץ הוסף רכב כדי להתחיל.</p></div>'}`}
+    function profileHTML(u){return `<div class="form-grid"><div class="field"><label>שם</label><input id="pName" value="${esc(u.name)}"></div><div class="field"><label>טלפון</label><input id="pPhone" value="${esc(u.phone||'')}"></div><div class="field full"><label>אימייל</label><input id="pEmail" value="${esc(u.email)}"></div><div class="field full"><label>סיסמה</label><input id="pPass" value="${esc(u.pass)}"></div></div><button class="btn primary" onclick="saveProfile()">שמור פרטים</button>`}
+    function saveProfile(){const u=me();u.name=$('pName').value;u.phone=$('pPhone').value;u.email=$('pEmail').value;u.pass=$('pPass').value;save();renderDashboard();alert('נשמר')}
+
+    function openCarForm(){editingCarId=null;['carName','carPrice','carSeats','carArea','carColor','carImage','carDesc'].forEach(x=>$(x).value='');$('carType').value='Sedan';$('carFormTitle').textContent='הוספת רכב';openModal('carModal')}
+    function editCar(cid){const c=state.cars.find(x=>x.id===cid);editingCarId=cid;$('carName').value=c.name;$('carType').value=c.type;$('carPrice').value=c.price;$('carSeats').value=c.seats;$('carArea').value=c.area;$('carColor').value=c.color;$('carImage').value=c.image||'';$('carDesc').value=c.desc||'';$('carFormTitle').textContent='עריכת רכב';openModal('carModal')}
+    function saveCar(){const u=me();if(!u||u.role!=='owner')return alert('רק בעל רכב יכול להוסיף רכב');const data={name:$('carName').value,type:$('carType').value,price:Number($('carPrice').value||0),seats:Number($('carSeats').value||5),area:$('carArea').value,color:$('carColor').value,status:'available',image:$('carImage').value,desc:$('carDesc').value,ownerId:u.id};if(editingCarId){Object.assign(state.cars.find(c=>c.id===editingCarId),data)}else{state.cars.push({id:id('c_'),...data})}save();closeModal('carModal');renderDashboard();renderCars()}
+    function toggleCar(cid){const c=state.cars.find(x=>x.id===cid);c.status=c.status==='available'?'rented':'available';save();renderDashboard();renderCars()}
+    function deleteCar(cid){if(!confirm('למחוק רכב?'))return;state.cars=state.cars.filter(c=>c.id!==cid);save();renderDashboard();renderCars()}
+
+    function toggleChat(){const p=$('chatPanel');p.classList.toggle('open');renderThreadOptions();renderChat()}
+    function openOwnerChat(carId){const u=me();if(!u)return openAuth('renter');const c=state.cars.find(x=>x.id===carId);const tid='owner_'+c.ownerId+'_'+u.id;ensureThread(tid,`צ׳אט על ${c.name}`);$('chatPanel').classList.add('open');renderThreadOptions(tid);renderChat()}
+    function openBookingThread(bid){const tid='booking_'+bid;ensureThread(tid,'צ׳אט הזמנה');$('chatPanel').classList.add('open');renderThreadOptions(tid);renderChat()}
+    function ensureThread(tid,title){if(!state.messages.some(m=>m.threadId===tid)){state.messages.push({id:id('m_'),threadId:tid,from:'system',text:title+' נפתח.',ts:Date.now()});save()}}
+    function myThreads(){const u=me();if(!u)return [];const bookingThreads=state.bookings.filter(b=>b.ownerId===u.id||b.renterId===u.id).map(b=>'booking_'+b.id);const ownerThreads=state.messages.filter(m=>m.threadId.startsWith('owner_')&&m.threadId.includes(u.id)).map(m=>m.threadId);return [...new Set([...bookingThreads,...ownerThreads])]} 
+    function renderThreadOptions(selected){const threads=myThreads();$('threadSelect').innerHTML=threads.length?threads.map(t=>`<option value="${t}" ${selected===t?'selected':''}>${threadName(t)}</option>`).join(''):'<option value="support">שירות לקוחות</option>';if(selected)$('threadSelect').value=selected}
+    function threadName(t){if(t==='support')return 'שירות לקוחות';if(t.startsWith('booking_')){const b=state.bookings.find(x=>'booking_'+x.id===t);const c=b?state.cars.find(x=>x.id===b.carId):null;return 'הזמנה · '+(c?c.name:'רכב')}return 'צ׳אט עם בעל רכב'}
+    function renderChat(){const tid=$('threadSelect').value||'support';const msgs=state.messages.filter(m=>m.threadId===tid);$('chatMessages').innerHTML=msgs.length?msgs.map(m=>`<div class="bubble ${m.from===me()?.id?'me':m.from==='system'?'system':''}">${esc(m.text)}<div class="small">${m.from==='system'?'מערכת':esc(user(m.from).name||'')}</div></div>`).join(''):'<div class="bubble system">אין הודעות עדיין.</div>';$('chatMessages').scrollTop=$('chatMessages').scrollHeight}
+    function sendMessage(){const u=me();if(!u)return openAuth();const text=$('chatInput').value.trim();if(!text)return;const tid=$('threadSelect').value||'support';state.messages.push({id:id('m_'),threadId:tid,from:u.id,text,ts:Date.now()});$('chatInput').value='';save();renderChat()}
+
+    document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open')}));
+    updateTop();renderCars();
+  </script>
+</body>
+</html>
