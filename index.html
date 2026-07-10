@@ -1428,35 +1428,101 @@ body::after{
 
 <div class="toast" id="toast"></div>
 
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script>
 /* ╔════════════════════════════════════════════════════════════════╗
-   ║ הגדרות FIREBASE — הדביקו כאן את הקונפיג מפרויקט ה-Firebase שלכם ║
-   ║ Project settings → General → Your apps → SDK setup and config   ║
+   ║ CrownDrive + Netlify Database                                ║
+   ║ הנתונים נשמרים דרך /.netlify/functions/db במסד הנתונים של Netlify ║
    ╚════════════════════════════════════════════════════════════════╝ */
-const FIREBASE_CONFIG = (typeof window!=='undefined' && window.__FB_CONFIG) || {
-  apiKey: "PASTE_HERE",
-  authDomain: "PASTE_HERE",
-  projectId: "PASTE_HERE",
-  storageBucket: "PASTE_HERE",
-  messagingSenderId: "PASTE_HERE",
-  appId: "PASTE_HERE"
-};
-const CLOUD = !!(FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey.indexOf('PASTE')===-1 && typeof firebase!=='undefined');
+const CLOUD = true;
+const API_URL = '/.netlify/functions/db';
 let db=null, fauth=null;
-if(CLOUD){
-  firebase.initializeApp(FIREBASE_CONFIG);
-  db=firebase.firestore();
-  fauth=firebase.auth();
+
+async function api(action, payload={}){
+  const res = await fetch(API_URL, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action,...payload})
+  });
+  const txt = await res.text();
+  let data={};
+  try{ data = txt ? JSON.parse(txt) : {}; }catch(e){ data={error:txt||'Invalid JSON'}; }
+  if(!res.ok) throw new Error(data.error || ('שגיאת שרת '+res.status));
+  return data;
 }
-function persistState(){
-  // אתר אמיתי: הנתונים מגיעים מ-Firebase/Firestore בלבד.
+function snapFrom(rows){
+  return { docs:(rows||[]).map(r=>({ id:r.id, data:()=>({...r.data}) })) };
 }
-function loadState(){
-  // חברו FIREBASE_CONFIG כדי לקבל נתונים אמיתיים.
+function makeCollection(name){
+  return {
+    doc(id){
+      const refId = id || (name.slice(0,2)+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,8));
+      return {
+        id: refId,
+        async get(){ const r=await api('get',{collection:name,id:refId}); return {exists:!!r.record,id:refId,data:()=>r.record||{}}; },
+        async set(data, opts){ return api('set',{collection:name,id:refId,data,merge:!!(opts&&opts.merge)}); },
+        async update(data){ return api('update',{collection:name,id:refId,data}); },
+        async delete(){ return api('delete',{collection:name,id:refId}); }
+      };
+    },
+    async add(data){ const r=await api('add',{collection:name,data}); return {id:r.id}; },
+    where(field,op,value){
+      return {
+        onSnapshot(cb,err){
+          let stop=false, timer=null, last='';
+          const run=async()=>{
+            if(stop)return;
+            try{
+              const r=await api('list',{collection:name,where:{field,op,value}});
+              const key=JSON.stringify(r.records||[]);
+              if(key!==last){ last=key; cb(snapFrom(r.records)); }
+            }catch(e){ if(err)err(e); else console.error(e); }
+          };
+          run(); timer=setInterval(run,1000);
+          return ()=>{stop=true; if(timer)clearInterval(timer)};
+        }
+      };
+    },
+    onSnapshot(cb,err){
+      let stop=false, timer=null, last='';
+      const run=async()=>{
+        if(stop)return;
+        try{
+          const r=await api('list',{collection:name});
+          const key=JSON.stringify(r.records||[]);
+          if(key!==last){ last=key; cb(snapFrom(r.records)); }
+        }catch(e){ if(err)err(e); else console.error(e); }
+      };
+      run(); timer=setInterval(run,1000);
+      return ()=>{stop=true; if(timer)clearInterval(timer)};
+    }
+  };
 }
+function makeAuthUser(u){
+  return {
+    uid:u.uid,
+    email:u.email,
+    async updateEmail(newEmail){ const r=await api('updateAuth',{uid:u.uid,email:newEmail}); localStorage.setItem('cd_uid',u.uid); localStorage.setItem('cd_email',newEmail); this.email=newEmail; return r; },
+    async updatePassword(newPass){ return api('updateAuth',{uid:u.uid,pass:newPass}); }
+  };
+}
+const authListeners=[];
+function notifyAuth(){ authListeners.forEach(fn=>{try{fn(fauth.currentUser)}catch(e){console.error(e)}}); }
+
+db = { collection: makeCollection };
+fauth = {
+  currentUser:null,
+  onAuthStateChanged(fn){ authListeners.push(fn); setTimeout(()=>fn(this.currentUser),0); return ()=>{}; },
+  async signInWithEmailAndPassword(email,pass){ const r=await api('login',{email,pass}); this.currentUser=makeAuthUser(r.user); localStorage.setItem('cd_uid',r.user.uid); localStorage.setItem('cd_email',r.user.email); notifyAuth(); return {user:this.currentUser}; },
+  async createUserWithEmailAndPassword(email,pass){ const r=await api('signup',{email,pass}); this.currentUser=makeAuthUser(r.user); localStorage.setItem('cd_uid',r.user.uid); localStorage.setItem('cd_email',r.user.email); notifyAuth(); return {user:this.currentUser}; },
+  async sendPasswordResetEmail(email){ await api('resetPassword',{email}); },
+  async signOut(){ this.currentUser=null; localStorage.removeItem('cd_uid'); localStorage.removeItem('cd_email'); notifyAuth(); }
+};
+(function restoreSession(){
+  const uid=localStorage.getItem('cd_uid'), email=localStorage.getItem('cd_email');
+  if(uid&&email) fauth.currentUser=makeAuthUser({uid,email});
+})();
+function persistState(){ /* נשמר בענן דרך Netlify Database */ }
+function loadState(){ /* נטען אוטומטית דרך onSnapshot */ }
 function cloudErr(e){console.error(e);showToast('שגיאה בשמירה: '+((e&&e.message)||e))}
 
 /* ================= STATE ================= */
