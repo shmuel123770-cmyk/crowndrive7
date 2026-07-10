@@ -906,6 +906,12 @@ body::after{
 }
 
 </style>
+
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#1B222B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/icon-192.png">
 </head>
 <body>
 
@@ -1571,6 +1577,62 @@ async function api(action, payload={}){
   if(!res.ok) throw new Error(data.error || ('שגיאת שרת '+res.status));
   return data;
 }
+
+function plainDateTime(d,t){return `${fmt(d)} בשעה ${t||''}`.trim();}
+function emailOfUser(uid){
+  const u=userOf(uid)||{};
+  return u.email || '';
+}
+function bookingEmailHTML(title,b,statusText){
+  const c=state.cars.find(x=>x.id===b.carId)||{};
+  const owner=userOf(b.ownerId)||{};
+  const renter=userOf(b.renterId)||{};
+  const total=money(+b.total||0);
+  return `
+  <div dir="rtl" style="font-family:Arial,Heebo,sans-serif;line-height:1.7;color:#1D1D1F;background:#F4F6F8;padding:22px">
+    <div style="max-width:620px;margin:auto;background:white;border-radius:16px;padding:24px;border:1px solid #E5E8EC">
+      <h2 style="margin:0 0 12px;color:#1B222B">${title}</h2>
+      <p style="font-size:16px;margin:0 0 16px">${statusText}</p>
+      <table style="width:100%;border-collapse:collapse;font-size:15px">
+        <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#6E6E73">מספר הזמנה</td><td style="padding:8px;border-bottom:1px solid #eee"><b>${esc(b.num||'')}</b></td></tr>
+        <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#6E6E73">רכב</td><td style="padding:8px;border-bottom:1px solid #eee">${esc(c.make||'')} ${esc(c.model||'')} ${esc(c.yr||'')}</td></tr>
+        <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#6E6E73">שוכר</td><td style="padding:8px;border-bottom:1px solid #eee">${esc(b.signName||b.renterName||renter.name||'')}</td></tr>
+        <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#6E6E73">משכיר</td><td style="padding:8px;border-bottom:1px solid #eee">${esc(owner.name||'')}</td></tr>
+        <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#6E6E73">איסוף</td><td style="padding:8px;border-bottom:1px solid #eee">${plainDateTime(b.from,b.tmFrom)}</td></tr>
+        <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#6E6E73">החזרה</td><td style="padding:8px;border-bottom:1px solid #eee">${plainDateTime(b.to,b.tmTo)}</td></tr>
+        <tr><td style="padding:8px;border-bottom:1px solid #eee;color:#6E6E73">סוג השכרה</td><td style="padding:8px;border-bottom:1px solid #eee">${rentalLabel(b.rentalType||'hourly')}</td></tr>
+        <tr><td style="padding:8px;color:#6E6E73">סה״כ</td><td style="padding:8px"><b>${total}</b></td></tr>
+      </table>
+      <p style="margin-top:18px;color:#6E6E73;font-size:13px">Crown Drive · קראון הייטס</p>
+    </div>
+  </div>`;
+}
+async function sendBookingEmails(kind,b){
+  if(!CLOUD || !b) return;
+  const c=state.cars.find(x=>x.id===b.carId)||{};
+  const ownerEmail=b.ownerEmail || c.ownerEmail || emailOfUser(b.ownerId);
+  const renterEmail=b.renterEmail || emailOfUser(b.renterId) || (me()&&me().email) || '';
+  let subject='', title='', status='';
+  if(kind==='request'){
+    subject=`Crown Drive — בקשת הזמנה חדשה ${b.num}`;
+    title='בקשת הזמנה חדשה נשלחה';
+    status='ההזמנה ממתינה לאישור בעל הרכב. בעל הרכב יכול לאשר או לדחות באזור האישי.';
+  } else if(kind==='approved'){
+    subject=`Crown Drive — ההזמנה אושרה ${b.num}`;
+    title='ההזמנה אושרה';
+    status='בעל הרכב אישר את ההזמנה. השוכר צריך לשלוח בצ׳אט צילום מסך של העברת הכסף.';
+  } else if(kind==='rejected'){
+    subject=`Crown Drive — ההזמנה נדחתה ${b.num}`;
+    title='ההזמנה נדחתה';
+    status='בעל הרכב דחה את בקשת ההזמנה. אפשר לבחור רכב אחר או להתכתב בצ׳אט.';
+  } else { return; }
+  const to=[ownerEmail,renterEmail].filter(Boolean);
+  if(!to.length) return;
+  try{
+    await api('sendEmail',{to,subject,html:bookingEmailHTML(title,b,status)});
+  }catch(e){console.warn('Email send failed',e);}
+}
+
 function snapFrom(rows){
   return { docs:(rows||[]).map(r=>({ id:r.id, data:()=>({...r.data}) })) };
 }
@@ -1839,7 +1901,7 @@ function closeHiddenAdminMode(){
 }
 function shouldOpenAdminFromUrl(){
   // כניסת מנהל מוסתרת: אין פתיחה דרך #admin או ?admin=1.
-  // מנהל נכנס דרך בחירת 'בעל רכב' עם פרטי המנהל בלבד.
+  // מנהל נכנס דרך בחירת 'בעל רכב'. הזיהוי נעשה בשרת, לא בקוד הדפדפן.
   return false;
 }
 function checkAdminUrl(){
@@ -1853,7 +1915,7 @@ window.addEventListener('hashchange',checkAdminUrl);
 window.addEventListener('keydown',e=>{
   // אין קיצור מקשים גלוי/נסתר לכניסת מנהל.
 });
-const ADMIN_EMAIL='shmuel123770@icloud.com', ADMIN_PASS='amarZ770@';
+const ADMIN_EMAIL='shmuel123770@icloud.com';
 let authJustSignedUp=false, pendingProfile=null;
 function afterLoginUI(){
   closeOv('ov-auth'); renderNav(); updateBadge();
@@ -1887,7 +1949,7 @@ function saveAccount(){
   if(!name){showToast('שם מלא הוא שדה חובה');return}
   if(newPass && newPass.length<6){showToast('סיסמה חדשה חייבת לפחות 6 תווים');return}
   if(CLOUD){
-    const jobs=[db.collection('users').doc(u.id).update({name})];
+    const jobs=[db.collection('users').doc(u.id).update({name,...(newMail?{email:newMail}:{})})];
     const priv={phone}; if(acLicData)priv.lic=acLicData;
     jobs.push(db.collection('private').doc(u.id).update(priv));
     const au=fauth.currentUser;
@@ -1926,10 +1988,6 @@ function saveAccount(){
 function forgotPass(){
   const em=$('l-mail').value.trim().toLowerCase();
   if(!em){mark('lf-mail',true);showToast('הזינו את כתובת המייל ואז לחצו על שחזור');return}
-  if(em===ADMIN_EMAIL){
-    showToast('אם זה חשבון מנהל, שינוי הסיסמה נעשה דרך עדכון קובץ האתר.');
-    return;
-  }
   if(CLOUD){
     fauth.sendPasswordResetEmail(em)
       .then(()=>showToast('נשלח מייל לשחזור הסיסמה — בדקו את תיבת הדואר'))
@@ -1940,20 +1998,7 @@ function forgotPass(){
 }
 function doLogin(){
   const em=$('l-mail').value.trim().toLowerCase(), ps=$('l-pass').value;
-  // כניסת מנהל מוסתרת: בוחרים 'אני בעל רכב' ומזינים את פרטי המנהל.
-  // אין כפתור מנהל ואין כתובת #admin.
-  if(authRole==='owner' && em===ADMIN_EMAIL && ps===ADMIN_PASS){
-    state.session={role:'admin',id:'admin',name:'מנהל האתר',email:ADMIN_EMAIL};
-    if(CLOUD)startAdminFeeds();
-    afterLoginUI();
-    return;
-  }
-  if(adminSecretMode && em===ADMIN_EMAIL && ps===ADMIN_PASS){
-    state.session={role:'admin',id:'admin',name:'מנהל האתר',email:ADMIN_EMAIL};
-    if(CLOUD)startAdminFeeds();
-    afterLoginUI();
-    return;
-  }
+  // מנהל נכנס דרך 'אני בעל רכב'; השרת מזהה אם זה חשבון מנהל לפי הרשאות במסד הנתונים.
   if(CLOUD){
     mark('lf-mail',false);mark('lf-pass',false);
     fauth.signInWithEmailAndPassword(em,ps).catch(e=>{
@@ -1994,7 +2039,7 @@ function doSignup(){
 
   if(CLOUD){
     const role=authRole;
-    const prof={name,role,createdAt:Date.now()};
+    const prof={name,role,email:em,createdAt:Date.now()};
     const priv={phone:$('s-phone').value.trim(),...extra};
     fauth.createUserWithEmailAndPassword(em,ps).then(cred=>{
       const uid=cred.user.uid;
@@ -2013,7 +2058,7 @@ function doSignup(){
   }
   const u={id:newId('u'), name, phone:$('s-phone').value.trim(), email:em, pass:ps, createdAt:Date.now(), ...extra};
   pool.push(u);
-  state.users[u.id]={name:u.name,role:authRole,createdAt:u.createdAt};
+  state.users[u.id]={name:u.name,role:authRole,email:u.email,createdAt:u.createdAt};
   state.session={role:authRole,id:u.id,...u};
   ['s-name','s-phone','s-mail','s-pass'].forEach(i=>$(i).value='');
   clearRLic(true);clearRLicBack(true);if($('lic-state'))$('lic-state').value='';
@@ -2308,7 +2353,7 @@ function saveCar(){
     tags:$('a-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
     status:$('a-status').value,photos:[...formPhotos]};
   if(CLOUD){
-    const payload=editId?data:{...data,ownerId:state.session.id,ret:'',createdAt:Date.now()};
+    const payload=editId?data:{...data,ownerId:state.session.id,ownerEmail:state.session.email||'',ret:'',createdAt:Date.now()};
     const op=editId? db.collection('cars').doc(editId).update(payload)
                    : db.collection('cars').add(payload);
     op.then(()=>{showToast(editId?'הרכב עודכן':make+' '+model+' נוסף לצי');resetCarForm();if($('ov-owner').classList.contains('open'))setDash('cars');}).catch(cloudErr);
@@ -2567,10 +2612,14 @@ function adminSetBooking(id,status){
     db.collection('bookings').doc(id).update(upd).then(()=>{
       if(status==='approved')return db.collection('cars').doc(b.carId).update({status:'rented',ret:'זמין שוב: '+fmt(b.to)+' בשעה '+b.tmTo});
       if(status==='done')return db.collection('cars').doc(b.carId).update({status:'available',ret:''});
+    }).then(()=>{
+      if(status==='approved')return sendBookingEmails('approved',{...b,status:'approved'});
+      if(status==='rejected')return sendBookingEmails('rejected',{...b,status:'rejected'});
     }).then(()=>showToast('ההזמנה עודכנה')).catch(cloudErr);return;
   }
   b.status=status; if(status==='done'){b.done=true;b.doneAt=Date.now()} else b[status+'At']=Date.now();
   const c=state.cars.find(x=>x.id===b.carId); if(c&&status==='approved'){c.status='rented';c.ret='זמין שוב: '+fmt(b.to)+' בשעה '+b.tmTo} if(c&&status==='done'){c.status='available';c.ret=''}
+  if(status==='approved')sendBookingEmails('approved',b); if(status==='rejected')sendBookingEmails('rejected',b);
   render();renderAdminDashboard();showToast('ההזמנה עודכנה');
 }
 function adminDeleteBooking(id){
@@ -2834,7 +2883,7 @@ function confirmBooking(){
   const u=me(),h=hoursTotal(),d=daysTotal(),rentType=selectedBookingRentalType(),rate=bookingRate(),units=bookingUnits(),total=units*rate;
   const num='CD-'+Math.floor(100000+Math.random()*900000);
   const b={id:newId('bk'),num,status:'pending',carId:currentCar.id,ownerId:currentCar.ownerId,renterId:u.id,
-    lic:u.lic||null,renterName:u.name,
+    lic:u.lic||null,renterName:u.name,renterEmail:u.email||'',ownerEmail:currentCar.ownerEmail || emailOfUser(currentCar.ownerId),
     from:$('dt-from').value,tmFrom:$('tm-from').value,to:$('dt-to').value,tmTo:$('tm-to').value,
     hours:h,days:d,rentalType:rentType,rate,units,total,
     signName:$('sign-name').value.trim(),signDate:$('sign-date').value,sig:$('sig-pad').toDataURL(),
@@ -2845,10 +2894,12 @@ function confirmBooking(){
     b.id=ref.id;
     ref.set(b)
       .then(()=>pushMsg('b'+b.id,'system',0,msg,[b.renterId,b.ownerId]))
+      .then(()=>sendBookingEmails('request',b))
       .catch(cloudErr);
   } else {
     state.bookings.push(b);
     pushMsg('b'+b.id,'system',0,msg);
+    sendBookingEmails('request',b);
   }
   lastBooking=b;
   render();
@@ -2867,11 +2918,13 @@ function approveBooking(bid){
     db.collection('bookings').doc(bid).update({status:'approved',approvedAt:Date.now()})
       .then(()=>db.collection('cars').doc(b.carId).update({status:'rented',ret:'זמין שוב: '+fmt(b.to)+' בשעה '+b.tmTo}))
       .then(()=>pushMsg('b'+b.id,'system',0,'בעל הרכב אישר את ההזמנה '+b.num+'. עכשיו השוכר צריך לשלוח בצ׳אט צילום מסך של העברת הכסף לבעל הרכב.',[b.renterId,b.ownerId]))
+      .then(()=>sendBookingEmails('approved',{...b,status:'approved'}))
       .catch(cloudErr);return;
   }
   b.status='approved';b.approvedAt=Date.now();
   if(c){c.status='rented';c.ret='זמין שוב: '+fmt(b.to)+' בשעה '+b.tmTo;}
   pushMsg('b'+b.id,'system',0,'בעל הרכב אישר את ההזמנה '+b.num+'. עכשיו השוכר צריך לשלוח בצ׳אט צילום מסך של העברת הכסף לבעל הרכב.');
+  sendBookingEmails('approved',b);
   render();renderOwnerBookings();showToast('ההזמנה אושרה');
 }
 function rejectBooking(bid){
@@ -2881,10 +2934,12 @@ function rejectBooking(bid){
   if(CLOUD){
     db.collection('bookings').doc(bid).update({status:'rejected',rejectedAt:Date.now()})
       .then(()=>pushMsg('b'+b.id,'system',0,'בעל הרכב דחה את בקשת ההזמנה '+b.num+'. אפשר להתכתב בצ׳אט או לבחור רכב אחר.',[b.renterId,b.ownerId]))
+      .then(()=>sendBookingEmails('rejected',{...b,status:'rejected'}))
       .catch(cloudErr);return;
   }
   b.status='rejected';b.rejectedAt=Date.now();
   pushMsg('b'+b.id,'system',0,'בעל הרכב דחה את בקשת ההזמנה '+b.num+'. אפשר להתכתב בצ׳אט או לבחור רכב אחר.');
+  sendBookingEmails('rejected',b);
   render();renderOwnerBookings();showToast('הבקשה נדחתה');
 }
 
@@ -3326,7 +3381,8 @@ async function buildCloudSession(user){
   let prof=null;
   try{const d=await db.collection('users').doc(uid).get();if(d.exists)prof=d.data();}catch(e){}
   if(!prof && pendingProfile && pendingProfile.uid===uid)prof=pendingProfile.prof;
-  if(!prof){prof={name:user.email||'משתמש',role:'renter',createdAt:Date.now()}}
+  if(!prof){prof={name:user.email||'משתמש',role:'renter',email:user.email||'',createdAt:Date.now()}}
+  if(user.email && !prof.email){prof.email=user.email; db.collection('users').doc(uid).update({email:user.email}).catch(()=>{});}
   let priv={};
   try{const d=await db.collection('private').doc(uid).get();if(d.exists)priv=d.data();}catch(e){}
   if((!priv||!Object.keys(priv).length) && pendingProfile && pendingProfile.uid===uid)priv=pendingProfile.priv||{};
@@ -3419,6 +3475,12 @@ setInterval(()=>{
   if(document.activeElement && ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))return;
   refreshOpenViews();
 },1000);
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js').catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
