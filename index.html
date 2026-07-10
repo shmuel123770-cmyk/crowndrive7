@@ -1280,6 +1280,21 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;ba
           </label>
         </div>
 
+        <div class="search-row two">
+          <label>שנה
+            <select id="q-yr" onchange="updateSearch()"><option value="">כל השנים</option></select>
+          </label>
+          <label>צבע
+            <select id="q-color" onchange="updateSearch()"><option value="">כל הצבעים</option></select>
+          </label>
+        </div>
+
+        <div class="search-row one">
+          <label>מנוע
+            <select id="q-engine" onchange="updateSearch()"><option value="">כל סוגי המנוע</option></select>
+          </label>
+        </div>
+
         <div class="search-row one">
           <label>סוג הנעה
             <select id="q-fuel" onchange="updateSearch()"><option value="">כל סוגי ההנעה</option><option>בנזין</option><option>היברידי</option><option>היברידי נטען (PHEV)</option><option>חשמלי</option><option>דיזל</option></select>
@@ -1393,7 +1408,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;ba
         <!-- login -->
         <div id="auth-login">
           <div class="field" id="lf-mail"><label>אימייל <span class="req">*</span></label><input id="l-mail" type="email" dir="ltr" style="text-align:right" placeholder="name@email.com"><div class="err-msg">אימייל לא נמצא</div></div>
-          <div class="field" id="lf-pass"><label>סיסמה <span class="req">*</span></label><input id="l-pass" type="password"><div class="err-msg">סיסמה שגויה</div></div>
+          <div class="field" id="lf-pass"><label>סיסמה <span class="req">*</span></label><input id="l-pass" type="password"><button type="button" class="linklike" style="display:block;margin-top:6px" onclick="togglePass('l-pass',this)">הצג סיסמה</button><div class="err-msg">סיסמה שגויה</div></div>
           <div class="m-actions"><button class="btn btn-gold grow" onclick="doLogin()">כניסה לחשבון</button></div>
           <button class="linklike forgot-link" type="button" onclick="forgotPass()">שכחתי סיסמה</button>
         </div>
@@ -1406,7 +1421,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;ba
           </div>
           <div class="f-row">
             <div class="field" id="sf-mail"><label>אימייל <span class="req">*</span></label><input id="s-mail" type="email" dir="ltr" style="text-align:right" placeholder="name@email.com"><div class="err-msg">אימייל לא תקין או כבר רשום</div></div>
-            <div class="field" id="sf-pass"><label>סיסמה <span class="req">*</span></label><input id="s-pass" type="password"><div class="err-msg">לפחות 6 תווים</div></div>
+            <div class="field" id="sf-pass"><label>סיסמה <span class="req">*</span></label><input id="s-pass" type="password"><button type="button" class="linklike" style="display:block;margin-top:6px" onclick="togglePass('s-pass',this)">הצג סיסמה</button><div class="err-msg">לפחות 6 תווים</div></div>
           </div>
 
           <!-- renter extras -->
@@ -1498,12 +1513,27 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;ba
       <div id="dash-add" style="display:none">
         <div class="divider" id="form-title">הוספת רכב חדש</div>
         <div class="f-row3">
-          <div class="field" id="af-make"><label>יצרן <span class="req">*</span></label><input id="a-make" placeholder="Mercedes-Benz"><div class="err-msg">שדה חובה</div></div>
-          <div class="field" id="af-model"><label>דגם <span class="req">*</span></label><input id="a-model" placeholder="S-Class"><div class="err-msg">שדה חובה</div></div>
-          <div class="field" id="af-yr"><label>שנה <span class="req">*</span></label><input id="a-yr" type="number" min="2000" max="2027" placeholder="2025"><div class="err-msg">שנה לא תקינה</div></div>
+          <div class="field" id="af-make"><label>יצרן / Manufacturer <span class="req">*</span></label>
+            <select id="a-make" onchange="onFormMakeChange()"><option value="">בחר יצרן</option></select>
+            <input id="a-make-other" style="display:none;margin-top:8px" placeholder="הקלד יצרן / Manufacturer">
+            <div class="err-msg">שדה חובה</div>
+          </div>
+          <div class="field" id="af-model"><label>דגם / Model <span class="req">*</span></label>
+            <select id="a-model" onchange="toggleOther('a-model','a-model-other')"><option value="">בחר יצרן תחילה</option></select>
+            <input id="a-model-other" style="display:none;margin-top:8px" placeholder="הקלד דגם / Model">
+            <div class="err-msg">שדה חובה</div>
+          </div>
+          <div class="field" id="af-yr"><label>שנה / Year <span class="req">*</span></label>
+            <select id="a-yr"><option value="">בחר שנה</option></select>
+            <div class="err-msg">שנה לא תקינה</div>
+          </div>
         </div>
         <div class="f-row3">
-          <div class="field" id="af-color"><label>צבע <span class="req">*</span></label><input id="a-color" placeholder="שחור אובסידיאן"><div class="err-msg">שדה חובה</div></div>
+          <div class="field" id="af-color"><label>צבע / Color <span class="req">*</span></label>
+            <select id="a-color" onchange="toggleOther('a-color','a-color-other')"><option value="">בחר צבע</option></select>
+            <input id="a-color-other" style="display:none;margin-top:8px" placeholder="הקלד צבע / Color">
+            <div class="err-msg">שדה חובה</div>
+          </div>
           <div class="field"><label>קטגוריה</label>
             <select id="a-cat"><option>סדאן יוקרה</option><option>סדאן</option><option>SUV יוקרה</option><option>SUV</option><option>מיניוואן</option><option>קופה ספורט</option><option>קבריולה</option><option>רכב מסחרי</option></select>
           </div>
@@ -1528,7 +1558,10 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;ba
           <div class="field"><label>סוג הנעה <span class="req">*</span></label><select id="a-fuel"><option selected>בנזין</option><option>היברידי</option><option>היברידי נטען (PHEV)</option><option>חשמלי</option><option>דיזל</option></select></div>
         </div>
         <div class="f-row3">
-          <div class="field"><label>מנוע / נפח מנוע</label><input id="a-engine" placeholder="2.5L / V6 / Electric"></div>
+          <div class="field" id="af-engine"><label>מנוע / Engine</label>
+            <select id="a-engine" onchange="toggleOther('a-engine','a-engine-other')"><option value="">בחר סוג מנוע</option></select>
+            <input id="a-engine-other" style="display:none;margin-top:8px" placeholder="הקלד מנוע / Engine">
+          </div>
           <div class="field"><label>גודל רכב</label><input id="a-size" placeholder="קומפקטי / משפחתי / SUV גדול"></div>
           <div class="field"><label>אזור איסוף</label><input id="a-location" placeholder="קראון הייטס / קינגסטון"></div>
         </div>
@@ -1763,7 +1796,7 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;ba
       </div>
       <div class="divider">שינוי פרטי התחברות</div>
       <div class="field"><label>מייל חדש (להשאיר ריק אם אין שינוי)</label><input id="ac-mail" type="email" dir="ltr" placeholder="new@email.com"></div>
-      <div class="field"><label>סיסמה חדשה (להשאיר ריק אם אין שינוי)</label><input id="ac-pass" type="password" placeholder="לפחות 6 תווים"></div>
+      <div class="field"><label>סיסמה חדשה (להשאיר ריק אם אין שינוי)</label><input id="ac-pass" type="password" placeholder="לפחות 6 תווים"><button type="button" class="linklike" style="display:block;margin-top:6px" onclick="togglePass('ac-pass',this)">הצג סיסמה</button></div>
       <div class="note" style="margin-top:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><div>שינוי מייל או סיסמה עשוי לדרוש התחברות מחדש מטעמי אבטחה.</div></div>
       <div class="m-actions"><button class="btn btn-ghost" onclick="closeOv('ov-account')">ביטול</button><button class="btn btn-gold grow" onclick="saveAccount()">שמירת השינויים</button></div>
     </div>
@@ -1999,7 +2032,10 @@ const CAR_MAKES_MODELS={
   "Volkswagen":["Jetta","Passat","Arteon","Golf","GTI","Taos","Tiguan","Atlas","ID.4","Beetle"],
   "Volvo":["S60","S90","V60","V90","XC40","XC60","XC90","C40","EX30","EX90"]
 };
-const ENGINE_TYPES=["3 צילינדרים טורבו","4 צילינדרים","4 צילינדרים טורבו","V6","V6 טורבו","V8","V8 טורבו","היברידי","היברידי נטען (PHEV)","חשמלי","דיזל","דיזל טורבו","1.5L","1.6L","2.0L","2.4L","2.5L","3.0L","3.5L","5.0L"];
+const ENGINE_TYPES=["4-cylinder","6-cylinder","8-cylinder","Hybrid","Plug-in Hybrid","Electric","Diesel","Turbo","V6","V8"];
+const CAR_COLORS=["שחור","לבן","כסף","אפור","כחול","אדום","ירוק","חום","בז׳","זהב","כתום","צהוב"];
+const OTHER='__other__';
+function carYearList(){const max=(new Date()).getFullYear()+1;const ys=[];for(let y=max;y>=2000;y--)ys.push(y);return ys;}
 const US_STATES=["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","District of Columbia","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming","Canada","Israel","Other"];
 const RENTAL_TYPES={hourly:'לפי שעות',daily:'לפי ימים',long:'תקופות ארוכות'};
 function rentalTypesOf(c){return Array.isArray(c.rentalTypes)&&c.rentalTypes.length?c.rentalTypes:['hourly'];}
@@ -2049,7 +2085,25 @@ function bookingUnitName(){const t=selectedBookingRentalType();return t==='daily
 
 function fillSelect(id,items,placeholder){const el=$(id); if(!el)return; const cur=el.value; el.innerHTML=`<option value="">${placeholder}</option>`+items.map(x=>`<option>${esc(x)}</option>`).join(''); if(items.includes(cur))el.value=cur;}
 function populateModelSelect(makeId,modelId){const make=$(makeId)?.value||''; const models=make?CAR_MAKES_MODELS[make]||[]:[...new Set(Object.values(CAR_MAKES_MODELS).flat())].sort(); fillSelect(modelId,models,make?'כל הדגמים של '+make:'כל הדגמים');}
-function initChoiceLists(){fillSelect('q-make',Object.keys(CAR_MAKES_MODELS),'כל יצרני הרכב'); populateModelSelect('q-make','q-model'); }
+
+/* ----- owner add-car form: structured selects with "אחר / Other" fallback ----- */
+const OTHER_OPTION=`<option value="${OTHER}">אחר / Other</option>`;
+function fillFormSelect(id,items,placeholder,withOther){const el=$(id); if(!el)return; el.innerHTML=`<option value="">${placeholder}</option>`+items.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('')+(withOther?OTHER_OPTION:'');}
+function toggleOther(selectId,otherId){const s=$(selectId),o=$(otherId); if(!s||!o)return; const on=s.value===OTHER; o.style.display=on?'block':'none'; if(!on)o.value='';}
+function populateFormModels(){const make=$('a-make')?$('a-make').value:''; const models=(make&&make!==OTHER&&CAR_MAKES_MODELS[make])?CAR_MAKES_MODELS[make]:[]; fillFormSelect('a-model',models,make?'בחר דגם':'בחר יצרן תחילה',true);}
+function onFormMakeChange(){toggleOther('a-make','a-make-other'); populateFormModels(); toggleOther('a-model','a-model-other');}
+function fieldVal(selectId,otherId){const s=$(selectId); if(!s)return''; if(s.value===OTHER){const o=$(otherId); return o?o.value.trim():'';} return (s.value||'').trim();}
+function setFormField(selectId,otherId,value){const s=$(selectId),o=$(otherId); if(!s)return; value=(value==null?'':String(value)); const inList=[...s.options].some(op=>op.value===value&&op.value!==''&&op.value!==OTHER); if(value&&inList){s.value=value; if(o){o.style.display='none';o.value='';}} else if(value){s.value=OTHER; if(o){o.style.display='block';o.value=value;}} else {s.value=''; if(o){o.style.display='none';o.value='';}}}
+function setYearField(value){const s=$('a-yr'); if(!s)return; value=value?String(value):''; if(value&&![...s.options].some(op=>op.value===value)){const op=document.createElement('option');op.value=value;op.textContent=value;s.appendChild(op);} s.value=value;}
+
+function initChoiceLists(){
+  /* advanced search */
+  fillSelect('q-make',Object.keys(CAR_MAKES_MODELS),'כל יצרני הרכב'); populateModelSelect('q-make','q-model');
+  fillSelect('q-yr',carYearList(),'כל השנים'); fillSelect('q-color',CAR_COLORS,'כל הצבעים'); fillSelect('q-engine',ENGINE_TYPES,'כל סוגי המנוע');
+  /* owner add-car form */
+  fillFormSelect('a-make',Object.keys(CAR_MAKES_MODELS),'בחר יצרן',true); populateFormModels();
+  fillFormSelect('a-yr',carYearList(),'בחר שנה',false); fillFormSelect('a-color',CAR_COLORS,'בחר צבע',true); fillFormSelect('a-engine',ENGINE_TYPES,'בחר סוג מנוע',true);
+}
 
 
 const $ = id => document.getElementById(id);
@@ -2077,7 +2131,7 @@ function renderNav(){
     el.innerHTML = `
       <span class="who">שלום, <b>${esc((u.name||'משתמש').split(' ')[0])}</b> · ${roleTxt}</span>
       <button class="btn btn-gold" onclick="${mainAction}">${mainLabel}</button>
-      ${role==='admin'?'':`<button class="btn btn-dark-out" onclick="openAccount()" title="עריכת פרטי החשבון">⚙ החשבון</button>`} <button class="btn btn-dark-out" onclick="logout()">יציאה</button>`;
+      ${role==='admin'?'':`<button class="btn btn-dark-out" onclick="openAccount()" title="עריכת פרטי החשבון">⚙ החשבון</button>`} <button class="btn btn-dark-out" onclick="logout()">יציאה מהמערכת</button>`;
   }
 }
 
@@ -2122,7 +2176,15 @@ function privacyHTML(){return `
     <p>משתמש יכול לבקש עדכון או מחיקה של מידע דרך שירות הלקוחות. ייתכן שנשמור רשומות מסוימות לתיעוד, אבטחה, מחלוקות או דרישות חוק.</p>
   </div>`}
 
-function logout(){if(CLOUD&&fauth.currentUser){fauth.signOut()}state.session=null;stopUserFeeds();stopAdminFeeds();renderNav();toggleChat(false);updateBadge();showToast('התנתקת מהחשבון')}
+function togglePass(id,btn){const el=$(id); if(!el)return; const show=el.type==='password'; el.type=show?'text':'password'; if(btn)btn.textContent=show?'הסתר סיסמה':'הצג סיסמה';}
+function logout(){
+  if(CLOUD&&fauth.currentUser){fauth.signOut()}
+  state.session=null;stopUserFeeds();stopAdminFeeds();
+  ['ov-owner','ov-renter','ov-admin','ov-account','ov-profile','ov-book','ov-auth'].forEach(id=>{const o=$(id);if(o&&o.classList.contains('open'))closeOv(id);});
+  toggleChat(false);renderNav();updateBadge();render();
+  try{window.scrollTo({top:0,behavior:'auto'})}catch(e){}
+  showToast('יצאת מהמערכת בהצלחה');
+}
 
 /* ================= AUTH ================= */
 function openAuth(role){
@@ -2458,6 +2520,8 @@ function matchesSearch(c){
   if(q.make && !norm(c.make).includes(norm(q.make)))return false;
   if(q.model && !norm(c.model).includes(norm(q.model)))return false;
   if(q.color && !norm(c.color).includes(norm(q.color)))return false;
+  if(q.yr && String(c.yr)!==String(q.yr))return false;
+  if(q.engine && !norm(c.engine).includes(norm(q.engine)))return false;
   if(q.cat && !norm(c.cat).includes(norm(q.cat)))return false;
   if(q.fuel && c.fuel!==q.fuel)return false;
   if(q.seats && String(c.seats)!==String(q.seats))return false;
@@ -2487,6 +2551,8 @@ function updateSearch(){
     make:$('q-make')&&$('q-make').value,
     model:$('q-model')&&$('q-model').value,
     color:$('q-color')&&$('q-color').value,
+    yr:$('q-yr')&&$('q-yr').value,
+    engine:$('q-engine')&&$('q-engine').value,
     cat:$('q-cat')&&$('q-cat').value,
     fuel:$('q-fuel')&&$('q-fuel').value,
     seats:$('q-seats')&&$('q-seats').value,
@@ -2495,7 +2561,7 @@ function updateSearch(){
   render();
 }
 function clearSearch(){
-  ['q-free','q-make','q-model','q-color','q-cat','q-rental','q-fuel','q-seats'].forEach(id=>{if($(id))$(id).value=''});
+  ['q-free','q-make','q-model','q-color','q-yr','q-engine','q-cat','q-rental','q-fuel','q-seats'].forEach(id=>{if($(id))$(id).value=''});
   populateModelSelect('q-make','q-model');
   document.querySelectorAll('.rent-chip,.type-chip').forEach(b=>b.classList.remove('on'));
   searchQ={};render();
@@ -2574,11 +2640,12 @@ function editCar(id){
   const c=state.cars.find(x=>x.id===id);
   editId=id;
   setDash('add');
-  $('a-make').value=c.make;$('a-model').value=c.model;$('a-yr').value=c.yr;
-  $('a-color').value=c.color||'';$('a-cat').value=c.cat;$('a-price-hourly').value=c.priceHourly||c.price||'';$('a-price-daily').value=c.priceDaily||'';$('a-price-weekly').value=c.priceWeekly||c.priceLong||'';
+  setFormField('a-make','a-make-other',c.make); populateFormModels(); setFormField('a-model','a-model-other',c.model);
+  setYearField(c.yr); setFormField('a-color','a-color-other',c.color); setFormField('a-engine','a-engine-other',c.engine);
+  $('a-cat').value=c.cat;$('a-price-hourly').value=c.priceHourly||c.price||'';$('a-price-daily').value=c.priceDaily||'';$('a-price-weekly').value=c.priceWeekly||c.priceLong||'';
   $('a-seats').value=c.seats;$('a-gear').value=c.gear;$('a-fuel').value=c.fuel;
   $('a-tags').value=c.tags.join(', ');$('a-status').value=c.status;
-  $('a-engine').value=c.engine||'';$('a-size').value=c.size||'';$('a-location').value=c.location||'';setRentalChecks(c.rentalTypes);
+  $('a-size').value=c.size||'';$('a-location').value=c.location||'';setRentalChecks(c.rentalTypes);
   formPhotos=[...c.photos];renderPhotoGrid();
   $('form-title').textContent='עריכת '+c.make+' '+c.model;
   $('a-save').textContent='שמירת שינויים';$('a-cancel').style.display='block';
@@ -2590,7 +2657,10 @@ function editCar(id){
 }
 function resetCarForm(){
   editId=null;
-  ['a-make','a-model','a-yr','a-color','a-price-hourly','a-price-daily','a-price-weekly','a-tags','a-engine','a-size','a-location'].forEach(i=>$(i).value='');
+  ['a-price-hourly','a-price-daily','a-price-weekly','a-tags','a-size','a-location'].forEach(i=>$(i).value='');
+  ['a-make','a-model','a-yr','a-color','a-engine'].forEach(i=>{if($(i))$(i).value='';});
+  ['a-make-other','a-model-other','a-color-other','a-engine-other'].forEach(i=>{if($(i)){$(i).value='';$(i).style.display='none';}});
+  populateFormModels();
   $('a-cat').selectedIndex=0;$('a-seats').value='5';$('a-gear').selectedIndex=0;$('a-fuel').selectedIndex=0;$('a-status').value='available';setRentalChecks(['hourly']);
   formPhotos=[];renderPhotoGrid();
   ['af-make','af-model','af-yr','af-rentals','af-price-hourly','af-price-daily','af-price-weekly'].forEach(i=>$(i)&&$(i).classList.remove('err'));
@@ -2615,14 +2685,15 @@ function renderPhotoGrid(){
   $('drop-photos').classList.remove('err-b');
 }
 function saveCar(){
-  const make=$('a-make').value.trim(),model=$('a-model').value.trim();
+  const make=fieldVal('a-make','a-make-other'),model=fieldVal('a-model','a-model-other');
   const yr=+$('a-yr').value;
   const priceHourly=+$('a-price-hourly').value, priceDaily=+$('a-price-daily').value, priceWeekly=+$('a-price-weekly').value;
   let bad=false;const mk=(id,b)=>{$(id).classList.toggle('err',b);if(b)bad=true};
-  const color=$('a-color').value.trim();
+  const color=fieldVal('a-color','a-color-other');
+  const maxYr=(new Date()).getFullYear()+1;
   const rentalTypes=selectedRentalTypes();
   mk('af-rentals',rentalTypes.length===0);
-  mk('af-make',!make);mk('af-model',!model);mk('af-yr',!(yr>=2000&&yr<=2027));mk('af-color',!color);
+  mk('af-make',!make);mk('af-model',!model);mk('af-yr',!(yr>=2000&&yr<=maxYr));mk('af-color',!color);
   mk('af-price-hourly',rentalTypes.includes('hourly')&&!(priceHourly>0));
   mk('af-price-daily',rentalTypes.includes('daily')&&!(priceDaily>0));
   mk('af-price-weekly',rentalTypes.includes('long')&&!(priceWeekly>0));
@@ -2631,9 +2702,9 @@ function saveCar(){
   const price = priceHourly || priceDaily || priceWeekly;
   const data={make,model,yr,price,priceHourly,priceDaily,priceWeekly,color,cat:$('a-cat').value,rentalTypes,
     seats:$('a-seats').value,gear:$('a-gear').value,fuel:$('a-fuel').value,
-    engine:$('a-engine').value.trim(),size:$('a-size').value.trim(),location:$('a-location').value.trim(),
+    engine:fieldVal('a-engine','a-engine-other'),size:$('a-size').value.trim(),location:$('a-location').value.trim(),
     tags:$('a-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
-    status:$('a-status').value,photos:[...formPhotos]};
+    status:$('a-status').value,photos:[...formPhotos],updatedAt:Date.now()};
   if(CLOUD){
     const payload=editId?data:{...data,ownerId:state.session.id,ownerEmail:state.session.email||'',ret:'',createdAt:Date.now()};
     const op=editId? db.collection('cars').doc(editId).update(payload)
@@ -3028,6 +3099,7 @@ function applyPrefsToSearch(){
   const p=(me()&&me().prefs)||{};
   closeOv('ov-renter');scrollToFleet();
   if($('q-make'))$('q-make').value=p.make||'';
+  populateModelSelect('q-make','q-model');
   if($('q-color'))$('q-color').value=p.color||'';
   if($('q-maxprice'))$('q-maxprice').value=p.budget||'';
   if($('q-seats'))$('q-seats').value=p.seats||'';
@@ -3502,7 +3574,10 @@ function participantsOf(tid){
   return state.session?[state.session.id]:[];
 }
 function pushMsg(tid,role,uid,text,parts,extra){
-  const m={tid,role,uid,text,ts:Date.now(),participants:parts||participantsOf(tid),...(extra||{})};
+  const ex={...(extra||{})};
+  // Link booking-thread chat to its car so the server can bump the car to the top on new messages.
+  if(!ex.carId && typeof tid==='string' && tid[0]==='b'){const b=state.bookings.find(x=>'b'+x.id===tid); if(b&&b.carId)ex.carId=b.carId;}
+  const m={tid,role,uid,text,ts:Date.now(),participants:parts||participantsOf(tid),...ex};
   if(CLOUD){db.collection('messages').add(m).catch(cloudErr);}
   state.msgs.push(m);
   if(activeTid===tid && $('chat-panel').classList.contains('open')){
@@ -3659,7 +3734,7 @@ function startGlobalFeeds(){
     render();
   },cloudErr);
   db.collection('cars').onSnapshot(sn=>{
-    state.cars=sn.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    state.cars=sn.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>((b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0)));
     refreshOpenViews();
   },cloudErr);
   db.collection('ratings').onSnapshot(sn=>{
