@@ -2808,6 +2808,13 @@ function applyRealtimeData(d){
   }catch(e){console.error('Realtime apply failed',e)}
   finally{rtApplying=false;}
 }
+let rtInitialSnapshotReceived=false;
+let rtRemoteStateExists=false;
+function hasMeaningfulLocalData(){
+  return ['owners','renters','cars','bookings','msgs','ratings','notifications'].some(k=>Array.isArray(state[k])&&state[k].length>0)
+    || !!(state.users&&Object.keys(state.users).length);
+}
+
 function scheduleRealtimeSave(){
   if(!REALTIME || !RT_REF || rtApplying)return;
   clearTimeout(rtWriteTimer);
@@ -2840,8 +2847,17 @@ async function ensureRealtimeAuthFromMemory(){
     return !!(RT_AUTH&&RT_AUTH.currentUser);
   }catch(e){ console.warn('Realtime auto auth failed', e); return false; }
 }
-async function pushRealtimeNow(){
+async function pushRealtimeNow(options={}){
   if(!REALTIME || !RT_REF || rtApplying)return Promise.resolve(false);
+  // לעולם לא כותבים state מקומי לפני שקיבלנו את תמונת Firebase הראשונה.
+  // זה מונע מרענון/גלישה בסתר/כניסת מנהל לדרוס מסד נתונים קיים במערכים ריקים.
+  if(!rtInitialSnapshotReceived && !options.allowBootstrap){
+    console.warn('Realtime write blocked until initial Firebase snapshot is loaded');
+    return Promise.resolve(false);
+  }
+  // אתחול מסד ריק מותר רק כאשר Firebase אכן ריק ויש נתונים מקומיים ממשיים.
+  if(options.allowBootstrap && rtRemoteStateExists) return Promise.resolve(false);
+  if(options.allowBootstrap && !hasMeaningfulLocalData()) return Promise.resolve(false);
   if(window.CROWNDRIVE_AUTH_REQUIRED_FOR_REALTIME && RT_AUTH && !RT_AUTH.currentUser){
     await ensureRealtimeAuthFromMemory();
     if(!RT_AUTH.currentUser){
@@ -2907,7 +2923,7 @@ function initRealtime(){
           }
           const saved=savedLogin&&savedLogin();
           restoreSessionFromFirebaseUser(user,(saved&&saved.role)||(state.session&&state.session.role));
-          setTimeout(()=>pushRealtimeNow(),350);
+          setTimeout(()=>{ if(rtInitialSnapshotReceived) pushRealtimeNow(); },350);
         }
       });
     }
@@ -2915,8 +2931,10 @@ function initRealtime(){
     REALTIME=true;
     RT_REF.on('value', snap=>{
       const v=snap.val();
+      rtInitialSnapshotReceived=true;
+      rtRemoteStateExists=!!(v && v.data);
       if(v && v.data) applyRealtimeData(v.data);
-      else if(!v) pushRealtimeNow();
+      else if(!v && hasMeaningfulLocalData()) pushRealtimeNow({allowBootstrap:true});
     }, err=>{console.error('Realtime listener failed',err);safeToast('חיבור זמן אמת נכשל: '+firebaseErrorText(err));});
     window.addEventListener('online',()=>pushRealtimeNow());
     // Do a tiny diagnostic write first so permission/config problems are visible immediately.
@@ -5107,8 +5125,8 @@ function sendChatImage(input){
 $('cp-text').addEventListener('keydown',e=>{if(e.key==='Enter')sendMsg()});
 
 /* ===== ratings-and-profiles engine ===== */
-state.ratings = [];
-state.users = {};
+state.ratings = Array.isArray(state.ratings) ? state.ratings : [];
+state.users = (state.users && typeof state.users==='object') ? state.users : {};
 const userOf = uid => state.users[uid] || null;
 let profOwnerId=null;
 function ownerStats(oid){
@@ -5639,7 +5657,14 @@ document.querySelectorAll('.sec-head,.fleet-side,.how-grid,.foot-cta,.strip-in')
   window.CROWNDRIVE_SIZE_STABILITY='no-loop-final-v3';
 })();
 
-window.addEventListener('beforeunload', persistState);
+window.addEventListener('beforeunload', ()=>{
+  try{
+    window.CROWNDRIVE_SUPPRESS_REALTIME_WRITE=true;
+    persistState();
+  }finally{
+    window.CROWNDRIVE_SUPPRESS_REALTIME_WRITE=false;
+  }
+});
 window.CROWNDRIVE_DIAGNOSTICS=function(){return {cars:state.cars.length, owners:state.owners.length, renters:state.renters.length, bookings:state.bookings.length, realtime:!!REALTIME, firebaseUser:!!(RT_AUTH&&RT_AUTH.currentUser), lastRealtimeOk:window.CROWNDRIVE_LAST_REALTIME_OK||0, lastRealtimeError:String((window.CROWNDRIVE_LAST_REALTIME_ERROR&&window.CROWNDRIVE_LAST_REALTIME_ERROR.message)||'')};};
 loadState();
 ensureStateIntegrity();
@@ -6321,7 +6346,7 @@ setInterval(()=>{
 </script>
 \n<script id="crowndrive-final-functional-fixes-v3">
 (function(){
-  window.CROWNDRIVE_FUNCTIONAL_FIXES='2026-07-10-v3';
+  window.CROWNDRIVE_FUNCTIONAL_FIXES='2026-07-10-v4-data-protection';
   const completedBooking=b=>!!b&&(b.done===true||b.status==='done');
   const bookingCar=b=>state.cars.find(c=>c.id===b.carId)||null;
 
