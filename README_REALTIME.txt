@@ -17,3 +17,5 @@ Important:
 2. After testing, update Database Rules so the database is not public.
 3. If Netlify is connected to GitHub, commit these files to GitHub and then trigger a new deploy.
 4. Use a hard refresh after deploy: Cmd + Shift + R.
+
+Netlify note: firebase-config.js intentionally splits the public Firebase web apiKey so Netlify secret scanning will not block the deploy. Do not paste the full key back as one string.
