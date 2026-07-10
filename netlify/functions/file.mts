@@ -1,9 +1,6 @@
-export default async (request: Request) => {
-  return new Response(JSON.stringify({
-    ok: false,
-    message: "File serving is disabled in this deploy. No Netlify Blobs required."
-  }), {
+export default async function handler() {
+  return new Response(JSON.stringify({ ok: true, disabled: true, message: "Files are handled locally in the browser." }), {
     status: 200,
-    headers: { "content-type": "application/json; charset=utf-8" }
+    headers: { "content-type": "application/json" }
   });
-};
+}

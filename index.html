@@ -877,6 +877,54 @@ html,body{overflow-x:hidden!important}
 .booking-cards{display:flex;flex-direction:column;gap:11px}.booking-card{border:1px solid var(--hair);border-radius:16px;background:linear-gradient(180deg,#fff,#F8FAFC);padding:14px}.booking-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:8px}.booking-title{font-weight:800;color:#17212B}.booking-meta{font-size:.78rem;color:var(--mut)}.booking-bottom{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-top:10px}.booking-money{font-weight:800;color:var(--gold-d);font-size:1.02rem}.mini-row{display:flex;gap:7px;flex-wrap:wrap}.prefs-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}.storage-note{background:#EEF5FB;border:1px solid rgba(63,107,142,.15);color:#31567A;border-radius:14px;padding:11px 13px;font-size:.78rem;margin-bottom:14px}
 @media(max-width:760px){.personal-hero,.personal-grid{grid-template-columns:1fr}.personal-avatar{display:none}.prefs-row{grid-template-columns:1fr}.quick-actions{grid-template-columns:1fr}}
 
+
+
+/* ===== FINAL ADMIN MOBILE + PERSISTENT LOGIN POLISH ===== */
+.admin-mobile-note{display:none;background:#EEF4FA;border:1px solid rgba(63,107,142,.18);border-radius:14px;padding:10px 12px;margin:0 0 12px;color:#425466;font-size:.82rem}
+#ov-admin .admin-panel{max-width:100%}
+#ov-admin .tbl{width:100%}
+#ov-admin .admin-panel{overflow:auto;-webkit-overflow-scrolling:touch}
+#ov-admin .admin-actions-bar .btn{white-space:nowrap}
+@media(max-width:760px){
+  body:has(#ov-admin.open){overflow:hidden!important}
+  #ov-admin{padding:0;align-items:stretch;background:#EEF3F8}
+  .admin-mobile-note{display:block}
+  #ov-admin .admin-modal{width:100vw;height:100dvh;max-height:100dvh;border-radius:0}
+  #ov-admin .m-head{padding:12px 14px;gap:10px;position:sticky;top:0;z-index:7}
+  #ov-admin .m-head h3{font-size:1rem;line-height:1.25;max-width:calc(100vw - 65px)}
+  #ov-admin .m-close{width:38px;height:38px;border-radius:12px}
+  #ov-admin .m-body{background:#EEF3F8}
+  #ov-admin .dash-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:10px;overflow:visible;position:sticky;top:0;z-index:6}
+  #ov-admin .dash-tabs button{margin:0;padding:10px 6px;font-size:.72rem;border-radius:11px;white-space:normal;line-height:1.2;min-height:42px}
+  #admin-body{padding:12px;overflow:auto}
+  #ov-admin .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:12px}
+  #ov-admin .kpi{padding:13px 11px;border-radius:14px}
+  #ov-admin .kpi b{font-size:1.22rem}
+  #ov-admin .kpi span{font-size:.66rem;letter-spacing:0}
+  .admin-actions-bar{display:block;padding:14px;border-radius:16px;margin-bottom:12px}
+  .admin-actions-bar b{font-size:1rem}
+  .admin-actions-bar span{display:block;font-size:.78rem;line-height:1.45;margin-top:4px}
+  .admin-actions-bar>div:last-child{display:grid!important;grid-template-columns:1fr;gap:8px!important;margin-top:12px}
+  .admin-actions-bar .btn{width:100%;padding:12px 10px}
+  .admin-section-grid{grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px}
+  .admin-mini-card{padding:13px;border-radius:14px}
+  .admin-mini-card b{font-size:1rem}
+  .admin-mini-card span{font-size:.72rem;line-height:1.35}
+  .admin-overview-grid{grid-template-columns:1fr;gap:12px}
+  .admin-panel{padding:13px;border-radius:16px;box-shadow:0 8px 20px rgba(20,28,40,.05)}
+  .admin-panel h4{font-size:.95rem;margin-bottom:10px}
+  #ov-admin .tbl{min-width:760px;font-size:.76rem}
+  #ov-admin .tbl th,#ov-admin .tbl td{padding:8px 7px}
+  #ov-admin .mini{padding:7px 10px;margin:2px 0;font-size:.72rem}
+  .admin-chat-row{padding:11px;border-radius:13px;align-items:flex-start}
+  .admin-chat-row .sm{font-size:.72rem}
+  .cp-ava{width:36px;height:36px;font-size:.75rem}
+}
+@media(max-width:420px){
+  #ov-admin .dash-tabs{grid-template-columns:repeat(2,1fr)}
+  #ov-admin .kpis,.admin-section-grid{grid-template-columns:1fr}
+}
+
 </style>
 </head>
 <body>
@@ -1595,7 +1643,7 @@ function makeAuthUser(u){
   return {
     uid:u.uid,
     email:u.email,
-    async updateEmail(newEmail){ const r=await api('updateAuth',{uid:u.uid,email:newEmail}); localStorage.setItem('cd_uid',u.uid); localStorage.setItem('cd_email',newEmail); this.email=newEmail; return r; },
+    async updateEmail(newEmail){ const r=await api('updateAuth',{uid:u.uid,email:newEmail}); rememberAuthIdentity(u.uid,newEmail); this.email=newEmail; return r; },
     async updatePassword(newPass){ return api('updateAuth',{uid:u.uid,pass:newPass}); }
   };
 }
@@ -1606,22 +1654,77 @@ db = { collection: makeCollection };
 fauth = {
   currentUser:null,
   onAuthStateChanged(fn){ authListeners.push(fn); setTimeout(()=>fn(this.currentUser),0); return ()=>{}; },
-  async signInWithEmailAndPassword(email,pass){ const r=await api('login',{email,pass}); this.currentUser=makeAuthUser(r.user); localStorage.setItem('cd_uid',r.user.uid); localStorage.setItem('cd_email',r.user.email); notifyAuth(); return {user:this.currentUser}; },
-  async createUserWithEmailAndPassword(email,pass){ const r=await api('signup',{email,pass}); this.currentUser=makeAuthUser(r.user); localStorage.setItem('cd_uid',r.user.uid); localStorage.setItem('cd_email',r.user.email); notifyAuth(); return {user:this.currentUser}; },
+  async signInWithEmailAndPassword(email,pass){ const r=await api('login',{email,pass}); this.currentUser=makeAuthUser(r.user); rememberAuthIdentity(r.user.uid,r.user.email); notifyAuth(); return {user:this.currentUser}; },
+  async createUserWithEmailAndPassword(email,pass){ const r=await api('signup',{email,pass}); this.currentUser=makeAuthUser(r.user); rememberAuthIdentity(r.user.uid,r.user.email); notifyAuth(); return {user:this.currentUser}; },
   async sendPasswordResetEmail(email){ await api('resetPassword',{email}); },
-  async signOut(){ this.currentUser=null; localStorage.removeItem('cd_uid'); localStorage.removeItem('cd_email'); notifyAuth(); }
+  async signOut(){ this.currentUser=null; clearAuthIdentity(); notifyAuth(); }
 };
 (function restoreSession(){
-  const uid=localStorage.getItem('cd_uid'), email=localStorage.getItem('cd_email');
-  if(uid&&email) fauth.currentUser=makeAuthUser({uid,email});
+  const uid=localStorage.getItem('cd_uid')||getCookieRaw(COOKIE_UID_KEY), email=localStorage.getItem('cd_email')||getCookieRaw(COOKIE_EMAIL_KEY);
+  if(uid&&email){ rememberAuthIdentity(uid,email); fauth.currentUser=makeAuthUser({uid,email}); }
 })();
 const LOCAL_KEY = 'crowndrive_site_data_v4';
+const AUTH_MEMORY_KEY = 'crowndrive_saved_login_until_deleted_v1';
+
+const COOKIE_SESSION_KEY = 'crowndrive_session_until_deleted_v1';
+const COOKIE_LOGIN_KEY = 'crowndrive_login_until_deleted_v1';
+const COOKIE_UID_KEY = 'cd_uid';
+const COOKIE_EMAIL_KEY = 'cd_email';
+const COOKIE_MAX_AGE = 60*60*24*365*10; // 10 שנים — עד יציאה/מחיקת נתוני אתר
+function cookieOpts(){ return '; Max-Age='+COOKIE_MAX_AGE+'; Path=/; SameSite=Lax'+(location.protocol==='https:'?'; Secure':''); }
+function setCookieRaw(name,value){ try{ document.cookie=name+'='+encodeURIComponent(value)+cookieOpts(); }catch(e){} }
+function getCookieRaw(name){
+  try{
+    const hit=document.cookie.split('; ').find(x=>x.startsWith(name+'='));
+    return hit?decodeURIComponent(hit.slice(name.length+1)):'';
+  }catch(e){return ''}
+}
+function delCookie(name){ try{ document.cookie=name+'=; Max-Age=0; Path=/; SameSite=Lax'+(location.protocol==='https:'?'; Secure':''); }catch(e){} }
+function packCookie(obj){ try{ return btoa(unescape(encodeURIComponent(JSON.stringify(obj||{})))); }catch(e){ return ''; } }
+function unpackCookie(v){ try{ return JSON.parse(decodeURIComponent(escape(atob(v||'')))); }catch(e){ return null; } }
+function setCookieJSON(name,obj){ const v=packCookie(obj); if(v) setCookieRaw(name,v); }
+function getCookieJSON(name){ return unpackCookie(getCookieRaw(name)); }
+function sessionForCookie(u){
+  if(!u)return null;
+  return {role:u.role,id:u.id,name:u.name||'',email:u.email||'',phone:u.phone||'',ts:Date.now()};
+}
+function rememberAuthIdentity(uid,email){
+  if(uid){ localStorage.setItem('cd_uid',uid); setCookieRaw(COOKIE_UID_KEY,uid); }
+  if(email){ localStorage.setItem('cd_email',email); setCookieRaw(COOKIE_EMAIL_KEY,email); }
+}
+function clearAuthIdentity(){
+  ['cd_uid','cd_email'].forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});
+  delCookie(COOKIE_UID_KEY); delCookie(COOKIE_EMAIL_KEY);
+}
+function persistSessionCookie(){
+  if(state && state.session) setCookieJSON(COOKIE_SESSION_KEY, sessionForCookie(state.session));
+  else delCookie(COOKIE_SESSION_KEY);
+}
+function rememberLogin(role,email,pass){
+  const data={role,email,pass,ts:Date.now()};
+  try{ localStorage.setItem(AUTH_MEMORY_KEY, JSON.stringify(data)); }catch(e){}
+  setCookieJSON(COOKIE_LOGIN_KEY,data);
+}
+function savedLogin(){
+  try{ const local=JSON.parse(localStorage.getItem(AUTH_MEMORY_KEY)||'null'); if(local)return local; }catch(e){}
+  return getCookieJSON(COOKIE_LOGIN_KEY);
+}
+function prefillSavedLogin(role){
+  const s=savedLogin();
+  if(!s)return;
+  if(role && s.role && role!==s.role)return;
+  const mail=document.getElementById('l-mail'), pass=document.getElementById('l-pass');
+  if(mail && s.email) mail.value=s.email;
+  if(pass && s.pass) pass.value=s.pass;
+}
+function clearSavedLogin(){ try{ localStorage.removeItem(AUTH_MEMORY_KEY); }catch(e){} delCookie(COOKIE_LOGIN_KEY); }
 function persistState(){
   try{
     const copy={
       owners:state.owners||[], renters:state.renters||[], cars:state.cars||[], bookings:state.bookings||[],
       session:state.session||null, msgs:state.msgs||[], ratings:state.ratings||[], users:state.users||{}, seq
     };
+    persistSessionCookie();
     localStorage.setItem(LOCAL_KEY, JSON.stringify(copy));
     return true;
   }catch(e){
@@ -1633,11 +1736,12 @@ function persistState(){
 function loadState(){
   try{
     const raw=localStorage.getItem(LOCAL_KEY);
-    if(!raw)return;
+    if(!raw){ const cs=getCookieJSON(COOKIE_SESSION_KEY); if(cs&&cs.role&&cs.id)state.session=cs; return; }
     const d=JSON.parse(raw);
     ['owners','renters','cars','bookings','msgs','ratings'].forEach(k=>{ if(Array.isArray(d[k])) state[k]=d[k]; });
     if(d.users&&typeof d.users==='object')state.users=d.users;
     if(d.session)state.session=d.session;
+    if(!state.session){ const cs=getCookieJSON(COOKIE_SESSION_KEY); if(cs&&cs.role&&cs.id)state.session=cs; }
     if(d.seq&&Number.isFinite(+d.seq))seq=+d.seq;
   }catch(e){console.error('local load failed', e)}
 }
@@ -1801,7 +1905,7 @@ function renderNav(){
       ${role==='admin'?'':`<button class="btn btn-dark-out" onclick="openAccount()" title="עריכת פרטי החשבון">⚙ החשבון</button>`} <button class="btn btn-dark-out" onclick="logout()">יציאה מהמערכת</button>`;
   }
 }
-function logout(){if(CLOUD&&fauth.currentUser){fauth.signOut()}state.session=null;localStorage.removeItem('cd_uid');localStorage.removeItem('cd_email');persistState();stopUserFeeds();stopAdminFeeds();renderNav();toggleChat(false);updateBadge();showToast('יצאת מהמערכת בהצלחה')}
+function logout(){if(CLOUD&&fauth.currentUser){fauth.signOut()}state.session=null;clearAuthIdentity();delCookie(COOKIE_SESSION_KEY);persistState();stopUserFeeds();stopAdminFeeds();renderNav();toggleChat(false);updateBadge();showToast('יצאת מהמערכת בהצלחה')}
 
 /* ================= AUTH ================= */
 function openAuth(role){
@@ -1811,6 +1915,7 @@ function openAuth(role){
   $('auth-title').textContent='כניסה לחשבון';
   openOv('ov-auth');
   if(role) pickRole(role);
+  setTimeout(()=>prefillSavedLogin(authRole),0);
 }
 function pickRole(r){
   if(r==='admin'){
@@ -1881,6 +1986,7 @@ window.addEventListener('keydown',e=>{
 const ADMIN_EMAIL='shmuel123770@icloud.com', ADMIN_PASS='amarZ770@';
 let authJustSignedUp=false, pendingProfile=null;
 function afterLoginUI(){
+  persistState();
   closeOv('ov-auth'); renderNav(); updateBadge();
   const u=me();
   if(u&&u.name)showToast('ברוך הבא, '+u.name.split(' ')[0]);
@@ -1922,6 +2028,8 @@ function saveAccount(){
       Object.assign(state.session,{name,phone});
       if(acLicData)state.session.lic=acLicData;
       if(newMail)state.session.email=newMail;
+      if(newMail||newPass) rememberLogin(state.session.role, state.session.email||newMail||u.email, newPass||'');
+      persistSessionCookie();
       renderNav();closeOv('ov-account');showToast('הפרטים עודכנו בהצלחה');
     }).catch(e=>{
       const msg=((e&&e.code)||'').indexOf('requires-recent-login')>-1
@@ -1945,6 +2053,7 @@ function saveAccount(){
   Object.assign(state.session,{name,phone});
   if(newMail)state.session.email=newMail;
   if(newPass)state.session.pass=newPass;
+  if(newMail||newPass) rememberLogin(u.role, state.session.email||rec.email, newPass||rec.pass);
   if(acLicData)state.session.lic=acLicData;
   renderNav();render();closeOv('ov-account');showToast('הפרטים עודכנו בהצלחה');
 }
@@ -1968,12 +2077,14 @@ function doLogin(){
   // כניסת מנהל מוסתרת: בוחרים 'אני בעל רכב' ומזינים את פרטי המנהל.
   // אין כפתור מנהל ואין כתובת #admin.
   if(authRole==='owner' && em===ADMIN_EMAIL && ps===ADMIN_PASS){
+    rememberLogin('owner',em,ps);
     state.session={role:'admin',id:'admin',name:'מנהל האתר',email:ADMIN_EMAIL};
     if(CLOUD)startAdminFeeds();
     afterLoginUI();
     return;
   }
   if(adminSecretMode && em===ADMIN_EMAIL && ps===ADMIN_PASS){
+    rememberLogin('admin',em,ps);
     state.session={role:'admin',id:'admin',name:'מנהל האתר',email:ADMIN_EMAIL};
     if(CLOUD)startAdminFeeds();
     afterLoginUI();
@@ -1992,6 +2103,7 @@ function doLogin(){
   if(!u) return;
   mark('lf-pass',u.pass!==ps);
   if(u.pass!==ps) return;
+  rememberLogin(authRole,em,ps);
   state.session={role:authRole,id:u.id,...u};
   afterLoginUI();
 }
@@ -2040,6 +2152,7 @@ function doSignup(){
   pool.push(u);
   state.users[u.id]={name:u.name,role:authRole,createdAt:u.createdAt};
   state.session={role:authRole,id:u.id,...u};
+  rememberLogin(authRole,em,ps);
   ['s-name','s-phone','s-mail','s-pass'].forEach(i=>$(i).value='');
   clearRLic(true);clearRLicBack(true);if($('lic-state'))$('lic-state').value='';
   showToast('החשבון נוצר בהצלחה');
@@ -2668,12 +2781,13 @@ function adminOverviewHTML(){
 
 function renderAdminDashboard(){
   const box=$('admin-body'); if(!box)return;
-  if(adminTab==='all')box.innerHTML=adminOverviewHTML();
-  if(adminTab==='bookings')box.innerHTML=adminKPIs()+`<div class="admin-panel"><h4>כל ההשכרות באתר</h4>${adminBookingsTable()}</div>`;
-  if(adminTab==='chats')box.innerHTML=adminKPIs()+`<div class="admin-panel"><h4>כל הצ׳אטים באתר — כולל שירות לקוחות מול מנהל המערכת</h4>${adminChatsHTML()}</div>`;
-  if(adminTab==='cars')box.innerHTML=adminKPIs()+`<div class="admin-panel"><h4>ניהול כל הרכבים באתר</h4>${adminCarsHTML()}</div>`;
-  if(adminTab==='users')box.innerHTML=adminKPIs()+`<div class="admin-panel"><h4>כל המשתמשים במערכת</h4>${adminFullUsersHTML()}</div>`;
-  if(adminTab==='data')box.innerHTML=adminKPIs()+`<div class="admin-panel"><h4>גישה מלאה וייצוא מידע</h4>${adminDataHTML()}</div>`;
+  const mobileNote='<div class="admin-mobile-note">בפלאפון: אפשר להחליק טבלאות לצדדים, וכל הכפתורים עובדים גם במסך קטן.</div>';
+  if(adminTab==='all')box.innerHTML=mobileNote+adminOverviewHTML();
+  if(adminTab==='bookings')box.innerHTML=mobileNote+adminKPIs()+`<div class="admin-panel"><h4>כל ההשכרות באתר</h4>${adminBookingsTable()}</div>`;
+  if(adminTab==='chats')box.innerHTML=mobileNote+adminKPIs()+`<div class="admin-panel"><h4>כל הצ׳אטים באתר — כולל שירות לקוחות מול מנהל המערכת</h4>${adminChatsHTML()}</div>`;
+  if(adminTab==='cars')box.innerHTML=mobileNote+adminKPIs()+`<div class="admin-panel"><h4>ניהול כל הרכבים באתר</h4>${adminCarsHTML()}</div>`;
+  if(adminTab==='users')box.innerHTML=mobileNote+adminKPIs()+`<div class="admin-panel"><h4>כל המשתמשים במערכת</h4>${adminFullUsersHTML()}</div>`;
+  if(adminTab==='data')box.innerHTML=mobileNote+adminKPIs()+`<div class="admin-panel"><h4>גישה מלאה וייצוא מידע</h4>${adminDataHTML()}</div>`;
 }
 
 /* ================= RENTER AREA ================= */
@@ -3452,6 +3566,7 @@ async function buildCloudSession(user){
   try{const d=await db.collection('private').doc(uid).get();if(d.exists)priv=d.data();}catch(e){}
   if((!priv||!Object.keys(priv).length) && pendingProfile && pendingProfile.uid===uid)priv=pendingProfile.priv||{};
   state.session={role:prof.role,id:uid,name:prof.name,createdAt:prof.createdAt,email:user.email||'',...priv};
+  persistSessionCookie();
   startUserFeeds(uid);
   afterLoginUI();
 }

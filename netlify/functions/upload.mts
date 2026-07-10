@@ -1,9 +1,6 @@
-export default async (request: Request) => {
-  return new Response(JSON.stringify({
-    ok: false,
-    message: "File upload is disabled in this deploy. Use base64/local browser storage from index.html."
-  }), {
+export default async function handler() {
+  return new Response(JSON.stringify({ ok: true, disabled: true, message: "Uploads are handled locally in the browser." }), {
     status: 200,
-    headers: { "content-type": "application/json; charset=utf-8" }
+    headers: { "content-type": "application/json" }
   });
-};
+}
