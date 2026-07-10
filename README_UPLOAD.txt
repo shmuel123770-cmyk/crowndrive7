@@ -1,22 +1,28 @@
-Crown Drive - גרסת Pro Foundation
+Crown Drive - Cloud Storage Ready
 
-מה יש בחבילה:
-- index.html - האתר המעודכן
-- netlify/functions/db.mts - מסד נתונים + התחברות + מיילים
-- package.json - dependencies ל-Netlify
-- manifest.json + service-worker.js + icons - תמיכה בסיסית ב-PWA
+Upload these files/folders to your GitHub repository crowndrive7:
 
-העלאה:
-1. GitHub -> crowndrive7 -> Add file -> Upload files
-2. העלה את כל הקבצים והתיקיות מהתיקייה הזאת
-3. Commit changes
-4. חכה ל-Netlify Published
+1. index.html
+2. package.json
+3. manifest.json
+4. service-worker.js
+5. icon-192.png
+6. icon-512.png
+7. the full netlify folder, including:
+   netlify/functions/db.mts
+   netlify/functions/upload.mts
+   netlify/functions/file.mts
 
-מומלץ ב-Netlify -> Environment variables להוסיף:
-ADMIN_EMAIL=your admin email
-ADMIN_PASS=your admin password
-SMTP_HOST=...
-SMTP_PORT=587
-SMTP_USER=...
-SMTP_PASS=...
-SMTP_FROM=Crown Drive <no-reply@crowndrive770.com>
+After upload, click Commit changes. Netlify will deploy automatically.
+
+The new cloud upload endpoints are:
+POST /.netlify/functions/upload
+GET  /.netlify/functions/file?key=...
+
+Use upload folders like:
+- car-photos
+- license-front
+- license-back
+- chat-images
+- payment-screenshots
+
