@@ -16,3 +16,7 @@ window.CROWNDRIVE_FIREBASE_CONFIG = {
   appId: "1:754093347550:web:513f0c7cfcf7a5a40fe84f",
   measurementId: "G-OYJCC93VX3"
 };
+
+// Backward compatibility alias for older script checks
+window.CROWNFIREBASE_CONFIG = window.CROWNDRIVE_FIREBASE_CONFIG;
+window.FIREBASE_CONFIG = window.CROWNDRIVE_FIREBASE_CONFIG;

@@ -1803,7 +1803,7 @@ function pushRealtimeNow(){
   });
 }
 function initRealtime(){
-  const cfg=(window.CROWNFIREBASE_CONFIG||window.FIREBASE_CONFIG||null);
+  const cfg=(window.CROWNDRIVE_FIREBASE_CONFIG||window.CROWNFIREBASE_CONFIG||window.FIREBASE_CONFIG||null);
   const ready=cfg && cfg.apiKey && cfg.databaseURL && cfg.projectId;
   if(!ready){console.warn('CrownDrive realtime: fill firebase-config.js to enable live sync.');return false;}
   if(typeof firebase==='undefined' || !firebase.initializeApp){console.warn('CrownDrive realtime: Firebase SDK not loaded.');return false;}
