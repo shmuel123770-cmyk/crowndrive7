@@ -1,6 +1,6 @@
 import { getStore } from "@netlify/blobs";
 
-const MAX_FILE_BYTES = 8 * 1024 * 1024; // 8MB
+const MAX_FILE_BYTES = 25 * 1024 * 1024; // 25MB per file; images are compressed client-side
 const ALLOWED_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "application/pdf"]);
 
 function json(statusCode: number, body: unknown) {

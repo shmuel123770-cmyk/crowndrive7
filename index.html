@@ -905,6 +905,46 @@ body::after{
   .car-type-options,.type-options,.vehicle-type-options{grid-template-columns:1fr!important;}
 }
 
+
+
+/* ===== CrownDrive Pro: desktop + mobile performance polish ===== */
+body{background:
+  radial-gradient(900px 420px at 10% 5%,rgba(63,107,142,.10),transparent 60%),
+  radial-gradient(900px 480px at 90% 18%,rgba(159,182,201,.12),transparent 55%),
+  linear-gradient(180deg,#F4F7FA 0%,#E9EEF4 42%,#F8FAFC 100%);}
+.section{contain:layout paint;}
+.card,.modal,.foot-cta,.fleet-side{backface-visibility:hidden;transform:translateZ(0);}
+.card{box-shadow:0 18px 45px rgba(25,36,48,.08);}
+.card:hover{box-shadow:0 26px 68px rgba(25,36,48,.14);}
+.gallery img{content-visibility:auto;}
+.grid{align-items:stretch;}
+#fleet::before{content:"CROWN DRIVE";position:absolute;inset-inline-start:50%;top:35px;transform:translateX(50%);font-size:clamp(3.2rem,11vw,8rem);font-weight:900;letter-spacing:.08em;color:rgba(49,86,122,.045);white-space:nowrap;pointer-events:none;z-index:0;}
+.hero{box-shadow:inset 0 -80px 110px rgba(255,255,255,.03);}
+.btn,.card-btn,.mini{will-change:transform;}
+.cp-msgs,.modal,.adm-list{overscroll-behavior:contain;}
+img{max-width:100%;}
+@media (min-width:941px){
+  .modal.wide{width:min(1120px,94vw);}
+  #ov-admin .modal.wide{width:min(1280px,96vw);}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(320px,1fr));}
+}
+@media (max-width:720px){
+  body{background:linear-gradient(180deg,#F6F8FB 0%,#EEF3F8 100%);}
+  .nav{position:sticky;}
+  .nav-in{padding:12px 14px;}
+  .logo b{font-size:1rem}.logo small{font-size:.5rem;letter-spacing:.18em}.logo-mark{width:34px;height:34px}
+  .hero-in{padding:54px 16px 132px!important;}
+  .hero h1{font-size:2rem;max-width:12ch;}
+  .hero-actions .btn{width:100%;max-width:320px;}
+  .hero-stats{display:grid;grid-template-columns:1fr 1fr;margin-top:34px;border-radius:18px;}
+  .hstat{padding:15px 8px;border:1px solid var(--hair)!important;}
+  .section{padding:42px 14px;}
+  #fleet::before{top:18px;font-size:3rem;opacity:.9;}
+  .card{min-width:0;}
+  .overlay.open{animation:fadeIn .18s ease both;}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+}
+
 </style>
 
 <link rel="manifest" href="/manifest.json">
@@ -1938,9 +1978,7 @@ function openAccount(){
 }
 $('ac-lic').addEventListener('change',e=>{
   const f=e.target.files[0]; if(!f)return;
-  const r=new FileReader();
-  r.onload=()=>{acLicData=r.result;showToast('צילום הרישיון החדש נטען')};
-  r.readAsDataURL(f);
+  readImg(f,url=>{acLicData=url;showToast('צילום הרישיון החדש נשמר בענן')},'licenses');
 });
 function saveAccount(){
   const u=me(); if(!u)return;
@@ -2072,12 +2110,12 @@ bindDrop('drop-rlic','rlic-file',f=>readImg(f,d=>{
   rlicData=d; $('rlic-img').src=d;
   $('rlic-prev').style.display='block'; $('drop-rlic').style.display='none';
   $('drop-rlic').classList.remove('err-b'); $('rlic-err').style.display='none';
-}));
+},'licenses'));
 bindDrop('drop-rlic-back','rlic-back-file',f=>readImg(f,d=>{
   rlicBackData=d; $('rlic-back-img').src=d;
   $('rlic-back-prev').style.display='block'; $('drop-rlic-back').style.display='none';
   $('drop-rlic-back').classList.remove('err-b'); $('rlic-back-err').style.display='none';
-}));
+},'licenses'));
 function clearRLic(s){rlicData=null;$('rlic-file').value='';$('rlic-prev').style.display='none';$('drop-rlic').style.display='block'}
 function clearRLicBack(s){rlicBackData=null;$('rlic-back-file').value='';$('rlic-back-prev').style.display='none';$('drop-rlic-back').style.display='block'}
 
@@ -2320,7 +2358,7 @@ bindDrop('drop-photos','ph-file',null,files=>{
     if(!f.type.startsWith('image/'))return showToast('ניתן להעלות קבצי תמונה בלבד');
     if(f.size>10*1024*1024)return showToast(f.name+' — גדול מדי (מקס׳ 10MB)');
     if(formPhotos.length>=6)return showToast('עד 6 תמונות לרכב');
-    readImg(f,d=>{formPhotos.push(d);renderPhotoGrid()});
+    readImg(f,d=>{formPhotos.push(d);renderPhotoGrid()},'car-photos');
   });
 });
 function removePhoto(i){formPhotos.splice(i,1);renderPhotoGrid()}
@@ -2729,9 +2767,7 @@ function paymentProofCell(b){
 function uploadPaymentProof(bid,input){
   const f=input.files&&input.files[0]; if(!f)return;
   if(!f.type.startsWith('image/')){showToast('נא להעלות תמונה בלבד');input.value='';return}
-  const r=new FileReader();
-  r.onload=()=>{
-    const data=r.result;
+  readImg(f,data=>{
     const b=state.bookings.find(x=>x.id===bid); if(!b)return;
     b.paymentProof=data; b.paymentProofAt=Date.now();
     const txt='השוכר שלח צילום מסך של העברת תשלום עבור הזמנה '+b.num+'.';
@@ -2739,10 +2775,9 @@ function uploadPaymentProof(bid,input){
       db.collection('bookings').doc(bid).update({paymentProof:data,paymentProofAt:b.paymentProofAt}).catch(cloudErr);
     }
     pushMsg('b'+bid,state.session?state.session.role:'renter',state.session?state.session.id:b.renterId,txt,[b.renterId,b.ownerId],{image:data,kind:'paymentProof'});
-    openRenterArea();
+    input.value=''; openRenterArea();
     showToast('צילום התשלום נשלח בצ׳אט לבעל הרכב');
-  };
-  r.readAsDataURL(f);
+  },'payment-proofs');
 }
 
 function applyPrefsToSearch(){
@@ -3022,10 +3057,45 @@ function bindDrop(dropId,fileId,single,multi){
     else if(f.files[0])single(f.files[0]);
   });
 }
-function readImg(f,cb){
+async function uploadFileToCloud(file, folder='uploads'){
+  const fd=new FormData();
+  fd.append('file',file);
+  fd.append('folder',folder);
+  const res=await fetch('/.netlify/functions/upload',{method:'POST',body:fd});
+  const data=await res.json().catch(()=>({}));
+  if(!res.ok||!data.ok)throw new Error(data.error||'Upload failed');
+  return data.url;
+}
+function compressImageFile(file, max=1600, quality=.82){
+  return new Promise(resolve=>{
+    if(!file.type.startsWith('image/')||file.type==='image/gif')return resolve(file);
+    const img=new Image(); const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      URL.revokeObjectURL(url);
+      let w=img.naturalWidth,h=img.naturalHeight;
+      const scale=Math.min(1,max/Math.max(w,h)); w=Math.round(w*scale); h=Math.round(h*scale);
+      const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      canvas.toBlob(b=>resolve(b?new File([b],(file.name||'image').replace(/\.[^.]+$/,'')+'.webp',{type:'image/webp'}):file),'image/webp',quality);
+    };
+    img.onerror=()=>{URL.revokeObjectURL(url);resolve(file)};
+    img.src=url;
+  });
+}
+function readImg(f,cb,folder='images'){
   if(!f.type.startsWith('image/'))return showToast('יש להעלות קובץ תמונה בלבד');
-  if(f.size>10*1024*1024)return showToast('הקובץ גדול מדי (מקסימום 10MB)');
-  const r=new FileReader();r.onload=()=>cb(r.result);r.readAsDataURL(f);
+  if(f.size>25*1024*1024)return showToast('הקובץ גדול מדי (מקסימום 25MB)');
+  (async()=>{
+    try{
+      const compact=await compressImageFile(f);
+      if(CLOUD){
+        const url=await uploadFileToCloud(compact,folder);
+        cb(url);
+        return;
+      }
+    }catch(e){console.warn('Cloud upload failed, using local preview',e)}
+    const r=new FileReader();r.onload=()=>cb(r.result);r.readAsDataURL(f);
+  })();
 }
 function viewLic(bid){
   const b=state.bookings.find(x=>x.id===bid);
@@ -3203,16 +3273,14 @@ function sendChatImage(input){
   const f=input.files&&input.files[0]; if(!f||!activeTid)return;
   if(CLOUD && !state.session){showToast('כדי לשלוח תמונה יש להתחבר');openAuth();input.value='';return;}
   if(!f.type.startsWith('image/')){showToast('נא לבחור קובץ תמונה');input.value='';return;}
-  const r=new FileReader();
-  r.onload=()=>{
+  readImg(f,imgUrl=>{
     const role=state.session?state.session.role:'guest';
     const uid=state.session?state.session.id:0;
     const txt=$('cp-text').value.trim()||'תמונה';
-    pushMsg(activeTid,role,uid,txt,undefined,{image:r.result,kind:'image',fileName:f.name});
+    pushMsg(activeTid,role,uid,txt,undefined,{image:imgUrl,kind:'image',fileName:f.name});
     $('cp-text').value=''; input.value='';
-    showToast('התמונה נשלחה בצ׳אט');
-  };
-  r.readAsDataURL(f);
+    showToast('התמונה נשמרה בענן ונשלחה בצ׳אט');
+  },'chat-images');
 }
 $('cp-text').addEventListener('keydown',e=>{if(e.key==='Enter')sendMsg()});
 
@@ -3397,7 +3465,7 @@ if(CLOUD){
     else{state.session=null;stopUserFeeds();stopAdminFeeds();renderNav();updateBadge();}
   });
 } else {
-  console.warn('CrownDrive: Firebase configuration is missing. Connect FIREBASE_CONFIG for live production data.');
+  console.warn('CrownDrive: Netlify Database mode active. Data updates every second.');
 }
 
 /* ---------- SCROLL DYNAMICS ---------- */

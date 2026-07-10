@@ -1,28 +1,26 @@
-Crown Drive - Cloud Storage Ready
+Crown Drive - גרסה מהירה + אחסון ענן
 
-Upload these files/folders to your GitHub repository crowndrive7:
+להעלות ל-GitHub את כל הקבצים והתיקייה netlify:
+- index.html
+- package.json
+- manifest.json
+- service-worker.js
+- icon-192.png
+- icon-512.png
+- netlify.toml
+- netlify/functions/db.mts
+- netlify/functions/upload.mts
+- netlify/functions/file.mts
 
-1. index.html
-2. package.json
-3. manifest.json
-4. service-worker.js
-5. icon-192.png
-6. icon-512.png
-7. the full netlify folder, including:
-   netlify/functions/db.mts
-   netlify/functions/upload.mts
-   netlify/functions/file.mts
+מה נוסף:
+1. Netlify Blobs לתמונות: רישיונות, תמונות רכבים, צ׳אט וצילום תשלום.
+2. דחיסת תמונות בדפדפן ל-WebP לפני העלאה כדי שהאתר יהיה מהיר בפלאפון.
+3. ריענון נתונים כל שנייה דרך Netlify Database, בלי לרענן את כל העמוד.
+4. CSS מותאם למחשב ולפלאפון, פחות שבירת מסך, כרטיסים וטפסים נוחים יותר.
+5. netlify.toml עם Cache Headers לאייקונים וקבצים סטטיים.
 
-After upload, click Commit changes. Netlify will deploy automatically.
-
-The new cloud upload endpoints are:
-POST /.netlify/functions/upload
-GET  /.netlify/functions/file?key=...
-
-Use upload folders like:
-- car-photos
-- license-front
-- license-back
-- chat-images
-- payment-screenshots
-
+אחרי העלאה:
+1. Commit changes.
+2. לחכות ל-Netlify Published.
+3. לבדוק בטלפון ובמחשב.
+4. להוסיף רכב עם תמונה ולפתוח בחלון פרטי לראות שהמידע נשמר.
