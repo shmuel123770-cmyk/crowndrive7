@@ -156,6 +156,12 @@ input,select,textarea{font-family:inherit}
 footer{border-top:1px solid var(--hair);color:var(--mut2);padding:34px 28px;font-size:.78rem;letter-spacing:.05em}
 .foot-in{max-width:1200px;margin:auto;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 footer a{color:var(--mut);text-decoration:none}
+.footer-link{background:none;border:none;color:var(--mut);text-decoration:underline;font:inherit;cursor:pointer;padding:0 2px}
+.footer-link:hover{color:var(--gold-d)}
+.legal-block{display:flex;flex-direction:column;gap:14px;color:#2E3641;font-size:.9rem;line-height:1.75}
+.legal-block h4{font-size:1rem;color:#1B222B;margin:8px 0 2px}
+.legal-block ul{padding-inline-start:22px}
+.legal-small{background:var(--bg2);border:1px solid var(--hair);border-radius:12px;padding:12px 14px;color:var(--mut);font-size:.82rem}
 
 /* ---------- OVERLAYS ---------- */
 .overlay{position:fixed;inset:0;background:rgba(5,5,7,.82);backdrop-filter:blur(6px);z-index:100;display:none;align-items:center;justify-content:center;padding:18px}
@@ -1178,6 +1184,7 @@ img{max-width:100%;}
   <div class="foot-in">
     <div><b style="color:var(--gold-d);font-family:'Heebo';font-weight:800">CROWN DRIVE</b> · קראון הייטס, ברוקלין NY</div>
     <div>קינגסטון אווניו, קראון הייטס · שירות הלקוחות מחובר למנהל המערכת בצ׳אט</div>
+    <div><button class="footer-link" onclick="openLegal('terms')">תקנון שימוש</button> · <button class="footer-link" onclick="openLegal('privacy')">מדיניות פרטיות</button></div>
     <div>© 2026 כל הזכויות שמורות</div>
   </div>
 </footer>
@@ -1275,10 +1282,15 @@ img{max-width:100%;}
             </div>
             <div class="note">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-              <div>התשלום מוסדר ישירות מול בעל הרכב בעת האיסוף.</div>
+              <div>התשלום מוסדר ישירות מול בעל הרכב בעת האיסוף. צילום הרישיון נשמר באזור מאובטח ונגיש רק לך, למנהל המערכת ולבעל הרכב בהזמנה רלוונטית לצורך אימות.</div>
             </div>
           </div>
 
+          <label class="check-line" id="sf-legal" style="margin-top:12px">
+            <input id="s-legal" type="checkbox">
+            <span>אני מאשר/ת את <button type="button" class="linklike" onclick="openLegal('terms')">תקנון השימוש</button> ואת <button type="button" class="linklike" onclick="openLegal('privacy')">מדיניות הפרטיות</button>, כולל שמירת פרטי רישיון ותמונות לצורך אימות וניהול השכרות.</span>
+          </label>
+          <div class="err-msg" id="legal-err" style="display:none">חובה לאשר את התקנון ומדיניות הפרטיות</div>
           <div class="m-actions" style="margin-top:18px"><button class="btn btn-gold grow" onclick="doSignup()">יצירת חשבון</button></div>
         </div>
       </div>
@@ -1587,6 +1599,13 @@ img{max-width:100%;}
   </div>
 </div>
 
+<div class="overlay" id="ov-legal" role="dialog" aria-modal="true">
+  <div class="modal wide">
+    <div class="m-head"><h3 id="legal-title">תקנון ומדיניות פרטיות</h3><button class="m-close" onclick="closeOv('ov-legal')">✕</button></div>
+    <div class="m-body" id="legal-body"></div>
+  </div>
+</div>
+
 <div class="overlay" id="ov-lic" role="dialog" aria-modal="true">
   <div class="modal" style="width:min(560px,100%)">
     <div class="m-head"><h3>רישיון נהיגה</h3><button class="m-close" onclick="closeOv('ov-lic')">✕</button></div>
@@ -1606,10 +1625,11 @@ const API_URL = '/.netlify/functions/db';
 let db=null, fauth=null;
 
 async function api(action, payload={}){
+  const token = localStorage.getItem('cd_token') || '';
   const res = await fetch(API_URL, {
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({action,...payload})
+    body:JSON.stringify({action,token,...payload})
   });
   const txt = await res.text();
   let data={};
@@ -1736,14 +1756,14 @@ db = { collection: makeCollection };
 fauth = {
   currentUser:null,
   onAuthStateChanged(fn){ authListeners.push(fn); setTimeout(()=>fn(this.currentUser),0); return ()=>{}; },
-  async signInWithEmailAndPassword(email,pass){ const r=await api('login',{email,pass}); this.currentUser=makeAuthUser(r.user); localStorage.setItem('cd_uid',r.user.uid); localStorage.setItem('cd_email',r.user.email); notifyAuth(); return {user:this.currentUser}; },
-  async createUserWithEmailAndPassword(email,pass){ const r=await api('signup',{email,pass}); this.currentUser=makeAuthUser(r.user); localStorage.setItem('cd_uid',r.user.uid); localStorage.setItem('cd_email',r.user.email); notifyAuth(); return {user:this.currentUser}; },
+  async signInWithEmailAndPassword(email,pass){ const r=await api('login',{email,pass}); this.currentUser=makeAuthUser(r.user); localStorage.setItem('cd_uid',r.user.uid); localStorage.setItem('cd_email',r.user.email); if(r.token)localStorage.setItem('cd_token',r.token); notifyAuth(); return {user:this.currentUser}; },
+  async createUserWithEmailAndPassword(email,pass){ const r=await api('signup',{email,pass}); this.currentUser=makeAuthUser(r.user); localStorage.setItem('cd_uid',r.user.uid); localStorage.setItem('cd_email',r.user.email); if(r.token)localStorage.setItem('cd_token',r.token); notifyAuth(); return {user:this.currentUser}; },
   async sendPasswordResetEmail(email){ await api('resetPassword',{email}); },
-  async signOut(){ this.currentUser=null; localStorage.removeItem('cd_uid'); localStorage.removeItem('cd_email'); notifyAuth(); }
+  async signOut(){ try{await api('logout')}catch(e){} this.currentUser=null; localStorage.removeItem('cd_uid'); localStorage.removeItem('cd_email'); localStorage.removeItem('cd_token'); notifyAuth(); }
 };
 (function restoreSession(){
-  const uid=localStorage.getItem('cd_uid'), email=localStorage.getItem('cd_email');
-  if(uid&&email) fauth.currentUser=makeAuthUser({uid,email});
+  const uid=localStorage.getItem('cd_uid'), email=localStorage.getItem('cd_email'), token=localStorage.getItem('cd_token');
+  if(uid&&email&&token) fauth.currentUser=makeAuthUser({uid,email});
 })();
 function persistState(){ /* נשמר בענן דרך Netlify Database */ }
 function loadState(){ /* נטען אוטומטית דרך onSnapshot */ }
@@ -1878,6 +1898,48 @@ function renderNav(){
       ${role==='admin'?'':`<button class="btn btn-dark-out" onclick="openAccount()" title="עריכת פרטי החשבון">⚙ החשבון</button>`} <button class="btn btn-dark-out" onclick="logout()">יציאה</button>`;
   }
 }
+
+function openLegal(type){
+  const title = type==='privacy' ? 'מדיניות פרטיות · Crown Drive' : 'תקנון שימוש · Crown Drive';
+  $('legal-title').textContent = title;
+  $('legal-body').innerHTML = type==='privacy' ? privacyHTML() : termsHTML();
+  openOv('ov-legal');
+}
+function termsHTML(){return `
+  <div class="legal-block">
+    <div class="legal-small">נוסח זה הוא בסיס תפעולי לאתר השכרות פרטי. לפני פרסום רחב מומלץ שעורך דין יבדוק ויתאים אותו לחוקי ניו יורק ולמודל העסקי הסופי.</div>
+    <h4>1. מהות השירות</h4>
+    <p>Crown Drive היא פלטפורמה המחברת בין שוכרי רכבים לבין בעלי רכבים. ההשכרה עצמה, התשלום, מסירת הרכב והאחריות להסכם ההשכרה מתבצעים בין השוכר לבעל הרכב, אלא אם צוין אחרת בכתב.</p>
+    <h4>2. הרשמה ואימות</h4>
+    <ul><li>שוכר נדרש למסור שם, טלפון, אימייל, מדינת הנפקת רישיון וצילום רישיון קדמי ואחורי.</li><li>בעל רכב נדרש למסור פרטי קשר ופרטי הרכב.</li><li>אסור למסור מידע שקרי או להשתמש ברישיון שאינו שלך.</li></ul>
+    <h4>3. הזמנות ואישורים</h4>
+    <p>בקשת הזמנה אינה סופית עד שבעל הרכב מאשר אותה. לאחר אישור, השוכר מתבקש לשלוח בצ׳אט צילום מסך של העברת התשלום לבעל הרכב.</p>
+    <h4>4. תשלומים ופיקדונות</h4>
+    <p>האתר אינו מעבד כרטיסי אשראי בשלב זה. תשלום, פיקדון, ביטול והחזר מתואמים ישירות בין השוכר לבעל הרכב, לפי מה שסוכם ביניהם.</p>
+    <h4>5. אחריות השוכר</h4>
+    <ul><li>לנהוג כחוק, עם רישיון תקף וביטוח מתאים לפי תנאי בעל הרכב.</li><li>להחזיר את הרכב בזמן ובמצב תקין.</li><li>לדווח מיד על תאונה, נזק, דו״ח או תקלה.</li></ul>
+    <h4>6. אחריות בעל הרכב</h4>
+    <ul><li>לפרסם מידע נכון על הרכב, זמינותו, מחיריו ותנאי ההשכרה.</li><li>לוודא שהרכב תקין, בטוח ומותר להשכרה לפי הדין והביטוח.</li><li>לאשר או לדחות הזמנות בזמן סביר.</li></ul>
+    <h4>7. חסימת משתמשים</h4>
+    <p>מנהל המערכת רשאי להסיר תוכן, לחסום משתמש או לבטל פעילות במקרה של שימוש לרעה, מידע שקרי, הונאה, סיכון בטיחותי או הפרת התקנון.</p>
+  </div>`}
+function privacyHTML(){return `
+  <div class="legal-block">
+    <div class="legal-small">אנחנו אוספים רק מידע שנדרש להפעלת שירות ההשכרות, אימות משתמשים, ניהול הזמנות, צ׳אט ותמיכה.</div>
+    <h4>1. איזה מידע נאסף</h4>
+    <ul><li>שם, טלפון, אימייל וסוג משתמש.</li><li>לשוכרים: מדינת הנפקת רישיון, צילום רישיון קדמי ואחורי.</li><li>למשכירים: פרטי רכב, תמונות רכב, מחירים וזמינות.</li><li>הזמנות, סטטוסים, צ׳אטים, תמונות בצ׳אט וצילום תשלום.</li></ul>
+    <h4>2. מי יכול לראות רישיון נהיגה</h4>
+    <ul><li>השוכר עצמו.</li><li>מנהל המערכת, לצורך תמיכה, בדיקה, מניעת הונאה וניהול מחלוקות.</li><li>בעל הרכב רק בהקשר להזמנה רלוונטית, לצורך אימות השוכר לפני מסירת רכב.</li><li>משתמשים אחרים לא אמורים לראות רישיונות או מידע פרטי של שוכרים.</li></ul>
+    <h4>3. אחסון תמונות וקבצים</h4>
+    <p>תמונות רישיון, רכבים, צ׳אט וצילום תשלום נשמרות באחסון ענן דרך Netlify Blobs או שירות אחסון מחובר אחר. במסד הנתונים נשמר קישור לקובץ במקום לשמור תמונה כבדה בתוך הדפדפן.</p>
+    <h4>4. אבטחה והרשאות</h4>
+    <ul><li>סיסמאות נשמרות בשרת כ־Hash ולא כטקסט רגיל.</li><li>מנהל מזוהה לפי הרשאות שרת ולא לפי כפתור גלוי באתר.</li><li>שוכר אמור לראות רק את ההזמנות והצ׳אטים שלו.</li><li>בעל רכב אמור לראות רק את הרכבים שלו, ההזמנות שלו והצ׳אטים שלו.</li></ul>
+    <h4>5. מיילים והתראות</h4>
+    <p>האתר עשוי לשלוח מיילים על בקשות הזמנה, אישור, דחייה, צ׳אט ותמיכה, אם הוגדר שירות SMTP.</p>
+    <h4>6. מחיקה ועדכון מידע</h4>
+    <p>משתמש יכול לבקש עדכון או מחיקה של מידע דרך שירות הלקוחות. ייתכן שנשמור רשומות מסוימות לתיעוד, אבטחה, מחלוקות או דרישות חוק.</p>
+  </div>`}
+
 function logout(){if(CLOUD&&fauth.currentUser){fauth.signOut()}state.session=null;stopUserFeeds();stopAdminFeeds();renderNav();toggleChat(false);updateBadge();showToast('התנתקת מהחשבון')}
 
 /* ================= AUTH ================= */
@@ -1955,7 +2017,6 @@ window.addEventListener('hashchange',checkAdminUrl);
 window.addEventListener('keydown',e=>{
   // אין קיצור מקשים גלוי/נסתר לכניסת מנהל.
 });
-const ADMIN_EMAIL='shmuel123770@icloud.com';
 let authJustSignedUp=false, pendingProfile=null;
 function afterLoginUI(){
   closeOv('ov-auth'); renderNav(); updateBadge();
@@ -2063,6 +2124,7 @@ function doSignup(){
   mk('sf-phone',phone.length<9);
   mk('sf-mail',!/^\S+@\S+\.\S+$/.test(em) || pool.some(x=>x.email===em));
   mk('sf-pass',ps.length<6);
+  if($('s-legal') && !$('s-legal').checked){$('legal-err').style.display='block';bad=true}else if($('legal-err')){$('legal-err').style.display='none'}
 
   let extra={};
   if(authRole==='renter'){
@@ -2089,7 +2151,7 @@ function doSignup(){
       ]);
     }).then(()=>{
       ['s-name','s-phone','s-mail','s-pass'].forEach(i=>$(i).value='');
-      clearRLic(true);clearRLicBack(true);if($('lic-state'))$('lic-state').value='';
+      clearRLic(true);clearRLicBack(true);if($('lic-state'))$('lic-state').value='';if($('s-legal'))$('s-legal').checked=false;if($('legal-err'))$('legal-err').style.display='none';
       showToast('החשבון נוצר בהצלחה');
     }).catch(e=>{mark('sf-mail',true);showToast('שגיאה: '+((e&&e.message)||e))});
     return;
@@ -2099,7 +2161,7 @@ function doSignup(){
   state.users[u.id]={name:u.name,role:authRole,email:u.email,createdAt:u.createdAt};
   state.session={role:authRole,id:u.id,...u};
   ['s-name','s-phone','s-mail','s-pass'].forEach(i=>$(i).value='');
-  clearRLic(true);clearRLicBack(true);if($('lic-state'))$('lic-state').value='';
+  clearRLic(true);clearRLicBack(true);if($('lic-state'))$('lic-state').value='';if($('s-legal'))$('s-legal').checked=false;if($('legal-err'))$('legal-err').style.display='none';
   showToast('החשבון נוצר בהצלחה');
   authJustSignedUp=(authRole==='owner');
   afterLoginUI();
@@ -3040,8 +3102,8 @@ function emailReceipt(){
 /* ================= HELPERS ================= */
 function openOv(id){$(id).classList.add('open');document.body.style.overflow='hidden'}
 function closeOv(id){$(id).classList.remove('open');document.body.style.overflow=''; if(id==='ov-auth') closeHiddenAdminMode()}
-['ov-auth','ov-owner','ov-admin','ov-renter','ov-book','ov-lic','ov-profile','ov-account'].forEach(id=>$(id).addEventListener('click',e=>{if(e.target.id===id)closeOv(id)}));
-document.addEventListener('keydown',e=>{if(e.key==='Escape')['ov-auth','ov-owner','ov-admin','ov-renter','ov-book','ov-lic','ov-profile','ov-account'].forEach(closeOv)});
+['ov-auth','ov-owner','ov-admin','ov-renter','ov-book','ov-lic','ov-profile','ov-account','ov-legal'].forEach(id=>$(id).addEventListener('click',e=>{if(e.target.id===id)closeOv(id)}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')['ov-auth','ov-owner','ov-admin','ov-renter','ov-book','ov-lic','ov-profile','ov-account','ov-legal'].forEach(closeOv)});
 function bindDrop(dropId,fileId,single,multi){
   const d=$(dropId),f=$(fileId);
   d.addEventListener('click',()=>f.click());
@@ -3057,11 +3119,21 @@ function bindDrop(dropId,fileId,single,multi){
     else if(f.files[0])single(f.files[0]);
   });
 }
+function fileToDataUrl(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(reader.result);
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
 async function uploadFileToCloud(file, folder='uploads'){
-  const fd=new FormData();
-  fd.append('file',file);
-  fd.append('folder',folder);
-  const res=await fetch('/.netlify/functions/upload',{method:'POST',body:fd});
+  const dataUrl=await fileToDataUrl(file);
+  const res=await fetch('/.netlify/functions/upload',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({folder,filename:file.name||'file',type:file.type||'application/octet-stream',dataUrl})
+  });
   const data=await res.json().catch(()=>({}));
   if(!res.ok||!data.ok)throw new Error(data.error||'Upload failed');
   return data.url;
