@@ -1,12 +1,6 @@
 {
   "dependencies": {
     "@netlify/database": "latest",
-    "@netlify/blobs": "latest",
-    "pg": "latest",
-    "nodemailer": "latest",
-    "drizzle-orm": "beta"
-  },
-  "devDependencies": {
-    "drizzle-kit": "beta"
+    "pg": "latest"
   }
 }
