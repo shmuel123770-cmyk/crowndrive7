@@ -1390,6 +1390,123 @@ html,body{overflow-x:hidden!important}
   #ov-owner .adm-item img{width:100%!important;height:150px!important}
 }
 
+
+
+/* ================= SIDE DRAWER PERSONAL AREAS =================
+   Owner / renter / admin / account now open as a stable left-side drawer,
+   less than half screen on desktop, with a smooth side-slide animation.
+   Firebase/Auth/Realtime untouched.
+*/
+#ov-admin,#ov-owner,#ov-renter,#ov-account{
+  align-items:stretch!important;
+  justify-content:flex-start!important;
+  padding:12px!important;
+  background:rgba(8,11,16,.48)!important;
+  backdrop-filter:blur(18px) saturate(135%)!important;
+  -webkit-backdrop-filter:blur(18px) saturate(135%)!important;
+  overflow:hidden!important;
+}
+#ov-admin.open,#ov-owner.open,#ov-renter.open,#ov-account.open{
+  display:flex!important;
+}
+#ov-admin .admin-modal,#ov-owner .modal,#ov-renter .modal,#ov-account .modal{
+  position:relative!important;
+  margin:0!important;
+  left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;
+  width:min(620px,44vw)!important;
+  min-width:430px!important;
+  height:calc(100dvh - 24px)!important;
+  max-width:calc(100vw - 24px)!important;
+  max-height:calc(100dvh - 24px)!important;
+  border-radius:30px!important;
+  transform:none!important;
+  animation:sideDrawerIn .34s cubic-bezier(.22,.9,.24,1) both!important;
+  box-shadow:38px 0 110px rgba(0,0,0,.34),0 20px 60px rgba(20,28,40,.16)!important;
+}
+@keyframes sideDrawerIn{
+  from{opacity:.55;transform:translateX(-112%) scale(.985)}
+  to{opacity:1;transform:translateX(0) scale(1)}
+}
+#ov-admin .m-head,#ov-owner .m-head,#ov-renter .m-head,#ov-account .m-head{
+  height:68px!important;
+  min-height:68px!important;
+  border-radius:0!important;
+}
+#ov-admin .m-body,#ov-owner .m-body,#ov-renter .m-body,#ov-account .m-body{
+  height:calc(100dvh - 92px)!important;
+  overflow:auto!important;
+  overscroll-behavior:contain!important;
+}
+#ov-admin .dash-tabs,#ov-owner .dash-tabs,#ov-renter .dash-tabs{
+  padding:10px 14px!important;
+  gap:7px!important;
+  overflow-x:auto!important;
+  white-space:nowrap!important;
+}
+#ov-admin .dash-tabs button,#ov-owner .dash-tabs button,#ov-renter .dash-tabs button{
+  min-height:38px!important;
+  padding:9px 13px!important;
+  font-size:.78rem!important;
+}
+#admin-body,#dash-cars,#dash-add,#dash-book,#dash-rep,#dash-prof,#renter-body,#account-body{
+  max-width:none!important;
+  padding:16px!important;
+}
+#ov-admin .kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+#ov-owner .adm-list{grid-template-columns:1fr!important}
+#ov-owner .adm-item{padding:12px!important}
+#ov-owner .adm-item img{width:82px!important;height:58px!important}
+#ov-owner .f-row,#ov-owner .f-row3,#ov-account .f-row,#ov-account .f-row3{grid-template-columns:1fr!important}
+#ov-admin .admin-overview-grid{grid-template-columns:1fr!important}
+#ov-admin .tbl{min-width:720px!important}
+#ov-admin .admin-panel{overflow:auto!important;-webkit-overflow-scrolling:touch!important}
+@media(max-width:900px){
+  #ov-admin,#ov-owner,#ov-renter,#ov-account{padding:8px!important}
+  #ov-admin .admin-modal,#ov-owner .modal,#ov-renter .modal,#ov-account .modal{
+    width:min(92vw,560px)!important;
+    min-width:0!important;
+    height:calc(100dvh - 16px)!important;
+    max-height:calc(100dvh - 16px)!important;
+    border-radius:26px!important;
+  }
+}
+@media(max-width:560px){
+  #ov-admin,#ov-owner,#ov-renter,#ov-account{padding:0!important;background:rgba(8,11,16,.58)!important}
+  #ov-admin .admin-modal,#ov-owner .modal,#ov-renter .modal,#ov-account .modal{
+    width:92vw!important;
+    height:100dvh!important;
+    max-height:100dvh!important;
+    border-radius:0 22px 22px 0!important;
+    box-shadow:28px 0 80px rgba(0,0,0,.34)!important;
+  }
+  #ov-admin .m-head,#ov-owner .m-head,#ov-renter .m-head,#ov-account .m-head{
+    height:62px!important;min-height:62px!important;padding:12px 14px!important;
+  }
+  #ov-admin .m-head h3,#ov-owner .m-head h3,#ov-renter .m-head h3,#ov-account .m-head h3{font-size:.95rem!important}
+  #ov-admin .m-head h3::after,#ov-owner .m-head h3::after,#ov-renter .m-head h3::after{display:none!important}
+  #ov-admin .dash-tabs,#ov-owner .dash-tabs,#ov-renter .dash-tabs{padding:8px!important;display:flex!important;overflow-x:auto!important}
+  #ov-admin .kpis{grid-template-columns:1fr 1fr!important;gap:9px!important}
+  #admin-body,#dash-cars,#dash-add,#dash-book,#dash-rep,#dash-prof,#renter-body,#account-body{padding:12px!important}
+}
+@media (prefers-reduced-motion: reduce){
+  #ov-admin .admin-modal,#ov-owner .modal,#ov-renter .modal,#ov-account .modal{animation:none!important}
+}
+
+
+
+/* ===== TOP NAV CLEANUP + PERSONAL AREA BUBBLE ===== */
+.nav-side{display:flex;align-items:center;gap:10px;flex-wrap:nowrap}
+.nav-user-email{color:#DCE7F1;font-size:.84rem;font-weight:700;max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr;text-align:left;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:10px 14px}
+.nav-area-bubble{border:none;border-radius:999px;background:#4D86B6;color:#fff;font-weight:900;font-size:.92rem;padding:13px 22px;box-shadow:0 14px 34px rgba(77,134,182,.34);display:inline-flex;align-items:center;gap:8px;transition:transform .18s var(--ease),background .2s,box-shadow .2s}
+.nav-area-bubble:hover{background:#5E97C5;transform:translateY(-2px);box-shadow:0 18px 42px rgba(77,134,182,.42)}
+.nav-area-bubble::before{content:"";width:9px;height:9px;border-radius:50%;background:#52E08E;box-shadow:0 0 0 5px rgba(82,224,142,.16)}
+.nav-guest-login{border:1px solid rgba(255,255,255,.38);background:rgba(255,255,255,.06);color:#fff;border-radius:14px;padding:12px 18px;font-weight:800}
+.drawer-userbar{display:flex;align-items:center;justify-content:space-between;gap:12px;background:rgba(255,255,255,.82);border-bottom:1px solid rgba(20,28,40,.08);padding:12px 18px;position:sticky;top:0;z-index:9;backdrop-filter:blur(16px)}
+.drawer-userbar .drawer-ident{min-width:0;display:flex;flex-direction:column;gap:2px}
+.drawer-userbar b{font-size:.92rem;color:#1B222B;line-height:1.2}.drawer-userbar .drawer-email{font-size:.78rem;color:#657587;direction:ltr;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
+.drawer-actions{display:flex;gap:8px;align-items:center;flex:none}.drawer-actions .mini{background:#fff;border-color:rgba(27,34,43,.14);color:#263342;font-weight:800}.drawer-actions .mini.danger{color:#D70015;border-color:rgba(215,0,21,.24)}
+@media(max-width:900px){.nav-user-email{display:none}.nav-area-bubble{padding:12px 16px;font-size:.86rem}.nav-area-bubble::before{display:none}.nav-side{gap:6px}.drawer-userbar{align-items:flex-start;flex-direction:column;padding:12px 14px}.drawer-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.drawer-actions .mini{width:100%;padding:10px 8px}.drawer-userbar .drawer-email{max-width:100%}}
+
 </style>
 </head>
 <body>
@@ -1749,6 +1866,10 @@ html,body{overflow-x:hidden!important}
 <div class="overlay" id="ov-owner" role="dialog" aria-modal="true">
   <div class="modal wide">
     <div class="m-head"><h3>אזור בעלי רכב</h3><button class="m-close" onclick="closeOv('ov-owner')">✕</button></div>
+    <div class="drawer-userbar">
+      <div class="drawer-ident"><b>אזור אישי</b><span class="drawer-email" id="drawer-email-owner"></span></div>
+      <div class="drawer-actions"><button class="mini gold" onclick="openAccount()">⚙ חשבון</button><button class="mini danger" onclick="logout()">יציאה</button></div>
+    </div>
     <div class="m-body">
       <div class="dash-tabs">
         <button class="on" id="dt-cars" onclick="setDash('cars')">ניהול הרכבים</button>
@@ -1766,7 +1887,7 @@ html,body{overflow-x:hidden!important}
             <h4>מרכז בעלי רכב</h4>
             <p>ניהול רכבים, הזמנות, הכנסות ופרופיל במסך אחד נקי ונוח — בנוי לעבוד חלק גם בפלאפון.</p>
           </div>
-          <div class="personal-avatar">רכב</div>
+          
         </div>
 
         <div class="note" style="margin:0 0 14px">
@@ -1856,6 +1977,10 @@ html,body{overflow-x:hidden!important}
 <div class="overlay" id="ov-admin" role="dialog" aria-modal="true">
   <div class="modal wide admin-modal">
     <div class="m-head"><h3>לוח מנהל מערכת · שליטה מלאה באתר</h3><button class="m-close" onclick="closeOv('ov-admin')">✕</button></div>
+    <div class="drawer-userbar">
+      <div class="drawer-ident"><b>אזור אישי · מנהל</b><span class="drawer-email" id="drawer-email-admin"></span></div>
+      <div class="drawer-actions"><button class="mini gold" onclick="openAccount()">⚙ חשבון</button><button class="mini danger" onclick="logout()">יציאה</button></div>
+    </div>
     <div class="m-body">
       <div class="dash-tabs">
         <button class="on" id="ad-all" onclick="setAdminTab('all')">כל הפעילות</button>
@@ -1874,6 +1999,10 @@ html,body{overflow-x:hidden!important}
 <div class="overlay" id="ov-renter" role="dialog" aria-modal="true">
   <div class="modal wide">
     <div class="m-head"><h3>האזור האישי שלי</h3><button class="m-close" onclick="closeOv('ov-renter')">✕</button></div>
+    <div class="drawer-userbar">
+      <div class="drawer-ident"><b>אזור אישי</b><span class="drawer-email" id="drawer-email-renter"></span></div>
+      <div class="drawer-actions"><button class="mini gold" onclick="openAccount()">⚙ חשבון</button><button class="mini danger" onclick="logout()">יציאה</button></div>
+    </div>
     <div class="m-body" id="renter-body"></div>
   </div>
 </div>
@@ -2824,22 +2953,25 @@ function renderMyAreaFab(){
   if(lab) lab.textContent = role==='admin'?'לוח מנהל':(role==='owner'?'אזור בעל רכב':'האזור שלי');
   fab.classList.add('show');
 }
+function renderPersonalDrawerChrome(){
+  const u=me()||{};
+  const email=esc(u.email||state.session?.email||'');
+  ['owner','admin','renter'].forEach(k=>{const el=$('drawer-email-'+k); if(el) el.textContent=email;});
+}
 function renderNav(){
   const el = $('nav-side');
-  if(!el){ renderMyAreaFab(); return; }
+  if(!el){ renderMyAreaFab(); renderPersonalDrawerChrome(); return; }
   if(!state.session){
-    el.innerHTML = `<button class="btn btn-dark-out" onclick="openAuth()">כניסה / הרשמה</button>`;
+    el.innerHTML = `<button class="nav-guest-login" onclick="openAuth()">כניסה / הרשמה</button>`;
   } else {
     const u = me()||{};
-    const role = state.session.role;
-    const roleTxt = role==='admin'?'מנהל האתר':(role==='owner'?'בעל רכב':'שוכר');
-    const mainLabel = role==='admin'?'לוח מנהל':(role==='owner'?'אזור בעלי רכב':'האזור שלי');
+    const email = esc(u.email||state.session.email||'');
     el.innerHTML = `
-      <span class="who">שלום, <b>${esc((u.name||'משתמש').split(' ')[0])}</b> · ${roleTxt}</span>
-      <button class="btn btn-gold" onclick="openMyArea()">${mainLabel}</button>
-      ${role==='admin'?'':`<button class="btn btn-dark-out" onclick="openAccount()" title="עריכת פרטי החשבון">⚙ החשבון</button>`} <button class="btn btn-dark-out" onclick="logout()">יציאה</button>`;
+      <span class="nav-user-email" title="${email}">${email}</span>
+      <button class="nav-area-bubble" onclick="openMyArea()">אזור אישי</button>`;
   }
   renderMyAreaFab();
+  renderPersonalDrawerChrome();
 }
 function logout(){try{ if(RT_AUTH&&RT_AUTH.currentUser)RT_AUTH.signOut(); }catch(e){} if(CLOUD&&fauth.currentUser){fauth.signOut()}state.session=null;clearAuthIdentity();clearSavedLogin();delCookie(COOKIE_SESSION_KEY);persistState();stopUserFeeds();stopAdminFeeds();renderNav();toggleChat(false);updateBadge();renderMyAreaFab();showToast('יצאת מהמערכת בהצלחה')}
 
@@ -3437,7 +3569,7 @@ function goHowStep(step){
 /* ================= OWNER DASHBOARD ================= */
 function openOwner(){
   if(!state.session||state.session.role!=='owner') return openAuth('owner');
-  setDash('cars'); renderAdminList(); resetCarForm(); openOv('ov-owner');
+  renderPersonalDrawerChrome(); setDash('cars'); renderAdminList(); resetCarForm(); openOv('ov-owner');
 }
 function setDash(t){
   ['cars','add','book','rep','prof'].forEach(x=>{
@@ -3730,7 +3862,7 @@ let adminTab='all';
 function openAdmin(){
   if(!state.session||state.session.role!=='admin'){showToast('כניסה למנהל בלבד');return}
   setAdminTab('all');
-  openOv('ov-admin');
+  renderPersonalDrawerChrome(); openOv('ov-admin');
 }
 function setAdminTab(t){
   adminTab=t;
@@ -3879,6 +4011,7 @@ function bookingStatusHTML(b){
 }
 function openRenterArea(){
   if(!state.session||state.session.role!=='renter')return openAuth('renter');
+  renderPersonalDrawerChrome();
   const u=me();
   const prefs=u.prefs||{};
   const list=state.bookings.filter(b=>b.renterId===u.id).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
