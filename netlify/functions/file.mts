@@ -1,6 +1,6 @@
-export default async function handler() {
-  return new Response(JSON.stringify({ ok: true, disabled: true, message: "Files are handled locally in the browser." }), {
-    status: 200,
-    headers: { "content-type": "application/json" }
+export default async (request: Request) => {
+  return new Response('Local browser storage build. No Netlify Blobs dependency.', {
+    headers: { 'content-type': 'text/plain; charset=utf-8', 'access-control-allow-origin': '*' }
   });
-}
+};
+export const config = { path: '/api/file/*' };

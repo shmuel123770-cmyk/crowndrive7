@@ -1,6 +1,4 @@
 {
-  "scripts": {
-    "build": "echo CrownDrive ready"
-  },
+  "scripts": { "build": "echo CrownDrive ready" },
   "dependencies": {}
 }

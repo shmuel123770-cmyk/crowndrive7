@@ -936,6 +936,21 @@ html,body{overflow-x:hidden!important}
   #ov-admin .kpis,.admin-section-grid{grid-template-columns:1fr}
 }
 
+
+
+/* ===== ALWAYS AVAILABLE PERSONAL AREA BUTTON — FIX ===== */
+#my-area-fab{position:fixed;bottom:22px;inset-inline-end:22px;z-index:110;border:none;border-radius:999px;background:#1B222B;color:#fff;box-shadow:0 16px 38px rgba(10,14,19,.34);padding:14px 20px;font-weight:800;font-size:.92rem;display:none;align-items:center;gap:8px;min-height:54px}
+#my-area-fab.show{display:flex}
+#my-area-fab:hover{background:#263240;transform:translateY(-2px)}
+#my-area-fab .dot-mini{width:9px;height:9px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 5px rgba(28,124,79,.16)}
+@media(max-width:700px){
+  #my-area-fab{bottom:14px;inset-inline-end:12px;left:82px;justify-content:center;border-radius:15px;padding:13px 10px;font-size:.86rem;min-height:50px}
+  #chat-fab{bottom:14px;inset-inline-start:14px;width:50px;height:50px}
+  .nav-in{padding:11px 12px}.logo b{font-size:1rem}.logo small{font-size:.48rem}.btn{padding:10px 13px;font-size:.8rem}
+  #nav-side{gap:6px}.nav-side .btn-dark-out:last-child{display:none}
+  .personal-grid{grid-template-columns:1fr!important}.quick-actions{grid-template-columns:1fr!important}.booking-card{padding:13px!important}.booking-top,.booking-bottom{flex-direction:column;align-items:flex-start!important;gap:10px}
+}
+
 </style>
 </head>
 <body>
@@ -1525,6 +1540,9 @@ html,body{overflow-x:hidden!important}
 </div>
 
 <!-- ============ CHAT ============ -->
+
+<button id="my-area-fab" onclick="openMyArea()" aria-label="פתיחת אזור אישי"><span class="dot-mini"></span><span id="my-area-fab-label">האזור שלי</span></button>
+
 <button id="chat-fab" onclick="toggleChat()" aria-label="פתיחת צ'אט">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
   <span id="chat-badge" style="display:none">0</span>
@@ -1910,23 +1928,38 @@ const ic = {
 };
 
 /* ================= NAV / SESSION ================= */
+function openMyArea(){
+  if(!state.session){ openAuth(); return; }
+  if(state.session.role==='admin') return openAdmin();
+  if(state.session.role==='owner') return openOwner();
+  return openRenterArea();
+}
+function renderMyAreaFab(){
+  const fab=$('my-area-fab'), lab=$('my-area-fab-label');
+  if(!fab)return;
+  if(!state.session){ fab.classList.remove('show'); return; }
+  const role=state.session.role;
+  if(lab) lab.textContent = role==='admin'?'לוח מנהל':(role==='owner'?'אזור בעל רכב':'האזור שלי');
+  fab.classList.add('show');
+}
 function renderNav(){
   const el = $('nav-side');
+  if(!el){ renderMyAreaFab(); return; }
   if(!state.session){
     el.innerHTML = `<button class="btn btn-dark-out" onclick="openAuth()">כניסה / הרשמה</button>`;
   } else {
-    const u = me();
+    const u = me()||{};
     const role = state.session.role;
     const roleTxt = role==='admin'?'מנהל האתר':(role==='owner'?'בעל רכב':'שוכר');
-    const mainAction = role==='admin'?'openAdmin()':(role==='owner'?'openOwner()':'openRenterArea()');
     const mainLabel = role==='admin'?'לוח מנהל':(role==='owner'?'אזור בעלי רכב':'האזור שלי');
     el.innerHTML = `
       <span class="who">שלום, <b>${esc((u.name||'משתמש').split(' ')[0])}</b> · ${roleTxt}</span>
-      <button class="btn btn-gold" onclick="${mainAction}">${mainLabel}</button>
-      ${role==='admin'?'':`<button class="btn btn-dark-out" onclick="openAccount()" title="עריכת פרטי החשבון">⚙ החשבון</button>`} <button class="btn btn-dark-out" onclick="logout()">יציאה מהמערכת</button>`;
+      <button class="btn btn-gold" onclick="openMyArea()">${mainLabel}</button>
+      ${role==='admin'?'':`<button class="btn btn-dark-out" onclick="openAccount()" title="עריכת פרטי החשבון">⚙ החשבון</button>`} <button class="btn btn-dark-out" onclick="logout()">יציאה</button>`;
   }
+  renderMyAreaFab();
 }
-function logout(){if(CLOUD&&fauth.currentUser){fauth.signOut()}state.session=null;clearAuthIdentity();delCookie(COOKIE_SESSION_KEY);persistState();stopUserFeeds();stopAdminFeeds();renderNav();toggleChat(false);updateBadge();showToast('יצאת מהמערכת בהצלחה')}
+function logout(){if(CLOUD&&fauth.currentUser){fauth.signOut()}state.session=null;clearAuthIdentity();delCookie(COOKIE_SESSION_KEY);persistState();stopUserFeeds();stopAdminFeeds();renderNav();toggleChat(false);updateBadge();renderMyAreaFab();showToast('יצאת מהמערכת בהצלחה')}
 
 /* ================= AUTH ================= */
 function openAuth(role){
@@ -2100,7 +2133,7 @@ const ADMIN_EMAIL='shmuel123770@icloud.com', ADMIN_PASS='amarZ770@';
 let authJustSignedUp=false, pendingProfile=null;
 function afterLoginUI(){
   persistState();
-  closeOv('ov-auth'); renderNav(); updateBadge();
+  closeOv('ov-auth'); renderNav(); renderMyAreaFab(); updateBadge();
   const u=me();
   if(u&&u.name)showToast('ברוך הבא, '+u.name.split(' ')[0]);
   if(pendingBookCar && state.session && state.session.role==='renter'){const c=pendingBookCar;pendingBookCar=null;openBook(c)}
@@ -3765,7 +3798,7 @@ document.querySelectorAll('.sec-head,.fleet-side,.how-grid,.foot-cta,.strip-in')
 
 window.addEventListener('beforeunload', persistState);
 loadState();
-initChoiceLists();initOwnerChoiceLists();updateOwnerPriceFields();renderNav();render();initSig();updateBadge();
+initChoiceLists();initOwnerChoiceLists();updateOwnerPriceFields();renderNav();renderMyAreaFab();render();initSig();updateBadge();
 setInterval(()=>{
   if(document.activeElement && ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))return;
   refreshOpenViews();
