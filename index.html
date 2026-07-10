@@ -2830,29 +2830,26 @@ function applyRealtimeData(d){
   if(!d || typeof d!=='object')return;
   rtApplying=true;
   try{
-    // Merge instead of blind overwrite. This prevents a fresh local action, such as adding a second car,
-    // from being erased by a slightly older Firebase snapshot arriving a moment later.
-    // FIX: מיזוג tombstones לפני מיזוג הרשומות, כדי שמחיקות יתפשטו בין מכשירים.
-    if(d.deleted && typeof d.deleted==='object'){
-      state.deleted=(state.deleted&&typeof state.deleted==='object')?state.deleted:{};
-      Object.entries(d.deleted).forEach(([id,ts])=>{ if(+ts>(+state.deleted[id]||0)) state.deleted[id]=+ts; });
-    }
-    state.owners=mergeById(state.owners,d.owners,'id');
-    state.renters=mergeById(state.renters,d.renters,'id');
-    state.cars=mergeById(state.cars,d.cars,'id');
-    state.bookings=mergeById(state.bookings,d.bookings,'id');
-    state.msgs=mergeById(state.msgs,d.msgs,'id');
-    state.ratings=mergeById(state.ratings,d.ratings,'id');
-    state.notifications=mergeById(state.notifications,d.notifications,'id');
-    if(d.users && typeof d.users==='object')state.users=mergeUsers(state.users,d.users);
-    if(d.seq && Number.isFinite(+d.seq))seq=Math.max(seq,+d.seq);
+    // Firebase is the source of truth after page load.
+    // Never merge stale Safari/localStorage records into a fresh cloud snapshot,
+    // because that can resurrect deleted cars or undo admin status changes.
+    const sessionBefore=state.session||null;
+    const arrKeys=['owners','renters','cars','bookings','msgs','ratings','notifications'];
+    arrKeys.forEach(k=>{ state[k]=Array.isArray(d[k]) ? d[k].filter(Boolean) : []; });
+    state.users=(d.users&&typeof d.users==='object') ? d.users : {};
+    state.deleted=(d.deleted&&typeof d.deleted==='object') ? d.deleted : {};
+    if(d.seq && Number.isFinite(+d.seq)) seq=+d.seq;
+    state.session=sessionBefore;
     applyTombstones();
     ensureStateIntegrity();
     try{ localStorage.setItem(LOCAL_KEY, JSON.stringify({
       owners:state.owners||[], renters:state.renters||[], cars:state.cars||[], bookings:state.bookings||[],
       session:state.session||null, msgs:state.msgs||[], ratings:state.ratings||[], notifications:state.notifications||[], users:state.users||{}, deleted:state.deleted||{}, seq
     })); }catch(e){}
-    renderNav(); renderMyAreaFab(); refreshOpenViews(); if(!window.CROWNDRIVE_MODAL_IS_OPEN || !window.CROWNDRIVE_MODAL_IS_OPEN()) render(); updateBadge();
+    window.CROWNDRIVE_CLOUD_HYDRATED=true;
+    renderNav(); renderMyAreaFab(); refreshOpenViews();
+    if(!window.CROWNDRIVE_MODAL_IS_OPEN || !window.CROWNDRIVE_MODAL_IS_OPEN()) render();
+    updateBadge();
   }catch(e){console.error('Realtime apply failed',e)}
   finally{rtApplying=false;}
 }
@@ -2971,7 +2968,7 @@ function initRealtime(){
           }
           const saved=savedLogin&&savedLogin();
           restoreSessionFromFirebaseUser(user,(saved&&saved.role)||(state.session&&state.session.role));
-          setTimeout(()=>{ if(rtInitialSnapshotReceived) pushRealtimeNow(); },350);
+          // Session restoration is read-only. Do not write app data during refresh/login recovery.
         }
       });
     }
@@ -2984,7 +2981,7 @@ function initRealtime(){
       if(v && v.data) applyRealtimeData(v.data);
       else if(!v && hasMeaningfulLocalData()) pushRealtimeNow({allowBootstrap:true});
     }, err=>{console.error('Realtime listener failed',err);safeToast('חיבור זמן אמת נכשל: '+firebaseErrorText(err));});
-    window.addEventListener('online',()=>pushRealtimeNow());
+    window.addEventListener('online',()=>{ if(RT_REF) RT_REF.once('value').then(s=>{const v=s.val(); if(v&&v.data) applyRealtimeData(v.data);}).catch(e=>console.warn('Realtime refresh after reconnect failed',e)); });
     // Do a tiny diagnostic write first so permission/config problems are visible immediately.
     // If secure Rules require auth, this will succeed after login.
     const diagWrite = ()=>RT_DB.ref((window.CROWNDRIVE_RT_PATH||'crowndrive-live')+'/_connectionTest').set({ok:true,ts:Date.now(),uid:(RT_AUTH&&RT_AUTH.currentUser&&RT_AUTH.currentUser.uid)||null});
@@ -6617,5 +6614,26 @@ setInterval(()=>{
   try{_renderHash='';render();}catch(e){}
 })();
 </script>\n
+
+<script id="crowndrive-reload-authority-fix-v1">
+(function(){
+  window.CROWNDRIVE_RELOAD_FIX='2026-07-10-cloud-authoritative-v1';
+  // During the first cloud hydration, block all legacy background writes.
+  window.CROWNDRIVE_SUPPRESS_REALTIME_WRITE=true;
+  function releaseAfterCloud(){
+    if(window.CROWNDRIVE_CLOUD_HYDRATED || window.rtInitialSnapshotReceived){
+      window.CROWNDRIVE_SUPPRESS_REALTIME_WRITE=false;
+      return true;
+    }
+    return false;
+  }
+  [300,700,1400,2500,5000].forEach(ms=>setTimeout(releaseAfterCloud,ms));
+  window.addEventListener('pageshow',()=>{
+    window.CROWNDRIVE_SUPPRESS_REALTIME_WRITE=true;
+    setTimeout(releaseAfterCloud,500);
+    setTimeout(releaseAfterCloud,1500);
+  });
+})();
+</script>
 </body>
 </html>
