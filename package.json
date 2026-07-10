@@ -1,6 +1,8 @@
 {
+  "name": "crowndrive",
+  "version": "1.0.0",
+  "private": true,
   "dependencies": {
-    "@netlify/database": "latest",
-    "pg": "latest"
+    "@netlify/blobs": "^8.1.0"
   }
 }
