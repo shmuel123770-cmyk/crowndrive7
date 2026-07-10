@@ -1,18 +1,18 @@
-// image-stable-20260710
-const CACHE_NAME='crowndrive-mobile-admin-v1';
+// CrownDrive no-cache service worker cleanup — 2026-07-10
+const CACHE_BUST = 'crowndrive-no-cache-20260710';
 self.addEventListener('install', event => { self.skipWaiting(); });
 self.addEventListener('activate', event => {
-  event.waitUntil((async()=>{
-    const keys=await caches.keys();
-    await Promise.all(keys.map(k=>caches.delete(k)));
-    await self.clients.claim();
+  event.waitUntil((async () => {
+    try {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k => caches.delete(k)));
+      await self.clients.claim();
+      await self.registration.unregister();
+      const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      for (const client of clients) client.postMessage({ type: 'CROWNDRIVE_SW_CLEARED', version: CACHE_BUST });
+    } catch (e) {}
   })());
 });
 self.addEventListener('fetch', event => {
-  const req=event.request;
-  if(req.mode==='navigate' || req.url.endsWith('/index.html') || req.url.includes('firebase-config.js')){
-    event.respondWith(fetch(req, {cache:'no-store'}).catch(()=>fetch(req)));
-    return;
-  }
-  event.respondWith(fetch(req).catch(()=>caches.match(req)));
+  event.respondWith(fetch(event.request, { cache: 'no-store' }).catch(() => fetch(event.request)));
 });

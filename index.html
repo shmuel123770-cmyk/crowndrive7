@@ -1,6 +1,38 @@
 <!DOCTYPE html>
 <html dir="rtl" lang="he">
 <head>
+<!-- CrownDrive cache hardening: force latest deploy in normal browsers -->
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<script>
+(function(){
+  window.CROWNDRIVE_DEPLOY_VERSION = 'cache-hardening-20260710-1';
+  window.CROWNDRIVE_DISABLE_PWA_CACHE = true;
+  try{
+    if('serviceWorker' in navigator){
+      var shouldReload = !!navigator.serviceWorker.controller && !sessionStorage.getItem('crowndrive_sw_clean_reload_v1');
+      navigator.serviceWorker.getRegistrations().then(function(regs){
+        return Promise.all(regs.map(function(r){ return r.unregister().catch(function(){}); }));
+      }).then(function(){
+        if(window.caches && caches.keys){
+          return caches.keys().then(function(keys){
+            return Promise.all(keys.map(function(k){ return caches.delete(k).catch(function(){}); }));
+          });
+        }
+      }).then(function(){
+        if(shouldReload){
+          sessionStorage.setItem('crowndrive_sw_clean_reload_v1','1');
+          var url = new URL(location.href);
+          url.searchParams.set('v','cache-clean-20260710');
+          location.replace(url.toString());
+        }
+      }).catch(function(){});
+    }
+  }catch(e){}
+})();
+</script>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Crown Drive · השכרת רכבים · קראון הייטס</title>
@@ -5565,7 +5597,7 @@ setInterval(()=>{
 (function(){
   if ('serviceWorker' in navigator && location.protocol === 'https:') {
     window.addEventListener('load', function(){
-      navigator.serviceWorker.register('/sw.js').catch(function(err){
+      (window.CROWNDRIVE_DISABLE_PWA_CACHE ? Promise.resolve() : navigator.serviceWorker.register('/sw.js')).catch(function(err){
         console.warn('Service worker registration failed', err);
       });
     });
