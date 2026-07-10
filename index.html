@@ -3319,6 +3319,178 @@ async function doSignup(){
   }
 }
 
+
+
+/* ================= AUTH STABILITY OVERRIDE — FINAL =================
+   Fixes: switching email, new Firebase user creation from login, and auth modal crashes.
+   This override intentionally does not touch Realtime data path, Rules, dashboard UI, search UI, or car rendering.
+*/
+async function waitForFirebaseAuthReady(timeoutMs=4500){
+  const start=Date.now();
+  while(Date.now()-start<timeoutMs){
+    if(firebaseAuthReady()) return true;
+    await new Promise(r=>setTimeout(r,120));
+  }
+  return firebaseAuthReady();
+}
+function setLoginBusy(isBusy){
+  try{
+    const btn=document.querySelector('#auth-login .btn-gold');
+    if(btn){
+      btn.disabled=!!isBusy;
+      btn.dataset.oldText=btn.dataset.oldText||btn.textContent;
+      btn.textContent=isBusy?'מתחבר...':btn.dataset.oldText;
+      btn.style.opacity=isBusy?'.75':'';
+    }
+  }catch(e){}
+}
+function authRoleOrDefault(){
+  return (authRole==='owner'||authRole==='renter'||authRole==='admin') ? authRole : 'renter';
+}
+async function firebaseLoginOrCreate(email, pass, createIfMissing=true){
+  email=normalizeEmail(email);
+  if(!email || !pass) return null;
+  const ready=await waitForFirebaseAuthReady();
+  if(!ready) {
+    const e=new Error('Firebase Auth עדיין נטען. נסה שוב בעוד רגע.');
+    e.code='auth/not-ready';
+    throw e;
+  }
+
+  // If a different Firebase user is already cached, sign it out before trying another email.
+  // This prevents the old user from snapping the UI back or closing the auth modal.
+  try{
+    const cur=RT_AUTH && RT_AUTH.currentUser;
+    const curEmail=normalizeEmail(cur && cur.email);
+    if(cur && curEmail && curEmail!==email){
+      await RT_AUTH.signOut();
+      clearAuthIdentity();
+    }
+  }catch(e){ console.warn('Switch-user signOut skipped', e); }
+
+  try{
+    allowExplicitAuthAction();
+    const cred=await RT_AUTH.signInWithEmailAndPassword(email, pass);
+    return cred && cred.user;
+  }catch(signErr){
+    const code=(signErr&&signErr.code)||'';
+    const maybeMissing=['auth/user-not-found','auth/invalid-login-credentials','auth/invalid-credential'].includes(code);
+    if(createIfMissing && maybeMissing){
+      try{
+        allowExplicitAuthAction();
+        const cred=await RT_AUTH.createUserWithEmailAndPassword(email, pass);
+        return cred && cred.user;
+      }catch(createErr){
+        if((createErr&&createErr.code)==='auth/email-already-in-use'){
+          const friendly=new Error('המייל כבר רשום. הסיסמה שהוזנה לא תואמת.');
+          friendly.code='auth/wrong-password-friendly';
+          throw friendly;
+        }
+        throw createErr;
+      }
+    }
+    throw signErr;
+  }
+}
+
+async function doLogin(){
+  const em=normalizeEmail(($('l-mail')&&$('l-mail').value)||'');
+  const ps=($('l-pass')&&$('l-pass').value)||'';
+  authUserIsEditing=false;
+  clearAuthFieldErrors();
+  if(!/^\S+@\S+\.\S+$/.test(em)){ mark('lf-mail',true); showToast('נא להזין מייל תקין'); return; }
+  if(!ps || ps.length<6){ mark('lf-pass',true); showToast('נא להזין סיסמה של לפחות 6 תווים'); return; }
+
+  setLoginBusy(true);
+  try{
+    const role=authRoleOrDefault();
+
+    // Admin still uses the owner/admin path, but also signs into Firebase if possible.
+    if((role==='owner' || role==='admin' || adminSecretMode) && em===ADMIN_EMAIL && ps===ADMIN_PASS){
+      let uid='admin';
+      if(REALTIME){
+        const fbUser=await firebaseLoginOrCreate(em, ps, true);
+        if(fbUser && fbUser.uid) uid=fbUser.uid;
+      }
+      clearLoginFail(em);
+      rememberLogin('admin',em,ps);
+      state.session={role:'admin',id:uid,name:'מנהל האתר',email:ADMIN_EMAIL};
+      state.users[uid]={...(state.users[uid]||{}),name:'מנהל האתר',role:'admin',email:ADMIN_EMAIL,updatedAt:Date.now()};
+      rememberAuthIdentity(uid,ADMIN_EMAIL);
+      afterLoginUI();
+      pushRealtimeNow();
+      return;
+    }
+
+    if(role!=='owner' && role!=='renter'){
+      showToast('בחר קודם אם אתה שוכר או בעל רכב');
+      backToRoles();
+      return;
+    }
+
+    const pool=role==='owner'?state.owners:state.renters;
+    let u=pool.find(x=>normalizeEmail(x.email)===em);
+
+    if(REALTIME){
+      const fbUser=await firebaseLoginOrCreate(em, ps, true);
+      const uid=(fbUser&&fbUser.uid) || (u&&u.id) || newId('u');
+
+      if(!u){
+        u={id:uid,name:em.split('@')[0],phone:'',email:em,pass:ps,createdAt:Date.now(),updatedAt:Date.now(),autoCreated:true};
+        pool.push(u);
+        showToast('ברוך הבא — יצרתי לך חשבון חדש וחיברתי אותך');
+      }else{
+        migrateLocalIdToFirebaseUid(role,u.id,uid,em);
+        u.id=uid;
+        u.email=em;
+        u.pass=ps;
+        u.updatedAt=Date.now();
+      }
+
+      mark('lf-mail',false); mark('lf-pass',false);
+      clearLoginFail(em);
+      rememberLogin(role,em,ps);
+      rememberAuthIdentity(uid,em);
+      state.session={role,id:u.id,...u};
+      state.users[u.id]={...(state.users[u.id]||{}),name:u.name||em.split('@')[0],role,email:u.email,createdAt:u.createdAt||Date.now(),updatedAt:Date.now()};
+      afterLoginUI();
+      pushRealtimeNow();
+      return;
+    }
+
+    // Local fallback only if Firebase failed to initialize at all.
+    if(!u){
+      u={id:newId('u'),name:em.split('@')[0],phone:'',email:em,pass:ps,createdAt:Date.now(),updatedAt:Date.now(),autoCreated:true};
+      pool.push(u);
+    }else if(u.pass!==ps){
+      mark('lf-pass',true); showToast('הסיסמה לא תואמת למייל הזה'); return;
+    }
+    rememberLogin(role,em,ps);
+    state.session={role,id:u.id,...u};
+    state.users[u.id]={...(state.users[u.id]||{}),name:u.name,role,email:u.email,updatedAt:Date.now()};
+    afterLoginUI();
+  }catch(e){
+    console.error('login failed',e);
+    const code=(e&&e.code)||'';
+    if(code==='auth/wrong-password-friendly' || code==='auth/wrong-password' || code==='auth/email-already-in-use') mark('lf-pass',true);
+    else mark('lf-mail',true);
+    showToast(friendlyAuthMessage(e));
+  }finally{
+    setLoginBusy(false);
+  }
+}
+
+// Extra guard: editing the login fields must never close the auth modal or restore a previous account.
+['l-mail','l-pass','s-mail','s-pass'].forEach(id=>{
+  try{
+    const el=document.getElementById(id);
+    if(el){
+      el.addEventListener('input',()=>{authUserIsEditing=true; authModalOpenedAt=Date.now(); clearAuthFieldErrors();});
+      el.addEventListener('focus',()=>{authUserIsEditing=true; authModalOpenedAt=Date.now();});
+    }
+  }catch(e){}
+});
+
 /* renter license upload in signup */
 bindDrop('drop-rlic','rlic-file',f=>readImg(f,d=>{
   rlicData=d; $('rlic-img').src=d;
