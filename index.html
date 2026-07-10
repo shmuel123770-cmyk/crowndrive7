@@ -1456,7 +1456,13 @@ async function api(action, payload={}){
   return data;
 }
 function snapFrom(rows){
-  return { docs:(rows||[]).map(r=>({ id:r.id, data:()=>({...r.data}) })) };
+  const docs=(rows||[]).map(r=>({ id:r.id, data:()=>({...r.data}) }));
+  return {
+    docs,
+    forEach(fn){ docs.forEach(fn); },
+    size: docs.length,
+    empty: docs.length===0
+  };
 }
 function makeCollection(name){
   return {
