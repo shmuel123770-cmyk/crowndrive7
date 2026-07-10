@@ -7,11 +7,14 @@
 <meta http-equiv="Expires" content="0">
 <script>
 (function(){
-  window.CROWNDRIVE_DEPLOY_VERSION = 'cache-hardening-20260710-1';
+  window.CROWNDRIVE_DEPLOY_VERSION = 'cache-hardening-20260710-2';
   window.CROWNDRIVE_DISABLE_PWA_CACHE = true;
+  // מנקים service workers ו-cache ישנים ברקע בלבד.
+  // חשוב: לא מבצעים כאן location.reload/replace. רענון כפוי כזה גרם ללולאת רענון
+  // (במיוחד בספארי/מובייל שבהם sessionStorage לא תמיד נשמר בין ניווטים), והדפדפן "לא הגיב".
+  // ה-Headers כבר שולחים no-cache והרישום של sw.js מבוטל, כך שאין צורך ברענון כפוי.
   try{
     if('serviceWorker' in navigator){
-      var shouldReload = !!navigator.serviceWorker.controller && !sessionStorage.getItem('crowndrive_sw_clean_reload_v1');
       navigator.serviceWorker.getRegistrations().then(function(regs){
         return Promise.all(regs.map(function(r){ return r.unregister().catch(function(){}); }));
       }).then(function(){
@@ -19,13 +22,6 @@
           return caches.keys().then(function(keys){
             return Promise.all(keys.map(function(k){ return caches.delete(k).catch(function(){}); }));
           });
-        }
-      }).then(function(){
-        if(shouldReload){
-          sessionStorage.setItem('crowndrive_sw_clean_reload_v1','1');
-          var url = new URL(location.href);
-          url.searchParams.set('v','cache-clean-20260710');
-          location.replace(url.toString());
         }
       }).catch(function(){});
     }
@@ -2756,6 +2752,10 @@ function firebaseErrorText(e){
 }
 async function ensureRealtimeAuthFromMemory(){
   if(!window.CROWNDRIVE_AUTH_REQUIRED_FOR_REALTIME || !RT_AUTH || RT_AUTH.currentUser) return true;
+  // מגבילים ניסיונות התחברות אוטומטיים ל-Firebase כדי לא לספוג auth/too-many-requests,
+  // שחוסם את הדפדפן הנוכחי (ואז נראה שהאתר עובד רק בדפדפן אחר).
+  if(!authRestoreAllowed()) return false;
+  markAuthRestoreTried();
   try{
     const saved=savedLogin&&savedLogin();
     const localUser=(state.session && state.users) ? state.users[state.session.id] : null;
