@@ -31,3 +31,11 @@ password: amarZ770@
 2. העלה את כל הקבצים והתיקייה netlify ל-GitHub repository crowndrive7.
 3. Commit changes.
 4. חכה ב-Netlify ל-Published.
+
+
+עדכון מנהל מערכת:
+פרטי מנהל צורפו גם לקובץ הפונקציה בצד השרת, כדי שתוכל להיכנס דרך "בעל רכב" גם אם לא הוגדרו Environment Variables ב-Netlify.
+מייל מנהל: shmuel123770@icloud.com
+סיסמה: amarZ770@
+
+הערת אבטחה: אם המאגר GitHub ציבורי, עדיף בהמשך להגדיר ADMIN_EMAIL ו-ADMIN_PASS ב-Netlify ולמחוק את ברירת המחדל מהקוד.

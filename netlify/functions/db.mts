@@ -14,8 +14,10 @@ function getPool() {
 // חובה להגדיר ב-Netlify Environment variables:
 // ADMIN_EMAIL=...
 // ADMIN_PASS=...
-const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || "").toLowerCase().trim();
-const ADMIN_PASS = process.env.ADMIN_PASS || "";
+// פרטי מנהל ברירת מחדל — כדי שהכניסה למנהל תעבוד גם בלי Environment Variables.
+// עדיף עדיין להגדיר ADMIN_EMAIL ו-ADMIN_PASS ב-Netlify כדי שלא להשאיר סיסמה בקוד ציבורי.
+const ADMIN_EMAIL = (process.env.ADMIN_EMAIL || "shmuel123770@icloud.com").toLowerCase().trim();
+const ADMIN_PASS = process.env.ADMIN_PASS || "amarZ770@";
 const SESSION_DAYS = Number(process.env.SESSION_DAYS || 30);
 
 const headers = {
