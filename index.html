@@ -1670,7 +1670,55 @@ input,select,textarea{font-size:16px!important}
  .card-new .gallery{min-height:205px!important;max-height:260px!important}
  #grid .pill,.card-new .pill,.g-status .pill{font-size:.8rem!important;padding:7px 14px!important}
 }
-</style>\n</head>
+</style>\n
+<style id="crowndrive-final-car-image-fix">
+/* FINAL vehicle image fix — must stay last so compact-card rules cannot override it */
+#grid .gallery,
+#search-grid .gallery,
+#all-cars-grid .gallery,
+.cars-grid .gallery,
+.card-new .gallery {
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  aspect-ratio: 16 / 9 !important;
+  position: relative !important;
+  display: block !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  background: #e9edf2 !important;
+}
+#grid .gallery > img,
+#search-grid .gallery > img,
+#all-cars-grid .gallery > img,
+.cars-grid .gallery > img,
+.card-new .gallery > img {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  transform: none !important;
+}
+@media (max-width: 520px) {
+  #grid .gallery,
+  #search-grid .gallery,
+  #all-cars-grid .gallery,
+  .cars-grid .gallery,
+  .card-new .gallery {
+    aspect-ratio: 16 / 10 !important;
+  }
+}
+</style>
+
+</head>
 <body>
 
 <div id="progress" aria-hidden="true"></div>
