@@ -20,7 +20,7 @@
   --sh:0 24px 60px rgba(0,0,0,.1);
 }
 *{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
 body{font-family:'Heebo',sans-serif;font-weight:400;color:var(--ivory);background:
   radial-gradient(900px 520px at 50% 760px, rgba(255,255,255,.78), transparent 68%),
   radial-gradient(700px 380px at 18% 980px, rgba(63,107,142,.08), transparent 70%),
@@ -324,7 +324,7 @@ select option{background:var(--bg2);color:var(--ivory)}
 .reveal{opacity:0;transform:translateY(34px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
 .reveal.in{opacity:1;transform:none}
 @keyframes cardIn{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
-.card{animation:cardIn .55s cubic-bezier(.2,.7,.2,1) both}
+.card.card-new{animation:cardIn .55s cubic-bezier(.2,.7,.2,1) both}
 
 /* hero entrance */
 .hero-in>*{animation:heroUp .8s cubic-bezier(.2,.7,.2,1) both}
@@ -774,7 +774,6 @@ body::after{
 .overlay.open{opacity:1}
 .modal{animation:premiumModal .42s cubic-bezier(.2,.85,.2,1) both}
 @keyframes premiumModal{from{opacity:0;transform:translateY(18px) scale(.985);filter:blur(8px)}to{opacity:1;transform:none;filter:blur(0)}}
-.section{animation:softPageIn .55s cubic-bezier(.2,.8,.2,1) both}
 @keyframes softPageIn{from{opacity:.72;transform:translateY(10px)}to{opacity:1;transform:none}}
 .nav{background:rgba(20,29,40,.88);backdrop-filter:blur(22px) saturate(1.2);border-bottom:1px solid rgba(255,255,255,.06)}
 .btn,.card-btn,.mini,.rent-chip,.type-chip{will-change:transform}
@@ -789,6 +788,37 @@ body::after{
 .pass-toggle{position:absolute;left:8px;top:50%;transform:translateY(-50%);border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 10px;font-size:.78rem;font-weight:800;cursor:pointer;color:var(--blue)}
 .other-input{margin-top:8px;display:none}
 .other-input.show{display:block}
+
+
+/* ===== CrownDrive stability fix: no jumping/smeared cars ===== */
+.road,.blueprint,.route,.premium-road-mark{display:none!important}
+.hero-in{transform:none!important}
+.card,.card:hover{transform:none!important}
+.card::after{display:none!important}
+.gallery img,.card:hover .gallery img{transform:none!important}
+.ticker-track{animation:none!important;transform:none!important}
+.grid{align-items:start}
+.card{min-width:0;will-change:auto}
+.gallery{max-height:260px}
+.gallery img{object-fit:cover}
+@media(max-width:720px){.gallery{max-height:220px}.hero-in{padding-bottom:90px!important}}
+
+
+
+/* ===== FINAL STABILITY PATCH - upload-safe =====
+   Stops animated hero cars/ticker jumps and keeps fleet cards stable. */
+.cars-near,.cars-far{display:none!important}
+.sil,.s1,.s3,.ticker-track,.route-pin{animation:none!important;transform:none!important}
+.card,.card:hover{transform:none!important}
+.gallery img,.card:hover .gallery img{transform:none!important}
+.grid{align-items:stretch!important}
+.card{min-width:0!important;max-width:100%!important}
+.gallery{min-height:0!important}
+.gallery img{width:100%!important;height:100%!important;object-fit:cover!important}
+#fleet .grid{grid-template-columns:repeat(auto-fill,minmax(300px,1fr))!important}
+@media(max-width:560px){#fleet .grid{grid-template-columns:1fr!important}.grid{grid-template-columns:1fr!important}}
+/* ===== END FINAL STABILITY PATCH ===== */
+
 </style>
 </head>
 <body>
@@ -1268,13 +1298,13 @@ body::after{
         <div class="f-row">
           <div class="field" id="f-from"><label>תאריך איסוף <span class="req">*</span></label><input type="date" id="dt-from"><div class="err-msg">יש לבחור תאריך איסוף</div></div>
           <div class="field"><label>שעת איסוף</label>
-            <select id="tm-from"><option>09:00</option><option>10:00</option><option>11:00</option><option>12:00</option><option>14:00</option><option>16:00</option><option>18:00</option><option>20:00</option></select>
+            <select id="tm-from"><option selected>00:00</option><option>01:00</option><option>02:00</option><option>03:00</option><option>04:00</option><option>05:00</option><option>06:00</option><option>07:00</option><option>08:00</option><option>09:00</option><option>10:00</option><option>11:00</option><option>12:00</option><option>13:00</option><option>14:00</option><option>15:00</option><option>16:00</option><option>17:00</option><option>18:00</option><option>19:00</option><option>20:00</option><option>21:00</option><option>22:00</option><option>23:00</option></select>
           </div>
         </div>
         <div class="f-row">
           <div class="field" id="f-to"><label>תאריך החזרה <span class="req">*</span></label><input type="date" id="dt-to"><div class="err-msg">מועד ההחזרה חייב להיות אחרי האיסוף</div></div>
           <div class="field"><label>שעת החזרה</label>
-            <select id="tm-to"><option>09:00</option><option>10:00</option><option>11:00</option><option selected>12:00</option><option>14:00</option><option>16:00</option><option>18:00</option><option>20:00</option></select>
+            <select id="tm-to"><option>00:00</option><option>01:00</option><option>02:00</option><option>03:00</option><option>04:00</option><option>05:00</option><option>06:00</option><option>07:00</option><option>08:00</option><option>09:00</option><option>10:00</option><option>11:00</option><option selected>12:00</option><option>13:00</option><option>14:00</option><option>15:00</option><option>16:00</option><option>17:00</option><option>18:00</option><option>19:00</option><option>20:00</option><option>21:00</option><option>22:00</option><option>23:00</option></select>
           </div>
         </div>
         <div class="summary-box" id="price-live" style="display:none"></div>
@@ -1971,10 +2001,14 @@ function statusInfo(c){
   if(c.ret) return {cls:'soon',txt:'מתפנה בקרוב'};
   return {cls:'no',txt:'מושכר'};
 }
+let _renderHash='';
 function render(){
   persistState();
-  const g=$('grid'); g.innerHTML='';
   const list = state.cars.filter(matchesSearch).filter(c=>filter==='all'||(filter==='available'?c.status==='available':c.status!=='available')).sort((a,b)=>((b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0)));
+  const hash=list.map(c=>c.id+'|'+(c.status||'')+'|'+(c.updatedAt||c.createdAt||0)).join(',')+':'+filter;
+  if(hash===_renderHash) return;
+  _renderHash=hash;
+  const g=$('grid'); g.innerHTML='';
   if(state.cars.length===0){
     g.innerHTML=`<div class="empty">
       <h3>עדיין אין רכבים בצי</h3>
@@ -1987,7 +2021,7 @@ function render(){
     const ow=userOf(c.ownerId);
     const ost=ownerStats(c.ownerId);
     const el=document.createElement('article');
-    el.className='card'+(off?' off':''); el.dataset.id=c.id; el.dataset.ph=0;
+    el.className='card card-new'+(off?' off':''); el.dataset.id=c.id; el.dataset.ph=0;
     el.style.animationDelay=(idx*70)+'ms';
     el.innerHTML=`
       <div class="gallery">
@@ -2786,7 +2820,13 @@ function approveBooking(bid){
   const c=state.cars.find(x=>x.id===b.carId);
   if(!confirm('לאשר את ההזמנה '+b.num+'? הרכב יסומן כמושכר.'))return;
   if(CLOUD){
-    db.collection('bookings').doc(bid).update({status:'approved',approvedAt:Date.now()})
+    b.status='approved'; b.approvedAt=Date.now();
+    if(c){c.status='rented'; c.ret='זמין שוב: '+fmt(b.to)+' בשעה '+b.tmTo; c.updatedAt=Date.now();}
+    render();
+    if($('ov-owner').classList.contains('open')) renderOwnerBookings();
+    if($('ov-admin')&&$('ov-admin').classList.contains('open')) renderAdminDashboard();
+    showToast('ההזמנה אושרה');
+    db.collection('bookings').doc(bid).update({status:'approved',approvedAt:b.approvedAt})
       .then(()=>db.collection('cars').doc(b.carId).update({status:'rented',ret:'זמין שוב: '+fmt(b.to)+' בשעה '+b.tmTo,updatedAt:Date.now()}))
       .then(()=>pushMsg('b'+b.id,'system',0,'בעל הרכב אישר את ההזמנה '+b.num+'. עכשיו השוכר צריך לשלוח בצ׳אט צילום מסך של העברת הכסף לבעל הרכב.',[b.renterId,b.ownerId]))
       .catch(cloudErr);return;
@@ -2801,7 +2841,12 @@ function rejectBooking(bid){
   if(!b||!state.session||!((state.session.role==='owner'&&b.ownerId===state.session.id)||state.session.role==='admin'))return;
   if(!confirm('לדחות את בקשת ההזמנה '+b.num+'?'))return;
   if(CLOUD){
-    db.collection('bookings').doc(bid).update({status:'rejected',rejectedAt:Date.now()})
+    b.status='rejected'; b.rejectedAt=Date.now();
+    render();
+    if($('ov-owner').classList.contains('open')) renderOwnerBookings();
+    if($('ov-admin')&&$('ov-admin').classList.contains('open')) renderAdminDashboard();
+    showToast('הבקשה נדחתה');
+    db.collection('bookings').doc(bid).update({status:'rejected',rejectedAt:b.rejectedAt})
       .then(()=>pushMsg('b'+b.id,'system',0,'בעל הרכב דחה את בקשת ההזמנה '+b.num+'. אפשר להתכתב בצ׳אט או לבחור רכב אחר.',[b.renterId,b.ownerId]))
       .catch(cloudErr);return;
   }
@@ -3057,7 +3102,7 @@ function pushMsg(tid,role,uid,text,parts,extra){
 function sendMsg(){
   const inp=$('cp-text'),txt=inp.value.trim();
   if(!txt||!activeTid)return;
-  if(CLOUD && !state.session){showToast('כדי לשלוח הודעה יש להתחבר');openAuth();return;}
+  if(CLOUD && !state.session && !(activeTid||'').startsWith('sup-')){showToast('כדי לשלוח הודעה יש להתחבר');openAuth();return;}
   const role=state.session?state.session.role:'guest';
   const uid=state.session?state.session.id:0;
   pushMsg(activeTid,role,uid,txt,participantsOf(activeTid));
@@ -3068,7 +3113,7 @@ function sendMsg(){
 }
 function sendChatImage(input){
   const f=input.files&&input.files[0]; if(!f||!activeTid)return;
-  if(CLOUD && !state.session){showToast('כדי לשלוח תמונה יש להתחבר');openAuth();input.value='';return;}
+  if(CLOUD && !state.session && !(activeTid||'').startsWith('sup-')){showToast('כדי לשלוח תמונה יש להתחבר');openAuth();input.value='';return;}
   if(!f.type.startsWith('image/')){showToast('נא לבחור קובץ תמונה');input.value='';return;}
   const r=new FileReader();
   r.onload=()=>{
@@ -3279,8 +3324,8 @@ addEventListener('scroll',()=>{
     if(progress)progress.style.width=(max>0?(y/max)*100:0)+'%';
     if(!reduced&&heroIn){
       const f=Math.min(y/600,1);
-      heroIn.style.transform=`translateY(${y*.18}px)`;
-      heroIn.style.opacity=1-f*.55;
+      heroIn.style.transform=`translateY(${y*.06}px)`;
+      heroIn.style.opacity=1-f*.35;
     }
     tick=false;
   });
