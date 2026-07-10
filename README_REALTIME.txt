@@ -19,3 +19,8 @@ Important:
 4. Use a hard refresh after deploy: Cmd + Shift + R.
 
 Netlify note: firebase-config.js intentionally splits the public Firebase web apiKey so Netlify secret scanning will not block the deploy. Do not paste the full key back as one string.
+
+
+=== Firebase Auth אבטחה ===
+להפעיל Firebase Console > Authentication > Sign-in method > Email/Password > Enable.
+לאחר מכן להדביק Rules מהקובץ FIREBASE_RULES_AUTH_REQUIRED.txt.
