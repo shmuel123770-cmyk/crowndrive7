@@ -1005,6 +1005,109 @@ html,body{overflow-x:hidden!important}
 #ov-owner .f-row3{grid-template-columns:repeat(3,minmax(0,1fr))!important}#ov-owner .f-row{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 @media(max-width:760px){#ov-owner,#ov-renter,#ov-account{padding:0!important}#ov-owner .modal,#ov-renter .modal,#ov-account .modal{width:100%!important;height:100%!important;border-radius:0!important}#ov-owner .dash-tabs,#ov-renter .dash-tabs{display:grid!important;grid-template-columns:repeat(2,1fr)!important;overflow:visible!important;padding:9px!important}#ov-owner .dash-tabs button,#ov-renter .dash-tabs button{font-size:.76rem!important;padding:10px 8px!important}#dash-cars,#dash-add,#dash-book,#dash-rep,#dash-prof,#renter-body,#account-body{padding:12px!important}#ov-owner .f-row3,#ov-owner .f-row{grid-template-columns:1fr!important}#ov-owner .adm-list{grid-template-columns:1fr!important}}
 
+
+/* ===== USER REQUEST: smaller smart search panel =====
+/* Keeps realtime/auth code untouched; only layout/visual size changes */
+.search-panel.smart-search{
+  max-width:760px!important;
+  width:min(760px,94vw)!important;
+  margin:10px auto 14px!important;
+  padding:11px 14px!important;
+  border-radius:16px!important;
+  box-shadow:0 10px 26px rgba(25,35,45,.055)!important;
+}
+.search-panel.smart-search .search-top{margin-bottom:8px!important}
+.search-panel.smart-search .title{font-size:.95rem!important}
+.search-panel.smart-search .subtitle{font-size:.66rem!important;margin-top:2px!important}
+.search-panel.smart-search label{font-size:.66rem!important;margin-bottom:0!important}
+.search-panel.smart-search input,.search-panel.smart-search select{
+  padding:7px 10px!important;
+  min-height:34px!important;
+  font-size:.78rem!important;
+  border-radius:10px!important;
+  margin-top:3px!important;
+}
+.search-panel.smart-search .search-row{gap:8px!important;margin-bottom:7px!important}
+.search-panel.smart-search .rent-pick,.search-panel.smart-search .car-type-pick{gap:7px!important;margin:7px 0!important}
+.search-panel.smart-search .rent-chip,.search-panel.smart-search .type-chip{
+  padding:8px 5px!important;
+  border-radius:11px!important;
+  font-size:.74rem!important;
+}
+.search-panel.smart-search .clear{height:28px!important;padding:4px 10px!important;font-size:.74rem!important}
+#fleet .sec-tools{margin:18px 0 18px!important}
+#fleet .fleet-side .sec-head{margin-bottom:12px!important}
+#fleet .side-live{margin-top:8px!important;padding:8px 12px!important}
+@media(min-width:941px){
+  .fleet-side{max-width:820px!important;margin-inline:auto!important}
+}
+@media(max-width:560px){
+  .search-panel.smart-search{width:calc(100vw - 24px)!important;padding:10px!important}
+  .search-panel.smart-search .search-row.two{grid-template-columns:1fr!important}
+  .search-panel.smart-search .rent-pick,.search-panel.smart-search .car-type-pick{grid-template-columns:repeat(2,1fr)!important}
+}
+
+
+
+/* ===== HOME SEARCH BAR + FULL SEARCH PAGE ===== */
+.home-fleet-wrap{display:block!important;width:100%!important;max-width:1480px!important;margin:0 auto!important}
+.home-fleet-head{max-width:1180px;margin:0 auto 18px!important;text-align:center}
+.home-fleet-head .sec-head{margin-bottom:18px!important}
+.home-search-bar{width:min(1120px,100%);margin:0 auto;min-height:66px;border:1px solid rgba(31,41,53,.12);border-radius:22px;background:#fff;box-shadow:0 18px 45px rgba(20,28,40,.09);display:flex;align-items:center;gap:14px;justify-content:space-between;padding:12px 18px;color:#1B222B;transition:transform .18s var(--ease),box-shadow .25s,border-color .2s}
+.home-search-bar:hover{transform:translateY(-2px);box-shadow:0 24px 58px rgba(20,28,40,.13);border-color:rgba(63,107,142,.28)}
+.hsb-icon{width:42px;height:42px;border-radius:14px;background:#EFF4F8;color:var(--gold-d);display:grid;place-items:center;font-size:1.35rem;flex:none}
+.hsb-main{flex:1;text-align:right;font-weight:800;font-size:1.02rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hsb-action{background:#1B222B;color:#fff;border-radius:99px;padding:10px 18px;font-size:.82rem;font-weight:800;white-space:nowrap;flex:none}
+.home-mini-status{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;margin-top:12px;color:var(--mut);font-size:.82rem}.home-mini-status b{color:var(--gold-d);font-size:1.05rem}
+.all-cars-row{display:flex;justify-content:center;margin:22px 0 0}.all-cars-btn{min-width:210px;font-size:1rem!important;padding:14px 34px!important}
+.search-page-modal{width:min(1540px,calc(100vw - 18px))!important;height:calc(100vh - 18px)!important;max-height:none!important;display:flex!important;flex-direction:column!important;overflow:hidden!important}
+.search-page-modal .m-head{flex:none!important;background:#1B222B!important;color:#fff!important;border-bottom:none!important}.search-page-modal .m-close{background:rgba(255,255,255,.14)!important;color:#fff!important}
+.search-page-body{flex:1!important;overflow:auto!important;background:linear-gradient(180deg,#F6F9FC,#EAF0F5)!important;padding:18px!important}
+.search-page-top{max-width:1180px;margin:0 auto 12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.search-tabs{flex:1;max-width:520px}.search-tabs button{flex:1}
+.full-search-panel{max-width:1180px!important;width:100%!important;margin:0 auto 16px!important;padding:16px!important}
+.search-results-title{max-width:1480px;margin:0 auto 12px;background:#fff;border:1px solid var(--hair);border-radius:14px;padding:12px 16px;font-size:.9rem;color:var(--mut);text-align:center}.search-results-title b{color:var(--ivory);font-size:1.1rem}
+.search-grid{max-width:1480px;margin:0 auto!important;grid-template-columns:repeat(auto-fill,minmax(175px,1fr))!important;gap:12px!important}
+@media(min-width:1200px){.search-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important}}
+@media(min-width:1480px){.search-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important}}
+@media(max-width:700px){.home-search-bar{min-height:58px;padding:10px 12px;border-radius:17px}.hsb-main{font-size:.88rem}.hsb-action{display:none}.hsb-icon{width:36px;height:36px}.search-page-modal{width:100vw!important;height:100vh!important;border-radius:0!important}.search-page-body{padding:12px!important}.search-page-top{display:block}.search-tabs{max-width:none;margin-bottom:10px}.full-search-panel .search-row.two{grid-template-columns:1fr!important}.full-search-panel .rent-pick,.full-search-panel .car-type-pick{grid-template-columns:repeat(2,1fr)!important}.search-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:460px){.search-grid{grid-template-columns:1fr!important}.home-mini-status{font-size:.75rem;gap:8px}}
+
+
+
+/* ===== CROWNDRIVE CONCRETE STABILITY PATCH =====
+   Keeps Firebase/Auth intact. Stabilizes personal/admin/search overlays and home search layout. */
+.home-fleet-head{max-width:1320px!important;width:100%!important;margin-inline:auto!important}
+.home-search-bar{width:100%!important;max-width:1320px!important;min-height:62px!important;border-radius:20px!important}
+#fleet .grid#grid{margin-top:14px!important}
+.all-cars-row{margin:18px 0 4px!important}
+
+/* Separate full search page: stable, full-screen, scrolls only inside */
+#ov-search{position:fixed!important;inset:0!important;z-index:150!important;align-items:stretch!important;justify-content:center!important;padding:8px!important;background:rgba(5,5,7,.92)!important;overflow:hidden!important}
+#ov-search.open{display:flex!important}
+#ov-search .search-page-modal{width:calc(100vw - 16px)!important;height:calc(100vh - 16px)!important;max-width:1680px!important;border-radius:20px!important;animation:none!important;transform:none!important;display:flex!important;flex-direction:column!important;overflow:hidden!important}
+#ov-search .search-page-body{flex:1!important;min-height:0!important;overflow:auto!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior:contain!important}
+#ov-search .full-search-panel{max-width:1240px!important}
+#ov-search .search-grid .card-btn.chat{display:block!important}
+
+/* Personal/admin areas: no accidental closing, no jumping, no spring animation */
+#ov-admin,#ov-owner,#ov-renter{position:fixed!important;inset:0!important;z-index:155!important;align-items:stretch!important;justify-content:center!important;overflow:hidden!important;overscroll-behavior:contain!important}
+#ov-admin.open,#ov-owner.open,#ov-renter.open{display:flex!important}
+#ov-admin .modal,#ov-owner .modal,#ov-renter .modal{animation:none!important;transform:none!important;will-change:auto!important}
+#ov-admin .admin-modal,#ov-owner .modal,#ov-renter .modal{width:calc(100vw - 16px)!important;height:calc(100vh - 16px)!important;max-width:1680px!important;max-height:none!important;border-radius:20px!important;display:flex!important;flex-direction:column!important;overflow:hidden!important}
+#ov-admin .m-head,#ov-owner .m-head,#ov-renter .m-head{height:64px!important;min-height:64px!important;position:relative!important;top:auto!important;z-index:20!important;flex:none!important}
+#ov-admin .m-body,#ov-owner .m-body,#ov-renter .m-body{flex:1!important;min-height:0!important;overflow:auto!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior:contain!important;contain:layout paint!important}
+#ov-admin .dash-tabs,#ov-owner .dash-tabs{position:sticky!important;top:0!important;z-index:15!important;min-height:58px!important;flex:none!important;scrollbar-width:thin!important}
+#admin-body,#dash-cars,#dash-add,#dash-book,#dash-rep,#dash-prof,#renter-body{transform:none!important;animation:none!important;will-change:auto!important}
+#admin-body{min-height:calc(100vh - 150px)!important}
+#ov-admin .admin-panel,#ov-admin .admin-mini-card,#ov-admin .kpi,#ov-owner .adm-item,.personal-panel{transform:none!important;animation:none!important}
+@media(max-width:760px){
+  #ov-search,#ov-admin,#ov-owner,#ov-renter{padding:0!important}
+  #ov-search .search-page-modal,#ov-admin .admin-modal,#ov-owner .modal,#ov-renter .modal{width:100vw!important;height:100vh!important;border-radius:0!important}
+  #ov-admin .m-head,#ov-owner .m-head,#ov-renter .m-head,#ov-search .m-head{height:58px!important;min-height:58px!important;padding:12px 14px!important}
+  .home-search-bar{min-height:56px!important;border-radius:16px!important;padding:10px 12px!important}
+  .hsb-main{font-size:.86rem!important}.hsb-icon{width:34px!important;height:34px!important}
+}
+
 </style>
 </head>
 <body>
@@ -1128,71 +1231,26 @@ html,body{overflow-x:hidden!important}
     <circle cx="1080" cy="238" r="7" class="route-pin d2"/>
     <circle cx="900" cy="486" r="7" class="route-pin d3"/>
   </svg>
-  <div class="fleet-wrap">
-    <aside class="fleet-side">
+  <div class="fleet-wrap home-fleet-wrap">
+    <div class="home-fleet-head">
       <div class="sec-head">
         <h2>צי הרכבים</h2>
-        <div class="sub">מפרט מלא, תמונות וזמינות מעודכנת לכל רכב</div>
+        <div class="sub">חיפוש מהיר, רכבים זמינים, ולחיצה לפתיחת חיפוש מלא עם כל המסננים</div>
       </div>
-      <div class="filters vert" role="tablist" aria-label="סינון לפי זמינות">
-        <button class="on" onclick="setFilter('all',this)">הכל</button>
-        <button onclick="setFilter('available',this)">זמינים</button>
-        <button onclick="setFilter('rented',this)">מושכרים</button>
+      <button type="button" class="home-search-bar" onclick="openFullSearch()" aria-label="פתיחת חיפוש רכבים מלא">
+        <span class="hsb-icon">⌕</span>
+        <span class="hsb-main">חפש רכב לפי יצרן, דגם, צבע, מושבים, שעות או ימים</span>
+        <span class="hsb-action">פתח חיפוש מתקדם</span>
+      </button>
+      <div class="home-mini-status">
+        <span><b id="side-avail">0</b> זמינים עכשיו</span>
+        <span>הצגת עד 15 רכבים בדף הבית</span>
       </div>
-      <div class="search-panel smart-search" aria-label="חיפוש חכם לרכב">
-        <div class="search-top">
-          <div>
-            <div class="title">חיפוש חכם</div>
-            <div class="subtitle">בחר מתוך האפשרויות כדי למצוא רכב מדויק</div>
-          </div>
-          <button class="mini clear" onclick="clearSearch()">ניקוי</button>
-        </div>
-
-        <div class="search-row two">
-          <label>יצרן
-            <select id="q-make" onchange="populateModelSelect('q-make','q-model');updateSearch()"><option value="">כל יצרני הרכב</option></select>
-          </label>
-          <label>דגם
-            <select id="q-model" onchange="updateSearch()"><option value="">כל הדגמים</option></select>
-          </label>
-        </div>
-
-        <div class="search-row one">
-          <label>סוג הנעה
-            <select id="q-fuel" onchange="updateSearch()"><option value="">כל סוגי ההנעה</option><option>בנזין</option><option>היברידי</option><option>היברידי נטען (PHEV)</option><option>חשמלי</option><option>דיזל</option></select>
-          </label>
-        </div>
-
-        <div class="search-row one">
-          <label>מספר מושבים
-            <select id="q-seats" onchange="updateSearch()"><option value="">כל מספר מושבים</option><option>2</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9+</option></select>
-          </label>
-        </div>
-
-        <div class="rent-pick" role="group" aria-label="סוג השכרה">
-          <input id="q-rental" type="hidden" value="">
-          <button type="button" class="rent-chip" data-rental="hourly" onclick="setRentalFilter('hourly',this)">לפי שעות</button>
-          <button type="button" class="rent-chip" data-rental="daily" onclick="setRentalFilter('daily',this)">לפי ימים</button>
-          <button type="button" class="rent-chip" data-rental="long" onclick="setRentalFilter('long',this)">תקופה ארוכה</button>
-        </div>
-
-        <div class="car-type-pick" role="group" aria-label="סוג רכב">
-          <input id="q-cat" type="hidden" value="">
-          <button type="button" class="type-chip" data-cat="סדאן" onclick="setCarTypeFilter('סדאן',this)">סדאן</button>
-          <button type="button" class="type-chip" data-cat="SUV" onclick="setCarTypeFilter('SUV',this)">SUV</button>
-          <button type="button" class="type-chip" data-cat="פיקאפ" onclick="setCarTypeFilter('פיקאפ',this)">פיקאפ</button>
-          <button type="button" class="type-chip" data-cat="מיניוואן" onclick="setCarTypeFilter('מיניוואן',this)">מיניוואן</button>
-        </div>
-
-        <div class="search-row one soft">
-          <label>חיפוש חופשי
-            <input id="q-free" placeholder="לדוגמה: לבן, Toyota, משפחתי..." oninput="updateSearch()">
-          </label>
-        </div>
-      </div>
-      <div class="side-live"><span class="dot ok"></span><b id="side-avail">0</b> זמינים להשכרה עכשיו</div>
-    </aside>
+    </div>
     <div class="grid" id="grid"></div>
+    <div class="all-cars-row">
+      <button type="button" class="btn btn-gold all-cars-btn" onclick="openAllCarsPage()">כל הרכבים</button>
+    </div>
   </div>
 </section>
 
@@ -1235,6 +1293,70 @@ html,body{overflow-x:hidden!important}
     <div>© 2026 כל הזכויות שמורות</div>
   </div>
 </footer>
+
+<!-- ============ FULL SEARCH / ALL CARS PAGE ============ -->
+<div class="overlay" id="ov-search" role="dialog" aria-modal="true">
+  <div class="modal wide search-page-modal">
+    <div class="m-head">
+      <h3 id="search-page-title">חיפוש רכבים</h3>
+      <button class="m-close" onclick="closeOv('ov-search')">✕</button>
+    </div>
+    <div class="m-body search-page-body">
+      <div class="search-page-top">
+        <div class="filters search-tabs" role="tablist" aria-label="סינון לפי זמינות">
+          <button class="on" onclick="setFilter('all',this)">הכל</button>
+          <button onclick="setFilter('available',this)">זמינים</button>
+          <button onclick="setFilter('rented',this)">מושכרים</button>
+        </div>
+        <button class="mini clear" onclick="clearSearch()">ניקוי מסננים</button>
+      </div>
+      <div class="search-panel smart-search full-search-panel" aria-label="חיפוש חכם לרכב">
+        <div class="search-top">
+          <div>
+            <div class="title">חיפוש מתקדם</div>
+            <div class="subtitle">בחר מסננים, והרכבים למטה יתעדכנו מיד</div>
+          </div>
+        </div>
+        <div class="search-row two">
+          <label>יצרן
+            <select id="q-make" onchange="populateModelSelect('q-make','q-model');updateSearch()"><option value="">כל יצרני הרכב</option></select>
+          </label>
+          <label>דגם
+            <select id="q-model" onchange="updateSearch()"><option value="">כל הדגמים</option></select>
+          </label>
+        </div>
+        <div class="search-row two">
+          <label>סוג הנעה
+            <select id="q-fuel" onchange="updateSearch()"><option value="">כל סוגי ההנעה</option><option>בנזין</option><option>היברידי</option><option>היברידי נטען (PHEV)</option><option>חשמלי</option><option>דיזל</option></select>
+          </label>
+          <label>מספר מושבים
+            <select id="q-seats" onchange="updateSearch()"><option value="">כל מספר מושבים</option><option>2</option><option>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9+</option></select>
+          </label>
+        </div>
+        <div class="rent-pick" role="group" aria-label="סוג השכרה">
+          <input id="q-rental" type="hidden" value="">
+          <button type="button" class="rent-chip" data-rental="hourly" onclick="setRentalFilter('hourly',this)">לפי שעות</button>
+          <button type="button" class="rent-chip" data-rental="daily" onclick="setRentalFilter('daily',this)">לפי ימים</button>
+          <button type="button" class="rent-chip" data-rental="long" onclick="setRentalFilter('long',this)">תקופה ארוכה</button>
+        </div>
+        <div class="car-type-pick" role="group" aria-label="סוג רכב">
+          <input id="q-cat" type="hidden" value="">
+          <button type="button" class="type-chip" data-cat="סדאן" onclick="setCarTypeFilter('סדאן',this)">סדאן</button>
+          <button type="button" class="type-chip" data-cat="SUV" onclick="setCarTypeFilter('SUV',this)">SUV</button>
+          <button type="button" class="type-chip" data-cat="פיקאפ" onclick="setCarTypeFilter('פיקאפ',this)">פיקאפ</button>
+          <button type="button" class="type-chip" data-cat="מיניוואן" onclick="setCarTypeFilter('מיניוואן',this)">מיניוואן</button>
+        </div>
+        <div class="search-row one soft">
+          <label>חיפוש חופשי
+            <input id="q-free" placeholder="לדוגמה: לבן, Toyota, משפחתי..." oninput="updateSearch()">
+          </label>
+        </div>
+      </div>
+      <div class="search-results-title"><b id="search-count">0</b> רכבים בתוצאה</div>
+      <div class="grid search-grid" id="search-grid"></div>
+    </div>
+  </div>
+</div>
 
 <!-- ============ AUTH MODAL ============ -->
 <div class="overlay" id="ov-auth" role="dialog" aria-modal="true">
@@ -1811,6 +1933,82 @@ function prefillSavedLogin(role){
 }
 function clearSavedLogin(){ try{ localStorage.removeItem(AUTH_MEMORY_KEY); }catch(e){} delCookie(COOKIE_LOGIN_KEY); }
 
+const AUTH_RESTORE_THROTTLE_KEY = 'crowndrive_auto_auth_restore_last_try_v1';
+function authRestoreAllowed(){
+  try{
+    const last=+(localStorage.getItem(AUTH_RESTORE_THROTTLE_KEY)||0);
+    return Date.now()-last>90*1000;
+  }catch(e){return true}
+}
+function markAuthRestoreTried(){ try{localStorage.setItem(AUTH_RESTORE_THROTTLE_KEY,String(Date.now()))}catch(e){} }
+function findUserByRoleEmailOrUid(role,email,uid){
+  role = role || '';
+  email = normalizeEmail(email||'');
+  const pool = role==='owner' ? state.owners : (role==='renter' ? state.renters : []);
+  let u = pool.find(x=>x && ((uid && x.id===uid) || (email && normalizeEmail(x.email)===email)));
+  return {pool,u};
+}
+function restoreSessionFromFirebaseUser(fbUser, roleHint){
+  if(!fbUser || !fbUser.uid) return false;
+  const saved = savedLogin() || {};
+  const email = normalizeEmail(fbUser.email || saved.email || '');
+  let role = roleHint || (state.session&&state.session.role) || saved.role || (state.users&&state.users[fbUser.uid]&&state.users[fbUser.uid].role) || 'renter';
+  if(role==='admin'){
+    state.session={role:'admin',id:fbUser.uid,name:'מנהל האתר',email:email||ADMIN_EMAIL};
+    state.users[fbUser.uid]={...(state.users[fbUser.uid]||{}),role:'admin',name:'מנהל האתר',email:email||ADMIN_EMAIL,updatedAt:Date.now()};
+    rememberAuthIdentity(fbUser.uid,email||ADMIN_EMAIL);
+    persistSessionCookie();
+    try{localStorage.setItem(LOCAL_KEY, JSON.stringify({owners:state.owners||[],renters:state.renters||[],cars:state.cars||[],bookings:state.bookings||[],session:state.session,msgs:state.msgs||[],ratings:state.ratings||[],users:state.users||{},seq}))}catch(e){}
+    renderNav(); renderMyAreaFab(); updateBadge();
+    return true;
+  }
+  if(role!=='owner' && role!=='renter') role='renter';
+  let {pool,u}=findUserByRoleEmailOrUid(role,email,fbUser.uid);
+  if(!u){
+    u={id:fbUser.uid,name:(email?email.split('@')[0]:'משתמש'),phone:'',email,pass:(saved&&saved.pass)||'',createdAt:Date.now(),restored:true};
+    pool.push(u);
+  }else{
+    u.id=fbUser.uid;
+    if(email) u.email=email;
+    if(saved&&saved.pass&&!u.pass) u.pass=saved.pass;
+  }
+  state.users[fbUser.uid]={...(state.users[fbUser.uid]||{}),...u,role,email:u.email||email,updatedAt:Date.now()};
+  state.session={role,id:fbUser.uid,...u};
+  rememberAuthIdentity(fbUser.uid,u.email||email);
+  persistSessionCookie();
+  try{localStorage.setItem(LOCAL_KEY, JSON.stringify({owners:state.owners||[],renters:state.renters||[],cars:state.cars||[],bookings:state.bookings||[],session:state.session,msgs:state.msgs||[],ratings:state.ratings||[],users:state.users||{},seq}))}catch(e){}
+  renderNav(); renderMyAreaFab(); updateBadge();
+  return true;
+}
+async function restorePersistentLoginOnLoad(){
+  const saved = savedLogin && savedLogin();
+  if(!saved || !saved.email) return false;
+  const role = saved.role || (state.session&&state.session.role) || 'renter';
+  if(state.session && state.session.email && normalizeEmail(state.session.email)===normalizeEmail(saved.email)){
+    renderNav(); renderMyAreaFab();
+  }
+  if(RT_AUTH && RT_AUTH.currentUser){
+    return restoreSessionFromFirebaseUser(RT_AUTH.currentUser, role);
+  }
+  if(!firebaseAuthReady() || !saved.pass || !authRestoreAllowed()) return false;
+  markAuthRestoreTried();
+  try{
+    const cred = await RT_AUTH.signInWithEmailAndPassword(normalizeEmail(saved.email), saved.pass);
+    if(cred && cred.user){
+      restoreSessionFromFirebaseUser(cred.user, role);
+      safeToast('התחברת אוטומטית');
+      pushRealtimeNow();
+      return true;
+    }
+  }catch(e){
+    console.warn('Auto login restore failed', e);
+    // לא מוחקים פרטי התחברות בגלל שגיאה זמנית; רק אם המשתמש ילחץ יציאה נמחק.
+    if((e&&e.code)==='auth/too-many-requests') safeToast('Firebase חסם זמנית כניסות אוטומטיות — נסה עוד כמה דקות');
+  }
+  return false;
+}
+
+
 
 /* ================= FIREBASE AUTH BRIDGE =================
    Firebase Rules cannot know who owns a car unless the browser is signed in
@@ -1824,14 +2022,44 @@ async function firebaseLoginOrCreate(email, pass, createIfMissing=true){
   try{
     const cred = await RT_AUTH.signInWithEmailAndPassword(email, pass);
     return cred.user;
-  }catch(e){
-    const code=(e&&e.code)||'';
-    if(createIfMissing && (code==='auth/user-not-found' || code==='auth/invalid-login-credentials')){
-      const cred = await RT_AUTH.createUserWithEmailAndPassword(email, pass);
-      return cred.user;
+  }catch(signErr){
+    const code=(signErr&&signErr.code)||'';
+    const canCreate = createIfMissing && ['auth/user-not-found','auth/invalid-login-credentials','auth/invalid-credential'].includes(code);
+    if(canCreate){
+      try{
+        const cred = await RT_AUTH.createUserWithEmailAndPassword(email, pass);
+        return cred.user;
+      }catch(createErr){
+        // אם החשבון כבר קיים ב-Firebase, זו כנראה סיסמה שגויה — לא ליצור בלבול למשתמש.
+        if((createErr&&createErr.code)==='auth/email-already-in-use'){
+          const friendly = new Error('המייל כבר רשום. הסיסמה שהוזנה לא תואמת.');
+          friendly.code='auth/wrong-password-friendly';
+          throw friendly;
+        }
+        throw createErr;
+      }
     }
-    throw e;
+    throw signErr;
   }
+}
+function friendlyAuthMessage(e){
+  const code=(e&&e.code)||'';
+  const raw=((e&&e.message)||String(e||''));
+  if(code==='auth/invalid-credential' || code==='auth/invalid-login-credentials' || code==='auth/user-not-found') return 'המייל או הסיסמה לא תואמים. אם זה משתמש חדש — לחץ הרשמה, או נסה שוב עם הסיסמה הנכונה.';
+  if(code==='auth/wrong-password' || code==='auth/wrong-password-friendly') return 'הסיסמה לא תואמת למייל הזה.';
+  if(code==='auth/email-already-in-use') return 'המייל הזה כבר רשום. לחץ כניסה או אפס סיסמה.';
+  if(code==='auth/too-many-requests') return 'יותר מדי ניסיונות. חכה כמה דקות או נסה ממכשיר/רשת אחרת.';
+  if(code==='auth/weak-password') return 'הסיסמה קצרה מדי. צריך לפחות 6 תווים.';
+  if(code==='auth/invalid-email') return 'כתובת המייל לא תקינה.';
+  return raw.replace('Firebase: ','');
+}
+function switchLoginToSignupPrefill(email,pass){
+  try{
+    setAuthMode('signup');
+    if($('s-mail') && email) $('s-mail').value=email;
+    if($('s-pass') && pass) $('s-pass').value=pass;
+    setTimeout(()=>{ if($('s-name')) $('s-name').focus(); },80);
+  }catch(e){}
 }
 function migrateLocalIdToFirebaseUid(role, oldId, uid, email){
   if(!uid || !oldId || oldId===uid) return;
@@ -2005,6 +2233,16 @@ function initRealtime(){
     RT_AUTH = firebase.auth ? firebase.auth() : null;
     if(RT_AUTH && firebase.auth.Auth && firebase.auth.Auth.Persistence){
       RT_AUTH.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(e=>console.warn('Auth persistence failed',e));
+    }
+    if(RT_AUTH && !window.CROWNDRIVE_AUTH_STATE_WATCH_ATTACHED){
+      window.CROWNDRIVE_AUTH_STATE_WATCH_ATTACHED=true;
+      RT_AUTH.onAuthStateChanged(user=>{
+        if(user){
+          const saved=savedLogin&&savedLogin();
+          restoreSessionFromFirebaseUser(user,(saved&&saved.role)||(state.session&&state.session.role));
+          setTimeout(()=>pushRealtimeNow(),350);
+        }
+      });
     }
     RT_REF=RT_DB.ref((window.CROWNDRIVE_RT_PATH||'crowndrive-live/state'));
     REALTIME=true;
@@ -2290,7 +2528,7 @@ function renderNav(){
   }
   renderMyAreaFab();
 }
-function logout(){try{ if(RT_AUTH&&RT_AUTH.currentUser)RT_AUTH.signOut(); }catch(e){} if(CLOUD&&fauth.currentUser){fauth.signOut()}state.session=null;clearAuthIdentity();delCookie(COOKIE_SESSION_KEY);persistState();stopUserFeeds();stopAdminFeeds();renderNav();toggleChat(false);updateBadge();renderMyAreaFab();showToast('יצאת מהמערכת בהצלחה')}
+function logout(){try{ if(RT_AUTH&&RT_AUTH.currentUser)RT_AUTH.signOut(); }catch(e){} if(CLOUD&&fauth.currentUser){fauth.signOut()}state.session=null;clearAuthIdentity();clearSavedLogin();delCookie(COOKIE_SESSION_KEY);persistState();stopUserFeeds();stopAdminFeeds();renderNav();toggleChat(false);updateBadge();renderMyAreaFab();showToast('יצאת מהמערכת בהצלחה')}
 
 /* ================= AUTH ================= */
 function openAuth(role){
@@ -2489,11 +2727,51 @@ async function doLogin(){
     }
 
     const pool = authRole==='owner'?state.owners:state.renters;
-    let u = pool.find(x=>x.email===em);
+    let u = pool.find(x=>normalizeEmail(x.email)===em);
+
+    // פתרון למאות משתמשים חדשים: אם המייל לא קיים עדיין ב-Firebase,
+    // האתר יוצר חשבון אוטומטית במקום להציג חסימה/שגיאת Firebase.
+    // אם המייל כבר קיים והסיסמה שגויה, Firebase יחזיר email-already-in-use ונציג הודעה ברורה.
+    if(!u && REALTIME && firebaseAuthReady()){
+      try{
+        const fbUser = await firebaseLoginOrCreate(em,ps,true);
+        const uid = fbUser && fbUser.uid ? fbUser.uid : newId('u');
+        u = {
+          id: uid,
+          name: em.split('@')[0],
+          phone: '',
+          email: em,
+          pass: ps,
+          createdAt: Date.now(),
+          autoCreated: true
+        };
+        pool.push(u);
+        state.users[uid]={name:u.name,role:authRole,email:em,createdAt:u.createdAt,updatedAt:Date.now()};
+        showToast('יצרתי לך חשבון חדש וחיברתי אותך למערכת');
+      }catch(authErr){
+        mark('lf-mail',true); mark('lf-pass',true);
+        const code=(authErr&&authErr.code)||'';
+        if(['auth/user-not-found','auth/invalid-login-credentials','auth/invalid-credential'].includes(code)){
+          switchLoginToSignupPrefill(em,ps);
+          showToast('החשבון הזה עדיין לא רשום. עבור להרשמה או בדוק סיסמה.');
+          return;
+        }
+        throw authErr;
+      }
+    }
+
     mark('lf-mail',!u);
-    if(!u){ noteLoginFail(em); return; }
-    mark('lf-pass',u.pass!==ps);
-    if(u.pass!==ps){ noteLoginFail(em); return; }
+    if(!u){ noteLoginFail(em); showToast('לא נמצא חשבון. לחץ הרשמה ליצירת משתמש חדש.'); return; }
+
+    if(u.pass!==ps){
+      // לפעמים הסיסמה המקומית ישנה אבל Firebase נכון — נבדוק מול Firebase לפני חסימה.
+      if(REALTIME && firebaseAuthReady()){
+        try{ await RT_AUTH.signInWithEmailAndPassword(em,ps); u.pass=ps; }
+        catch(authErr){ mark('lf-pass',true); noteLoginFail(em); showToast(friendlyAuthMessage(authErr)); return; }
+      }else{
+        mark('lf-pass',true); noteLoginFail(em); return;
+      }
+    }else mark('lf-pass',false);
 
     // Firebase Auth sign-in is required for secure realtime Rules.
     u = await ensureFirebaseSessionForLocalUser(authRole,u,ps);
@@ -2505,9 +2783,8 @@ async function doLogin(){
   }catch(e){
     noteLoginFail(em);
     console.error('login failed',e);
-    const msg=((e&&e.message)||String(e));
-    if(/auth\//.test((e&&e.code)||'')) showToast('Firebase Auth חסם כניסה: '+msg.replace('Firebase: ',''));
-    else showToast('שגיאת כניסה: '+msg);
+    if(/auth\//.test((e&&e.code)||'')) showToast(friendlyAuthMessage(e));
+    else showToast('שגיאת כניסה: '+(((e&&e.message)||e)+''));
   }
 }
 async function doSignup(){
@@ -2572,7 +2849,7 @@ async function doSignup(){
   }catch(e){
     console.error('signup failed',e);
     mark('sf-mail',true);
-    showToast('שגיאת הרשמה / Firebase Auth: '+(((e&&e.message)||e)+'').replace('Firebase: ',''));
+    showToast('שגיאת הרשמה: '+friendlyAuthMessage(e));
   }
 }
 
@@ -2613,35 +2890,20 @@ function statusInfo(c){
   return {cls:'no',txt:'מושכר'};
 }
 let _renderHash='';
-function render(){
-  persistState();
-  const list = state.cars.filter(matchesSearch).filter(c=>filter==='all'||(filter==='available'?c.status==='available':c.status!=='available')).sort((a,b)=>((b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0)));
-  const hash=list.map(c=>c.id+'|'+(c.status||'')+'|'+(c.updatedAt||c.createdAt||0)).join(',')+':'+filter+':'+JSON.stringify(searchQ||{});
-  if(hash===_renderHash) return;
-  _renderHash=hash;
-  const g=$('grid'); g.innerHTML='';
-  if(state.cars.length===0){
-    g.innerHTML=`<div class="empty">
-      <h3>עדיין אין רכבים בצי</h3>
-      <p>רכבים חדשים יתווספו בקרוב.</p>
-    </div>`;
-  } else if(list.length===0){
-    g.innerHTML=`<div class="empty"><h3>אין רכבים בסינון זה</h3><p>נסו סינון אחר.</p></div>`;
-  } else list.forEach((c,idx)=>{
-    const s=statusInfo(c), off=c.status!=='available';
-    const ow=userOf(c.ownerId);
-    const ost=ownerStats(c.ownerId);
-    const el=document.createElement('article');
-    el.className='card card-new'+(off?' off':''); el.dataset.id=c.id; el.dataset.ph=0;
-    el.style.animationDelay=(idx*70)+'ms';
-    el.innerHTML=`
+function carCardHTML(c,idx){
+  const s=statusInfo(c), off=c.status!=='available';
+  const ow=userOf(c.ownerId);
+  const ost=ownerStats(c.ownerId);
+  const photos=(Array.isArray(c.photos)&&c.photos.length)?c.photos:[fallbackCarPhoto()];
+  c.photos=photos;
+  return `
       <div class="gallery">
-        <img src="${(c.photos&&c.photos[0])||fallbackCarPhoto()}" alt="${esc(c.make)} ${esc(c.model)}" loading="lazy" onerror="this.src=fallbackCarPhoto()">
+        <img src="${photos[0]||fallbackCarPhoto()}" alt="${esc(c.make)} ${esc(c.model)}" loading="lazy" onerror="this.src=fallbackCarPhoto()">
         <span class="g-status"><span class="pill ${s.cls}">${s.txt}</span></span>
-        <span class="g-count">1 / ${c.photos.length}</span>
+        <span class="g-count">1 / ${photos.length}</span>
         <button class="g-nav g-prev" onclick="slide('${c.id}',-1,event)" aria-label="תמונה קודמת">‹</button>
         <button class="g-nav g-next" onclick="slide('${c.id}',1,event)" aria-label="תמונה הבאה">›</button>
-        <div class="g-dots">${c.photos.map((_,i)=>`<span class="${i===0?'on':''}"></span>`).join('')}</div>
+        <div class="g-dots">${photos.map((_,i)=>`<span class="${i===0?'on':''}"></span>`).join('')}</div>
       </div>
       <div class="card-body">
         <div class="card-title">
@@ -2663,7 +2925,7 @@ function render(){
         </div>
         <div class="rental-tags">${rentalTypesOf(c).map(t=>`<span class="rental-tag">${rentalLabel(t)}</span>`).join('')}</div>
         <div class="rate-list">${ratePills(c)}</div>
-        ${c.tags.length?`<div class="tags">${c.tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>`:''}
+        ${(c.tags||[]).length?`<div class="tags">${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>`:''}
         <div class="availability-line">${esc(availabilityText(c))}</div>
         <div class="card-actions">
           <button class="card-btn chat" onclick="startOwnerChat('${c.ownerId}',event)">💬 צ'אט עם בעל הרכב</button>
@@ -2672,13 +2934,49 @@ function render(){
         </div>
         <div class="home-chat-note">אפשר לשאול את בעל הרכב לפני ההזמנה</div>
       </div>`;
+}
+function renderCarsInto(targetId,list,emptyTitle,emptyText){
+  const g=$(targetId);
+  if(!g)return;
+  g.innerHTML='';
+  if(state.cars.length===0){
+    g.innerHTML=`<div class="empty"><h3>עדיין אין רכבים בצי</h3><p>רכבים חדשים יתווספו בקרוב.</p></div>`;
+    return;
+  }
+  if(list.length===0){
+    g.innerHTML=`<div class="empty"><h3>${emptyTitle||'אין רכבים בסינון זה'}</h3><p>${emptyText||'נסו סינון אחר.'}</p></div>`;
+    return;
+  }
+  list.forEach((c,idx)=>{
+    const el=document.createElement('article');
+    el.className='card card-new'+(c.status!=='available'?' off':'');
+    el.dataset.id=c.id;
+    el.dataset.ph=0;
+    el.style.animationDelay=(Math.min(idx,18)*35)+'ms';
+    el.innerHTML=carCardHTML(c,idx);
     g.appendChild(el);
   });
+}
+function filteredCars(){
+  return state.cars
+    .filter(matchesSearch)
+    .filter(c=>filter==='all'||(filter==='available'?c.status==='available':c.status!=='available'))
+    .sort((a,b)=>((b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0)));
+}
+function render(){
+  persistState();
+  const list = filteredCars();
+  const hash=list.map(c=>c.id+'|'+(c.status||'')+'|'+(c.updatedAt||c.createdAt||0)+'|'+((c.photos||[]).length)).join(',')+':'+state.cars.length+':'+filter+':'+JSON.stringify(searchQ||{});
+  if(hash===_renderHash) return;
+  _renderHash=hash;
+  renderCarsInto('grid', list.slice(0,15), 'אין רכבים בסינון זה', 'פתחו את כל הרכבים או נסו חיפוש אחר.');
+  renderCarsInto('search-grid', list, 'אין רכבים בחיפוש הזה', 'נסו לנקות מסננים או לשנות חיפוש.');
+  if($('search-count')) $('search-count').textContent=list.length;
   const ok=state.cars.filter(c=>c.status==='available').length;
   const soon=state.cars.filter(c=>c.status!=='available'&&c.ret).length;
   animateNum($('cnt-ok'),ok); animateNum($('cnt-no'),state.cars.length-ok-soon); animateNum($('cnt-soon'),soon);
   animateNum($('hs-cars'),state.cars.length); animateNum($('hs-ok'),ok); animateNum($('side-avail'),ok);
-  $('last-upd').textContent='עודכן '+new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
+  if($('last-upd')) $('last-upd').textContent='עודכן '+new Date().toLocaleTimeString('he-IL',{hour:'2-digit',minute:'2-digit'});
 }
 
 function norm(v){return String(v||'').trim().toLowerCase()}
@@ -2746,6 +3044,31 @@ function slide(id,dir,e){
 }
 function setFilter(f,btn){filter=f;document.querySelectorAll('.filters button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');render()}
 function scrollToFleet(){$('fleet').scrollIntoView({behavior:'smooth'})}
+function syncSearchFilterTabs(){
+  document.querySelectorAll('.filters button').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll(`.filters button[onclick*="setFilter('${filter}'"]`).forEach(b=>b.classList.add('on'));
+}
+function openFullSearch(){
+  if($('search-page-title')) $('search-page-title').textContent='חיפוש רכבים מתקדם';
+  initChoiceLists();
+  syncSearchFilterTabs();
+  render();
+  openOv('ov-search');
+}
+function openAllCarsPage(){
+  searchQ={};
+  clearSearchInputsOnly();
+  filter='all';
+  if($('search-page-title')) $('search-page-title').textContent='כל הרכבים באתר';
+  initChoiceLists();
+  syncSearchFilterTabs();
+  render();
+  openOv('ov-search');
+}
+function clearSearchInputsOnly(){
+  ['q-free','q-make','q-model','q-color','q-cat','q-rental','q-fuel','q-seats'].forEach(id=>{if($(id))$(id).value=''});
+  document.querySelectorAll('.rent-chip,.type-chip').forEach(b=>b.classList.remove('on'));
+}
 
 function firstAvailableCarId(){
   const car=(state.cars||[]).find(c=>c.status==='available') || (state.cars||[])[0];
@@ -4073,11 +4396,163 @@ document.querySelectorAll('.sec-head,.fleet-side,.how-grid,.foot-cta,.strip-in')
 
 
 
+
+
+/* ===== CROWNDRIVE CONCRETE STABILITY LOGIC PATCH =====
+   Prevents accidental close/jump in personal/admin panels and keeps search page stable. */
+(function(){
+  const stableOverlayIds=['ov-owner','ov-renter','ov-admin','ov-search'];
+  const noBackdropClose=new Set(stableOverlayIds);
+  const originalOpenOv = openOv;
+  const originalCloseOv = closeOv;
+  const openedAt = {};
+
+  openOv = function(id){
+    const el=$(id);
+    if(!el){console.warn('Missing overlay',id);return;}
+    openedAt[id]=Date.now();
+    originalOpenOv(id);
+    if(noBackdropClose.has(id)){
+      el.setAttribute('data-stable-open','1');
+      document.body.style.overflow='hidden';
+      requestAnimationFrame(()=>{
+        const modal=el.querySelector('.modal');
+        if(modal){modal.scrollTop=0;}
+        const body=el.querySelector('.m-body');
+        if(body && id!=='ov-admin') body.scrollTop=0;
+      });
+    }
+  };
+
+  closeOv = function(id){
+    if(noBackdropClose.has(id) && Date.now()-(openedAt[id]||0)<350){
+      return; // ignore the same click/touch that opened the panel
+    }
+    originalCloseOv(id);
+  };
+
+  stableOverlayIds.forEach(id=>{
+    const el=$(id);
+    if(!el)return;
+    // Old code closes overlays on backdrop click. These areas should close only with X buttons.
+    el.addEventListener('click',function(e){
+      if(e.target===el){
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    },true);
+    el.addEventListener('touchstart',function(e){
+      if(e.target===el){
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      }
+    },true);
+  });
+
+  document.addEventListener('keydown',function(e){
+    if(e.key!=='Escape')return;
+    const openStable=stableOverlayIds.some(id=>$(id)&&$(id).classList.contains('open'));
+    if(openStable){
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      showToast('לסגירה השתמש בכפתור ✕ למעלה, כדי למנוע סגירה בטעות');
+    }
+  },true);
+
+  function carsHash(){return (state.cars||[]).map(c=>[c.id,c.status,c.updatedAt,c.ownerId,(c.photos||[]).length].join('|')).join('~')}
+  function bookingsHash(){return (state.bookings||[]).map(b=>[b.id,b.status,b.updatedAt,b.paymentProofAt,b.done,b.total].join('|')).join('~')}
+  function msgsHash(){return (state.msgs||[]).map(m=>[m.id,m.tid,m.ts,m.text,m.img?1:0].join('|')).join('~')}
+  let lastOwnerHash='', lastRenterHash='', lastAdminHash='', lastProfileHash='', lastChatHash='';
+
+  refreshOpenViews = function(){
+    render();
+    const active=document.activeElement;
+    const editing=active && ['INPUT','TEXTAREA','SELECT'].includes(active.tagName);
+    const cHash=carsHash(), bHash=bookingsHash(), mHash=msgsHash();
+
+    if($('ov-owner') && $('ov-owner').classList.contains('open')){
+      const h=cHash+'::'+bHash;
+      if(h!==lastOwnerHash && !editing){
+        lastOwnerHash=h;
+        renderAdminList();
+        if($('dash-book') && $('dash-book').style.display!=='none') renderOwnerBookings();
+        if($('dash-rep') && $('dash-rep').style.display!=='none') renderOwnerReport();
+        if($('dash-prof') && $('dash-prof').style.display!=='none') renderOwnerProfileSettings();
+      }
+    }
+    if($('ov-renter') && $('ov-renter').classList.contains('open')){
+      const h=bHash+'::'+cHash;
+      if(h!==lastRenterHash && !editing){
+        lastRenterHash=h;
+        // Re-render content only when data changes; do not repeatedly re-open the modal.
+        const wasOpen=true;
+        openRenterArea();
+        if(wasOpen) $('ov-renter').classList.add('open');
+      }
+    }
+    if($('ov-admin') && $('ov-admin').classList.contains('open')){
+      const h=cHash+'::'+bHash+'::'+mHash+'::'+adminTab;
+      if(h!==lastAdminHash && !editing){
+        lastAdminHash=h;
+        const body=$('admin-body'); const top=body?body.scrollTop:0;
+        renderAdminDashboard();
+        if(body) body.scrollTop=top;
+      }
+    }
+    if($('ov-profile') && $('ov-profile').classList.contains('open') && profOwnerId!==null){
+      const h=cHash+'::'+profOwnerId;
+      if(h!==lastProfileHash && !editing){lastProfileHash=h;openOwnerProfile(profOwnerId);}
+    }
+    if($('chat-panel') && $('chat-panel').classList.contains('open')){
+      const h=mHash+'::'+activeTid;
+      if(h!==lastChatHash && !editing){lastChatHash=h;activeTid?renderMsgs():showChatList();}
+    }
+    updateBadge();
+  };
+
+  const oldOpenAdmin=openAdmin;
+  openAdmin=function(){
+    if(!state.session||state.session.role!=='admin'){showToast('כניסה למנהל בלבד');return;}
+    lastAdminHash='';
+    oldOpenAdmin();
+    requestAnimationFrame(()=>{const b=$('admin-body'); if(b)b.scrollTop=0;});
+  };
+  const oldOpenOwner=openOwner;
+  openOwner=function(){
+    if(!state.session||state.session.role!=='owner') return openAuth('owner');
+    lastOwnerHash='';
+    oldOpenOwner();
+  };
+  const oldOpenRenterArea=openRenterArea;
+  openRenterArea=function(){
+    if(!state.session||state.session.role!=='renter')return openAuth('renter');
+    lastRenterHash='';
+    oldOpenRenterArea();
+  };
+
+  const oldOpenFullSearch=openFullSearch;
+  openFullSearch=function(){
+    oldOpenFullSearch();
+    requestAnimationFrame(()=>{const body=document.querySelector('#ov-search .search-page-body');if(body)body.scrollTop=0;});
+  };
+  const oldOpenAllCarsPage=openAllCarsPage;
+  openAllCarsPage=function(){
+    oldOpenAllCarsPage();
+    requestAnimationFrame(()=>{const body=document.querySelector('#ov-search .search-page-body');if(body)body.scrollTop=0;});
+  };
+
+  window.CROWNDRIVE_UI_STABILITY='concrete-v2';
+})();
+
 window.addEventListener('beforeunload', persistState);
 window.CROWNDRIVE_DIAGNOSTICS=function(){return {cars:state.cars.length, owners:state.owners.length, renters:state.renters.length, bookings:state.bookings.length, realtime:!!REALTIME, firebaseUser:!!(RT_AUTH&&RT_AUTH.currentUser), lastRealtimeOk:window.CROWNDRIVE_LAST_REALTIME_OK||0, lastRealtimeError:String((window.CROWNDRIVE_LAST_REALTIME_ERROR&&window.CROWNDRIVE_LAST_REALTIME_ERROR.message)||'')};};
 loadState();
 ensureStateIntegrity();
 initRealtime();
+setTimeout(()=>{ restorePersistentLoginOnLoad().catch(e=>console.warn('persistent login restore error',e)); },700);
 try{
   initChoiceLists();initOwnerChoiceLists();updateOwnerPriceFields();renderNav();renderMyAreaFab();render();initSig();updateBadge();
 }catch(e){
