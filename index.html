@@ -680,6 +680,12 @@ select option{background:var(--bg2);color:var(--ivory)}
 .search-panel input,.search-panel select{width:100%;border:1px solid rgba(31,41,53,.14);border-radius:12px;background:#fff;color:var(--ivory);padding:10px 12px;font-size:.84rem;margin-top:5px;box-shadow:0 3px 10px rgba(10,14,19,.03);transition:border-color .2s,box-shadow .2s,transform .15s}
 .search-panel input:focus,.search-panel select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 4px rgba(63,107,142,.12)}
 .search-panel .clear{height:32px;padding:5px 12px;background:#fff}
+
+.availability-pick{display:grid;grid-template-columns:1fr;gap:8px;margin:10px 0 12px}
+.avail-chip{border:1px solid rgba(28,124,79,.22);background:linear-gradient(180deg,#fff,#F5FAF7);border-radius:14px;padding:11px 12px;font-size:.86rem;font-weight:800;color:#1C7C4F;box-shadow:0 7px 16px rgba(10,14,19,.05);transition:all .2s var(--ease)}
+.avail-chip:hover{transform:translateY(-1px);border-color:rgba(28,124,79,.45);box-shadow:0 10px 22px rgba(28,124,79,.10)}
+.avail-chip.on{background:#1C7C4F;color:#fff;border-color:#1C7C4F;box-shadow:0 12px 26px rgba(28,124,79,.22)}
+.avail-chip small{display:block;font-size:.68rem;font-weight:600;opacity:.78;margin-top:2px}
 .rent-pick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 10px}
 .car-type-pick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0 10px}
 .rent-chip,.type-chip{border:1px solid rgba(63,107,142,.18);background:#fff;color:#263342;border-radius:14px;padding:12px 6px;font-weight:800;font-size:.82rem;box-shadow:0 5px 14px rgba(25,35,45,.05);transition:transform .18s var(--ease),background .2s,border-color .2s,color .2s}
@@ -1209,6 +1215,13 @@ img{max-width:100%;}
           <button type="button" class="rent-chip" data-rental="hourly" onclick="setRentalFilter('hourly',this)">לפי שעות</button>
           <button type="button" class="rent-chip" data-rental="daily" onclick="setRentalFilter('daily',this)">לפי ימים</button>
           <button type="button" class="rent-chip" data-rental="long" onclick="setRentalFilter('long',this)">תקופה ארוכה</button>
+        </div>
+
+
+
+        <div class="availability-pick" role="group" aria-label="סינון זמינות">
+          <input id="q-avail" type="hidden" value="">
+          <button type="button" class="avail-chip" data-avail="available" onclick="setAvailableNowFilter(this)">זמינים עכשיו<small>הצג רק רכבים שפנויים להזמנה כרגע</small></button>
         </div>
 
         <div class="car-type-pick" role="group" aria-label="סוג רכב">
@@ -2363,6 +2376,7 @@ function matchesSearch(c){
   if(q.fuel && c.fuel!==q.fuel)return false;
   if(q.seats && String(c.seats)!==String(q.seats))return false;
   if(q.rental && !rentalTypesOf(c).includes(q.rental))return false;
+  if(q.avail && c.status!=='available')return false;
   return true;
 }
 function setRentalFilter(v,btn){
@@ -2382,6 +2396,14 @@ function setCarTypeFilter(v,btn){
   updateSearch();
 }
 
+function setAvailableNowFilter(btn){
+  const input=$('q-avail');
+  const next=input&&input.value==='available'?'':'available';
+  if(input)input.value=next;
+  if(btn)btn.classList.toggle('on',next==='available');
+  updateSearch();
+}
+
 function updateSearch(){
   searchQ={
     free:$('q-free')&&$('q-free').value,
@@ -2391,14 +2413,15 @@ function updateSearch(){
     cat:$('q-cat')&&$('q-cat').value,
     fuel:$('q-fuel')&&$('q-fuel').value,
     seats:$('q-seats')&&$('q-seats').value,
-    rental:$('q-rental')&&$('q-rental').value
+    rental:$('q-rental')&&$('q-rental').value,
+    avail:$('q-avail')&&$('q-avail').value
   };
   render();
 }
 function clearSearch(){
-  ['q-free','q-make','q-model','q-color','q-cat','q-rental','q-fuel','q-seats'].forEach(id=>{if($(id))$(id).value=''});
+  ['q-free','q-make','q-model','q-color','q-cat','q-rental','q-fuel','q-seats','q-avail'].forEach(id=>{if($(id))$(id).value=''});
   populateModelSelect('q-make','q-model');
-  document.querySelectorAll('.rent-chip,.type-chip').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.rent-chip,.type-chip,.avail-chip').forEach(b=>b.classList.remove('on'));
   searchQ={};render();
 }
 
