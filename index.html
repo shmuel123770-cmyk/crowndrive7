@@ -4,6 +4,16 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Crown Drive · השכרת רכבים · קראון הייטס</title>
+<meta name="theme-color" content="#1B222B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Crown Drive">
+<meta name="application-name" content="Crown Drive">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -299,7 +309,7 @@ select option{background:var(--bg2);color:var(--ivory)}
 .kpi span{font-size:.72rem;color:var(--mut);letter-spacing:.08em}
 .lic-thumb{width:56px;height:38px;object-fit:cover;border:1px solid var(--hair);cursor:pointer}
 
-.toast{position:fixed;bottom:22px;inset-inline-start:50%;transform:translateX(50%) translateY(80px);background:#1D1D1F;color:#fff;border-radius:99px;padding:12px 26px;font-weight:500;font-size:.88rem;z-index:300;opacity:0;transition:all .3s}
+.toast{display:none!important;position:fixed;bottom:22px;inset-inline-start:50%;transform:translateX(50%) translateY(80px);background:#1D1D1F;color:#fff;border-radius:99px;padding:12px 26px;font-weight:500;font-size:.88rem;z-index:300;opacity:0;transition:all .3s}
 .toast.show{transform:translateX(50%) translateY(0);opacity:1}
 
 /* ---------- COLOR & MOTION LAYER ---------- */
@@ -1506,6 +1516,33 @@ html,body{overflow-x:hidden!important}
 .drawer-userbar b{font-size:.92rem;color:#1B222B;line-height:1.2}.drawer-userbar .drawer-email{font-size:.78rem;color:#657587;direction:ltr;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
 .drawer-actions{display:flex;gap:8px;align-items:center;flex:none}.drawer-actions .mini{background:#fff;border-color:rgba(27,34,43,.14);color:#263342;font-weight:800}.drawer-actions .mini.danger{color:#D70015;border-color:rgba(215,0,21,.24)}
 @media(max-width:900px){.nav-user-email{display:none}.nav-area-bubble{padding:12px 16px;font-size:.86rem}.nav-area-bubble::before{display:none}.nav-side{gap:6px}.drawer-userbar{align-items:flex-start;flex-direction:column;padding:12px 14px}.drawer-actions{width:100%;display:grid;grid-template-columns:1fr 1fr}.drawer-actions .mini{width:100%;padding:10px 8px}.drawer-userbar .drawer-email{max-width:100%}}
+
+
+
+/* ================= FINAL CONCRETE STABILITY LOCK =================
+   Last-mile stability layer: fixed viewport, fixed drawer geometry, no panel reflow loops. */
+html{scrollbar-gutter:stable both-edges!important;overflow-x:hidden!important}
+body{min-height:100dvh!important;overflow-x:hidden!important}
+body.modal-open-stable{overflow:hidden!important;touch-action:none!important}
+.overlay{contain:layout paint!important}
+.overlay.open{display:flex!important}
+#ov-auth,#ov-book,#ov-profile,#ov-lic{align-items:center!important;justify-content:center!important;overflow:hidden!important;padding:16px!important}
+#ov-auth .modal,#ov-book .modal,#ov-profile .modal,#ov-lic .modal{width:min(640px,calc(100vw - 32px))!important;max-height:calc(100dvh - 32px)!important;overflow:auto!important;animation:stablePop .18s ease-out both!important;transform:none!important}
+@keyframes stablePop{from{opacity:0;transform:scale(.985)}to{opacity:1;transform:scale(1)}}
+#ov-admin,#ov-owner,#ov-renter,#ov-account{position:fixed!important;inset:0!important;display:none!important;align-items:stretch!important;justify-content:flex-start!important;padding:0!important;background:rgba(8,11,16,.52)!important;overflow:hidden!important;overscroll-behavior:none!important}
+#ov-admin.open,#ov-owner.open,#ov-renter.open,#ov-account.open{display:flex!important}
+#ov-admin .admin-modal,#ov-owner .modal,#ov-renter .modal,#ov-account .modal{position:relative!important;flex:0 0 auto!important;width:clamp(380px,38vw,560px)!important;min-width:0!important;max-width:560px!important;height:100dvh!important;max-height:100dvh!important;margin:0!important;border-radius:0 28px 28px 0!important;overflow:hidden!important;transform:translateX(0)!important;animation:stableDrawerIn .24s cubic-bezier(.2,.8,.2,1) both!important;box-shadow:34px 0 110px rgba(0,0,0,.34)!important;contain:layout paint!important}
+@keyframes stableDrawerIn{from{opacity:.85;transform:translateX(-104%)}to{opacity:1;transform:translateX(0)}}
+#ov-admin .m-head,#ov-owner .m-head,#ov-renter .m-head,#ov-account .m-head{height:64px!important;min-height:64px!important;max-height:64px!important;flex:0 0 64px!important;padding:12px 16px!important;position:relative!important;top:auto!important}
+#ov-admin .drawer-userbar,#ov-owner .drawer-userbar,#ov-renter .drawer-userbar{flex:0 0 auto!important}
+#ov-admin .m-body,#ov-owner .m-body,#ov-renter .m-body,#ov-account .m-body{height:calc(100dvh - 64px)!important;max-height:calc(100dvh - 64px)!important;flex:1 1 auto!important;min-height:0!important;overflow:auto!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior:contain!important;contain:layout paint!important}
+#ov-owner .dash-tabs,#ov-admin .dash-tabs,#ov-renter .dash-tabs{position:sticky!important;top:0!important;z-index:20!important;flex:0 0 auto!important;min-height:52px!important;max-height:62px!important;overflow-x:auto!important;overflow-y:hidden!important}
+#admin-body,#dash-cars,#dash-add,#dash-book,#dash-rep,#dash-prof,#renter-body,#account-body{padding:14px!important;max-width:none!important;min-height:0!important;animation:none!important;transform:none!important;will-change:auto!important}
+#ov-admin .admin-panel,#ov-admin .admin-mini-card,#ov-admin .kpi,#ov-owner .adm-item,#ov-renter .personal-panel{animation:none!important;transform:none!important;transition:background .15s ease,border-color .15s ease,box-shadow .15s ease!important}
+#ov-admin .tbl-wrap,#ov-admin .admin-panel,#ov-owner .admin-panel{overflow:auto!important}
+@media(max-width:700px){#ov-admin .admin-modal,#ov-owner .modal,#ov-renter .modal,#ov-account .modal{width:92vw!important;max-width:92vw!important;border-radius:0 22px 22px 0!important}#ov-auth .modal{width:calc(100vw - 28px)!important}}
+@media(max-width:430px){#ov-admin .admin-modal,#ov-owner .modal,#ov-renter .modal,#ov-account .modal{width:94vw!important;max-width:94vw!important}#ov-admin .kpis,#ov-renter .kpis{grid-template-columns:1fr!important}}
+@media(prefers-reduced-motion:reduce){#ov-admin .admin-modal,#ov-owner .modal,#ov-renter .modal,#ov-account .modal,#ov-auth .modal{animation:none!important}}
 
 </style>
 </head>
@@ -4601,9 +4638,9 @@ function viewLic(bid){
   openOv('ov-lic');
 }
 function showToast(msg){
-  const t=$('toast'); if(!t){console.warn(msg);return;}
-  t.textContent=msg;t.classList.add('show');
-  clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2800);
+  // Silent toast mode: keep messages out of the visible UI.
+  // Messages are still available in the browser console for debugging.
+  if(msg) console.info('[CrownDrive]', msg);
 }
 
 
@@ -5190,6 +5227,79 @@ document.querySelectorAll('.sec-head,.fleet-side,.how-grid,.foot-cta,.strip-in')
   window.CROWNDRIVE_UI_STABILITY='concrete-v2';
 })();
 
+
+
+/* ================= FINAL CRASH / RESIZE STABILITY GUARD =================
+   Stops background repaint loops from resizing/closing open personal areas. */
+(function(){
+  const stableIds=['ov-auth','ov-admin','ov-owner','ov-renter','ov-account','ov-search','ov-book','ov-profile','ov-lic'];
+  function openCount(){return stableIds.filter(id=>{const e=document.getElementById(id);return e&&e.classList.contains('open');}).length}
+  function anyStableOpen(){return openCount()>0}
+  function editingNow(){const a=document.activeElement;return !!(a&&['INPUT','TEXTAREA','SELECT'].includes(a.tagName));}
+  function setModalBodyClass(){document.body.classList.toggle('modal-open-stable', anyStableOpen());}
+  const _openOv=window.openOv;
+  const _closeOv=window.closeOv;
+  if(typeof _openOv==='function'){
+    window.openOv=function(id){
+      try{
+        const el=document.getElementById(id);
+        if(!el)return _openOv(id);
+        _openOv(id);
+        el.dataset.stableOpenedAt=String(Date.now());
+        setModalBodyClass();
+        requestAnimationFrame(()=>{
+          const body=el.querySelector('.m-body,.search-page-body');
+          if(body && !body.dataset.keepScroll) body.scrollTop=0;
+        });
+      }catch(e){console.error('openOv guarded error',e)}
+    };
+  }
+  if(typeof _closeOv==='function'){
+    window.closeOv=function(id){
+      try{
+        const el=document.getElementById(id);
+        if(el){
+          const age=Date.now()-Number(el.dataset.stableOpenedAt||0);
+          if(age<450)return;
+        }
+        _closeOv(id);
+        setTimeout(setModalBodyClass,0);
+      }catch(e){console.error('closeOv guarded error',e)}
+    };
+  }
+  stableIds.forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    el.addEventListener('mousedown',e=>{if(e.target===el){e.preventDefault();e.stopImmediatePropagation();}},true);
+    el.addEventListener('click',e=>{if(e.target===el){e.preventDefault();e.stopImmediatePropagation();}},true);
+    el.addEventListener('touchstart',e=>{if(e.target===el){e.preventDefault();e.stopImmediatePropagation();}},true);
+  });
+  let lastHomeHash='';
+  function stableHash(){
+    try{return JSON.stringify({c:(state.cars||[]).map(c=>[c.id,c.updatedAt,c.status,(c.photos||[]).length]),b:(state.bookings||[]).map(b=>[b.id,b.updatedAt,b.status]),s:state.session&&[state.session.role,state.session.id,state.session.email]});}
+    catch(e){return String(Date.now())}
+  }
+  const _refresh=window.refreshOpenViews;
+  window.refreshOpenViews=function(){
+    try{
+      if(editingNow())return;
+      setModalBodyClass();
+      if(anyStableOpen()){
+        // Never repaint entire page/drawer while a user is inside a modal. This was the source of jumps/crashes.
+        try{updateBadge&&updateBadge()}catch(e){}
+        try{renderPersonalDrawerChrome&&renderPersonalDrawerChrome()}catch(e){}
+        return;
+      }
+      const h=stableHash();
+      if(h!==lastHomeHash){lastHomeHash=h; if(typeof render==='function')render();}
+      try{updateBadge&&updateBadge()}catch(e){}
+    }catch(e){console.warn('refreshOpenViews guarded',e)}
+  };
+  window.addEventListener('error',function(e){console.error('Recovered UI error',e.error||e.message);return false;});
+  window.addEventListener('unhandledrejection',function(e){console.error('Recovered async error',e.reason);});
+  window.CROWNDRIVE_STABILITY_GUARD='final-concrete-2026-07-10';
+})();
+
 window.addEventListener('beforeunload', persistState);
 window.CROWNDRIVE_DIAGNOSTICS=function(){return {cars:state.cars.length, owners:state.owners.length, renters:state.renters.length, bookings:state.bookings.length, realtime:!!REALTIME, firebaseUser:!!(RT_AUTH&&RT_AUTH.currentUser), lastRealtimeOk:window.CROWNDRIVE_LAST_REALTIME_OK||0, lastRealtimeError:String((window.CROWNDRIVE_LAST_REALTIME_ERROR&&window.CROWNDRIVE_LAST_REALTIME_ERROR.message)||'')};};
 loadState();
@@ -5218,6 +5328,18 @@ setInterval(()=>{
   if(document.activeElement && ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))return;
   refreshOpenViews();
 },1000);
+</script>
+
+<script>
+(function(){
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    window.addEventListener('load', function(){
+      navigator.serviceWorker.register('/sw.js').catch(function(err){
+        console.warn('Service worker registration failed', err);
+      });
+    });
+  }
+})();
 </script>
 </body>
 </html>
