@@ -145,6 +145,10 @@ input,select,textarea{font-family:inherit}
 .hstep .num{font-family:'Heebo';font-weight:800;font-size:2rem;color:var(--gold-d);font-weight:700;display:block;margin-bottom:14px}
 .hstep h3{font-size:1rem;font-weight:700;margin-bottom:7px;letter-spacing:.02em}
 .hstep p{font-size:.84rem;color:var(--mut);font-weight:200}
+.hstep{cursor:pointer;transition:transform .18s var(--ease),box-shadow .22s,border-color .2s}
+.hstep:focus-visible{outline:2px solid var(--gold);outline-offset:4px}
+.hstep-btn{margin-top:14px;border:none;border-radius:999px;background:#1B222B;color:#fff;padding:8px 16px;font-weight:800;font-size:.78rem;display:inline-flex;align-items:center;gap:6px}
+.hstep-btn:hover{background:#33404E}
 
 /* ---------- CTA / FOOTER ---------- */
 .foot-cta{background:#1B222B;border-radius:20px;padding:64px 40px;text-align:center;color:#fff;position:relative;overflow:hidden}
@@ -1065,10 +1069,10 @@ html,body{overflow-x:hidden!important}
     <h2>תהליך ההזמנה</h2>
   </div>
   <div class="how-grid">
-    <div class="hstep"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0114 0v1"/></svg></div><span class="num">1</span><h3>הרשמה</h3><p>פרטים אישיים וצילום רישיון נהיגה — פחות מ-3 דקות.</p></div>
-    <div class="hstep"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 16l1.5-5.5A2 2 0 018.4 9h7.2a2 2 0 011.9 1.5L19 16M5 16h14M5 16v3m14-3v3M7.5 13h.01M16.5 13h.01"/></svg></div><span class="num">2</span><h3>בחירת רכב ותאריכים</h3><p>בחירת רכב זמין וקביעת מועדי איסוף והחזרה. המחיר מחושב מיד.</p></div>
-    <div class="hstep"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 19l7-7a2.1 2.1 0 00-3-3l-7 7-1.5 4.5L12 19z"/><path d="M4 21h9"/></svg></div><span class="num">3</span><h3>הסכם וחתימה</h3><p>קריאת תקנון ההשכרה וחתימה דיגיטלית — שם מלא, חתימה ותאריך.</p></div>
-    <div class="hstep"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></div><span class="num">4</span><h3>אישור וקבלה</h3><p>מספר הזמנה וקבלה נשלחים לשוכר. הרכב ממתין בנקודת האיסוף.</p></div>
+    <button type="button" class="hstep" onclick="goHowStep(1)"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0114 0v1"/></svg></div><span class="num">1</span><h3>הרשמה</h3><p>פרטים אישיים וצילום רישיון נהיגה — פחות מ-3 דקות.</p><span class="hstep-btn">התחל הרשמה</span></button>
+    <button type="button" class="hstep" onclick="goHowStep(2)"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 16l1.5-5.5A2 2 0 018.4 9h7.2a2 2 0 011.9 1.5L19 16M5 16h14M5 16v3m14-3v3M7.5 13h.01M16.5 13h.01"/></svg></div><span class="num">2</span><h3>בחירת רכב ותאריכים</h3><p>בחירת רכב זמין וקביעת מועדי איסוף והחזרה. המחיר מחושב מיד.</p><span class="hstep-btn">עבור לרכבים</span></button>
+    <button type="button" class="hstep" onclick="goHowStep(3)"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 19l7-7a2.1 2.1 0 00-3-3l-7 7-1.5 4.5L12 19z"/><path d="M4 21h9"/></svg></div><span class="num">3</span><h3>הסכם וחתימה</h3><p>קריאת תקנון ההשכרה וחתימה דיגיטלית — שם מלא, חתימה ותאריך.</p><span class="hstep-btn">פתח הזמנה</span></button>
+    <button type="button" class="hstep" onclick="goHowStep(4)"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></div><span class="num">4</span><h3>אישור וקבלה</h3><p>מספר הזמנה וקבלה נשלחים לשוכר. הרכב ממתין בנקודת האיסוף.</p><span class="hstep-btn">ההזמנות שלי</span></button>
   </div>
 </section>
 
@@ -1081,7 +1085,7 @@ html,body{overflow-x:hidden!important}
     <h2>שירות לקוחות · מנהל המערכת</h2>
     <p>כשפותחים צ׳אט שירות לקוחות, ההודעות מגיעות ישירות למנהל המערכת באתר.</p>
     <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
-      <button class="btn btn-gold" style="padding:14px 34px;font-size:.95rem" onclick="openChatTo(supTid())">💬 פתיחת צ׳אט עם מנהל המערכת</button>
+      <button type="button" class="btn btn-gold" style="padding:14px 34px;font-size:.95rem" onclick="openChatTo(supTid())">💬 פתיחת צ׳אט עם מנהל המערכת</button>
     </div>
   </div>
 </section>
@@ -2179,6 +2183,32 @@ function slide(id,dir,e){
 }
 function setFilter(f,btn){filter=f;document.querySelectorAll('.filters button').forEach(b=>b.classList.remove('on'));btn.classList.add('on');render()}
 function scrollToFleet(){$('fleet').scrollIntoView({behavior:'smooth'})}
+
+function firstAvailableCarId(){
+  const car=(state.cars||[]).find(c=>c.status==='ok') || (state.cars||[])[0];
+  return car ? car.id : null;
+}
+function goHowStep(step){
+  if(step===1){
+    openAuth('renter');
+    return;
+  }
+  if(step===2){
+    scrollToFleet();
+    showToast('בחר רכב ולחץ הזמנה או צ׳אט עם בעל הרכב');
+    return;
+  }
+  if(step===3){
+    const id=firstAvailableCarId();
+    if(!id){showToast('אין רכבים זמינים כרגע');scrollToFleet();return;}
+    tryBook(id);
+    return;
+  }
+  if(step===4){
+    if(state.session && state.session.role==='renter') openRenterArea();
+    else {showToast('כדי לראות קבלות והזמנות יש להתחבר כשוכר');openAuth('renter');}
+  }
+}
 
 /* ================= OWNER DASHBOARD ================= */
 function openOwner(){
