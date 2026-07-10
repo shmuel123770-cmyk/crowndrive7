@@ -2,7 +2,7 @@
 <html dir="rtl" lang="he">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Crown Drive · השכרת רכבים · קראון הייטס</title>
 <meta name="theme-color" content="#1B222B">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1544,106 +1544,54 @@ body.modal-open-stable{overflow:hidden!important;touch-action:none!important}
 @media(max-width:430px){#ov-admin .admin-modal,#ov-owner .modal,#ov-renter .modal,#ov-account .modal{width:94vw!important;max-width:94vw!important}#ov-admin .kpis,#ov-renter .kpis{grid-template-columns:1fr!important}}
 @media(prefers-reduced-motion:reduce){#ov-admin .admin-modal,#ov-owner .modal,#ov-renter .modal,#ov-account .modal,#ov-auth .modal{animation:none!important}}
 
-/* ================= ADMIN POWER TOOLS + MOBILE CARDS ================= */
-.adm-blocked-note{border:1px solid rgba(215,0,21,.35);background:rgba(215,0,21,.06);color:var(--no);font-weight:700;border-radius:14px;padding:14px;margin-bottom:12px;font-size:.85rem;line-height:1.5}
-#ov-admin .acts-cell{min-width:190px}
-#ov-admin .acts-cell .mini{margin:2px 2px 2px 0}
-@media(max-width:700px){
-  #ov-admin .tbl{min-width:0!important;width:100%!important;display:block!important}
-  #ov-admin .tbl thead{display:none!important}
-  #ov-admin .tbl tbody{display:grid!important;grid-template-columns:1fr!important;gap:10px!important}
-  #ov-admin .tbl tr{display:block!important;background:#fff!important;border:1px solid rgba(20,28,40,.1)!important;border-radius:16px!important;padding:12px 14px!important;box-shadow:0 8px 22px rgba(20,28,40,.06)!important}
-  #ov-admin .tbl td{display:flex!important;justify-content:space-between!important;align-items:center!important;gap:12px!important;border:none!important;padding:5px 0!important;text-align:start!important}
-  #ov-admin .tbl td[data-label]::before{content:attr(data-label);color:#657587;font-size:.72rem;font-weight:800;flex:none}
-  #ov-admin .tbl td.acts-cell{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;margin-top:8px!important;padding-top:10px!important;border-top:1px solid rgba(20,28,40,.08)!important;min-width:0!important}
-  #ov-admin .tbl td.acts-cell::before{display:none!important}
-  #ov-admin .tbl td.acts-cell .mini{width:100%!important;min-height:42px!important;text-align:center!important;margin:0!important}
-  #ov-admin .mini{min-height:42px;padding:10px 14px}
-  #ov-admin .admin-panel{overflow:visible!important}
-}
 
-/* ================= MOBILE APP LAYER =================
-   Bottom app bar, full-screen chat, bottom-sheet modals, iOS-safe inputs.
-   Desktop is untouched — everything here is scoped to small screens. */
-/* Deep de-dup: the floating "אזור אישי" button duplicated the top-bar bubble.
-   Personal area now has ONE entry: nav bubble on desktop, bottom bar on mobile. */
-#my-area-fab,#my-area-fab.show{display:none!important}
-.m-bottom-nav{position:fixed;bottom:0;inset-inline:0;z-index:96;display:none;grid-template-columns:repeat(4,1fr);gap:2px;background:rgba(255,255,255,.94);backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);border-top:1px solid rgba(20,28,40,.1);padding:6px 10px calc(7px + env(safe-area-inset-bottom));box-shadow:0 -12px 34px rgba(20,28,40,.1)}
-.mbn-btn{border:none;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:.66rem;font-weight:800;color:#5B6B7C;padding:6px 2px;border-radius:14px;min-height:54px}
-.mbn-btn:active{background:rgba(63,107,142,.12);color:var(--gold-d)}
-.mbn-ic{position:relative;width:26px;height:26px;display:grid;place-items:center}
-.mbn-ic svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-#bn-chat-badge{position:absolute;top:-5px;inset-inline-end:-9px;background:#D70015;color:#fff;border-radius:99px;font-size:.6rem;min-width:16px;height:16px;display:none;place-items:center;padding:0 4px;font-weight:800;line-height:1}
-body.modal-open-stable .m-bottom-nav,body.cd-chat-open .m-bottom-nav{display:none!important}
-@keyframes sheetUp{from{transform:translateY(26%);opacity:.6}to{transform:none;opacity:1}}
 
-@media(max-width:700px){
-  /* bottom app bar on, floating buttons off */
-  .m-bottom-nav{display:grid}
-  #my-area-fab,#my-area-fab.show,#chat-fab{display:none!important}
-  body{padding-bottom:86px!important}
-
-  /* single nav entry on mobile: bottom bar handles personal area + login,
-     so the top-bar bubble/login are hidden (no duplicate option) */
-  .nav-area-bubble,.nav-guest-login{display:none!important}
-  .nav-in{justify-content:center}
-
-  /* compact top bar + hero like an app start screen */
-  .nav-in{padding:11px 14px;gap:10px}
-  .logo b{font-size:1.05rem}
-  .nav-area-bubble{padding:11px 14px!important;font-size:.82rem!important}
-  .nav-guest-login{padding:10px 14px;font-size:.84rem}
-  .hero-in{padding:56px 18px 44px}
-  .hero p{margin:18px auto 26px;font-size:.95rem}
-  .hero-actions{flex-direction:column;align-items:stretch;gap:10px}
-  .hero-actions .btn{width:100%;padding:15px 20px;font-size:.95rem}
-  .hero-stats{display:grid;grid-template-columns:1fr 1fr;margin-top:34px;border-radius:18px}
-  .hstat{border-inline-start:none;padding:16px 8px}
-  .hstat:nth-child(even){border-inline-start:1px solid var(--hair)}
-  .hstat:nth-child(n+3){border-top:1px solid var(--hair)}
-  .blueprint{display:none!important}
-  .section{padding:52px 16px}
-  .sec-head{margin-bottom:26px}
-  .strip-in{gap:16px;padding:12px 14px;font-size:.74rem}
-  .foot-cta{padding:42px 20px;border-radius:18px}
-  .how-grid{gap:12px}
-  .hstep{padding:26px 20px}
-  footer{padding-bottom:14px}
-
-  /* 16px form fields so iPhone doesn't auto-zoom on focus */
-  input,select,textarea{font-size:16px!important}
-
-  /* touch: gallery arrows always visible, bigger tap targets */
-  .g-nav{opacity:.92!important;width:38px!important;height:38px!important}
-  .card-btn{min-height:48px}
-  .mini{min-height:40px}
-  .filters button{padding:10px 18px}
-
-  /* app-style bottom sheets for the small modals */
-  #ov-auth,#ov-book,#ov-profile,#ov-lic{align-items:flex-end!important;padding:0!important}
-  #ov-auth .modal,#ov-book .modal,#ov-profile .modal,#ov-lic .modal{
-    width:100vw!important;max-width:100vw!important;max-height:94dvh!important;
-    border-radius:24px 24px 0 0!important;margin:0!important;
-    animation:sheetUp .26s cubic-bezier(.22,.9,.24,1) both!important;
-    padding-bottom:env(safe-area-inset-bottom)!important;
-  }
-  #ov-book .modal{height:94dvh!important}
-
-  /* personal / admin areas = full app screens on mobile */
-  #ov-admin .admin-modal,#ov-owner .modal,#ov-renter .modal,#ov-account .modal{width:100vw!important;max-width:100vw!important;border-radius:0!important}
-  #ov-admin .dash-tabs button,#ov-owner .dash-tabs button,#ov-renter .dash-tabs button{min-height:44px!important;padding:11px 15px!important;font-size:.82rem!important}
-  .drawer-actions .mini{min-height:44px}
-
-  /* full-screen chat like a messaging app */
-  #chat-panel{inset:0!important;bottom:0!important;width:100vw!important;height:100dvh!important;border-radius:0!important;z-index:130!important}
-  .cp-head{padding-top:calc(14px + env(safe-area-inset-top))}
-  .cp-input{padding-bottom:calc(11px + env(safe-area-inset-bottom))}
-  .cp-input input{min-height:44px}
-  .cp-input button{width:46px;height:46px}
-}
-@media(hover:none) and (pointer:coarse){.g-nav{opacity:.92}}
+/* ===== ABSOLUTE FINAL SIZE LOCK: no drawer resizing / no layout jump ===== */
+html,body{max-width:100%!important;overflow-x:hidden!important;}
+body.modal-open-stable{overflow:hidden!important;height:100dvh!important;touch-action:none;}
+#ov-admin,#ov-owner,#ov-renter,#ov-account{position:fixed!important;inset:0!important;display:none!important;align-items:stretch!important;justify-content:flex-start!important;background:rgba(8,11,16,.52)!important;overflow:hidden!important;contain:strict!important;}
+#ov-admin.open,#ov-owner.open,#ov-renter.open,#ov-account.open{display:flex!important;}
+#ov-admin .admin-modal,#ov-owner .modal,#ov-renter .modal,#ov-account .modal{box-sizing:border-box!important;flex:none!important;width:clamp(360px,38vw,540px)!important;min-width:360px!important;max-width:540px!important;height:100dvh!important;min-height:100dvh!important;max-height:100dvh!important;margin:0!important;border-radius:0 26px 26px 0!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;transform:none!important;transition:none!important;animation:stableDrawerIn .22s cubic-bezier(.2,.8,.2,1) both!important;will-change:transform!important;}
+#ov-admin .m-head,#ov-owner .m-head,#ov-renter .m-head,#ov-account .m-head{box-sizing:border-box!important;flex:0 0 64px!important;height:64px!important;min-height:64px!important;max-height:64px!important;position:relative!important;top:auto!important;}
+#ov-admin .m-body,#ov-owner .m-body,#ov-renter .m-body,#ov-account .m-body{box-sizing:border-box!important;flex:1 1 auto!important;height:auto!important;min-height:0!important;max-height:none!important;overflow-y:auto!important;overflow-x:hidden!important;contain:layout paint style!important;}
+#ov-admin .dash-tabs,#ov-owner .dash-tabs,#ov-renter .dash-tabs{flex:0 0 auto!important;min-height:52px!important;max-height:62px!important;overflow-x:auto!important;overflow-y:hidden!important;}
+#ov-admin *,#ov-owner *,#ov-renter *,#ov-account *{scrollbar-gutter:stable;}
+@media(max-width:700px){#ov-admin .admin-modal,#ov-owner .modal,#ov-renter .modal,#ov-account .modal{width:92vw!important;min-width:0!important;max-width:92vw!important;border-radius:0 22px 22px 0!important;}}
+@media(max-width:430px){#ov-admin .admin-modal,#ov-owner .modal,#ov-renter .modal,#ov-account .modal{width:94vw!important;max-width:94vw!important;}}
 
 </style>
+
+<style id="mobile-admin-control-upgrade">
+/* CrownDrive mobile-first app shell + stronger admin control center */
+:root{--app-blue:#0A84FF;--app-surface:#F5F7FA;--app-card:#FFFFFF;--app-text:#111827;--app-sub:#667085;--app-border:rgba(16,24,40,.10);--app-shadow:0 18px 55px rgba(15,23,42,.12)}
+html,body{max-width:100%;overflow-x:hidden;-webkit-tap-highlight-color:transparent}
+button,.btn,.mini,.card-btn{touch-action:manipulation;user-select:none}
+input,select,textarea{font-size:16px!important}
+.nav{backdrop-filter:saturate(160%) blur(18px)!important;background:rgba(17,24,39,.94)!important}
+.nav-in{min-height:66px;padding:12px clamp(12px,3vw,28px)!important}
+.nav-side{gap:8px!important}.personal-bubble{background:linear-gradient(135deg,#0A84FF,#2563EB)!important;color:#fff!important;border:0!important;box-shadow:0 12px 28px rgba(10,132,255,.28)!important;border-radius:999px!important;padding:11px 17px!important;font-weight:900!important}.nav-email{max-width:210px!important;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#DFE7F2!important;font-size:.82rem!important}
+#grid.grid{grid-template-columns:repeat(auto-fit,minmax(185px,1fr))!important;gap:14px!important}.card{border-radius:18px!important;box-shadow:0 10px 28px rgba(15,23,42,.07)!important}.card-body{padding:14px!important}.gallery{height:132px!important}.card-title h3{font-size:1rem!important}.price b{font-size:1.08rem!important}.specs{gap:9px!important}.tag{font-size:.68rem!important}.card-actions{gap:7px!important}.card-btn{padding:11px 9px!important;border-radius:12px!important}
+/* all personal areas are stable, mobile-first drawers */
+#ov-admin,#ov-owner,#ov-renter,#ov-account{position:fixed!important;inset:0!important;display:none;align-items:stretch!important;justify-content:flex-start!important;background:rgba(3,8,18,.38)!important;backdrop-filter:blur(9px)!important;padding:0!important;overflow:hidden!important;z-index:200!important}
+#ov-admin.open,#ov-owner.open,#ov-renter.open,#ov-account.open{display:flex!important}
+#ov-admin .admin-modal,#ov-owner .modal,#ov-renter .modal,#ov-account .modal{width:min(520px,92vw)!important;height:100dvh!important;max-height:100dvh!important;margin:0!important;border-radius:0 24px 24px 0!important;background:#F6F8FB!important;box-shadow:38px 0 80px rgba(15,23,42,.22)!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;animation:cdDrawerIn .32s cubic-bezier(.2,.8,.2,1)!important;transform:none!important;contain:layout paint!important;will-change:auto!important}
+@keyframes cdDrawerIn{from{transform:translateX(-104%)!important;opacity:.5}to{transform:translateX(0)!important;opacity:1}}
+#ov-admin .m-head,#ov-owner .m-head,#ov-renter .m-head,#ov-account .m-head{height:64px!important;min-height:64px!important;padding:14px 16px!important;background:rgba(255,255,255,.88)!important;color:#111827!important;border-bottom:1px solid var(--app-border)!important;backdrop-filter:blur(18px)!important;position:relative!important;flex:none!important;box-shadow:none!important}
+#ov-admin .m-head h3,#ov-owner .m-head h3,#ov-renter .m-head h3,#ov-account .m-head h3{font-size:1rem!important;letter-spacing:-.01em!important;color:#111827!important;line-height:1.15!important;max-width:calc(100% - 54px)!important}
+#ov-admin .m-head h3::after,#ov-owner .m-head h3::after,#ov-renter .m-head h3::after{font-size:.68rem!important;color:#667085!important;font-weight:600!important;margin-top:2px!important}
+#ov-admin .m-close,#ov-owner .m-close,#ov-renter .m-close,#ov-account .m-close{width:38px!important;height:38px!important;background:#EEF2F7!important;color:#111827!important;border-radius:14px!important;border:1px solid var(--app-border)!important;box-shadow:none!important;font-weight:900!important}
+.drawer-userbar{flex:none!important;background:#fff!important;border-bottom:1px solid var(--app-border)!important;padding:12px 16px!important;display:flex!important;gap:12px!important;align-items:center!important;justify-content:space-between!important}.drawer-ident b{font-size:.9rem!important;color:#111827!important}.drawer-ident span{display:block!important;max-width:240px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;color:#667085!important;font-size:.76rem!important}.drawer-actions{display:flex!important;gap:7px!important}.drawer-actions .mini{border-radius:999px!important;padding:8px 12px!important}
+#ov-admin .m-body,#ov-owner .m-body,#ov-renter .m-body,#ov-account .m-body{flex:1!important;min-height:0!important;overflow:auto!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior:contain!important;background:#F6F8FB!important;padding:0!important;contain:layout paint!important}
+#ov-admin .dash-tabs,#ov-owner .dash-tabs,#ov-renter .dash-tabs{position:sticky!important;top:0!important;z-index:18!important;background:rgba(246,248,251,.92)!important;backdrop-filter:blur(14px)!important;border-bottom:1px solid var(--app-border)!important;padding:10px 12px!important;margin:0!important;display:flex!important;gap:8px!important;overflow-x:auto!important;scroll-snap-type:x mandatory!important;min-height:58px!important;box-shadow:none!important}
+#ov-admin .dash-tabs button,#ov-owner .dash-tabs button,#ov-renter .dash-tabs button{flex:0 0 auto!important;scroll-snap-align:start!important;border:1px solid var(--app-border)!important;background:#fff!important;color:#344054!important;border-radius:999px!important;padding:10px 13px!important;font-size:.78rem!important;font-weight:900!important;white-space:nowrap!important;min-height:40px!important;line-height:1!important;box-shadow:0 6px 18px rgba(15,23,42,.04)!important}
+#ov-admin .dash-tabs button.on,#ov-owner .dash-tabs button.on,#ov-renter .dash-tabs button.on{background:#111827!important;color:#fff!important;border-color:#111827!important;box-shadow:0 10px 24px rgba(17,24,39,.18)!important}
+#admin-body,#dash-cars,#dash-add,#dash-book,#dash-rep,#dash-prof,#renter-body,#account-body{padding:14px!important;min-height:auto!important;transform:none!important;animation:none!important;will-change:auto!important}.admin-mobile-note{display:block!important;background:#EAF3FF!important;border:1px solid rgba(10,132,255,.14)!important;color:#175CD3!important;border-radius:16px!important;padding:10px 12px!important;font-size:.77rem!important;font-weight:700!important;margin-bottom:12px!important}
+.kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}.kpi{background:#fff!important;border:1px solid var(--app-border)!important;border-radius:18px!important;padding:15px!important;box-shadow:0 8px 24px rgba(15,23,42,.05)!important}.kpi b{font-size:1.42rem!important;color:#111827!important}.kpi span{font-size:.68rem!important;letter-spacing:0!important;color:#667085!important;font-weight:800!important}.admin-panel,.admin-mini-card,.personal-panel,.qa-card{background:#fff!important;border:1px solid var(--app-border)!important;border-radius:20px!important;box-shadow:0 10px 30px rgba(15,23,42,.06)!important;overflow:hidden!important}.admin-panel{padding:14px!important;overflow:auto!important;-webkit-overflow-scrolling:touch!important}.admin-panel h4{font-size:1rem!important;color:#111827!important;margin-bottom:12px!important}.admin-actions-bar{border-radius:20px!important;padding:14px!important;background:#fff!important;border:1px solid var(--app-border)!important;box-shadow:0 10px 30px rgba(15,23,42,.06)!important}.admin-section-grid{grid-template-columns:1fr!important;gap:10px!important}.admin-overview-grid{grid-template-columns:1fr!important;gap:12px!important}.tbl{min-width:780px!important;border-collapse:separate!important;border-spacing:0!important}.tbl th{background:#F3F6FA!important;color:#475467!important;font-size:.68rem!important;letter-spacing:0!important}.tbl th,.tbl td{padding:10px!important}.tbl tr{background:#fff!important}.mini{border-radius:999px!important;min-height:34px!important;padding:8px 12px!important;font-weight:900!important}.mini.danger{background:#FFF1F3!important}.mini.gold{background:#EAF3FF!important;color:#0A62C8!important;border-color:rgba(10,132,255,.22)!important}.admin-user-card,.admin-car-card,.admin-booking-card{background:#fff;border:1px solid var(--app-border);border-radius:18px;padding:14px;box-shadow:0 8px 24px rgba(15,23,42,.05);margin-bottom:10px}.admin-card-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.admin-card-top b{font-size:1rem;color:#111827}.admin-card-meta{color:#667085;font-size:.78rem;line-height:1.55;margin-top:4px}.admin-action-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.status-chip{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:5px 10px;font-size:.7rem;font-weight:900}.status-chip.ok{background:#ECFDF3;color:#027A48}.status-chip.blocked{background:#FFF1F3;color:#C01048}.status-chip.info{background:#EAF3FF;color:#175CD3}.mobile-only-list{display:none}.desktop-table-wrap{overflow:auto;-webkit-overflow-scrolling:touch}
+@media(max-width:820px){body{background:#F6F8FB!important}.hero-in{padding-top:72px!important}.section{padding:42px 12px!important}.nav-in{padding:10px 12px!important}.nav-links{display:none!important}.logo small{display:none!important}.logo b{font-size:1.05rem!important}.personal-bubble{padding:10px 14px!important;font-size:.84rem!important}.nav-email{display:none!important}#ov-admin .admin-modal,#ov-owner .modal,#ov-renter .modal,#ov-account .modal{width:100vw!important;border-radius:0!important;box-shadow:none!important}.drawer-userbar{padding:10px 12px!important}.drawer-actions .mini{padding:8px 10px!important;font-size:.72rem!important}#grid.grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}.gallery{height:118px!important}.card-body{padding:11px!important}.card-title h3{font-size:.88rem!important}.price b{font-size:.98rem!important}.specs,.tags{display:none!important}.card-actions{grid-template-columns:1fr!important}.card-btn.chat{display:none!important}.kpis{gap:8px!important}.kpi{padding:12px!important}.kpi b{font-size:1.2rem!important}.desktop-table-wrap{display:none!important}.mobile-only-list{display:block!important}.admin-panel{padding:12px!important}.admin-actions-bar{display:block!important}.admin-actions-bar .btn{width:100%!important;margin-top:8px!important}.home-search-bar{margin-inline:0!important}.foot-cta{border-radius:18px!important}}
+@media(min-width:821px){.mobile-admin-only{display:none!important}}
+@media(prefers-reduced-motion:reduce){#ov-admin .admin-modal,#ov-owner .modal,#ov-renter .modal,#ov-account .modal{animation:none!important}}
+</style>
+
 </head>
 <body>
 
@@ -2011,7 +1959,7 @@ body.modal-open-stable .m-bottom-nav,body.cd-chat-open .m-bottom-nav{display:non
         <button class="on" id="dt-cars" onclick="setDash('cars')">ניהול הרכבים</button>
         <button id="dt-book" onclick="setDash('book')">הזמנות</button>
         <button id="dt-rep" onclick="setDash('rep')">סיכום הכנסות</button>
-        <button id="dt-prof" onclick="setDash('prof')">הפרטים שלי</button>
+        <button id="dt-prof" onclick="setDash('prof')">אזור אישי והעדפות</button>
         <button id="dt-add" onclick="setDash('add')">+ הוספת רכב</button>
       </div>
 
@@ -2294,14 +2242,6 @@ body.modal-open-stable .m-bottom-nav,body.cd-chat-open .m-bottom-nav{display:non
   </div>
 </div>
 
-<!-- MOBILE BOTTOM APP BAR -->
-<nav class="m-bottom-nav" id="m-bottom-nav" aria-label="ניווט תחתון">
-  <button class="mbn-btn" onclick="mbnHome()"><span class="mbn-ic"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10"/></svg></span><span>בית</span></button>
-  <button class="mbn-btn" onclick="openFullSearch()"><span class="mbn-ic"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></span><span>חיפוש</span></button>
-  <button class="mbn-btn" onclick="toggleChat(true)"><span class="mbn-ic"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg><span id="bn-chat-badge">0</span></span><span>צ'אט</span></button>
-  <button class="mbn-btn" onclick="openMyArea()"><span class="mbn-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0114 0v1"/></svg></span><span>אזור אישי</span></button>
-</nav>
-
 <div class="overlay" id="ov-profile" role="dialog" aria-modal="true">
   <div class="modal" style="width:min(560px,100%)">
     <div class="m-head"><h3>פרופיל משכיר</h3><button class="m-close" onclick="closeOv('ov-profile')">✕</button></div>
@@ -2506,8 +2446,7 @@ function isAuthInputFocused(){ const ov=document.getElementById('ov-auth'); retu
 function markAuthEditing(){ authUserIsEditing=true; }
 function allowExplicitAuthAction(){ authExplicitActionUntil=Date.now()+12000; }
 function isExplicitAuthAction(){ return Date.now()<authExplicitActionUntil; }
-function clearAuthFieldErrors(){ ['lf-mail','lf-pass','sf-name','sf-phone','sf-mail','sf-pass','sf-lic-state'].forEach(id=>{const el=document.getElementById(id); if(el){el.classList.remove('err'); const em=el.querySelector('.err-msg'); if(em&&em.dataset.def)em.textContent=em.dataset.def;}}); }
-function setAuthErrText(fieldId,msg){ try{ const el=document.querySelector('#'+fieldId+' .err-msg'); if(!el)return; if(!el.dataset.def)el.dataset.def=el.textContent; el.textContent=msg||el.dataset.def; }catch(e){} }
+function clearAuthFieldErrors(){ ['lf-mail','lf-pass','sf-name','sf-phone','sf-mail','sf-pass','sf-lic-state'].forEach(id=>{const el=document.getElementById(id); if(el)el.classList.remove('err');}); }
 function resetAuthEditingSoon(){ setTimeout(()=>{ if(!isAuthInputFocused()) authUserIsEditing=false; },250); }
 
 const AUTH_RESTORE_THROTTLE_KEY = 'crowndrive_auto_auth_restore_last_try_v1';
@@ -2595,7 +2534,34 @@ async function restorePersistentLoginOnLoad(){
    also sign the user into Firebase Auth with the same email/password. */
 function firebaseAuthReady(){ return !!(RT_AUTH && typeof RT_AUTH.signInWithEmailAndPassword==='function'); }
 function normalizeEmail(e){ return String(e||'').trim().toLowerCase(); }
-// firebaseLoginOrCreate() מוגדרת פעם אחת בלבד, במקטע "AUTH STABILITY OVERRIDE — FINAL" למטה.
+async function firebaseLoginOrCreate(email, pass, createIfMissing=true){
+  email=normalizeEmail(email);
+  if(!email || !pass || !firebaseAuthReady()) return null;
+  try{
+    allowExplicitAuthAction();
+    const cred = await RT_AUTH.signInWithEmailAndPassword(email, pass);
+    return cred.user;
+  }catch(signErr){
+    const code=(signErr&&signErr.code)||'';
+    const canCreate = createIfMissing && ['auth/user-not-found','auth/invalid-login-credentials','auth/invalid-credential'].includes(code);
+    if(canCreate){
+      try{
+        allowExplicitAuthAction();
+        const cred = await RT_AUTH.createUserWithEmailAndPassword(email, pass);
+        return cred.user;
+      }catch(createErr){
+        // אם החשבון כבר קיים ב-Firebase, זו כנראה סיסמה שגויה — לא ליצור בלבול למשתמש.
+        if((createErr&&createErr.code)==='auth/email-already-in-use'){
+          const friendly = new Error('המייל כבר רשום. הסיסמה שהוזנה לא תואמת.');
+          friendly.code='auth/wrong-password-friendly';
+          throw friendly;
+        }
+        throw createErr;
+      }
+    }
+    throw signErr;
+  }
+}
 function friendlyAuthMessage(e){
   const code=(e&&e.code)||'';
   const raw=((e&&e.message)||String(e||''));
@@ -2678,7 +2644,7 @@ function cleanFirebaseValue(v, seen){
 function realtimeData(){
   const data={
     owners:state.owners||[], renters:state.renters||[], cars:state.cars||[], bookings:state.bookings||[],
-    msgs:state.msgs||[], ratings:state.ratings||[], users:state.users||{}, seq:seq||1,
+    msgs:state.msgs||[], ratings:state.ratings||[], notifications:state.notifications||[], users:state.users||{}, seq:seq||1,
     updatedAt:Date.now()
   };
   return cleanFirebaseValue(data);
@@ -2709,14 +2675,15 @@ function applyRealtimeData(d){
     state.bookings=mergeById(state.bookings,d.bookings,'id');
     state.msgs=mergeById(state.msgs,d.msgs,'id');
     state.ratings=mergeById(state.ratings,d.ratings,'id');
+    state.notifications=mergeById(state.notifications,d.notifications,'id');
     if(d.users && typeof d.users==='object')state.users=mergeUsers(state.users,d.users);
     if(d.seq && Number.isFinite(+d.seq))seq=Math.max(seq,+d.seq);
     ensureStateIntegrity();
     try{ localStorage.setItem(LOCAL_KEY, JSON.stringify({
       owners:state.owners||[], renters:state.renters||[], cars:state.cars||[], bookings:state.bookings||[],
-      session:state.session||null, msgs:state.msgs||[], ratings:state.ratings||[], users:state.users||{}, seq
+      session:state.session||null, msgs:state.msgs||[], ratings:state.ratings||[], notifications:state.notifications||[], users:state.users||{}, seq
     })); }catch(e){}
-    renderNav(); renderMyAreaFab(); refreshOpenViews(); render(); updateBadge();
+    renderNav(); renderMyAreaFab(); refreshOpenViews(); if(!window.CROWNDRIVE_MODAL_IS_OPEN || !window.CROWNDRIVE_MODAL_IS_OPEN()) render(); updateBadge();
   }catch(e){console.error('Realtime apply failed',e)}
   finally{rtApplying=false;}
 }
@@ -2831,11 +2798,11 @@ function persistState(){
   try{
     const copy={
       owners:state.owners||[], renters:state.renters||[], cars:state.cars||[], bookings:state.bookings||[],
-      session:state.session||null, msgs:state.msgs||[], ratings:state.ratings||[], users:state.users||{}, seq
+      session:state.session||null, msgs:state.msgs||[], ratings:state.ratings||[], notifications:state.notifications||[], users:state.users||{}, seq
     };
     persistSessionCookie();
     localStorage.setItem(LOCAL_KEY, JSON.stringify(copy));
-    scheduleRealtimeSave();
+    if(!rtApplying && !window.CROWNDRIVE_SUPPRESS_REALTIME_WRITE) scheduleRealtimeSave();
     return true;
   }catch(e){
     console.error('local save failed', e);
@@ -2848,7 +2815,7 @@ function loadState(){
     const raw=localStorage.getItem(LOCAL_KEY);
     if(!raw){ const cs=getCookieJSON(COOKIE_SESSION_KEY); if(cs&&cs.role&&cs.id)state.session=cs; return; }
     const d=JSON.parse(raw);
-    ['owners','renters','cars','bookings','msgs','ratings'].forEach(k=>{ if(Array.isArray(d[k])) state[k]=d[k]; });
+    ['owners','renters','cars','bookings','msgs','ratings','notifications'].forEach(k=>{ if(Array.isArray(d[k])) state[k]=d[k]; });
     if(d.users&&typeof d.users==='object')state.users=d.users;
     if(d.session)state.session=d.session;
     if(!state.session){ const cs=getCookieJSON(COOKIE_SESSION_KEY); if(cs&&cs.role&&cs.id)state.session=cs; }
@@ -2863,6 +2830,7 @@ const state = {
   renters: [],  // {id,name,phone,email,pass,lic}
   cars: [],     // {id,ownerId,make,model,yr,color,cat,price,priceHourly,priceDaily,priceWeekly,rentalTypes[],seats,gear,fuel,tags[],status,ret,photos[]}
   bookings: [], // {id,num,status:'pending'|'approved'|'rejected'|'done',carId,ownerId,renterId,from,tmFrom,to,tmTo,hours,days,total,signName,signDate,sig,createdAt}
+  notifications: [], // admin notifications, e.g. new user signups
   session: null // {role:'owner'|'renter', id}
 };
 let seq = 1; const newId = p => p + (seq++) + Math.random().toString(36).slice(2,6);
@@ -3093,6 +3061,36 @@ function renderNav(){
 }
 function logout(){try{ if(RT_AUTH&&RT_AUTH.currentUser)RT_AUTH.signOut(); }catch(e){} if(CLOUD&&fauth.currentUser){fauth.signOut()}state.session=null;clearAuthIdentity();clearSavedLogin();delCookie(COOKIE_SESSION_KEY);persistState();stopUserFeeds();stopAdminFeeds();renderNav();toggleChat(false);updateBadge();renderMyAreaFab();showToast('יצאת מהמערכת בהצלחה')}
 
+
+/* ================= ADMIN NOTIFICATIONS ================= */
+function adminNotify(type, title, text, meta){
+  try{
+    state.notifications = Array.isArray(state.notifications) ? state.notifications : [];
+    const key = (meta && meta.key) || (type+'-'+((meta&&meta.userId)||'')+'-'+((meta&&meta.email)||''));
+    if(key && state.notifications.some(n=>n && n.key===key)) return;
+    state.notifications.unshift({
+      id: newId('nt'), key, type:type||'info', title:title||'התראה', text:text||'', meta:meta||{}, read:false, createdAt:Date.now(), updatedAt:Date.now()
+    });
+    state.notifications = state.notifications.slice(0,80);
+  }catch(e){console.warn('admin notification failed', e)}
+}
+function notifyAdminNewUser(u, role, source){
+  if(!u) return;
+  adminNotify('new-user','משתמש חדש נרשם',`${roleLabel(role||u.role)} · ${u.name||u.email||'משתמש'} · ${u.email||''}`,{
+    key:'new-user-'+(u.id||u.email), userId:u.id||'', email:u.email||'', role:role||u.role||'', source:source||'signup'
+  });
+}
+function adminNotificationsHTML(){
+  const list=(state.notifications||[]).slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,12);
+  if(!list.length) return '<div class="adm-empty">אין התראות מנהל חדשות.</div>';
+  return `<div class="admin-notifications">${list.map(n=>`<div class="admin-user-card admin-alert-card"><div class="admin-card-top"><div><b>${esc(n.title||'התראה')}</b><div class="admin-card-meta">${esc(n.text||'')}<br>${new Date(n.createdAt||Date.now()).toLocaleString('he-IL')}</div></div><span class="status-chip info">${n.read?'נקרא':'חדש'}</span></div>${n.meta&&n.meta.userId?`<div class="admin-action-row"><button class="mini gold" onclick="setAdminTab('users')">ניהול משתמשים</button></div>`:''}</div>`).join('')}</div>`;
+}
+function markAllAdminNotificationsRead(){
+  (state.notifications||[]).forEach(n=>{n.read=true;n.updatedAt=Date.now()});
+  persistState();
+  try{renderAdminDashboard()}catch(e){}
+}
+
 /* ================= AUTH ================= */
 function openAuth(role){
   authRole=null;
@@ -3268,7 +3266,108 @@ function forgotPass(){
     showToast('שחזור סיסמה במייל יפעל אחרי חיבור מסד הנתונים (Firebase)');
   }
 }
-// doLogin() מוגדרת פעם אחת בלבד, במקטע "AUTH STABILITY OVERRIDE — FINAL" למטה.
+async function doLogin(){
+  const em=$('l-mail').value.trim().toLowerCase(), ps=$('l-pass').value;
+  authUserIsEditing=false;
+  clearAuthFieldErrors();
+  if(!/^\S+@\S+\.\S+$/.test(em)){ mark('lf-mail',true); showToast('נא להזין מייל תקין'); return; }
+  if(!ps || ps.length<6){ mark('lf-pass',true); showToast('נא להזין סיסמה של לפחות 6 תווים'); return; }
+  if(isLoginLocked(em)){ showToast('יותר מדי ניסיונות כניסה. נסה שוב בעוד '+loginLockSeconds(em)+' שניות.'); return; }
+
+  try{
+    // כניסת מנהל מוסתרת: בוחרים 'אני בעל רכב' ומזינים את פרטי המנהל.
+    if((authRole==='owner' || adminSecretMode) && em===ADMIN_EMAIL && ps===ADMIN_PASS){
+      clearLoginFail(em); rememberLogin('admin',em,ps);
+      let uid='admin';
+      if(REALTIME && firebaseAuthReady()){
+        const fbUser=await firebaseLoginOrCreate(em,ps,true);
+        if(fbUser && fbUser.uid) uid=fbUser.uid;
+      }
+      state.session={role:'admin',id:uid,name:'מנהל האתר',email:ADMIN_EMAIL};
+      state.users[uid]={name:'מנהל האתר',role:'admin',email:ADMIN_EMAIL,updatedAt:Date.now()};
+      rememberAuthIdentity(uid,ADMIN_EMAIL);
+      if(CLOUD)startAdminFeeds();
+      afterLoginUI();
+      return;
+    }
+
+    if(CLOUD){
+      mark('lf-mail',false);mark('lf-pass',false);
+      fauth.signInWithEmailAndPassword(em,ps).then(()=>clearLoginFail(em)).catch(e=>{
+        noteLoginFail(em);
+        if(((e&&e.code)||'').indexOf('user')>-1)mark('lf-mail',true);else mark('lf-pass',true);
+      });
+      return;
+    }
+
+    const pool = authRole==='owner'?state.owners:state.renters;
+    let u = pool.find(x=>normalizeEmail(x.email)===em);
+
+    // כניסה/הרשמה מאוחדת למאות משתמשים:
+    // אם המייל כבר קיים ב-Firebase — נכניס אותו עם הסיסמה.
+    // אם המייל עדיין לא קיים — ניצור אותו אוטומטית ב-Firebase ונבנה לו פרופיל מקומי לפי התפקיד שנבחר.
+    // כך מנהל האתר לא צריך להכניס מיילים ידנית ל-Firebase Authentication.
+    if(REALTIME && firebaseAuthReady()){
+      try{
+        const fbUser = await firebaseLoginOrCreate(em, ps, true);
+        const uid = fbUser && fbUser.uid ? fbUser.uid : (u && u.id) || newId('u');
+        if(!u){
+          u = {
+            id: uid,
+            name: em.split('@')[0],
+            phone: '',
+            email: em,
+            pass: ps,
+            createdAt: Date.now(),
+            autoCreated: true
+          };
+          pool.push(u);
+          notifyAdminNewUser(u, authRole, 'login-auto-create');
+          showToast('יצרתי לך חשבון חדש וחיברתי אותך למערכת');
+        }else{
+          migrateLocalIdToFirebaseUid(authRole, u.id, uid, em);
+          u.id = uid;
+          u.email = em;
+          u.pass = ps;
+          u.updatedAt = Date.now();
+        }
+        rememberAuthIdentity(uid, em);
+        mark('lf-mail',false); mark('lf-pass',false);
+        clearLoginFail(em);
+        rememberLogin(authRole,em,ps);
+        state.session={role:authRole,id:u.id,...u};
+        state.users[u.id]={...(state.users[u.id]||{}),name:u.name||em.split('@')[0],role:authRole,email:u.email,createdAt:u.createdAt||Date.now(),updatedAt:Date.now()};
+        afterLoginUI();
+        pushRealtimeNow();
+        return;
+      }catch(authErr){
+        mark('lf-mail',true); mark('lf-pass',true);
+        noteLoginFail(em);
+        showToast(friendlyAuthMessage(authErr));
+        return;
+      }
+    }
+
+    // fallback מקומי בלבד, אם Firebase לא נטען.
+    mark('lf-mail',!u);
+    if(!u){ noteLoginFail(em); showToast('לא נמצא חשבון. לחץ הרשמה ליצירת משתמש חדש.'); return; }
+
+    if(u.pass!==ps){
+      mark('lf-pass',true); noteLoginFail(em); return;
+    }else mark('lf-pass',false);
+
+    clearLoginFail(em);
+    rememberLogin(authRole,em,ps);
+    state.session={role:authRole,id:u.id,...u};
+    state.users[u.id]={...(state.users[u.id]||{}),name:u.name,role:authRole,email:u.email,updatedAt:Date.now()};
+    afterLoginUI();
+  }catch(e){
+    noteLoginFail(em);
+    console.error('login failed',e);
+    if(/auth\//.test((e&&e.code)||'')) showToast(friendlyAuthMessage(e));
+    else showToast('שגיאת כניסה: '+(((e&&e.message)||e)+''));
+  }
+}
 async function doSignup(){
   authUserIsEditing=false;
   clearAuthFieldErrors();
@@ -3322,6 +3421,7 @@ async function doSignup(){
     const u={id:uid, name, phone:$('s-phone').value.trim(), email:em, pass:ps, createdAt:Date.now(), ...extra};
     pool.push(u);
     state.users[u.id]={name:u.name,role:authRole,email:u.email,createdAt:u.createdAt};
+    notifyAdminNewUser(u, authRole, 'signup-form');
     state.session={role:authRole,id:u.id,...u};
     rememberLogin(authRole,em,ps);
     rememberAuthIdentity(u.id,u.email);
@@ -3333,7 +3433,6 @@ async function doSignup(){
   }catch(e){
     console.error('signup failed',e);
     mark('sf-mail',true);
-    setAuthErrText('sf-mail',friendlyAuthMessage(e));
     showToast('שגיאת הרשמה: '+friendlyAuthMessage(e));
   }
 }
@@ -3457,6 +3556,7 @@ async function doLogin(){
       if(!u){
         u={id:uid,name:em.split('@')[0],phone:'',email:em,pass:ps,createdAt:Date.now(),updatedAt:Date.now(),autoCreated:true};
         pool.push(u);
+        notifyAdminNewUser(u, role, 'login-auto-create');
         showToast('ברוך הבא — יצרתי לך חשבון חדש וחיברתי אותך');
       }else{
         migrateLocalIdToFirebaseUid(role,u.id,uid,em);
@@ -3491,10 +3591,9 @@ async function doLogin(){
   }catch(e){
     console.error('login failed',e);
     const code=(e&&e.code)||'';
-    const friendly=friendlyAuthMessage(e);
-    if(code==='auth/wrong-password-friendly' || code==='auth/wrong-password' || code==='auth/email-already-in-use'){ mark('lf-pass',true); setAuthErrText('lf-pass',friendly); }
-    else { mark('lf-mail',true); setAuthErrText('lf-mail',friendly); }
-    showToast(friendly);
+    if(code==='auth/wrong-password-friendly' || code==='auth/wrong-password' || code==='auth/email-already-in-use') mark('lf-pass',true);
+    else mark('lf-mail',true);
+    showToast(friendlyAuthMessage(e));
   }finally{
     setLoginBusy(false);
   }
@@ -3777,9 +3876,8 @@ function setDash(t){
 function myCars(){return state.cars.filter(c=>c.ownerId===state.session.id)}
 function renderAdminList(){
   const box=$('adm-list'), list=myCars();
-  const blockedNote=(state.session&&isUserBlocked(state.session.id,state.session.email))?'<div class="adm-blocked-note">⚠ החשבון שלך נחסם על ידי מנהל האתר — אי אפשר לפרסם רכבים חדשים. לבירור אפשר לפנות למנהל דרך צ׳אט שירות הלקוחות.</div>':'';
-  if(list.length===0){box.innerHTML=blockedNote+'<div class="adm-empty">עדיין לא פרסמת רכבים. מלא את הטופס למטה כדי לפרסם את הראשון.</div>';return}
-  box.innerHTML=blockedNote+list.map(c=>{
+  if(list.length===0){box.innerHTML='<div class="adm-empty">עדיין לא פרסמת רכבים. מלא את הטופס למטה כדי לפרסם את הראשון.</div>';return}
+  box.innerHTML=list.map(c=>{
     const s=statusInfo(c);
     return `<div class="adm-item">
       <img src="${c.photos[0]}" alt="">
@@ -3859,7 +3957,6 @@ function renderPhotoGrid(){
 }
 function saveCar(){
   if(!state.session || state.session.role!=='owner'){ showToast('צריך להיכנס כבעל רכב כדי להוסיף רכב'); return; }
-  if(isUserBlocked(state.session.id,state.session.email)){ alert(blockedGuardMsg()); return; }
   const make=selectedOrOther('a-make','a-make-other'),model=selectedOrOther('a-model','a-model-other');
   const yr=+$('a-yr').value;
   const priceHourly=+$('a-price-hourly').value, priceDaily=+$('a-price-daily').value, priceWeekly=+$('a-price-weekly').value;
@@ -4020,13 +4117,34 @@ function renderOwnerProfileSettings(){
     </div>
     <div class="divider">הזמנות הבאות לפי סדר</div>
     ${ownerUpcomingBookingsHTML(u.id)}
-    <div class="divider">הפרטים שלי</div>
-    <div class="profile-lines">
-      <div class="profile-line"><span>שם</span><b>${esc(u.name||'—')}</b></div>
-      <div class="profile-line"><span>אימייל</span><b>${esc(u.email||'—')}</b></div>
-      <div class="profile-line"><span>טלפון</span><b>${esc(u.phone||'—')}</b></div>
+    <div class="divider">פרופיל משכיר</div>
+    <div class="pref-grid">
+      <div class="field"><label>שם שיופיע לשוכרים</label><input id="op-display" value="${esc(prefs.displayName||u.name||'')}"></div>
+      <div class="field"><label>אזור מסירה מועדף</label><input id="op-area" value="${esc(prefs.area||'קראון הייטס')}"></div>
+      <div class="field"><label>זמן תגובה משוער</label><select id="op-response"><option ${prefs.response==='מיידי'?'selected':''}>מיידי</option><option ${prefs.response==='עד שעה'?'selected':''}>עד שעה</option><option ${prefs.response==='באותו יום'?'selected':''}>באותו יום</option></select></div>
+      <div class="field"><label>שפת שירות</label><input id="op-lang" value="${esc(prefs.lang||'עברית / English / Yiddish')}"></div>
     </div>
-    <div class="m-actions"><button class="btn btn-gold grow" onclick="openAccount()">עריכת שם · טלפון · מייל · סיסמה</button></div>`;
+    <div class="field"><label>הודעת פתיחה אוטומטית לשוכרים</label><textarea id="op-welcome" rows="3" placeholder="לדוגמה: שלום, אשמח לענות על שאלות לגבי הרכב...">${esc(prefs.welcome||'')}</textarea></div>
+    <div class="divider">העדפות אישיות</div>
+    <div class="pref-grid">
+      <div class="pref-card"><b>אישורי הזמנות</b><span>כל הזמנה חדשה נכנסת לסטטוס ממתין לאישור שלך.</span></div>
+      <div class="pref-card"><b>צ׳אט ישיר</b><span>שוכרים יכולים לפתוח איתך צ׳אט ממסך הבית לפני ההזמנה.</span></div>
+      <div class="pref-card"><b>פרטי חשבון</b><span>שינוי שם, טלפון, מייל וסיסמה דרך כפתור החשבון למעלה.</span></div>
+    </div>
+    <div class="m-actions"><button class="btn btn-gold grow" onclick="saveOwnerPrefs()">שמירת העדפות</button></div>`;
+}
+function saveOwnerPrefs(){
+  const u=me(); if(!u)return;
+  const prefs={displayName:$('op-display').value.trim(),area:$('op-area').value.trim(),response:$('op-response').value,lang:$('op-lang').value.trim(),welcome:$('op-welcome').value.trim()};
+  savePrefs(prefs,'העדפות המשכיר נשמרו');
+}
+function savePrefs(prefs,msg){
+  const u=me(); if(!u)return;
+  u.prefs={...(u.prefs||{}),...prefs};
+  if(CLOUD){db.collection('private').doc(u.id).set({prefs:u.prefs},{merge:true}).then(()=>showToast(msg)).catch(cloudErr);return;}
+  const pool=u.role==='owner'?state.owners:state.renters;
+  const rec=pool.find(x=>x.id===u.id); if(rec)rec.prefs=u.prefs;
+  persistState(); showToast(msg);
 }
 
 
@@ -4050,8 +4168,17 @@ function adminKPIs(){
     <div class="kpi"><b>${state.cars.length}</b><span>רכבים באתר</span></div>
     <div class="kpi"><b>${bookings.length}</b><span>סה״כ השכרות</span></div>
     <div class="kpi"><b>${bookings.filter(b=>(b.status||'approved')==='pending').length}</b><span>ממתינות לאישור</span></div>
+    <div class="kpi"><b>${(state.notifications||[]).filter(n=>!n.read).length}</b><span>התראות חדשות</span></div>
     <div class="kpi"><b>${money(revenue)}</b><span>מחזור מאושר</span></div>
   </div>`;
+}
+function adminBookingsTable(list=allBookingsSorted()){
+  if(!list.length)return '<div class="adm-empty">אין עדיין השכרות באתר.</div>';
+  return `<table class="tbl"><thead><tr><th>מספר</th><th>סטטוס</th><th>רכב</th><th>שוכר</th><th>משכיר</th><th>תאריך</th><th>סכום</th><th>פעולות</th></tr></thead><tbody>${list.map(b=>{
+    const c=state.cars.find(x=>x.id===b.carId)||{make:'—',model:'',ownerId:b.ownerId};
+    const o=userOf(b.ownerId)||state.owners.find(x=>x.id===b.ownerId)||{};
+    return `<tr><td class="num">${esc(b.num)}</td><td>${bookingStatusHTML(b)}</td><td>${esc(c.make)} ${esc(c.model)}</td><td>${esc(b.signName||b.renterName||'')}</td><td>${esc(o.name||'')}</td><td>${fmt(b.from)} ${esc(b.tmFrom)} → ${fmt(b.to)} ${esc(b.tmTo)}</td><td class="num">${money(+b.total||0)}</td><td><button class="mini gold" onclick="openChatTo('b${b.id}')">צ׳אט</button> ${b.lic?`<button class="mini" onclick="viewLic('${b.id}')">רישיון</button>`:''} ${((b.status||'approved')==='pending')?`<button class="mini" onclick="adminSetBooking('${b.id}','approved')">אישור</button><button class="mini danger" onclick="adminSetBooking('${b.id}','rejected')">דחייה</button>`:''} ${((b.status||'approved')==='approved'&&!b.done)?`<button class="mini" onclick="adminSetBooking('${b.id}','done')">סיום</button>`:''} <button class="mini danger" onclick="adminDeleteBooking('${b.id}')">מחיקה</button></td></tr>`;
+  }).join('')}</tbody></table>`;
 }
 function adminThreads(){
   const map=new Map();
@@ -4088,6 +4215,17 @@ function adminUsersHTML(){
   ${Object.entries(ownersRows).length?`<table class="tbl"><thead><tr><th>משכיר</th><th>מס׳ רכבים</th><th>הזמנות</th></tr></thead><tbody>${Object.entries(ownersRows).map(([oid,n])=>{const o=userOf(oid)||{};return `<tr><td>${esc(o.name||oid)}</td><td class="num">${n}</td><td class="num">${state.bookings.filter(b=>b.ownerId===oid).length}</td></tr>`}).join('')}</tbody></table>`:'<div class="adm-empty">אין עדיין משכירים עם רכבים.</div>'}`;
 }
 
+function adminCarsHTML(){
+  if(!state.cars.length)return '<div class="adm-empty">אין רכבים באתר.</div>';
+  return `<table class="tbl"><thead><tr><th>רכב</th><th>משכיר</th><th>סוג השכרה</th><th>מחירים</th><th>סטטוס וזמינות</th><th>פעולות</th></tr></thead><tbody>${state.cars.map(c=>{const o=userOf(c.ownerId)||{};const s=statusInfo(c);return `<tr><td><b>${esc(c.make)} ${esc(c.model)} ${esc(c.yr||'')}</b><div class="sm">${esc(c.color||'')} · ${esc(c.cat||'')} · ${esc(c.seats||'')} מושבים</div></td><td>${esc(o.name||c.ownerId||'')}</td><td>${rentalTypesOf(c).map(rentalLabel).join(' / ')||'—'}</td><td class="num">${rateSummary(c)||money(primaryRate(c))}</td><td><span class="pill ${s.cls}" style="font-size:.62rem;padding:1px 8px">${s.txt}</span><div class="sm">${esc(c.ret||'זמין עכשיו / לא הוגדר')}</div></td><td><button class="mini" onclick="adminToggleCar('${c.id}')">${c.status==='available'?'סימון כמושכר':'סימון כזמין'}</button><button class="mini danger" onclick="adminDeleteCar('${c.id}')">מחיקת רכב</button></td></tr>`}).join('')}</tbody></table>`;
+}
+function adminFullUsersHTML(){
+  const users=Object.entries(state.users||{}).map(([id,u])=>({id,...u}));
+  const fallback=[...(state.owners||[]).map(u=>({...u,role:'owner'})),...(state.renters||[]).map(u=>({...u,role:'renter'}))];
+  const list=users.length?users:fallback;
+  if(!list.length)return '<div class="adm-empty">אין משתמשים רשומים עדיין.</div>';
+  return `<table class="tbl"><thead><tr><th>שם</th><th>תפקיד</th><th>מייל</th><th>טלפון</th><th>רכבים</th><th>הזמנות</th><th>צ׳אט</th></tr></thead><tbody>${list.map(u=>`<tr><td><b>${esc(u.name||'')}</b><div class="sm">ID: ${esc(u.id||'')}</div></td><td>${u.role==='owner'?'בעל רכב':u.role==='admin'?'מנהל':'שוכר'}</td><td>${esc(u.email||'')}</td><td>${esc(u.phone||'')}</td><td class="num">${state.cars.filter(c=>c.ownerId===u.id).length}</td><td class="num">${state.bookings.filter(b=>b.ownerId===u.id||b.renterId===u.id).length}</td><td>${u.role==='owner'?`<button class="mini gold" onclick="openChatTo('o-admin-${u.id}')">צ׳אט</button>`:''}</td></tr>`).join('')}</tbody></table>`;
+}
 function adminDataHTML(){
   const safe={cars:state.cars,bookings:state.bookings,messages:state.msgs,owners:state.owners,renters:state.renters,users:state.users};
   return `<div class="note">כאן יש למנהל גישה מלאה לנתוני האתר כפי שהם נטענו בדפדפן/מסד הנתונים. אפשר להעתיק את המידע לגיבוי.</div><div class="m-actions"><button class="btn btn-gold grow" onclick="adminExportData()">הורדת גיבוי JSON</button><button class="btn btn-out grow" onclick="renderAdminDashboard()">רענון תצוגה</button></div><textarea readonly style="width:100%;min-height:360px;margin-top:14px;border:1px solid var(--line);border-radius:14px;padding:14px;direction:ltr;text-align:left;font-family:monospace;font-size:.76rem">${esc(JSON.stringify(safe,null,2))}</textarea>`;
@@ -4146,7 +4284,7 @@ function adminOverviewHTML(){
 
 function renderAdminDashboard(){
   const box=$('admin-body'); if(!box)return;
-  const mobileNote='';
+  const mobileNote='<div class="admin-mobile-note">בפלאפון: אפשר להחליק טבלאות לצדדים, וכל הכפתורים עובדים גם במסך קטן.</div>';
   if(adminTab==='all')box.innerHTML=mobileNote+adminOverviewHTML();
   if(adminTab==='bookings')box.innerHTML=mobileNote+adminKPIs()+`<div class="admin-panel"><h4>כל ההשכרות באתר</h4>${adminBookingsTable()}</div>`;
   if(adminTab==='chats')box.innerHTML=mobileNote+adminKPIs()+`<div class="admin-panel"><h4>כל הצ׳אטים באתר — כולל שירות לקוחות מול מנהל המערכת</h4>${adminChatsHTML()}</div>`;
@@ -4182,6 +4320,7 @@ function openRenterArea(){
       </div>
       <div class="personal-avatar">${esc(initials)}</div>
     </div>
+    <div class="storage-note">מצב השמירה תוקן: האתר שומר בדפדפן בצורה יציבה ולא נתקע בגלל Netlify Blobs או שגיאת שרת.</div>
     <div class="kpis">
       <div class="kpi"><b>${list.length}</b><span>סה״כ הזמנות</span></div>
       <div class="kpi"><b>${pending}</b><span>ממתינות לאישור</span></div>
@@ -4201,6 +4340,11 @@ function openRenterArea(){
           <div class="profile-line"><span>אימייל</span><b>${esc(u.email||'—')}</b></div>
           <div class="profile-line"><span>טלפון</span><b>${esc(u.phone||'—')}</b></div>
           <div class="profile-line"><span>רישיון</span><b style="color:var(--ok)">✓ שמור במערכת</b></div>
+        </div>
+        <div class="divider">העדפות</div>
+        <div class="prefs-row">
+          <div class="field" style="margin-bottom:0"><label>שפת תקשורת</label><input id="rp-lang" value="${esc(prefs.lang||'עברית / English')}"></div>
+          <button class="btn btn-gold" onclick="saveRenterPrefs()">שמירה</button>
         </div>
       </div>
       <div class="personal-panel">
@@ -4226,6 +4370,10 @@ function openRenterArea(){
       </div>
     </div>`;
   openOv('ov-renter');
+}
+function saveRenterPrefs(){
+  const prefs={lang:$('rp-lang').value.trim()};
+  savePrefs(prefs,'העדפות השוכר נשמרו');
 }
 
 function paymentProofCell(b){
@@ -4253,12 +4401,20 @@ function uploadPaymentProof(bid,input){
   r.readAsDataURL(f);
 }
 
+function applyPrefsToSearch(){
+  const p=(me()&&me().prefs)||{};
+  closeOv('ov-renter');scrollToFleet();
+  if($('q-make'))$('q-make').value=p.make||'';
+  if($('q-color'))$('q-color').value=p.color||'';
+  if($('q-maxprice'))$('q-maxprice').value=p.budget||'';
+  if($('q-seats'))$('q-seats').value=p.seats||'';
+  updateSearch();
+}
 
 
 /* ================= BOOKING ================= */
 let pendingBookCar=null;
 function tryBook(id){
-  if(state.session && isUserBlocked(state.session.id,state.session.email)){ alert(blockedGuardMsg()); return; }
   if(!state.session||state.session.role!=='renter'){
     pendingBookCar=id;
     showToast('להזמנה יש להתחבר כשוכר');
@@ -4387,7 +4543,6 @@ function bumpCarActivity(carId){
 }
 /* confirm + receipt */
 function confirmBooking(){
-  if(state.session && isUserBlocked(state.session.id,state.session.email)){ alert(blockedGuardMsg()); return; }
   const u=me(),h=hoursTotal(),d=daysTotal(),rentType=selectedBookingRentalType(),rate=bookingRate(),units=bookingUnits(),total=units*rate;
   const num='CD-'+Math.floor(100000+Math.random()*900000);
   const b={id:newId('bk'),num,status:'pending',carId:currentCar.id,ownerId:currentCar.ownerId,renterId:u.id,
@@ -4981,6 +5136,7 @@ addEventListener('scroll',()=>{
 
 /* animated counters */
 function animateNum(el,target){
+  if(!el)return;
   target=+target||0;
   if(reduced){el.textContent=target;el._v=target;return}
   const from=el._v||0;
@@ -5228,278 +5384,52 @@ document.querySelectorAll('.sec-head,.fleet-side,.how-grid,.foot-cta,.strip-in')
   window.CROWNDRIVE_STABILITY_GUARD='final-concrete-2026-07-10';
 })();
 
-/* ================= ADMIN POWER TOOLS + BLOCKED USERS =================
-   Adds: block/unblock users, edit users, delete users, quick car edit,
-   transfer car to another owner, edit booking amount + admin note.
-   Data flows through the existing local+realtime save path only —
-   Firebase / Auth / Realtime / Rules untouched. */
-function poolRecordOf(uid){
-  return (state.owners||[]).find(x=>x&&x.id===uid) || (state.renters||[]).find(x=>x&&x.id===uid) || null;
-}
-function isUserBlocked(uid,email){
-  try{
-    if(uid){
-      const um=(state.users||{})[uid];
-      if(um&&um.blocked)return true;
-      const rec=poolRecordOf(uid);
-      if(rec&&rec.blocked)return true;
-    }
-    if(email){
-      const e=normalizeEmail(email);
-      const rec2=[...(state.owners||[]),...(state.renters||[])].find(x=>x&&normalizeEmail(x.email)===e);
-      if(rec2&&rec2.blocked)return true;
-    }
-  }catch(e){}
-  return false;
-}
-function blockedGuardMsg(){ return 'החשבון שלך נחסם על ידי מנהל האתר.\nאי אפשר לפרסם רכבים או לבצע הזמנות.\nלבירור אפשר לפנות למנהל דרך צ׳אט שירות הלקוחות.'; }
-function adminOnly(){ return !!(state.session && state.session.role==='admin'); }
-function adminSetUserBlocked(uid,blocked){
-  if(!adminOnly())return;
-  const um=(state.users||{})[uid]||{}; const rec=poolRecordOf(uid);
-  const name=um.name||(rec&&rec.name)||uid;
-  if(!confirm((blocked?'לחסום את ':'לשחרר את החסימה של ')+name+'?'))return;
-  const ts=Date.now();
-  state.users[uid]={...(state.users[uid]||{}),blocked:!!blocked,blockedAt:blocked?ts:null,updatedAt:ts};
-  if(rec){ rec.blocked=!!blocked; rec.blockedAt=blocked?ts:null; rec.updatedAt=ts; }
-  persistState(); renderAdminDashboard();
-  showToast(blocked?'המשתמש נחסם':'החסימה הוסרה');
-}
-function adminDeleteUser(uid){
-  if(!adminOnly())return;
-  const um=(state.users||{})[uid]||{}; const rec=poolRecordOf(uid);
-  const name=um.name||(rec&&rec.name)||uid;
-  const carCount=(state.cars||[]).filter(c=>c.ownerId===uid).length;
-  if(!confirm('למחוק לגמרי את המשתמש '+name+'?'+(carCount?'\nגם '+carCount+' רכבים שפרסם יוסרו מהאתר.':'')))return;
-  state.owners=(state.owners||[]).filter(x=>x.id!==uid);
-  state.renters=(state.renters||[]).filter(x=>x.id!==uid);
-  if(carCount) state.cars=(state.cars||[]).filter(c=>c.ownerId!==uid);
-  if(state.users) delete state.users[uid];
-  persistState(); render(); renderAdminDashboard();
-  showToast('המשתמש נמחק');
-}
-function adminEditUser(uid){
-  if(!adminOnly())return;
-  const rec=poolRecordOf(uid)||state.users[uid];
-  if(!rec){showToast('משתמש לא נמצא');return;}
-  const um=state.users[uid]||{};
-  const role=um.role||((state.owners||[]).some(x=>x&&x.id===uid)?'owner':'renter');
-  const body=$('admin-body'); if(!body)return;
-  body.innerHTML=`<div class="admin-panel">
-    <h4>עריכת משתמש · ${esc(rec.name||'')}</h4>
-    <div class="f-row">
-      <div class="field"><label>שם מלא</label><input id="adm-u-name" value="${esc(rec.name||'')}"></div>
-      <div class="field"><label>טלפון</label><input id="adm-u-phone" dir="ltr" value="${esc(rec.phone||'')}"></div>
-    </div>
-    <div class="f-row">
-      <div class="field"><label>אימייל (בפרופיל האתר)</label><input id="adm-u-mail" dir="ltr" value="${esc(rec.email||'')}"></div>
-      <div class="field"><label>תפקיד</label><input value="${role==='owner'?'בעל רכב':role==='admin'?'מנהל':'שוכר'}" disabled></div>
-    </div>
-    <div class="field"><label>סיסמה של המשתמש (לצפייה בלבד)</label><input value="${esc(rec.pass||'')}" readonly dir="ltr" style="font-family:monospace;text-align:left;background:var(--bg2)"></div>
-    <label class="check-line"><input type="checkbox" id="adm-u-blocked" ${isUserBlocked(uid)?'checked':''}> <span>משתמש חסום — לא יכול לפרסם רכב או לבצע הזמנה</span></label>
-    <div class="m-actions"><button class="btn btn-ghost" onclick="setAdminTab('users')">ביטול</button><button class="btn btn-gold grow" onclick="adminSaveUserEdit('${esc(uid)}')">שמירת שינויים</button></div>
-  </div>`;
-  body.scrollTop=0;
-}
-function adminSaveUserEdit(uid){
-  if(!adminOnly())return;
-  const rec=poolRecordOf(uid); const ts=Date.now();
-  const name=($('adm-u-name')&&$('adm-u-name').value.trim())||'';
-  const phone=($('adm-u-phone')&&$('adm-u-phone').value.trim())||'';
-  const mail=normalizeEmail(($('adm-u-mail')&&$('adm-u-mail').value)||'');
-  const blocked=!!($('adm-u-blocked')&&$('adm-u-blocked').checked);
-  if(!name){alert('שם מלא הוא שדה חובה');return;}
-  if(rec){ rec.name=name; rec.phone=phone; if(mail)rec.email=mail; rec.blocked=blocked; rec.updatedAt=ts; }
-  state.users[uid]={...(state.users[uid]||{}),name,phone,email:mail||((state.users[uid]||{}).email||''),blocked,updatedAt:ts};
-  if(state.session&&state.session.id===uid)Object.assign(state.session,{name,phone});
-  persistState(); render(); setAdminTab('users');
-  showToast('פרטי המשתמש עודכנו');
-}
-function adminEditCar(id){
-  if(!adminOnly())return;
-  const c=(state.cars||[]).find(x=>x.id===id);
-  if(!c){showToast('רכב לא נמצא');return;}
-  const owners=(state.owners||[]);
-  const body=$('admin-body'); if(!body)return;
-  body.innerHTML=`<div class="admin-panel">
-    <h4>עריכה מהירה · ${esc(c.make)} ${esc(c.model)} ${esc(c.yr||'')}</h4>
-    <div class="f-row3">
-      <div class="field"><label>יצרן</label><input id="adm-c-make" value="${esc(c.make||'')}"></div>
-      <div class="field"><label>דגם</label><input id="adm-c-model" value="${esc(c.model||'')}"></div>
-      <div class="field"><label>שנה</label><input id="adm-c-yr" type="number" value="${esc(c.yr||'')}"></div>
-    </div>
-    <div class="f-row3">
-      <div class="field"><label>מחיר לשעה ($)</label><input id="adm-c-ph" type="number" min="0" value="${esc(c.priceHourly||c.price||'')}"></div>
-      <div class="field"><label>מחיר ליום ($)</label><input id="adm-c-pd" type="number" min="0" value="${esc(c.priceDaily||'')}"></div>
-      <div class="field"><label>מחיר לשבוע ($)</label><input id="adm-c-pw" type="number" min="0" value="${esc(c.priceWeekly||'')}"></div>
-    </div>
-    <div class="f-row">
-      <div class="field"><label>סטטוס</label><select id="adm-c-status"><option value="available" ${c.status==='available'?'selected':''}>זמין להשכרה</option><option value="rented" ${c.status!=='available'?'selected':''}>מושכר</option></select></div>
-      <div class="field"><label>העברת הרכב לבעל רכב אחר</label><select id="adm-c-owner">${owners.length?owners.map(o=>`<option value="${esc(o.id)}" ${o.id===c.ownerId?'selected':''}>${esc(o.name||o.email||o.id)}</option>`).join(''):`<option value="${esc(c.ownerId)}" selected>הבעלים הנוכחי</option>`}</select></div>
-    </div>
-    <div class="field"><label>הערת זמינות (מוצגת באתר כשהרכב מושכר)</label><input id="adm-c-ret" value="${esc(c.ret||'')}" placeholder="לדוגמה: זמין שוב ביום ראשון בשעה 10:00"></div>
-    <div class="m-actions"><button class="btn btn-ghost" onclick="setAdminTab('cars')">ביטול</button><button class="btn btn-gold grow" onclick="adminSaveCarEdit('${esc(id)}')">שמירת שינויים</button></div>
-  </div>`;
-  body.scrollTop=0;
-}
-function adminSaveCarEdit(id){
-  if(!adminOnly())return;
-  const c=(state.cars||[]).find(x=>x.id===id); if(!c)return;
-  const make=($('adm-c-make')&&$('adm-c-make').value.trim())||'';
-  const model=($('adm-c-model')&&$('adm-c-model').value.trim())||'';
-  if(!make||!model){alert('יצרן ודגם הם שדות חובה');return;}
-  c.make=make; c.model=model;
-  const yr=+($('adm-c-yr')&&$('adm-c-yr').value); if(yr)c.yr=yr;
-  c.priceHourly=+($('adm-c-ph')&&$('adm-c-ph').value)||0;
-  c.priceDaily=+($('adm-c-pd')&&$('adm-c-pd').value)||0;
-  c.priceWeekly=+($('adm-c-pw')&&$('adm-c-pw').value)||0;
-  c.price=c.priceHourly||c.priceDaily||c.priceWeekly||c.price||0;
-  c.status=($('adm-c-status')&&$('adm-c-status').value)==='available'?'available':'rented';
-  const retV=($('adm-c-ret')&&$('adm-c-ret').value.trim())||'';
-  c.ret=c.status==='available'?'':(retV||c.ret||'');
-  const newOwner=$('adm-c-owner')&&$('adm-c-owner').value;
-  if(newOwner&&newOwner!==c.ownerId)c.ownerId=newOwner;
-  c.updatedAt=Date.now();
-  persistState(); render(); setAdminTab('cars');
-  showToast('הרכב עודכן');
-}
-function adminEditBooking(id){
-  if(!adminOnly())return;
-  const b=(state.bookings||[]).find(x=>x.id===id);
-  if(!b){showToast('הזמנה לא נמצאה');return;}
-  const c=(state.cars||[]).find(x=>x.id===b.carId)||{make:'—',model:''};
-  const st=b.status||(b.done?'done':'approved');
-  const body=$('admin-body'); if(!body)return;
-  body.innerHTML=`<div class="admin-panel">
-    <h4>עריכת הזמנה · ${esc(b.num||'')} · ${esc(c.make)} ${esc(c.model)}</h4>
-    <div class="f-row">
-      <div class="field"><label>סטטוס ההזמנה</label><select id="adm-b-status">
-        <option value="pending" ${st==='pending'?'selected':''}>ממתינה לאישור</option>
-        <option value="approved" ${st==='approved'?'selected':''}>מאושרת</option>
-        <option value="rejected" ${st==='rejected'?'selected':''}>נדחתה</option>
-        <option value="done" ${st==='done'?'selected':''}>הסתיימה</option>
-      </select></div>
-      <div class="field"><label>סכום ההזמנה ($)</label><input id="adm-b-total" type="number" min="0" value="${esc(b.total||0)}"></div>
-    </div>
-    <div class="field"><label>הערת מנהל (פנימית — מוצגת רק במסך המנהל)</label><textarea id="adm-b-note" rows="3" placeholder="לדוגמה: סוכם טלפונית על הנחה">${esc(b.adminNote||'')}</textarea></div>
-    <div class="m-actions"><button class="btn btn-ghost" onclick="setAdminTab('bookings')">ביטול</button><button class="btn btn-gold grow" onclick="adminSaveBookingEdit('${esc(id)}')">שמירת שינויים</button></div>
-  </div>`;
-  body.scrollTop=0;
-}
-function adminSaveBookingEdit(id){
-  if(!adminOnly())return;
-  const b=(state.bookings||[]).find(x=>x.id===id); if(!b)return;
-  const st=($('adm-b-status')&&$('adm-b-status').value)||b.status||'approved';
-  const total=+($('adm-b-total')&&$('adm-b-total').value);
-  b.status=st; b.done=(st==='done');
-  if(st==='done'&&!b.doneAt)b.doneAt=Date.now();
-  if(Number.isFinite(total)&&total>=0)b.total=total;
-  b.adminNote=($('adm-b-note')&&$('adm-b-note').value.trim())||'';
-  b.updatedAt=Date.now();
-  const c=(state.cars||[]).find(x=>x.id===b.carId);
-  if(c){
-    if(st==='approved'){c.status='rented';c.ret='זמין שוב: '+fmt(b.to)+' בשעה '+b.tmTo;c.updatedAt=Date.now();}
-    if(st==='done'){c.status='available';c.ret='';c.updatedAt=Date.now();}
+
+
+/* ===== ABSOLUTE FINAL NO-LOOP GUARD =====
+   Fixes: constant size changes caused by realtime snapshot -> render -> save -> snapshot loop. */
+(function(){
+  const modalIds=['ov-auth','ov-admin','ov-owner','ov-renter','ov-account','ov-search','ov-book','ov-profile','ov-lic'];
+  window.CROWNDRIVE_MODAL_IS_OPEN=function(){
+    return modalIds.some(id=>{const e=document.getElementById(id);return e&&e.classList.contains('open');});
+  };
+  function syncBodyLock(){
+    document.body.classList.toggle('modal-open-stable', window.CROWNDRIVE_MODAL_IS_OPEN());
   }
-  persistState(); render(); setAdminTab('bookings');
-  showToast('ההזמנה עודכנה');
-}
-
-/* Admin tables — same data, plus action buttons, admin notes, blocked state,
-   and data-labels so mobile shows clean cards instead of giant tables. */
-function adminBookingsTable(list=allBookingsSorted()){
-  if(!list.length)return '<div class="adm-empty">אין עדיין השכרות באתר.</div>';
-  return `<table class="tbl"><thead><tr><th>מספר</th><th>סטטוס</th><th>רכב</th><th>שוכר</th><th>משכיר</th><th>תאריך</th><th>סכום</th><th>פעולות</th></tr></thead><tbody>${list.map(b=>{
-    const c=state.cars.find(x=>x.id===b.carId)||{make:'—',model:'',ownerId:b.ownerId};
-    const o=userOf(b.ownerId)||state.owners.find(x=>x.id===b.ownerId)||{};
-    const st=b.status||'approved';
-    return `<tr>
-      <td data-label="מספר" class="num">${esc(b.num)}${b.adminNote?`<div class="sm" style="color:var(--gold-d)">📝 ${esc(b.adminNote)}</div>`:''}</td>
-      <td data-label="סטטוס">${bookingStatusHTML(b)}</td>
-      <td data-label="רכב">${esc(c.make)} ${esc(c.model)}</td>
-      <td data-label="שוכר">${esc(b.signName||b.renterName||'')}</td>
-      <td data-label="משכיר">${esc(o.name||'')}</td>
-      <td data-label="תאריך">${fmt(b.from)} ${esc(b.tmFrom)} → ${fmt(b.to)} ${esc(b.tmTo)}</td>
-      <td data-label="סכום" class="num">${money(+b.total||0)}</td>
-      <td class="acts-cell"><button class="mini gold" onclick="adminEditBooking('${b.id}')">✎ עריכת סכום/סטטוס</button><button class="mini gold" onclick="openChatTo('b${b.id}')">💬 צ׳אט</button>${b.lic?`<button class="mini" onclick="viewLic('${b.id}')">רישיון</button>`:''}${st==='pending'?`<button class="mini" style="color:var(--ok);border-color:rgba(28,124,79,.4)" onclick="adminSetBooking('${b.id}','approved')">✓ אישור</button><button class="mini danger" onclick="adminSetBooking('${b.id}','rejected')">דחייה</button>`:''}${(st==='approved'&&!b.done)?`<button class="mini" onclick="adminSetBooking('${b.id}','done')">סיום</button>`:''}<button class="mini danger" onclick="adminDeleteBooking('${b.id}')">מחיקה</button></td>
-    </tr>`;
-  }).join('')}</tbody></table>`;
-};
-function adminCarsHTML(){
-  if(!state.cars.length)return '<div class="adm-empty">אין רכבים באתר.</div>';
-  return `<table class="tbl"><thead><tr><th>רכב</th><th>משכיר</th><th>סוג השכרה</th><th>מחירים</th><th>סטטוס וזמינות</th><th>פעולות</th></tr></thead><tbody>${state.cars.map(c=>{
-    const o=userOf(c.ownerId)||{};const s=statusInfo(c);
-    return `<tr>
-      <td data-label="רכב"><b>${esc(c.make)} ${esc(c.model)} ${esc(c.yr||'')}</b><div class="sm">${esc(c.color||'')} · ${esc(c.cat||'')} · ${esc(c.seats||'')} מושבים</div></td>
-      <td data-label="משכיר">${esc(o.name||c.ownerId||'')}</td>
-      <td data-label="סוג השכרה">${rentalTypesOf(c).map(rentalLabel).join(' / ')||'—'}</td>
-      <td data-label="מחירים" class="num">${rateSummary(c)||money(primaryRate(c))}</td>
-      <td data-label="סטטוס"><span class="pill ${s.cls}" style="font-size:.62rem;padding:1px 8px">${s.txt}</span><div class="sm">${esc(c.ret||'זמין עכשיו / לא הוגדר')}</div></td>
-      <td class="acts-cell"><button class="mini gold" onclick="adminEditCar('${c.id}')">✎ עריכה מהירה</button><button class="mini" onclick="adminToggleCar('${c.id}')">${c.status==='available'?'סימון כמושכר':'סימון כזמין'}</button><button class="mini danger" onclick="adminDeleteCar('${c.id}')">מחיקת רכב</button></td>
-    </tr>`;
-  }).join('')}</tbody></table>`;
-};
-function adminFullUsersHTML(){
-  const users=Object.entries(state.users||{}).map(([id,u])=>({id,...u}));
-  const fallback=[...(state.owners||[]).map(u=>({...u,role:'owner'})),...(state.renters||[]).map(u=>({...u,role:'renter'}))];
-  const list=users.length?users:fallback;
-  if(!list.length)return '<div class="adm-empty">אין משתמשים רשומים עדיין.</div>';
-  return `<table class="tbl"><thead><tr><th>שם</th><th>תפקיד</th><th>מייל</th><th>סיסמה</th><th>טלפון</th><th>רכבים</th><th>הזמנות</th><th>מצב</th><th>פעולות</th></tr></thead><tbody>${list.map(u=>{
-    const blocked=isUserBlocked(u.id);
-    const isAdminUser=u.role==='admin';
-    const rec=poolRecordOf(u.id)||{};
-    const pw=isAdminUser?'':(rec.pass||u.pass||'');
-    return `<tr${blocked?' style="background:rgba(215,0,21,.04)"':''}>
-      <td data-label="שם"><b>${esc(u.name||'')}</b><div class="sm">ID: ${esc(u.id||'')}</div></td>
-      <td data-label="תפקיד">${u.role==='owner'?'בעל רכב':isAdminUser?'מנהל':'שוכר'}</td>
-      <td data-label="מייל">${esc(u.email||'')}</td>
-      <td data-label="סיסמה" style="direction:ltr;text-align:left;font-family:monospace;font-size:.78rem">${pw?esc(pw):'—'}</td>
-      <td data-label="טלפון">${esc(u.phone||'')}</td>
-      <td data-label="רכבים" class="num">${state.cars.filter(c=>c.ownerId===u.id).length}</td>
-      <td data-label="הזמנות" class="num">${state.bookings.filter(b=>b.ownerId===u.id||b.renterId===u.id).length}</td>
-      <td data-label="מצב">${blocked?'<span class="pill no" style="font-size:.62rem;padding:1px 8px">חסום</span>':'<span class="pill ok" style="font-size:.62rem;padding:1px 8px">פעיל</span>'}</td>
-      <td class="acts-cell">${isAdminUser?'<span class="sm">חשבון מנהל</span>':`<button class="mini gold" onclick="adminEditUser('${esc(u.id)}')">✎ עריכה</button><button class="mini ${blocked?'':'danger'}" onclick="adminSetUserBlocked('${esc(u.id)}',${blocked?'false':'true'})">${blocked?'שחרור חסימה':'חסימת משתמש'}</button><button class="mini danger" onclick="adminDeleteUser('${esc(u.id)}')">מחיקה</button>${u.role==='owner'?`<button class="mini" onclick="openChatTo('o-admin-${esc(u.id)}')">💬 צ׳אט</button>`:''}`}</td>
-    </tr>`;
-  }).join('')}</tbody></table>`;
-};
-
-/* Chat live refresh: incoming realtime messages render into an open chat
-   without repainting the page or the drawers. */
-(function(){
-  const prevRefresh=window.refreshOpenViews;
-  let lastChatSig='';
-  window.refreshOpenViews=function(){
-    try{ prevRefresh(); }catch(e){ console.warn('refresh base failed',e); }
-    try{
-      const panel=document.getElementById('chat-panel');
-      if(!panel || !panel.classList.contains('open')) return;
-      const n=(state.msgs||[]).length;
-      const sig=n+'|'+(n?(state.msgs[n-1].ts||0):0)+'|'+String(activeTid);
-      if(sig===lastChatSig) return;
-      lastChatSig=sig;
-      const a=document.activeElement;
-      const typingOutsideChat=a && ['INPUT','TEXTAREA','SELECT'].includes(a.tagName) && a.id!=='cp-text';
-      if(typingOutsideChat) return;
-      if(activeTid) renderMsgs(); else showChatList();
-      updateBadge();
-    }catch(e){ console.warn('chat live refresh skipped',e); }
-  };
-})();
-
-/* ================= MOBILE APP BAR WIRING ================= */
-function mbnHome(){
-  try{ ['ov-search','ov-auth','ov-book','ov-profile','ov-lic','ov-account'].forEach(id=>{const el=$(id); if(el&&el.classList.contains('open')) closeOv(id);}); }catch(e){}
-  try{ toggleChat(false); }catch(e){}
-  try{ if(typeof window.scrollTo==='function') window.scrollTo({top:0,behavior:'smooth'}); }catch(e){ try{window.scrollTo(0,0)}catch(e2){} }
-}
-(function(){
-  function syncChatBodyClass(){ try{ document.body.classList.toggle('cd-chat-open', $('chat-panel').classList.contains('open')); }catch(e){} }
-  const _tc=toggleChat; toggleChat=function(force){ _tc(force); syncChatBodyClass(); };
-  const _oct=openChatTo; openChatTo=function(tid){ _oct(tid); syncChatBodyClass(); };
-  const _ub=updateBadge; updateBadge=function(){
-    _ub();
-    try{ const n=totalUnread(), b=$('bn-chat-badge'); if(b){ b.style.display=n>0?'grid':'none'; b.textContent=n; } }catch(e){}
-  };
+  const oldOpen=window.openOv;
+  const oldClose=window.closeOv;
+  if(typeof oldOpen==='function'){
+    window.openOv=function(id){
+      const r=oldOpen.apply(this,arguments);
+      syncBodyLock();
+      return r;
+    };
+  }
+  if(typeof oldClose==='function'){
+    window.closeOv=function(id){
+      const r=oldClose.apply(this,arguments);
+      setTimeout(syncBodyLock,0);
+      return r;
+    };
+  }
+  const originalRender=window.render;
+  if(typeof originalRender==='function'){
+    window.render=function(){
+      if(window.CROWNDRIVE_MODAL_IS_OPEN && window.CROWNDRIVE_MODAL_IS_OPEN() && !window.CROWNDRIVE_FORCE_RENDER){
+        try{updateBadge&&updateBadge()}catch(e){}
+        return;
+      }
+      return originalRender.apply(this,arguments);
+    };
+  }
+  // Stop old service workers/caches from Chrome serving stale scripts that break buttons.
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.update().catch(()=>{}))).catch(()=>{});
+  }
+  if(window.caches){
+    caches.keys().then(keys=>keys.filter(k=>/crowndrive|pwa|app/i.test(k)).forEach(k=>caches.delete(k))).catch(()=>{});
+  }
+  window.CROWNDRIVE_SIZE_STABILITY='no-loop-final-v3';
 })();
 
 window.addEventListener('beforeunload', persistState);
@@ -5517,6 +5447,28 @@ ensureStateIntegrity();
   }
 });
 
+
+function reviveSessionBeforeFirstRender(){
+  try{
+    if(state.session && state.session.role && state.session.id) return true;
+    const saved = savedLogin && savedLogin();
+    const cookieSession = getCookieJSON && getCookieJSON(COOKIE_SESSION_KEY);
+    const email = normalizeEmail((saved&&saved.email)||(cookieSession&&cookieSession.email)||'');
+    const role = (saved&&saved.role)||(cookieSession&&cookieSession.role)||'';
+    if(!email || !role) return false;
+    const pool = role==='owner' ? state.owners : (role==='renter' ? state.renters : []);
+    let u = pool.find(x=>normalizeEmail(x.email)===email) || Object.entries(state.users||{}).map(([id,u])=>({id,...u})).find(x=>normalizeEmail(x.email)===email);
+    if(!u){
+      u={id:(cookieSession&&cookieSession.id)||('local-'+email.replace(/[^a-z0-9]/g,'-')),name:email.split('@')[0],email,phone:'',role,restored:true,createdAt:Date.now(),updatedAt:Date.now()};
+      if(role==='owner') state.owners.push(u); else if(role==='renter') state.renters.push(u);
+    }
+    state.session={role,id:u.id,...u};
+    state.users[u.id]={...(state.users[u.id]||{}),...u,role,email:u.email||email,updatedAt:Date.now()};
+    persistSessionCookie();
+    return true;
+  }catch(e){console.warn('revive session failed',e);return false;}
+}
+reviveSessionBeforeFirstRender();
 initRealtime();
 setTimeout(()=>{ restorePersistentLoginOnLoad().catch(e=>console.warn('persistent login restore error',e)); },700);
 try{
@@ -5530,6 +5482,59 @@ setInterval(()=>{
   if(document.activeElement && ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))return;
   refreshOpenViews();
 },1000);
+
+/* ===== URGENT AUTH/ADMIN HOTFIX: stable refresh, clickable login, admin signup alerts ===== */
+(function(){
+  window.CROWNDRIVE_HOTFIX_AUTH_REFRESH_ALERTS='v1';
+  // Keep Chrome from running stale cached app code. Stability beats installable PWA for the live rental app.
+  try{
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister().catch(()=>{}))).catch(()=>{});
+    }
+    if(window.caches){ caches.keys().then(keys=>keys.forEach(k=>caches.delete(k))).catch(()=>{}); }
+  }catch(e){}
+
+  function unlockAuthButtons(){
+    document.querySelectorAll('button,[onclick],.nav-guest-login,.nav-area-bubble').forEach(el=>{
+      try{ el.disabled=false; el.style.pointerEvents='auto'; el.style.touchAction='manipulation'; }catch(e){}
+    });
+  }
+  document.addEventListener('DOMContentLoaded',unlockAuthButtons);
+  window.addEventListener('pageshow',()=>{ unlockAuthButtons(); reviveSessionBeforeFirstRender&&reviveSessionBeforeFirstRender(); try{renderNav();renderMyAreaFab();}catch(e){} });
+  setTimeout(unlockAuthButtons,350);
+  setTimeout(unlockAuthButtons,1200);
+
+  // Delegated backup handler: even if inline onclick is blocked by a stale browser state, login/personal buttons still work.
+  document.addEventListener('click',function(e){
+    const btn=e.target && e.target.closest && e.target.closest('.nav-guest-login,.nav-area-bubble,[data-open-auth],[data-open-myarea]');
+    if(!btn) return;
+    try{
+      if(btn.classList.contains('nav-guest-login') || btn.hasAttribute('data-open-auth')){ e.preventDefault(); e.stopPropagation(); openAuth(); }
+      if(btn.classList.contains('nav-area-bubble') || btn.hasAttribute('data-open-myarea')){ e.preventDefault(); e.stopPropagation(); openMyArea(); }
+    }catch(err){ console.error('backup nav click failed',err); }
+  },true);
+
+  // Make the guest login button explicit for delegated handler too.
+  const oldRenderNav=window.renderNav;
+  window.renderNav=function(){
+    const r=oldRenderNav.apply(this,arguments);
+    try{
+      const b=document.querySelector('.nav-guest-login'); if(b){b.setAttribute('data-open-auth','1'); b.disabled=false;}
+      const a=document.querySelector('.nav-area-bubble'); if(a){a.setAttribute('data-open-myarea','1'); a.disabled=false;}
+    }catch(e){}
+    return r;
+  };
+
+  // When Firebase restores the user after refresh, rebuild the local session and nav instead of appearing logged out.
+  setTimeout(()=>{
+    try{
+      reviveSessionBeforeFirstRender&&reviveSessionBeforeFirstRender();
+      if(RT_AUTH && RT_AUTH.currentUser) restoreSessionFromFirebaseUser(RT_AUTH.currentUser, (savedLogin()||{}).role || (state.session&&state.session.role));
+      renderNav(); renderMyAreaFab(); updateBadge(); unlockAuthButtons();
+    }catch(e){console.warn('post-refresh auth repair failed',e)}
+  },900);
+})();
+
 </script>
 
 <script>
@@ -5542,6 +5547,257 @@ setInterval(()=>{
     });
   }
 })();
+
+/* ===== URGENT AUTH/ADMIN HOTFIX: stable refresh, clickable login, admin signup alerts ===== */
+(function(){
+  window.CROWNDRIVE_HOTFIX_AUTH_REFRESH_ALERTS='v1';
+  // Keep Chrome from running stale cached app code. Stability beats installable PWA for the live rental app.
+  try{
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister().catch(()=>{}))).catch(()=>{});
+    }
+    if(window.caches){ caches.keys().then(keys=>keys.forEach(k=>caches.delete(k))).catch(()=>{}); }
+  }catch(e){}
+
+  function unlockAuthButtons(){
+    document.querySelectorAll('button,[onclick],.nav-guest-login,.nav-area-bubble').forEach(el=>{
+      try{ el.disabled=false; el.style.pointerEvents='auto'; el.style.touchAction='manipulation'; }catch(e){}
+    });
+  }
+  document.addEventListener('DOMContentLoaded',unlockAuthButtons);
+  window.addEventListener('pageshow',()=>{ unlockAuthButtons(); reviveSessionBeforeFirstRender&&reviveSessionBeforeFirstRender(); try{renderNav();renderMyAreaFab();}catch(e){} });
+  setTimeout(unlockAuthButtons,350);
+  setTimeout(unlockAuthButtons,1200);
+
+  // Delegated backup handler: even if inline onclick is blocked by a stale browser state, login/personal buttons still work.
+  document.addEventListener('click',function(e){
+    const btn=e.target && e.target.closest && e.target.closest('.nav-guest-login,.nav-area-bubble,[data-open-auth],[data-open-myarea]');
+    if(!btn) return;
+    try{
+      if(btn.classList.contains('nav-guest-login') || btn.hasAttribute('data-open-auth')){ e.preventDefault(); e.stopPropagation(); openAuth(); }
+      if(btn.classList.contains('nav-area-bubble') || btn.hasAttribute('data-open-myarea')){ e.preventDefault(); e.stopPropagation(); openMyArea(); }
+    }catch(err){ console.error('backup nav click failed',err); }
+  },true);
+
+  // Make the guest login button explicit for delegated handler too.
+  const oldRenderNav=window.renderNav;
+  window.renderNav=function(){
+    const r=oldRenderNav.apply(this,arguments);
+    try{
+      const b=document.querySelector('.nav-guest-login'); if(b){b.setAttribute('data-open-auth','1'); b.disabled=false;}
+      const a=document.querySelector('.nav-area-bubble'); if(a){a.setAttribute('data-open-myarea','1'); a.disabled=false;}
+    }catch(e){}
+    return r;
+  };
+
+  // When Firebase restores the user after refresh, rebuild the local session and nav instead of appearing logged out.
+  setTimeout(()=>{
+    try{
+      reviveSessionBeforeFirstRender&&reviveSessionBeforeFirstRender();
+      if(RT_AUTH && RT_AUTH.currentUser) restoreSessionFromFirebaseUser(RT_AUTH.currentUser, (savedLogin()||{}).role || (state.session&&state.session.role));
+      renderNav(); renderMyAreaFab(); updateBadge(); unlockAuthButtons();
+    }catch(e){console.warn('post-refresh auth repair failed',e)}
+  },900);
+})();
+
 </script>
+
+<script id="mobile-admin-control-upgrade-js">
+(function(){
+  'use strict';
+  window.CROWNDRIVE_MOBILE_ADMIN_UPGRADE='v1-mobile-admin-control';
+  function now(){return Date.now()}
+  function userList(){
+    const m=new Map();
+    Object.entries(state.users||{}).forEach(([id,u])=>{ if(u) m.set(id,{id,...u}); });
+    (state.owners||[]).forEach(u=>{ if(u&&u.id) m.set(u.id,{...(m.get(u.id)||{}),...u,role:'owner'}); });
+    (state.renters||[]).forEach(u=>{ if(u&&u.id) m.set(u.id,{...(m.get(u.id)||{}),...u,role:'renter'}); });
+    if(state.session&&state.session.role==='admin') m.set(state.session.id||'admin',{id:state.session.id||'admin',name:state.session.name||'מנהל האתר',email:state.session.email||'',role:'admin',...(m.get(state.session.id||'admin')||{})});
+    return Array.from(m.values()).sort((a,b)=>(+(b.updatedAt||b.createdAt||0))-(+(a.updatedAt||a.createdAt||0)));
+  }
+  function uidLabel(u){return esc((u&&u.id)||'')}
+  function roleLabel(r){return r==='admin'?'מנהל':r==='owner'?'בעל רכב':'שוכר'}
+  window.isUserBlocked=function(idOrEmail){
+    const email=normalizeEmail(idOrEmail||'');
+    const u=(state.users&&state.users[idOrEmail]) || userList().find(x=>x.id===idOrEmail || normalizeEmail(x.email)===email);
+    return !!(u && (u.blocked || u.status==='blocked'));
+  };
+  function syncUserRecord(id, patch){
+    if(!id)return;
+    state.users=state.users||{};
+    state.users[id]={...(state.users[id]||{}),...patch,updatedAt:now()};
+    [state.owners,state.renters].forEach(arr=>safeArr(arr).forEach(u=>{ if(u&&u.id===id) Object.assign(u,patch,{updatedAt:now()}); }));
+  }
+  window.adminToggleUserBlock=function(id){
+    const u=userList().find(x=>x.id===id); if(!u)return;
+    if(u.role==='admin'){safeToast('לא ניתן לחסום מנהל');return;}
+    const blocked=!isUserBlocked(id);
+    syncUserRecord(id,{blocked,status:blocked?'blocked':'active',blockedAt:blocked?now():null});
+    persistState(); renderAdminDashboard(); safeToast(blocked?'המשתמש נחסם':'החסימה הוסרה');
+  };
+  window.adminEditUser=function(id){
+    const u=userList().find(x=>x.id===id); if(!u)return;
+    const name=prompt('שם המשתמש',u.name||''); if(name===null)return;
+    const phone=prompt('טלפון',u.phone||''); if(phone===null)return;
+    const role=prompt('תפקיד: owner / renter / admin',u.role||'renter'); if(role===null)return;
+    const cleanRole=['owner','renter','admin'].includes(role)?role:(u.role||'renter');
+    syncUserRecord(id,{name:name.trim(),phone:phone.trim(),role:cleanRole});
+    if(cleanRole==='owner' && !state.owners.some(x=>x.id===id)) state.owners.push({id,name:name.trim(),phone:phone.trim(),email:u.email||'',createdAt:u.createdAt||now()});
+    if(cleanRole==='renter' && !state.renters.some(x=>x.id===id)) state.renters.push({id,name:name.trim(),phone:phone.trim(),email:u.email||'',createdAt:u.createdAt||now()});
+    persistState(); renderAdminDashboard(); safeToast('פרטי המשתמש עודכנו');
+  };
+  window.adminDeleteUser=function(id){
+    const u=userList().find(x=>x.id===id); if(!u)return;
+    if(u.role==='admin'){safeToast('לא ניתן למחוק מנהל');return;}
+    const hasCars=state.cars.some(c=>c.ownerId===id), hasBookings=state.bookings.some(b=>b.ownerId===id||b.renterId===id);
+    const msg='למחוק משתמש '+(u.email||u.name||id)+'?'+(hasCars||hasBookings?'\n\nיש לו רכבים/הזמנות. מומלץ לחסום במקום למחוק. להמשיך?':'');
+    if(!confirm(msg))return;
+    delete state.users[id];
+    state.owners=state.owners.filter(x=>x.id!==id); state.renters=state.renters.filter(x=>x.id!==id);
+    if(state.session&&state.session.id===id) state.session=null;
+    persistState(); renderAdminDashboard(); renderNav(); renderMyAreaFab(); safeToast('המשתמש נמחק מהרשימות המקומיות');
+  };
+  window.adminViewUser=function(id){
+    const u=userList().find(x=>x.id===id); if(!u)return;
+    const data={user:u,cars:state.cars.filter(c=>c.ownerId===id),bookings:state.bookings.filter(b=>b.ownerId===id||b.renterId===id),messages:state.msgs.filter(m=>m.uid===id || (Array.isArray(m.participants)&&m.participants.includes(id)))};
+    alert(JSON.stringify(data,null,2).slice(0,5000));
+  };
+  window.adminQuickEditCar=function(id){
+    const c=state.cars.find(x=>x.id===id); if(!c)return;
+    const price=prompt('מחיר יומי / מחיר ראשי',c.priceDaily||c.price||''); if(price===null)return;
+    const status=prompt('סטטוס: available / rented / soon',c.status||'available'); if(status===null)return;
+    const ret=prompt('טקסט זמינות / חזרה',c.ret||''); if(ret===null)return;
+    c.priceDaily=price; c.price=price; c.status=['available','rented','soon'].includes(status)?status:c.status; c.ret=ret; c.updatedAt=now();
+    persistState(); render(); renderAdminDashboard(); safeToast('הרכב עודכן');
+  };
+  window.adminChangeCarOwner=function(id){
+    const c=state.cars.find(x=>x.id===id); if(!c)return;
+    const owners=userList().filter(u=>u.role==='owner');
+    const email=prompt('העבר לבעל רכב לפי מייל:\n'+owners.map(o=>o.email||o.id).join('\n'), '');
+    if(!email)return;
+    const o=owners.find(x=>normalizeEmail(x.email)===normalizeEmail(email) || x.id===email.trim());
+    if(!o){safeToast('לא נמצא בעל רכב כזה');return;}
+    c.ownerId=o.id; c.updatedAt=now(); persistState(); render(); renderAdminDashboard(); safeToast('הרכב הועבר לבעל רכב אחר');
+  };
+  window.adminSetBookingStatusPrompt=function(id){
+    const b=state.bookings.find(x=>x.id===id); if(!b)return;
+    const st=prompt('סטטוס הזמנה: pending / approved / rejected / done',b.status||'pending'); if(!st)return;
+    if(!['pending','approved','rejected','done'].includes(st)){safeToast('סטטוס לא תקין');return;}
+    adminSetBooking(id,st);
+  };
+  window.adminQuickEditBooking=function(id){
+    const b=state.bookings.find(x=>x.id===id); if(!b)return;
+    const total=prompt('סכום ההזמנה',b.total||''); if(total===null)return;
+    const note=prompt('הערת מנהל להזמנה',b.adminNote||''); if(note===null)return;
+    b.total=+total||b.total; b.adminNote=note; b.updatedAt=now(); persistState(); renderAdminDashboard(); safeToast('ההזמנה עודכנה');
+  };
+  window.adminUsersHTML=function(){
+    const list=userList();
+    if(!list.length)return '<div class="adm-empty">אין משתמשים רשומים עדיין.</div>';
+    const card=(u)=>`<div class="admin-user-card"><div class="admin-card-top"><div><b>${esc(u.name||u.email||'משתמש')}</b><div class="admin-card-meta">${esc(u.email||'אין מייל')}<br>ID: ${uidLabel(u)}<br>${esc(u.phone||'אין טלפון')}</div></div><span class="status-chip ${isUserBlocked(u.id)?'blocked':'ok'}">${isUserBlocked(u.id)?'חסום':'פעיל'} · ${roleLabel(u.role)}</span></div><div class="admin-action-row"><button class="mini gold" onclick="adminViewUser('${u.id}')">כל המידע</button><button class="mini" onclick="adminEditUser('${u.id}')">עריכה</button><button class="mini ${isUserBlocked(u.id)?'gold':'danger'}" onclick="adminToggleUserBlock('${u.id}')">${isUserBlocked(u.id)?'שחרור חסימה':'חסימה'}</button><button class="mini danger" onclick="adminDeleteUser('${u.id}')">מחיקה</button></div></div>`;
+    const rows=list.map(u=>`<tr><td><b>${esc(u.name||'')}</b><div class="sm">ID: ${uidLabel(u)}</div></td><td>${roleLabel(u.role)}</td><td>${esc(u.email||'')}</td><td>${esc(u.phone||'')}</td><td>${isUserBlocked(u.id)?'<span class="badge-status rejected">חסום</span>':'<span class="badge-status approved">פעיל</span>'}</td><td class="num">${state.cars.filter(c=>c.ownerId===u.id).length}</td><td class="num">${state.bookings.filter(b=>b.ownerId===u.id||b.renterId===u.id).length}</td><td><button class="mini gold" onclick="adminViewUser('${u.id}')">מידע</button> <button class="mini" onclick="adminEditUser('${u.id}')">עריכה</button> <button class="mini ${isUserBlocked(u.id)?'gold':'danger'}" onclick="adminToggleUserBlock('${u.id}')">${isUserBlocked(u.id)?'שחרור':'חסימה'}</button> <button class="mini danger" onclick="adminDeleteUser('${u.id}')">מחיקה</button></td></tr>`).join('');
+    return `<div class="mobile-only-list">${list.map(card).join('')}</div><div class="desktop-table-wrap"><table class="tbl"><thead><tr><th>שם</th><th>תפקיד</th><th>מייל</th><th>טלפון</th><th>סטטוס</th><th>רכבים</th><th>הזמנות</th><th>שליטה</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  };
+  window.adminFullUsersHTML=window.adminUsersHTML;
+  window.adminCarsHTML=function(){
+    if(!state.cars.length)return '<div class="adm-empty">אין רכבים באתר.</div>';
+    const card=(c)=>{const o=userOf(c.ownerId)||{};const s=statusInfo(c);return `<div class="admin-car-card"><div class="admin-card-top"><div><b>${esc(c.make)} ${esc(c.model)} ${esc(c.yr||'')}</b><div class="admin-card-meta">משכיר: ${esc(o.name||o.email||c.ownerId||'')}<br>${esc(c.cat||'')} · ${esc(c.seats||'')} מושבים · ${rateSummary(c)||money(primaryRate(c))}</div></div><span class="status-chip info">${s.txt}</span></div><div class="admin-action-row"><button class="mini" onclick="adminToggleCar('${c.id}')">${c.status==='available'?'סימון כמושכר':'סימון כזמין'}</button><button class="mini gold" onclick="adminQuickEditCar('${c.id}')">עריכה מהירה</button><button class="mini" onclick="adminChangeCarOwner('${c.id}')">החלפת בעלים</button><button class="mini danger" onclick="adminDeleteCar('${c.id}')">הסרה</button></div></div>`};
+    const rows=state.cars.map(c=>{const o=userOf(c.ownerId)||{};const s=statusInfo(c);return `<tr><td><b>${esc(c.make)} ${esc(c.model)} ${esc(c.yr||'')}</b><div class="sm">${esc(c.color||'')} · ${esc(c.cat||'')} · ${esc(c.seats||'')} מושבים</div></td><td>${esc(o.name||o.email||c.ownerId||'')}</td><td>${rentalTypesOf(c).map(rentalLabel).join(' / ')||'—'}</td><td class="num">${rateSummary(c)||money(primaryRate(c))}</td><td><span class="pill ${s.cls}" style="font-size:.62rem;padding:1px 8px">${s.txt}</span><div class="sm">${esc(c.ret||'זמין עכשיו / לא הוגדר')}</div></td><td><button class="mini" onclick="adminToggleCar('${c.id}')">${c.status==='available'?'מושכר':'זמין'}</button><button class="mini gold" onclick="adminQuickEditCar('${c.id}')">עריכה</button><button class="mini" onclick="adminChangeCarOwner('${c.id}')">בעלים</button><button class="mini danger" onclick="adminDeleteCar('${c.id}')">הסרה</button></td></tr>`}).join('');
+    return `<div class="mobile-only-list">${state.cars.map(card).join('')}</div><div class="desktop-table-wrap"><table class="tbl"><thead><tr><th>רכב</th><th>משכיר</th><th>סוג השכרה</th><th>מחירים</th><th>סטטוס וזמינות</th><th>שליטה</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  };
+  const oldAdminBookingsTable=window.adminBookingsTable;
+  window.adminBookingsTable=function(list=allBookingsSorted()){
+    if(!list.length)return '<div class="adm-empty">אין עדיין השכרות באתר.</div>';
+    const cards=list.map(b=>{const c=state.cars.find(x=>x.id===b.carId)||{make:'—',model:''};const o=userOf(b.ownerId)||{};return `<div class="admin-booking-card"><div class="admin-card-top"><div><b>${esc(b.num||'הזמנה')}</b><div class="admin-card-meta">${esc(c.make)} ${esc(c.model)}<br>שוכר: ${esc(b.signName||b.renterName||'')} · משכיר: ${esc(o.name||'')}<br>${fmt(b.from)} ${esc(b.tmFrom||'')} → ${fmt(b.to)} ${esc(b.tmTo||'')}</div></div>${bookingStatusHTML(b)}</div><div class="admin-action-row"><button class="mini gold" onclick="openChatTo('b${b.id}')">צ׳אט</button><button class="mini" onclick="adminSetBookingStatusPrompt('${b.id}')">סטטוס</button><button class="mini" onclick="adminQuickEditBooking('${b.id}')">עריכה</button><button class="mini danger" onclick="adminDeleteBooking('${b.id}')">מחיקה</button></div></div>`;}).join('');
+    return `<div class="mobile-only-list">${cards}</div><div class="desktop-table-wrap">${oldAdminBookingsTable?oldAdminBookingsTable(list):''}</div>`;
+  };
+  const oldAdminOverview=window.adminOverviewHTML;
+  window.adminOverviewHTML=function(){
+    const blocked=userList().filter(u=>isUserBlocked(u.id)).length;
+    return adminKPIs()+`<div class="admin-panel" style="margin-bottom:12px"><h4>התראות מנהל</h4><button class="mini gold" onclick="markAllAdminNotificationsRead()">סמן הכל כנקרא</button>${adminNotificationsHTML()}</div><div class="admin-actions-bar"><div><b>מרכז שליטה מלא</b><br><span>צפייה ועריכה של משתמשים, רכבים, השכרות, צ׳אטים וגיבוי — מותאם למובייל.</span></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-gold" onclick="setAdminTab('users')">ניהול משתמשים</button><button class="btn btn-out" onclick="setAdminTab('cars')">ניהול רכבים</button><button class="btn btn-out" onclick="setAdminTab('bookings')">ניהול השכרות</button></div></div><div class="admin-section-grid"><div class="admin-mini-card"><b>${userList().length}</b><span>משתמשים רשומים</span></div><div class="admin-mini-card"><b>${blocked}</b><span>משתמשים חסומים</span></div><div class="admin-mini-card"><b>${state.cars.length}</b><span>רכבים באתר</span></div><div class="admin-mini-card"><b>${state.bookings.length}</b><span>השכרות באתר</span></div></div><div class="admin-overview-grid"><div class="admin-panel"><h4>השכרות אחרונות</h4>${adminBookingsTable(allBookingsSorted().slice(0,8))}</div><div class="admin-panel"><h4>משתמשים אחרונים</h4>${adminUsersHTML()}</div></div>`;
+  };
+  window.renderAdminDashboard=function(){
+    const box=document.getElementById('admin-body'); if(!box)return;
+    const note='<div class="admin-mobile-note">מובייל ראשון: כל השליטה זמינה בכרטיסים נוחים; בדסקטופ יש גם טבלאות רחבות.</div>';
+    if(adminTab==='all') box.innerHTML=note+adminOverviewHTML();
+    if(adminTab==='bookings') box.innerHTML=note+adminKPIs()+`<div class="admin-panel"><h4>כל ההשכרות באתר</h4>${adminBookingsTable()}</div>`;
+    if(adminTab==='chats') box.innerHTML=note+adminKPIs()+`<div class="admin-panel"><h4>כל הצ׳אטים באתר</h4>${adminChatsHTML()}</div>`;
+    if(adminTab==='cars') box.innerHTML=note+adminKPIs()+`<div class="admin-panel"><h4>ניהול כל הרכבים באתר</h4>${adminCarsHTML()}</div>`;
+    if(adminTab==='users') box.innerHTML=note+adminKPIs()+`<div class="admin-panel"><h4>שליטה במשתמשים</h4>${adminUsersHTML()}</div>`;
+    if(adminTab==='data') box.innerHTML=note+adminKPIs()+`<div class="admin-panel"><h4>גישה מלאה וייצוא מידע</h4>${adminDataHTML()}</div>`;
+  };
+  const oldAfterLogin=window.afterLoginUI;
+  window.afterLoginUI=function(){
+    const s=state.session;
+    if(s && s.role!=='admin' && isUserBlocked(s.id||s.email)){
+      state.session=null; persistState(); renderNav(); renderMyAreaFab(); closeOv('ov-auth'); safeToast('החשבון חסום. פנה למנהל המערכת.'); return;
+    }
+    return oldAfterLogin.apply(this,arguments);
+  };
+  const oldSaveCar=window.saveCar;
+  window.saveCar=function(){
+    if(state.session && isUserBlocked(state.session.id)){safeToast('החשבון חסום ואין אפשרות לפרסם רכב');return;}
+    return oldSaveCar.apply(this,arguments);
+  };
+  const oldOpenBook=window.openBook;
+  if(oldOpenBook){window.openBook=function(c){ if(state.session && isUserBlocked(state.session.id)){safeToast('החשבון חסום ואין אפשרות לבצע הזמנה');return;} return oldOpenBook.apply(this,arguments); };}
+  // Keep header tidy after this upgrade.
+  try{renderNav(); renderMyAreaFab(); if(document.getElementById('ov-admin')&&document.getElementById('ov-admin').classList.contains('open')) renderAdminDashboard();}catch(e){console.warn('mobile admin upgrade post-render failed',e)}
+})();
+
+/* ===== URGENT AUTH/ADMIN HOTFIX: stable refresh, clickable login, admin signup alerts ===== */
+(function(){
+  window.CROWNDRIVE_HOTFIX_AUTH_REFRESH_ALERTS='v1';
+  // Keep Chrome from running stale cached app code. Stability beats installable PWA for the live rental app.
+  try{
+    if('serviceWorker' in navigator){
+      navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister().catch(()=>{}))).catch(()=>{});
+    }
+    if(window.caches){ caches.keys().then(keys=>keys.forEach(k=>caches.delete(k))).catch(()=>{}); }
+  }catch(e){}
+
+  function unlockAuthButtons(){
+    document.querySelectorAll('button,[onclick],.nav-guest-login,.nav-area-bubble').forEach(el=>{
+      try{ el.disabled=false; el.style.pointerEvents='auto'; el.style.touchAction='manipulation'; }catch(e){}
+    });
+  }
+  document.addEventListener('DOMContentLoaded',unlockAuthButtons);
+  window.addEventListener('pageshow',()=>{ unlockAuthButtons(); reviveSessionBeforeFirstRender&&reviveSessionBeforeFirstRender(); try{renderNav();renderMyAreaFab();}catch(e){} });
+  setTimeout(unlockAuthButtons,350);
+  setTimeout(unlockAuthButtons,1200);
+
+  // Delegated backup handler: even if inline onclick is blocked by a stale browser state, login/personal buttons still work.
+  document.addEventListener('click',function(e){
+    const btn=e.target && e.target.closest && e.target.closest('.nav-guest-login,.nav-area-bubble,[data-open-auth],[data-open-myarea]');
+    if(!btn) return;
+    try{
+      if(btn.classList.contains('nav-guest-login') || btn.hasAttribute('data-open-auth')){ e.preventDefault(); e.stopPropagation(); openAuth(); }
+      if(btn.classList.contains('nav-area-bubble') || btn.hasAttribute('data-open-myarea')){ e.preventDefault(); e.stopPropagation(); openMyArea(); }
+    }catch(err){ console.error('backup nav click failed',err); }
+  },true);
+
+  // Make the guest login button explicit for delegated handler too.
+  const oldRenderNav=window.renderNav;
+  window.renderNav=function(){
+    const r=oldRenderNav.apply(this,arguments);
+    try{
+      const b=document.querySelector('.nav-guest-login'); if(b){b.setAttribute('data-open-auth','1'); b.disabled=false;}
+      const a=document.querySelector('.nav-area-bubble'); if(a){a.setAttribute('data-open-myarea','1'); a.disabled=false;}
+    }catch(e){}
+    return r;
+  };
+
+  // When Firebase restores the user after refresh, rebuild the local session and nav instead of appearing logged out.
+  setTimeout(()=>{
+    try{
+      reviveSessionBeforeFirstRender&&reviveSessionBeforeFirstRender();
+      if(RT_AUTH && RT_AUTH.currentUser) restoreSessionFromFirebaseUser(RT_AUTH.currentUser, (savedLogin()||{}).role || (state.session&&state.session.role));
+      renderNav(); renderMyAreaFab(); updateBadge(); unlockAuthButtons();
+    }catch(e){console.warn('post-refresh auth repair failed',e)}
+  },900);
+})();
+
+</script>
+
 </body>
 </html>

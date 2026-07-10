@@ -1,0 +1,7 @@
+עדכון ממוקד:
+1. התראת מנהל נוצרת אוטומטית בכל יצירת משתמש חדש.
+2. התראות מופיעות בסקירת המנהל ונשמרות ב-Firebase יחד עם state.notifications.
+3. אחרי Refresh המשתמש משוחזר מ-Firebase/localStorage/cookie ולא מוצג כמנותק.
+4. כפתור כניסה/הרשמה מקבל handler גיבוי כדי להישאר לחיץ גם אחרי רענון/Cache ישן.
+5. Service Worker מנקה Cache ומבטל את עצמו כדי למנוע Chrome שמחזיק גרסת JS ישנה.
+לא שונה Firebase config ולא שונו Rules.
