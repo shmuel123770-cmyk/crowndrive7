@@ -1765,12 +1765,43 @@ function prefillSavedLogin(role){
 }
 function clearSavedLogin(){ try{ localStorage.removeItem(AUTH_MEMORY_KEY); }catch(e){} delCookie(COOKIE_LOGIN_KEY); }
 
+function cleanFirebaseValue(v, seen){
+  // Firebase Realtime Database rejects undefined, functions, NaN/Infinity, DOM/File objects, and very large accidental blobs.
+  // This cleaner makes the cloud payload safe while localStorage still keeps the full local copy.
+  if(v===undefined || typeof v==='function' || typeof v==='symbol') return null;
+  if(v===null || typeof v==='boolean') return v;
+  if(typeof v==='number') return Number.isFinite(v)?v:null;
+  if(typeof v==='string'){
+    // Keep photos, but prevent one huge base64 image from blocking the whole realtime save.
+    if(v.startsWith('data:image/') && v.length>350000) return fallbackCarPhoto();
+    return v;
+  }
+  if(v instanceof Date) return v.toISOString();
+  if(typeof File!=='undefined' && v instanceof File) return null;
+  if(typeof Blob!=='undefined' && v instanceof Blob) return null;
+  if(typeof HTMLElement!=='undefined' && v instanceof HTMLElement) return null;
+  if(!seen) seen=new WeakSet();
+  if(typeof v==='object'){
+    if(seen.has(v)) return null;
+    seen.add(v);
+    if(Array.isArray(v)) return v.map(x=>cleanFirebaseValue(x, seen)).filter(x=>x!==undefined);
+    const o={};
+    Object.keys(v).forEach(k=>{
+      if(k.startsWith('_')) return;
+      const cv=cleanFirebaseValue(v[k], seen);
+      if(cv!==undefined) o[k]=cv;
+    });
+    return o;
+  }
+  return null;
+}
 function realtimeData(){
-  return {
+  const data={
     owners:state.owners||[], renters:state.renters||[], cars:state.cars||[], bookings:state.bookings||[],
     msgs:state.msgs||[], ratings:state.ratings||[], users:state.users||{}, seq:seq||1,
     updatedAt:Date.now()
   };
+  return cleanFirebaseValue(data);
 }
 function applyRealtimeData(d){
   if(!d || typeof d!=='object')return;
@@ -1793,13 +1824,27 @@ function scheduleRealtimeSave(){
   clearTimeout(rtWriteTimer);
   rtWriteTimer=setTimeout(pushRealtimeNow,280);
 }
+function firebaseErrorText(e){
+  const code=(e&&e.code)||''; const msg=(e&&e.message)||String(e||'');
+  if(code==='PERMISSION_DENIED' || /permission/i.test(msg)) return 'Firebase חוסם כתיבה — צריך לשנות Rules לכתיבה';
+  if(/undefined|invalid/i.test(msg)) return 'נתונים לא תקינים נוקו — נסה לשמור שוב';
+  if(/network|offline/i.test(msg)) return 'אין חיבור רשת יציב ל־Firebase';
+  return msg.slice(0,90)||'שגיאה לא ידועה';
+}
 function pushRealtimeNow(){
   if(!REALTIME || !RT_REF || rtApplying)return Promise.resolve(false);
-  const payload={version:1,updatedAt:Date.now(),data:realtimeData()};
-  return RT_REF.set(payload).catch(e=>{
+  let payload;
+  try{ payload=cleanFirebaseValue({version:1,updatedAt:Date.now(),data:realtimeData()}); }
+  catch(e){ console.error('Realtime payload clean failed',e); return Promise.resolve(false); }
+  return RT_REF.set(payload).then(()=>{
+    window.CROWNDRIVE_LAST_REALTIME_OK=Date.now();
+    return true;
+  }).catch(e=>{
     console.error('Realtime save failed',e);
+    window.CROWNDRIVE_LAST_REALTIME_ERROR=e;
     const now=Date.now();
-    if(now-rtLastToast>7000){rtLastToast=now; safeToast('שמירה בזמן אמת נכשלה — האתר ממשיך לשמור מקומית');}
+    if(now-rtLastToast>7000){rtLastToast=now; safeToast('שמירה בזמן אמת נכשלה: '+firebaseErrorText(e));}
+    return false;
   });
 }
 function initRealtime(){
@@ -1816,9 +1861,17 @@ function initRealtime(){
       const v=snap.val();
       if(v && v.data) applyRealtimeData(v.data);
       else if(!v) pushRealtimeNow();
-    }, err=>{console.error('Realtime listener failed',err);safeToast('חיבור זמן אמת נכשל — בדוק Firebase config/rules');});
+    }, err=>{console.error('Realtime listener failed',err);safeToast('חיבור זמן אמת נכשל: '+firebaseErrorText(err));});
     window.addEventListener('online',()=>pushRealtimeNow());
-    setTimeout(()=>{ if(state.session) safeToast('זמן אמת פעיל'); },1200);
+    // Do a tiny diagnostic write first so permission/config problems are visible immediately.
+    RT_DB.ref((window.CROWNDRIVE_RT_PATH||'crowndrive-live')+'/_connectionTest').set({ok:true,ts:Date.now()}).then(()=>{
+      window.CROWNDRIVE_REALTIME_CONNECTED=true;
+      if(state.session) safeToast('זמן אמת פעיל');
+    }).catch(e=>{
+      console.error('Realtime diagnostic write failed',e);
+      window.CROWNDRIVE_REALTIME_CONNECTED=false;
+      safeToast('Firebase לא נותן לשמור: '+firebaseErrorText(e));
+    });
     return true;
   }catch(e){console.error('Realtime init failed',e);safeToast('Firebase לא מוגדר תקין — האתר עובד מקומית');return false;}
 }
