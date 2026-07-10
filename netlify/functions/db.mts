@@ -43,7 +43,13 @@ function verifyPassword(pass: string, stored?: string | null) {
   return real.length === test.length && crypto.timingSafeEqual(real, test);
 }
 
+// The schema itself is created and indexed by the managed migration in
+// netlify/database/migrations. This runs once per warm function instance as a
+// safety net (e.g. local dev) and to seed the admin account — it is skipped on
+// every subsequent request so the per-second live feeds stay fast.
+let initialized = false;
 async function ensureTables() {
+  if (initialized) return;
   await getPool().query(`
     CREATE TABLE IF NOT EXISTS crown_records (
       collection TEXT NOT NULL,
@@ -68,6 +74,12 @@ async function ensureTables() {
     );
   `);
   await getPool().query(`ALTER TABLE crown_auth ADD COLUMN IF NOT EXISTS pass_hash TEXT;`);
+  await getPool().query(`
+    CREATE INDEX IF NOT EXISTS idx_crown_records_collection_updated ON crown_records (collection, updated_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_crown_records_data_gin ON crown_records USING gin (data);
+    CREATE INDEX IF NOT EXISTS idx_crown_sessions_expires ON crown_sessions (expires_at);
+    CREATE INDEX IF NOT EXISTS idx_crown_sessions_uid ON crown_sessions (uid);
+  `);
 
   if (ADMIN_EMAIL && ADMIN_PASS) {
     await getPool().query(
@@ -83,6 +95,9 @@ async function ensureTables() {
       [JSON.stringify({ name: "מנהל האתר", role: "admin", email: ADMIN_EMAIL, createdAt: Date.now() })]
     );
   }
+  // Mark ready only after everything above succeeded; a thrown error leaves the
+  // flag false so the next request retries the setup.
+  initialized = true;
 }
 
 async function getRecord(collection: string, rid: string) {
