@@ -4512,8 +4512,71 @@ function adminDeleteBooking(id){
   if(CLOUD){db.collection('bookings').doc(id).delete().then(()=>showToast('ההזמנה נמחקה')).catch(cloudErr);return;}
   state.bookings=state.bookings.filter(x=>x.id!==id);markDeleted(id);persistState();render();renderAdminDashboard();showToast('ההזמנה נמחקה');
 }
-function adminToggleCar(id){toggleStatus(id);setTimeout(renderAdminDashboard,50)}
-function adminDeleteCar(id){deleteCar(id);setTimeout(renderAdminDashboard,50)}
+
+async function saveAdminCarsDirect(verifyId, expectedStatus, shouldBeDeleted=false){
+  if(!REALTIME || !RT_REF || !rtInitialSnapshotReceived) return false;
+  try{
+    if(window.CROWNDRIVE_AUTH_REQUIRED_FOR_REALTIME && RT_AUTH && !RT_AUTH.currentUser){
+      await ensureRealtimeAuthFromMemory();
+      if(!RT_AUTH.currentUser) return false;
+    }
+    const stamp=Date.now();
+    const updates={
+      'data/cars':cleanFirebaseValue(state.cars||[]),
+      'data/deleted':cleanFirebaseValue(state.deleted||{}),
+      'data/updatedAt':stamp,
+      'updatedAt':stamp,
+      'version':1
+    };
+    await RT_REF.update(updates);
+    const snap=await RT_REF.child('data/cars').once('value');
+    const remote=safeArr(snap.val());
+    const car=remote.find(x=>x&&x.id===verifyId);
+    const ok=shouldBeDeleted ? !car : !!car && car.status===expectedStatus;
+    if(ok) window.CROWNDRIVE_LAST_ADMIN_SAVE_OK=Date.now();
+    return ok;
+  }catch(e){
+    console.error('Direct admin cars save failed',e);
+    window.CROWNDRIVE_LAST_REALTIME_ERROR=e;
+    safeToast('Firebase לא אישר את שינוי הרכב: '+firebaseErrorText(e));
+    return false;
+  }
+}
+window.adminToggleCar=async function(id){
+  const c=state.cars.find(x=>x.id===id); if(!c)return;
+  const old={status:c.status,ret:c.ret,updatedAt:c.updatedAt};
+  const status=c.status==='available'?'rented':'available';
+  c.status=status; c.ret=status==='available'?'':(c.ret||''); c.updatedAt=Date.now();
+  window.CROWNDRIVE_SUPPRESS_REALTIME_WRITE=true;
+  persistState();
+  window.CROWNDRIVE_SUPPRESS_REALTIME_WRITE=false;
+  render(); renderAdminDashboard();
+  const ok=await saveAdminCarsDirect(id,status,false);
+  if(ok){ safeToast(status==='rented'?'הרכב סומן כמושכר ונשמר בענן':'הרכב סומן כזמין ונשמר בענן'); return; }
+  Object.assign(c,old);
+  window.CROWNDRIVE_SUPPRESS_REALTIME_WRITE=true; persistState(); window.CROWNDRIVE_SUPPRESS_REALTIME_WRITE=false;
+  render(); renderAdminDashboard();
+  safeToast('השינוי לא נשמר ב־Firebase ולכן בוטל');
+};
+window.adminDeleteCar=async function(id){
+  const c=state.cars.find(x=>x.id===id); if(!c)return;
+  const hasBookings=state.bookings.some(b=>b.carId===id);
+  const msg=`למחוק את המודעה של ${c.make} ${c.model} ${c.yr} לגמרי?\n\nהרכב יוסר מהאתר מיד.`+(hasBookings?'\nהיסטוריית ההזמנות שלו תישמר בדוח ההכנסות.':'');
+  if(!confirm(msg))return;
+  const oldCars=[...state.cars];
+  const oldDeleted={...(state.deleted||{})};
+  state.cars=state.cars.filter(x=>x.id!==id); markDeleted(id);
+  window.CROWNDRIVE_SUPPRESS_REALTIME_WRITE=true;
+  persistState();
+  window.CROWNDRIVE_SUPPRESS_REALTIME_WRITE=false;
+  render(); renderAdminDashboard();
+  const ok=await saveAdminCarsDirect(id,null,true);
+  if(ok){ safeToast('הרכב נמחק ונשמר בענן'); return; }
+  state.cars=oldCars; state.deleted=oldDeleted;
+  window.CROWNDRIVE_SUPPRESS_REALTIME_WRITE=true; persistState(); window.CROWNDRIVE_SUPPRESS_REALTIME_WRITE=false;
+  render(); renderAdminDashboard();
+  safeToast('המחיקה לא נשמרה ב־Firebase ולכן בוטלה');
+};
 function adminExportData(){
   const blob=new Blob([JSON.stringify({cars:state.cars,bookings:state.bookings,messages:state.msgs,owners:state.owners,renters:state.renters,users:state.users},null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='crowndrive-admin-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();URL.revokeObjectURL(a.href);
