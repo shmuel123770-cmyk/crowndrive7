@@ -4,9 +4,7 @@
     "@netlify/blobs": "latest",
     "pg": "latest",
     "nodemailer": "latest",
-    "drizzle-orm": "beta"
-  },
-  "devDependencies": {
+    "drizzle-orm": "beta",
     "drizzle-kit": "beta"
   }
 }
