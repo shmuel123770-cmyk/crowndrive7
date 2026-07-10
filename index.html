@@ -960,6 +960,30 @@ img{max-width:100%;}
 .hero-stats{margin-top:48px!important;}
 @media(max-width:720px){.hero-in{padding:64px 16px 56px!important}.hero-stats{margin-top:30px!important}}
 
+
+/* BMW X6M BLACK scroll showcase */
+.x6m-showcase{position:relative;overflow:hidden;padding:74px 22px 92px;background:
+  radial-gradient(780px 260px at 50% 45%,rgba(63,107,142,.12),transparent 64%),
+  linear-gradient(180deg,#F4F7FA 0%,#ECF2F7 100%);border-top:1px solid rgba(0,0,0,.06);border-bottom:1px solid rgba(0,0,0,.06);isolation:isolate}
+.x6m-showcase::before{content:"CROWN DRIVE";position:absolute;inset-inline:0;top:22px;text-align:center;font-size:clamp(3.8rem,12vw,11rem);font-weight:900;letter-spacing:.09em;color:rgba(20,34,48,.055);white-space:nowrap;pointer-events:none;z-index:0}
+.x6m-showcase::after{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(49,86,122,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(49,86,122,.055) 1px,transparent 1px);background-size:64px 64px;mask-image:radial-gradient(760px 360px at 50% 48%,#000 18%,transparent 78%);-webkit-mask-image:radial-gradient(760px 360px at 50% 48%,#000 18%,transparent 78%);z-index:0;pointer-events:none}
+.x6m-inner{position:relative;z-index:1;max-width:980px;margin:auto;text-align:center}
+.x6m-title{display:inline-flex;gap:10px;align-items:center;margin-bottom:18px;background:rgba(255,255,255,.78);border:1px solid rgba(49,86,122,.12);box-shadow:0 18px 55px rgba(31,42,56,.1);border-radius:999px;padding:10px 18px;color:#243140;font-weight:800;letter-spacing:.02em}
+.x6m-title span{color:#3F6B8E;font-weight:700;font-size:.86rem}
+.car-stage{position:relative;height:300px;display:grid;place-items:center;perspective:1200px;margin:0 auto;max-width:880px}
+.car-shadow{position:absolute;bottom:44px;width:min(640px,82vw);height:38px;border-radius:50%;background:radial-gradient(ellipse at center,rgba(0,0,0,.28),rgba(0,0,0,.05) 54%,transparent 72%);filter:blur(12px);transform:scaleX(calc(.82 + var(--turn,0) * .003));opacity:.68}
+.x6m-car{width:min(760px,94vw);transform:perspective(1100px) rotateY(var(--carRot,0deg)) rotateX(1.2deg) translateZ(0);transform-style:preserve-3d;filter:drop-shadow(0 32px 34px rgba(0,0,0,.28));transition:filter .2s linear;will-change:transform}
+.x6m-car svg{width:100%;height:auto;display:block;overflow:visible}
+.x6m-body{fill:url(#x6mBody)}
+.x6m-glass{fill:url(#x6mGlass)}
+.x6m-line{stroke:#53606B;stroke-width:2;fill:none;opacity:.42}
+.x6m-highlight{stroke:#FFFFFF;stroke-width:3;fill:none;opacity:.15}
+.x6m-wheel{transform-box:fill-box;transform-origin:center;transform:rotate(var(--wheelRot,0deg));will-change:transform}
+.x6m-wheel tire{fill:#05070A}
+.x6m-caption{margin-top:-10px;color:#637181;font-size:.86rem}.x6m-caption b{color:#1B2733}
+@media(max-width:720px){.x6m-showcase{padding:42px 10px 54px}.x6m-title{font-size:.84rem;flex-wrap:wrap;justify-content:center}.car-stage{height:190px}.car-shadow{bottom:22px;width:82vw}.x6m-caption{font-size:.78rem;margin-top:0}.x6m-showcase::before{font-size:3.1rem;top:38px;white-space:normal;line-height:.9}}
+@media (prefers-reduced-motion: reduce){.x6m-car,.x6m-wheel{transform:none!important}}
+
 </style>
 
 <link rel="manifest" href="/manifest.json">
@@ -1040,6 +1064,62 @@ img{max-width:100%;}
     <span class="it" style="color:var(--mut2);font-size:.74rem" id="last-upd"></span>
   </div>
 </div>
+
+
+<!-- BMW X6M BLACK SCROLL SHOWCASE -->
+<section class="x6m-showcase" aria-label="BMW X6M BLACK תצוגה מסתובבת">
+  <div class="x6m-inner">
+    <div class="x6m-title">BMW X6M BLACK <span>מסתובבת עם גלילת העכבר</span></div>
+    <div class="car-stage">
+      <div class="car-shadow" id="x6m-shadow" aria-hidden="true"></div>
+      <div class="x6m-car" id="x6m-car" aria-hidden="true">
+        <svg viewBox="0 0 900 360" role="img">
+          <defs>
+            <linearGradient id="x6mBody" x1="0" x2="1" y1="0" y2="1">
+              <stop offset="0" stop-color="#222B35"/>
+              <stop offset=".28" stop-color="#070A0E"/>
+              <stop offset=".55" stop-color="#111922"/>
+              <stop offset="1" stop-color="#020305"/>
+            </linearGradient>
+            <linearGradient id="x6mGlass" x1="0" x2="1">
+              <stop offset="0" stop-color="#192737"/>
+              <stop offset=".55" stop-color="#0A1018"/>
+              <stop offset="1" stop-color="#28384A"/>
+            </linearGradient>
+            <radialGradient id="rimGlow" cx="50%" cy="45%" r="65%">
+              <stop offset="0" stop-color="#CFD7DF"/>
+              <stop offset=".48" stop-color="#5C6873"/>
+              <stop offset="1" stop-color="#11161C"/>
+            </radialGradient>
+          </defs>
+          <path class="x6m-body" d="M78 229c7-42 34-64 81-69l60-7c35-50 88-77 160-81l146-7c60-3 112 12 153 46l68 57c45 6 74 20 88 43 12 19 8 38-12 48l-46 15c-7-55-44-87-99-87-53 0-91 33-101 89H313c-10-57-47-89-101-89-53 0-91 33-101 89H93c-22-5-29-20-15-47Z"/>
+          <path class="x6m-highlight" d="M135 196c82-16 159-25 232-26 118-2 246 5 383 20"/>
+          <path class="x6m-glass" d="M271 151c36-44 79-66 130-70l112-6c47-2 90 9 129 36l57 42-428-2Z"/>
+          <path fill="#05080C" d="M356 87h101l-15 64H305c12-27 29-48 51-64Zm124-6h45c43-1 80 9 112 30l47 34-225 5 21-69Z" opacity=".96"/>
+          <path fill="#0D131A" d="M87 228h96c28-47 84-47 112 0h300c29-47 85-47 113 0h107c2 14-3 25-16 32l-27 8c-12-53-47-81-96-81-51 0-84 29-99 83H314c-14-54-48-83-99-83-49 0-85 29-97 83H91c-18-8-19-21-4-42Z"/>
+          <path fill="#E8EDF2" d="M113 213l62-8c11-1 18 2 21 10l-78 14c-7 1-10-5-5-16Zm641-5 47 8c9 2 10 12 2 16l-63-10c2-9 6-13 14-14Z" opacity=".9"/>
+          <path class="x6m-line" d="M267 158l-18 96M450 157l-4 96M636 156l31 96M214 189h515"/>
+          <g class="x6m-wheel">
+            <circle cx="212" cy="270" r="70" fill="#030405"/>
+            <circle cx="212" cy="270" r="48" fill="url(#rimGlow)"/>
+            <circle cx="212" cy="270" r="13" fill="#111820"/>
+            <path d="M212 222v96M164 270h96M178 236l68 68M246 236l-68 68" stroke="#DDE4EA" stroke-width="7" stroke-linecap="round" opacity=".62"/>
+            <circle cx="212" cy="270" r="59" fill="none" stroke="#111820" stroke-width="11"/>
+          </g>
+          <g class="x6m-wheel">
+            <circle cx="677" cy="270" r="70" fill="#030405"/>
+            <circle cx="677" cy="270" r="48" fill="url(#rimGlow)"/>
+            <circle cx="677" cy="270" r="13" fill="#111820"/>
+            <path d="M677 222v96M629 270h96M643 236l68 68M711 236l-68 68" stroke="#DDE4EA" stroke-width="7" stroke-linecap="round" opacity=".62"/>
+            <circle cx="677" cy="270" r="59" fill="none" stroke="#111820" stroke-width="11"/>
+          </g>
+          <text x="450" y="315" text-anchor="middle" font-family="Heebo, Arial" font-size="24" font-weight="800" fill="#1B2733" opacity=".55">X6M BLACK</text>
+        </svg>
+      </div>
+    </div>
+    <div class="x6m-caption">גלול עם העכבר / משטח המגע — הרכב והגלגלים יזוזו יחד עם התנועה.</div>
+  </div>
+</section>
 
 <!-- FLEET -->
 <section class="section" id="fleet">
@@ -3577,6 +3657,33 @@ document.querySelectorAll('.sec-head,.fleet-side,.how-grid,.foot-cta,.strip-in')
   el.classList.add('reveal');io.observe(el);
 });
 
+
+
+/* BMW X6M scroll-controlled rotation */
+(function(){
+  const car=document.getElementById('x6m-car');
+  const shadow=document.getElementById('x6m-shadow');
+  if(!car) return;
+  let rot=0,wheel=0,target=0,lastScroll=window.scrollY||0,raf=false;
+  function paint(){
+    raf=false;
+    rot += (target-rot)*0.12;
+    const soft=((rot%360)+360)%360;
+    const yAngle=Math.sin(soft*Math.PI/180)*18;
+    car.style.setProperty('--carRot', yAngle.toFixed(2)+'deg');
+    car.style.setProperty('--wheelRot', wheel.toFixed(2)+'deg');
+    if(shadow) shadow.style.setProperty('--turn', Math.abs(yAngle).toFixed(2));
+    if(Math.abs(target-rot)>0.08) requestAnimationFrame(paint), raf=true;
+  }
+  function push(delta){
+    target += delta*0.22;
+    wheel += delta*1.45;
+    if(!raf){raf=true;requestAnimationFrame(paint)}
+  }
+  window.addEventListener('wheel',e=>push(e.deltaY),{passive:true});
+  window.addEventListener('scroll',()=>{const y=window.scrollY||0;push(y-lastScroll);lastScroll=y;},{passive:true});
+  paint();
+})();
 
 
 loadState();
