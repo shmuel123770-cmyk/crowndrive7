@@ -746,7 +746,7 @@ select option{background:var(--bg2);color:var(--ivory)}
     <h2>תהליך ההזמנה</h2>
   </div>
   <div class="how-grid">
-    <div class="hstep"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0114 0v1"/></svg></div><span class="num">1</span><h3>הרשמה</h3><p>פרטים אישיים, צילום רישיון נהיגה ואמצעי תשלום עם מסגרת פיקדון.</p></div>
+    <div class="hstep"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0114 0v1"/></svg></div><span class="num">1</span><h3>הרשמה</h3><p>פרטים אישיים וצילום רישיון נהיגה — פחות מ-3 דקות.</p></div>
     <div class="hstep"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 16l1.5-5.5A2 2 0 018.4 9h7.2a2 2 0 011.9 1.5L19 16M5 16h14M5 16v3m14-3v3M7.5 13h.01M16.5 13h.01"/></svg></div><span class="num">2</span><h3>בחירת רכב ותאריכים</h3><p>בחירת רכב זמין וקביעת מועדי איסוף והחזרה. המחיר מחושב מיד.</p></div>
     <div class="hstep"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 19l7-7a2.1 2.1 0 00-3-3l-7 7-1.5 4.5L12 19z"/><path d="M4 21h9"/></svg></div><span class="num">3</span><h3>הסכם וחתימה</h3><p>קריאת תקנון ההשכרה וחתימה דיגיטלית — שם מלא, חתימה ותאריך.</p></div>
     <div class="hstep"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></div><span class="num">4</span><h3>אישור וקבלה</h3><p>מספר הזמנה וקבלה נשלחים לשוכר. הרכב ממתין בנקודת האיסוף.</p></div>
@@ -842,17 +842,9 @@ select option{background:var(--bg2);color:var(--ivory)}
               </div>
             </div>
 
-            <div class="divider">אמצעי תשלום ומסגרת פיקדון</div>
-            <div class="card-row">
-              <div class="field" id="sf-card"><label>מספר כרטיס אשראי <span class="req">*</span></label><input id="s-card" dir="ltr" style="text-align:right" inputmode="numeric" placeholder="4580 •••• •••• ••••" maxlength="19"><div class="err-msg">מספר כרטיס לא תקין</div></div>
-              <div class="field" id="sf-exp"><label>תוקף <span class="req">*</span></label><input id="s-exp" dir="ltr" style="text-align:right" placeholder="MM/YY" maxlength="5"><div class="err-msg">תוקף לא תקין</div></div>
-              <div class="field"><label>מסגרת פיקדון <span class="req">*</span></label>
-                <select id="s-frame"><option value="500">$500</option><option value="1000" selected>$1,000</option><option value="1500">$1,500</option><option value="2000">$2,000</option></select>
-              </div>
-            </div>
             <div class="note">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-              <div>המסגרת נתפסת כפיקדון בעת ההשכרה ומשוחררת בהחזרת הרכב. <b style="color:var(--soon)">שימו לב:</b> זוהי גרסת הדגמה — באתר אמיתי אין לשמור פרטי אשראי גולמיים; החיוב חייב לעבור דרך סולק מאובטח (Stripe וכדומה).</div>
+              <div>התשלום מוסדר ישירות מול בעל הרכב בעת האיסוף.</div>
             </div>
           </div>
 
@@ -992,7 +984,7 @@ select option{background:var(--bg2);color:var(--ivory)}
           </ol>
           <h4>3. ביטוח והשתתפות עצמית</h4>
           <ol>
-            <li>הרכב מבוטח בביטוח מקיף. בכל מקרה של נזק חלה השתתפות עצמית בגובה מסגרת הפיקדון.</li>
+            <li>הרכב מבוטח בביטוח מקיף. בכל מקרה של נזק חלה השתתפות עצמית כפי שיסוכם עם בעל הרכב.</li>
             <li>נזק שנגרם עקב נהיגה רשלנית, תחת השפעה, או בניגוד להסכם — באחריות השוכר במלואו.</li>
           </ol>
           <h4>4. שימוש ברכב</h4>
@@ -1006,9 +998,9 @@ select option{background:var(--bg2);color:var(--ivory)}
             <li>איחור של יותר משעה במועד ההחזרה יחויב כיום השכרה נוסף.</li>
             <li>ביטול חינם עד 24 שעות לפני מועד האיסוף. לאחר מכן — חיוב יום השכרה אחד.</li>
           </ol>
-          <h4>6. פיקדון ותשלום</h4>
+          <h4>6. תשלום</h4>
           <ol>
-            <li>מסגרת הפיקדון נתפסת בכרטיס האשראי בעת האיסוף ומשוחררת עד 5 ימי עסקים לאחר החזרה תקינה.</li>
+            <li>התשלום מוסדר ישירות מול בעל הרכב בעת האיסוף, לפי הסכום שאושר בהזמנה.</li>
             <li>התשלום המלא מתבצע בנקודת האיסוף.</li>
           </ol>
         </div>
@@ -1039,7 +1031,7 @@ select option{background:var(--bg2);color:var(--ivory)}
         <div class="summary-box" id="final-sum"></div>
         <div class="note">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>
-          <div>ביטול חינם עד 24 שעות לפני האיסוף · התשלום והפיקדון בנקודת האיסוף · קבלה תישלח לאימייל שלך.</div>
+          <div>ביטול חינם עד 24 שעות לפני האיסוף · התשלום בנקודת האיסוף · קבלה תישלח לאימייל שלך.</div>
         </div>
         <div class="m-actions" style="margin-top:18px"><button class="btn btn-ghost" onclick="goStep(2)">חזרה</button><button class="btn btn-gold grow" onclick="confirmBooking()">אישור וסגירת הזמנה</button></div>
       </div>
@@ -1108,7 +1100,6 @@ select option{background:var(--bg2);color:var(--ivory)}
         <div class="field"><label>טלפון</label><input id="ac-phone" dir="ltr"></div>
       </div>
       <div id="ac-renter-extra" style="display:none">
-        <div class="field"><label>מסגרת פיקדון ($)</label><input id="ac-frame" type="number" min="500" step="100"></div>
         <div class="field"><label>החלפת צילום רישיון (לא חובה)</label><input type="file" id="ac-lic" accept="image/*"></div>
       </div>
       <div class="divider">שינוי פרטי התחברות</div>
@@ -1177,9 +1168,9 @@ function cloudErr(e){console.error(e);showToast('שגיאה בשמירה: '+((e&
 /* ================= STATE ================= */
 const state = {
   owners: [],   // {id,name,phone,email,pass}
-  renters: [],  // {id,name,phone,email,pass,lic,card4,exp,frame}
+  renters: [],  // {id,name,phone,email,pass,lic,exp}
   cars: [],     // {id,ownerId,make,model,yr,color,cat,price,seats,gear,fuel,tags[],status,ret,photos[]}
-  bookings: [], // {id,num,carId,ownerId,renterId,from,tmFrom,to,tmTo,hours,days,total,frame,signName,signDate,sig,createdAt}
+  bookings: [], // {id,num,carId,ownerId,renterId,from,tmFrom,to,tmTo,hours,days,total,signName,signDate,sig,createdAt}
   session: null // {role:'owner'|'renter', id}
 };
 let seq = 1; const newId = p => p + (seq++) + Math.random().toString(36).slice(2,6);
@@ -1254,7 +1245,6 @@ function openAccount(){
   $('ac-mail').value='';$('ac-pass').value='';
   acLicData=null;$('ac-lic').value='';
   $('ac-renter-extra').style.display = u.role==='renter'?'block':'none';
-  if(u.role==='renter')$('ac-frame').value=u.frame||1000;
   openOv('ov-account');
 }
 $('ac-lic').addEventListener('change',e=>{
@@ -1269,17 +1259,15 @@ function saveAccount(){
   const newMail=$('ac-mail').value.trim().toLowerCase(), newPass=$('ac-pass').value;
   if(!name){showToast('שם מלא הוא שדה חובה');return}
   if(newPass && newPass.length<6){showToast('סיסמה חדשה חייבת לפחות 6 תווים');return}
-  const frame = u.role==='renter' ? Math.max(500,+$('ac-frame').value||u.frame) : undefined;
   if(CLOUD){
     const jobs=[db.collection('users').doc(u.id).update({name})];
-    const priv={phone}; if(frame!==undefined)priv.frame=frame; if(acLicData)priv.lic=acLicData;
+    const priv={phone}; if(acLicData)priv.lic=acLicData;
     jobs.push(db.collection('private').doc(u.id).update(priv));
     const au=fauth.currentUser;
     if(newMail && au)jobs.push(au.updateEmail(newMail));
     if(newPass && au)jobs.push(au.updatePassword(newPass));
     Promise.all(jobs).then(()=>{
       Object.assign(state.session,{name,phone});
-      if(frame!==undefined)state.session.frame=frame;
       if(acLicData)state.session.lic=acLicData;
       if(newMail)state.session.email=newMail;
       renderNav();closeOv('ov-account');showToast('הפרטים עודכנו בהצלחה');
@@ -1300,13 +1288,11 @@ function saveAccount(){
   }
   rec.name=name;rec.phone=phone;
   if(newPass)rec.pass=newPass;
-  if(frame!==undefined)rec.frame=frame;
   if(acLicData)rec.lic=acLicData;
   state.users[u.id]={...(state.users[u.id]||{}),name};
   Object.assign(state.session,{name,phone});
   if(newMail)state.session.email=newMail;
   if(newPass)state.session.pass=newPass;
-  if(frame!==undefined)state.session.frame=frame;
   if(acLicData)state.session.lic=acLicData;
   renderNav();render();closeOv('ov-account');showToast('הפרטים עודכנו בהצלחה');
 }
@@ -1352,11 +1338,8 @@ function doSignup(){
 
   let extra={};
   if(authRole==='renter'){
-    const card=$('s-card').value.replace(/\D/g,''), exp=$('s-exp').value.trim();
-    mk('sf-card',card.length<12);
-    mk('sf-exp',!/^(0[1-9]|1[0-2])\/\d{2}$/.test(exp));
     if(!rlicData){$('rlic-err').style.display='block';$('drop-rlic').classList.add('err-b');bad=true}
-    extra={lic:rlicData, card4:card.slice(-4), exp, frame:+$('s-frame').value};
+    extra={lic:rlicData};
   }
   if(bad) return;
 
@@ -1373,7 +1356,7 @@ function doSignup(){
         db.collection('private').doc(uid).set(priv)
       ]);
     }).then(()=>{
-      ['s-name','s-phone','s-mail','s-pass','s-card','s-exp'].forEach(i=>$(i).value='');
+      ['s-name','s-phone','s-mail','s-pass'].forEach(i=>$(i).value='');
       clearRLic(true);
       showToast('החשבון נוצר בהצלחה');
     }).catch(e=>{mark('sf-mail',true);showToast('שגיאה: '+((e&&e.message)||e))});
@@ -1383,7 +1366,7 @@ function doSignup(){
   pool.push(u);
   state.users[u.id]={name:u.name,role:authRole,createdAt:u.createdAt};
   state.session={role:authRole,id:u.id,...u};
-  ['s-name','s-phone','s-mail','s-pass','s-card','s-exp'].forEach(i=>$(i).value='');
+  ['s-name','s-phone','s-mail','s-pass'].forEach(i=>$(i).value='');
   clearRLic(true);
   showToast('החשבון נוצר בהצלחה');
   authJustSignedUp=(authRole==='owner');
@@ -1397,15 +1380,6 @@ bindDrop('drop-rlic','rlic-file',f=>readImg(f,d=>{
   $('drop-rlic').classList.remove('err-b'); $('rlic-err').style.display='none';
 }));
 function clearRLic(s){rlicData=null;$('rlic-file').value='';$('rlic-prev').style.display='none';$('drop-rlic').style.display='block'}
-
-/* card formatting */
-$('s-card').addEventListener('input',e=>{
-  e.target.value = e.target.value.replace(/\D/g,'').slice(0,16).replace(/(.{4})/g,'$1 ').trim();
-});
-$('s-exp').addEventListener('input',e=>{
-  let v=e.target.value.replace(/\D/g,'').slice(0,4);
-  e.target.value = v.length>2 ? v.slice(0,2)+'/'+v.slice(2) : v;
-});
 
 /* ================= FLEET ================= */
 function statusInfo(c){
@@ -1668,7 +1642,7 @@ function renderOwnerBookings(){
       <td>${esc(b.signName)}<div class="sm">התקשורת מתנהלת בצ'אט</div><button class="mini gold" style="margin-top:6px" onclick="openChatTo('b${b.id}')">💬 צ'אט עם השוכר</button></td>
       <td>${fmt(b.from)} ${b.tmFrom}<div class="sm">עד ${fmt(b.to)} ${b.tmTo}</div></td>
       <td class="num">${b.hours}</td>
-      <td class="num">${money(b.total)}<div class="sm">פיקדון ${money(b.frame)}</div></td>
+      <td class="num">${money(b.total)}</td>
       <td>${b.lic?`<img class="lic-thumb" src="${b.lic}" alt="רישיון" onclick="viewLic('${b.id}')">`:'—'}</td>
       <td>
         <span class="rate-label">דירוג השוכר בקהילה:</span>${starsHTML(rst.avg,rst.count)}
@@ -1721,8 +1695,6 @@ function openRenterArea(){
     <div class="summary-box">
       <div class="row"><span>שם</span><span>${esc(u.name)}</span></div>
       <div class="row"><span>אימייל</span><span>${esc(u.email)}</span></div>
-      <div class="row"><span>כרטיס אשראי</span><span dir="ltr">•••• ${esc(u.card4)}</span></div>
-      <div class="row"><span>מסגרת פיקדון</span><span>${money(u.frame)}</span></div>
       <div class="row"><span>רישיון נהיגה</span><span style="color:var(--ok)">✓ מאומת</span></div>
     </div>
     <div class="divider">ההזמנות שלי</div>
@@ -1823,8 +1795,6 @@ function buildSummary(){
     <div class="row"><span>החזרה</span><span>${fmt($('dt-to').value)} · ${$('tm-to').value}</span></div>
     <div class="row"><span>משך</span><span>${h} שעות</span></div>
     <div class="row"><span>שוכר</span><span>${esc($('sign-name').value)}</span></div>
-    <div class="row"><span>אמצעי תשלום</span><span dir="ltr">•••• ${esc(u.card4)}</span></div>
-    <div class="row"><span>מסגרת פיקדון</span><span>${money(u.frame)}</span></div>
     <div class="row"><span>הסכם השכרה</span><span style="color:var(--ok)">✓ נחתם ב-${fmt($('sign-date').value)}</span></div>
     <div class="row"><span>סה"כ לתשלום</span><span>${money(h*currentCar.price)}</span></div>`;
 }
@@ -1868,9 +1838,9 @@ function confirmBooking(){
   const u=me(),h=hoursTotal(),d=daysTotal(),total=h*currentCar.price;
   const num='CD-'+Math.floor(100000+Math.random()*900000);
   const b={id:newId('bk'),num,carId:currentCar.id,ownerId:currentCar.ownerId,renterId:u.id,
-    lic:u.lic||null,card4:u.card4||'',renterName:u.name,
+    lic:u.lic||null,renterName:u.name,
     from:$('dt-from').value,tmFrom:$('tm-from').value,to:$('dt-to').value,tmTo:$('tm-to').value,
-    hours:h,days:d,total,frame:u.frame,
+    hours:h,days:d,total,
     signName:$('sign-name').value.trim(),signDate:$('sign-date').value,sig:$('sig-pad').toDataURL(),
     createdAt:Date.now()};
   if(CLOUD){
@@ -1908,8 +1878,6 @@ function receiptHTML(b){
     <div class="r-row"><span>החזרה</span><span>${fmt(b.to)} · ${b.tmTo}</span></div>
     <div class="r-row"><span>משך ההשכרה</span><span>${b.hours} שעות</span></div>
     <div class="r-row"><span>תעריף שעתי</span><span>${money(c.price)}</span></div>
-    <div class="r-row"><span>אמצעי תשלום</span><span>כרטיס •••• ${esc(u.card4)}</span></div>
-    <div class="r-row"><span>מסגרת פיקדון (משוחררת בהחזרה)</span><span>${money(b.frame)}</span></div>
     <div class="r-row"><span>הסכם השכרה</span><span>נחתם דיגיטלית · ${fmt(b.signDate)}</span></div>
     <div class="r-row total"><span>סה"כ לתשלום</span><span>${money(b.total)}</span></div>
     <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:end">
@@ -1947,7 +1915,6 @@ function emailReceipt(){
     'החזרה: '+fmt(b.to)+' בשעה '+b.tmTo,
     'משך: '+b.hours+' שעות',
     'סה"כ לתשלום: '+money(b.total),
-    'מסגרת פיקדון: '+money(b.frame),
     'הסכם השכרה נחתם דיגיטלית בתאריך '+fmt(b.signDate),'',
     'תודה שבחרתם ב-Crown Drive · (718) 555-0123'
   ].join('\n');
