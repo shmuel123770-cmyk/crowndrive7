@@ -2060,6 +2060,28 @@ function updatePasskeyAccountStatus(){
   const el=document.getElementById('passkey-status'); if(!el)return;
   el.classList.toggle('on',hasPasskeyForUser(me()));
 }
+let passkeyLoginUsedThisRound=false;
+function shouldOfferPasskeyAfterPasswordLogin(){
+  const u=me();
+  if(!u || passkeyLoginUsedThisRound) return false;
+  if(!passkeySupported()) return false;
+  if(hasPasskeyForUser(u)) return false;
+  return true;
+}
+function offerPasskeyAfterPasswordLogin(){
+  if(!shouldOfferPasskeyAfterPasswordLogin()) return;
+  // נותן לאזור האישי/מנהל להיטען קודם, ואז מציג הצעה ברורה להפעלה.
+  setTimeout(()=>{
+    if(shouldOfferPasskeyAfterPasswordLogin()) openOv('ov-passkey-login-offer');
+  },700);
+}
+function declinePasskeyLoginOffer(){
+  closeOv('ov-passkey-login-offer');
+}
+async function acceptPasskeyLoginOffer(){
+  closeOv('ov-passkey-login-offer');
+  await registerPasskey();
+}
 async function registerPasskey(){
   const u=me();
   if(!u){showToast('צריך להתחבר קודם כדי להפעיל Passkey');return}
@@ -2094,6 +2116,7 @@ async function registerPasskey(){
 }
 function restoreSessionFromPasskeyRecord(rec){
   if(!rec)return false;
+  passkeyLoginUsedThisRound=true;
   if(rec.role==='admin'){
     state.session={role:'admin',id:'admin',name:rec.name||'מנהל האתר',email:rec.email||ADMIN_EMAIL};
   }else{
@@ -2140,6 +2163,7 @@ function afterLoginUI(){
   else pendingBookCar=null;
   if(state.session && state.session.role==='admin') openAdmin();
   if(state.session && state.session.role==='owner' && authJustSignedUp){authJustSignedUp=false;openOwner();}
+  offerPasskeyAfterPasswordLogin();
 }
 let acLicData=null;
 function openAccount(){
@@ -2220,6 +2244,7 @@ function forgotPass(){
   }
 }
 function doLogin(){
+  passkeyLoginUsedThisRound=false;
   const em=$('l-mail').value.trim().toLowerCase(), ps=$('l-pass').value;
   // כניסת מנהל מוסתרת: בוחרים 'אני בעל רכב' ומזינים את פרטי המנהל.
   // אין כפתור מנהל ואין כתובת #admin.
@@ -3316,8 +3341,8 @@ function emailReceipt(){
 /* ================= HELPERS ================= */
 function openOv(id){$(id).classList.add('open');document.body.style.overflow='hidden'}
 function closeOv(id){$(id).classList.remove('open');document.body.style.overflow=''; if(id==='ov-auth') closeHiddenAdminMode()}
-['ov-auth','ov-owner','ov-admin','ov-renter','ov-book','ov-lic','ov-profile','ov-account'].forEach(id=>$(id).addEventListener('click',e=>{if(e.target.id===id)closeOv(id)}));
-document.addEventListener('keydown',e=>{if(e.key==='Escape')['ov-auth','ov-owner','ov-admin','ov-renter','ov-book','ov-lic','ov-profile','ov-account'].forEach(closeOv)});
+['ov-auth','ov-owner','ov-admin','ov-renter','ov-book','ov-lic','ov-profile','ov-account','ov-passkey-login-offer'].forEach(id=>$(id).addEventListener('click',e=>{if(e.target.id===id)closeOv(id)}));
+document.addEventListener('keydown',e=>{if(e.key==='Escape')['ov-auth','ov-owner','ov-admin','ov-renter','ov-book','ov-lic','ov-profile','ov-account','ov-passkey-login-offer'].forEach(closeOv)});
 function bindDrop(dropId,fileId,single,multi){
   const d=$(dropId),f=$(fileId);
   d.addEventListener('click',()=>f.click());
