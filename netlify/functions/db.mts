@@ -96,6 +96,17 @@ async function updateAuth(uid: string, fields: any) {
   return true;
 }
 
+async function bumpCar(carId: string) {
+  // Requirement: any activity linked to a car bumps it to the top. Merge-only
+  // update of updatedAt so no other car data is touched. Runs server-side so
+  // renters (who cannot write cars) still trigger the bump on booking/chat.
+  if (!carId) return;
+  try {
+    const existing = await getRecord("cars", carId);
+    if (existing) await setRecord("cars", carId, { updatedAt: Date.now() }, true);
+  } catch {}
+}
+
 async function getUser(uid: string) {
   const r = await getRecord("users", uid);
   return r ? { id: uid, ...(r.data || {}) } : { id: uid, role: "renter" };
@@ -209,17 +220,21 @@ export const handler = async (event: any) => {
     }
 
     if (action === "add") {
-      const data = body.data || {};
+      const data = { ...(body.data || {}) };
       if (!canWrite(collection, "", data, auth)) return bad("Forbidden", 403);
+      if (collection === "cars") data.updatedAt = Date.now();
       const newId = id(collection.slice(0, 3) || "rec");
       await setRecord(collection, newId, data, false);
+      // Bump the related car to the top on new booking / new chat message about it.
+      if ((collection === "bookings" || collection === "messages") && data.carId) await bumpCar(String(data.carId));
       return json({ ok: true, id: newId });
     }
 
     if (action === "set" || action === "update") {
-      const data = body.data || {};
+      const data = { ...(body.data || {}) };
       const existing = await getRecord(collection, rid);
       if (!canWrite(collection, rid, data, auth, existing?.data)) return bad("Forbidden", 403);
+      if (collection === "cars") data.updatedAt = Date.now();
       await setRecord(collection, rid, data, action !== "set" || !!body.merge);
       return json({ ok: true });
     }
