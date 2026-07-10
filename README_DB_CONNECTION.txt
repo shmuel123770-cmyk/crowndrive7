@@ -1,13 +1,24 @@
-Crown Drive - תיקון חיבור Database
+Crown Drive - חיבור Database (Netlify Database)
 
-אם האתר מחזיר DB_NOT_READY עם הודעה על connectionString:
-1. Netlify → Project crowndrive7 → Database.
-2. לפתוח את branch: production.
-3. ללחוץ Copy connection string.
-4. Project configuration → Environment variables.
-5. להוסיף:
-   Key: NETLIFY_DB_URL
-   Value: connection string שהעתקת
-6. Save ואז Trigger deploy / Upload to GitHub and wait Published.
+חשוב: אין צורך להגדיר ידנית connection string.
+Netlify Database מזריק אוטומטית את מחרוזת החיבור הנכונה (קריאה+כתיבה) לכל דיפלוי:
+- Production deploy → מסד הנתונים הראשי (production/main).
+- Deploy preview → ענף מבודד עם עותק של נתוני הפרודקשן.
 
-הקובץ db.mts בגרסה הזאת קורא קודם NETLIFY_DB_URL / DATABASE_URL / NETLIFY_DATABASE_URL, ורק אחר כך מנסה את getConnectionString().
+הפונקציה db.mts משתמשת ב-getConnectionString() מ-@netlify/database שקורא את
+החיבור המנוהל הזה, כך שאין צורך לגעת ב-Environment Variables.
+
+השגיאה "DB_NOT_READY - permission denied for schema public":
+הסיבה הנפוצה היא NETLIFY_DB_URL שהוגדר ידנית עם מחרוזת חיבור לקריאה בלבד
+(read-only). ערך ידני כזה דורס את החיבור המנוהל של Netlify וגורם לשגיאה.
+
+מה לעשות:
+1. Netlify → Project crowndrive7 → Project configuration → Environment variables.
+2. אם קיים משתנה NETLIFY_DB_URL שהוגדר ידנית — למחוק אותו (Delete/Unset).
+   כך Netlify יספק שוב את החיבור המנוהל עם הרשאות קריאה+כתיבה.
+3. Trigger deploy ולחכות ל-Published.
+
+סכימת הטבלאות (crown_records / crown_auth / crown_sessions) נוצרת כעת דרך migration
+בתיקייה netlify/database/migrations/, ומיושמת אוטומטית על ידי Netlify בזמן הדיפלוי.
+הפונקציה כבר לא מריצה CREATE TABLE בזמן ריצה, ולכן היא צריכה רק הרשאות קריאה+כתיבה
+לטבלאות — לא הרשאות בעלות (owner) על schema public.

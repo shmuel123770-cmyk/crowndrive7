@@ -6,13 +6,22 @@ const { Pool } = pg;
 let pool: any = null;
 function getPool() {
   if (pool) return pool;
-  const connectionString =
-    process.env.NETLIFY_DB_URL ||
-    process.env.DATABASE_URL ||
-    process.env.NETLIFY_DATABASE_URL ||
-    getConnectionString();
+  // Netlify Database automatically populates the runtime with the correct
+  // read/write connection string for the current deploy context — the main
+  // (production) database on production deploys, and the isolated branch copy on
+  // deploy previews. getConnectionString() reads that managed value.
+  //
+  // We deliberately do NOT prefer a hand-set connection string here: a manually
+  // pinned NETLIFY_DB_URL previously shadowed the managed connection with a
+  // read-only endpoint, which caused "permission denied for schema public".
+  let connectionString: string | undefined;
+  try {
+    connectionString = getConnectionString();
+  } catch {
+    connectionString = undefined;
+  }
   if (!connectionString) {
-    throw new Error("DB_CONNECTION_STRING_MISSING: Add NETLIFY_DB_URL in Netlify Environment variables with the production database connection string.");
+    throw new Error("DB_CONNECTION_STRING_MISSING: Netlify Database is not configured for this deploy context. Enable Netlify Database for the project and remove any manually set NETLIFY_DB_URL override so the managed read/write connection is used.");
   }
   pool = new Pool({ connectionString });
   return pool;
@@ -52,32 +61,12 @@ function verifyPassword(pass: string, stored?: string | null) {
   return real.length === test.length && crypto.timingSafeEqual(real, test);
 }
 
+// The crown_records / crown_auth / crown_sessions tables are created by the
+// deploy-time migration (netlify/database/migrations/*_create_crown_records_auth_sessions).
+// The function no longer issues DDL at runtime, so it only needs read/write
+// access to the tables — not schema-owner privileges on the public schema.
+// This step just ensures the default admin account exists (data-only writes).
 async function ensureTables() {
-  await getPool().query(`
-    CREATE TABLE IF NOT EXISTS crown_records (
-      collection TEXT NOT NULL,
-      id TEXT NOT NULL,
-      data JSONB NOT NULL DEFAULT '{}'::jsonb,
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      PRIMARY KEY(collection, id)
-    );
-    CREATE TABLE IF NOT EXISTS crown_auth (
-      uid TEXT PRIMARY KEY,
-      email TEXT UNIQUE NOT NULL,
-      pass TEXT,
-      pass_hash TEXT,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    );
-    CREATE TABLE IF NOT EXISTS crown_sessions (
-      token_hash TEXT PRIMARY KEY,
-      uid TEXT NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      expires_at TIMESTAMPTZ NOT NULL
-    );
-  `);
-  await getPool().query(`ALTER TABLE crown_auth ADD COLUMN IF NOT EXISTS pass_hash TEXT;`);
-
   if (ADMIN_EMAIL && ADMIN_PASS) {
     await getPool().query(
       `INSERT INTO crown_auth(uid,email,pass,pass_hash)
