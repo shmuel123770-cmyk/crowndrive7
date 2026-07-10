@@ -1,5 +1,5 @@
-export default async (request: Request) => {
-  return new Response(JSON.stringify({ ok: true, localOnly: true, message: 'Uploads are handled in the browser/localStorage in this build.' }), {
+export default async (_request: Request) => {
+  return new Response(JSON.stringify({ ok: true, localOnly: true, message: 'Uploads are handled in browser/localStorage. No Netlify Blobs dependency.' }), {
     headers: { 'content-type': 'application/json; charset=utf-8', 'access-control-allow-origin': '*' }
   });
 };

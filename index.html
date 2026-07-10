@@ -630,15 +630,6 @@ select option{background:var(--bg2);color:var(--ivory)}
 .linklike{background:none;border:none;color:var(--gold-d);font-size:.78rem;text-decoration:underline;cursor:pointer;padding:2px 0;margin-top:-6px}
 .linklike:hover{color:var(--gold)}
 
-/* ===== PASSKEY / APPLE FACE ID / TOUCH ID ===== */
-.passkey-box{margin-top:12px;border:1px solid rgba(63,107,142,.16);background:linear-gradient(180deg,#fff,#F3F7FB);border-radius:14px;padding:12px}
-.passkey-btn{width:100%;border:1px solid rgba(63,107,142,.22);background:#fff;color:#1B222B;border-radius:12px;padding:12px 14px;font-weight:800;font-size:.9rem;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .18s var(--ease),box-shadow .2s,border-color .2s}
-.passkey-btn:hover{transform:translateY(-2px);border-color:var(--gold);box-shadow:0 10px 24px rgba(63,107,142,.12)}
-.passkey-btn.dark{background:#1B222B;color:#fff;border-color:#1B222B}
-.passkey-hint{font-size:.73rem;color:var(--mut);line-height:1.45;margin-top:7px;text-align:center}
-.passkey-status{font-size:.76rem;color:var(--ok);font-weight:700;margin-top:7px;text-align:center;display:none}
-.passkey-status.on{display:block}
-@media(max-width:560px){.passkey-btn{font-size:.86rem;padding:13px 10px}}
 
 /* reviews */
 .rv-box{display:flex;gap:6px;margin-top:6px}
@@ -951,6 +942,25 @@ html,body{overflow-x:hidden!important}
   .personal-grid{grid-template-columns:1fr!important}.quick-actions{grid-template-columns:1fr!important}.booking-card{padding:13px!important}.booking-top,.booking-bottom{flex-direction:column;align-items:flex-start!important;gap:10px}
 }
 
+
+/* ===== FINAL HARDENING: mobile tables, personal/admin recovery ===== */
+.tbl{min-width:760px}
+.admin-panel,.personal-panel{overflow:auto}
+.admin-panel .tbl,.personal-panel .tbl{display:table}
+#my-area-fab.show{display:flex!important}
+@media(max-width:680px){
+  .modal,.modal.wide{width:100%!important;max-width:100%!important;border-radius:16px 16px 0 0}
+  .overlay{align-items:flex-end;padding:0}
+  .m-body{padding:18px!important}
+  .dash-tabs{gap:6px;padding-bottom:6px}
+  .dash-tabs button{font-size:.82rem;padding:11px 14px}
+  .admin-actions-bar,.quick-actions,.personal-grid,.admin-overview-grid{grid-template-columns:1fr!important;display:grid!important}
+  .admin-panel,.personal-panel{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tbl{min-width:720px}
+  .kpis{grid-template-columns:repeat(2,1fr)!important}
+  #ov-admin .admin-modal{width:100vw!important;height:100vh!important;border-radius:0!important}
+}
+
 </style>
 </head>
 <body>
@@ -1217,10 +1227,6 @@ html,body{overflow-x:hidden!important}
           <div class="field" id="lf-mail"><label>אימייל <span class="req">*</span></label><input id="l-mail" type="email" dir="ltr" style="text-align:right" placeholder="name@email.com"><div class="err-msg">אימייל לא נמצא</div></div>
           <div class="field" id="lf-pass"><label>סיסמה <span class="req">*</span></label><div class="pass-wrap"><input id="l-pass" type="password"><button class="pass-toggle" type="button" onclick="togglePassword('l-pass',this)">הצג סיסמה</button></div><div class="err-msg">סיסמה שגויה</div></div>
           <div class="m-actions"><button class="btn btn-gold grow" onclick="doLogin()">כניסה לחשבון</button></div>
-          <div class="passkey-box">
-            <button class="passkey-btn dark" type="button" onclick="loginWithPasskey()">🔐 כניסה עם Passkey / Face ID / Touch ID</button>
-            <div class="passkey-hint">עובד באייפון, מק ואייפד דרך Safari/Chrome באתר HTTPS.</div>
-          </div>
           <button class="linklike forgot-link" type="button" onclick="forgotPass()">שכחתי סיסמה</button>
         </div>
 
@@ -1588,12 +1594,6 @@ html,body{overflow-x:hidden!important}
       <div class="divider">שינוי פרטי התחברות</div>
       <div class="field"><label>מייל חדש (להשאיר ריק אם אין שינוי)</label><input id="ac-mail" type="email" dir="ltr" placeholder="new@email.com"></div>
       <div class="field"><label>סיסמה חדשה (להשאיר ריק אם אין שינוי)</label><div class="pass-wrap"><input id="ac-pass" type="password" placeholder="לפחות 6 תווים"><button class="pass-toggle" type="button" onclick="togglePassword('ac-pass',this)">הצג סיסמה</button></div></div>
-      <div class="divider">Passkey / Face ID / Touch ID</div>
-      <div class="passkey-box">
-        <button class="passkey-btn" type="button" onclick="registerPasskey()">🔐 הפעל Passkey למכשיר הזה</button>
-        <div class="passkey-hint">אחרי הפעלה אפשר להיכנס בלי סיסמה במכשירי Apple נתמכים. עובד רק ב־HTTPS.</div>
-        <div id="passkey-status" class="passkey-status">✓ Passkey פעיל לחשבון הזה במכשיר הזה</div>
-      </div>
       <div class="note" style="margin-top:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg><div>שינוי מייל או סיסמה עשוי לדרוש התחברות מחדש מטעמי אבטחה.</div></div>
       <div class="m-actions"><button class="btn btn-ghost" onclick="closeOv('ov-account')">ביטול</button><button class="btn btn-gold grow" onclick="saveAccount()">שמירת השינויים</button></div>
     </div>
@@ -1740,9 +1740,12 @@ function persistSessionCookie(){
   else delCookie(COOKIE_SESSION_KEY);
 }
 function rememberLogin(role,email,pass){
-  const data={role,email,pass,ts:Date.now()};
-  try{ localStorage.setItem(AUTH_MEMORY_KEY, JSON.stringify(data)); }catch(e){}
-  setCookieJSON(COOKIE_LOGIN_KEY,data);
+  // שומר התחברות עד יציאה/מחיקת נתוני אתר.
+  // הסיסמה נשמרת רק ב-localStorage ולא בעוגייה, כדי לא לשלוח אותה לשרת בכל בקשה.
+  const localData={role,email,pass:pass||'',ts:Date.now()};
+  const cookieData={role,email,ts:Date.now()};
+  try{ localStorage.setItem(AUTH_MEMORY_KEY, JSON.stringify(localData)); }catch(e){}
+  setCookieJSON(COOKIE_LOGIN_KEY,cookieData);
 }
 function savedLogin(){
   try{ const local=JSON.parse(localStorage.getItem(AUTH_MEMORY_KEY)||'null'); if(local)return local; }catch(e){}
@@ -1917,7 +1920,58 @@ function initChoiceLists(){fillSelect('q-make',Object.keys(CAR_MAKES_MODELS),'כ
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s??'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
-const money = n => '$'+n.toLocaleString('en-US');
+const money = n => '$'+Number(n||0).toLocaleString('en-US');
+
+/* ================= HARDENING / RECOVERY ================= */
+function safeToast(msg){ try{ showToast(msg); }catch(e){ console.warn(msg); } }
+window.addEventListener('error', e=>{
+  console.error('CrownDrive runtime error:', e.error||e.message);
+  safeToast('זוהתה תקלה קטנה במסך — האתר ממשיך לעבוד.');
+});
+window.addEventListener('unhandledrejection', e=>{
+  console.error('CrownDrive promise error:', e.reason);
+  safeToast('פעולה נכשלה זמנית — הנתונים נשמרים מקומית בדפדפן.');
+});
+function safeArr(v){ return Array.isArray(v)?v:[] }
+function fallbackCarPhoto(){
+  return 'data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500"><rect width="800" height="500" fill="#E6EAEF"/><text x="400" y="245" text-anchor="middle" font-size="42" font-family="Arial" fill="#31567A">Crown Drive</text><text x="400" y="300" text-anchor="middle" font-size="24" font-family="Arial" fill="#6E6E73">תמונה חסרה</text></svg>');
+}
+function ensureStateIntegrity(){
+  try{
+    state.owners=safeArr(state.owners); state.renters=safeArr(state.renters); state.cars=safeArr(state.cars);
+    state.bookings=safeArr(state.bookings); state.msgs=safeArr(state.msgs); state.ratings=safeArr(state.ratings);
+    state.users=(state.users&&typeof state.users==='object')?state.users:{}; state.reads=(state.reads&&typeof state.reads==='object')?state.reads:{};
+    state.owners.forEach(u=>{ if(u&&u.id) state.users[u.id]={...(state.users[u.id]||{}),...u,role:'owner'}; });
+    state.renters.forEach(u=>{ if(u&&u.id) state.users[u.id]={...(state.users[u.id]||{}),...u,role:'renter'}; });
+    state.cars.forEach(c=>{
+      c.id=c.id||newId('c'); c.photos=safeArr(c.photos).filter(Boolean); if(!c.photos.length)c.photos=[fallbackCarPhoto()];
+      c.tags=safeArr(c.tags); c.rentalTypes=safeArr(c.rentalTypes); if(!c.rentalTypes.length)c.rentalTypes=['hourly'];
+      if(!['available','rented'].includes(c.status)) c.status='available';
+      c.updatedAt=+c.updatedAt||+c.createdAt||Date.now();
+    });
+    state.bookings.forEach(b=>{ b.id=b.id||newId('b'); if(!['pending','approved','rejected','done'].includes(b.status)) b.status=b.done?'done':'approved'; b.createdAt=+b.createdAt||Date.now(); });
+    if(state.session){
+      if(state.session.role==='admin'){ state.session.id='admin'; state.session.name=state.session.name||'מנהל האתר'; }
+      else {
+        const pool=state.session.role==='owner'?state.owners:state.renters;
+        let rec=pool.find(x=>x.id===state.session.id);
+        if(!rec && state.session.id && (state.session.email||state.session.name)){
+          rec={...state.session,pass:state.session.pass||''}; pool.push(rec);
+        }
+        if(rec) state.session={...rec,role:state.session.role}; else state.session=null;
+      }
+    }
+    if(!Number.isFinite(+seq)||seq<1) seq=Date.now();
+  }catch(e){ console.error('State repair failed', e); }
+}
+const LOGIN_LOCK_KEY='crowndrive_login_lock_v1';
+function loginLockMap(){ try{return JSON.parse(localStorage.getItem(LOGIN_LOCK_KEY)||'{}')}catch(e){return {}} }
+function saveLoginLockMap(m){ try{localStorage.setItem(LOGIN_LOCK_KEY,JSON.stringify(m))}catch(e){} }
+function loginKey(email){ return String(email||'').toLowerCase().replace(/[^a-z0-9@._-]/g,'').slice(0,100); }
+function isLoginLocked(email){ const m=loginLockMap(), r=m[loginKey(email)]; return r&&r.until&&Date.now()<r.until; }
+function loginLockSeconds(email){ const m=loginLockMap(), r=m[loginKey(email)]; return r&&r.until?Math.max(0,Math.ceil((r.until-Date.now())/1000)):0; }
+function noteLoginFail(email){ const m=loginLockMap(), k=loginKey(email), r=m[k]||{n:0,until:0}; r.n=(r.n||0)+1; if(r.n>=5) r.until=Date.now()+5*60*1000; m[k]=r; saveLoginLockMap(m); }
+function clearLoginFail(email){ const m=loginLockMap(); delete m[loginKey(email)]; saveLoginLockMap(m); }
 function togglePassword(id,btn){const el=$(id);if(!el)return;const show=el.type==='password';el.type=show?'text':'password';if(btn)btn.textContent=show?'הסתר סיסמה':'הצג סיסמה';}
 const me = () => state.session;
 
@@ -1929,10 +1983,17 @@ const ic = {
 
 /* ================= NAV / SESSION ================= */
 function openMyArea(){
-  if(!state.session){ openAuth(); return; }
-  if(state.session.role==='admin') return openAdmin();
-  if(state.session.role==='owner') return openOwner();
-  return openRenterArea();
+  try{
+    ensureStateIntegrity();
+    if(!state.session){ openAuth(); return; }
+    if(state.session.role==='admin') return openAdmin();
+    if(state.session.role==='owner') return openOwner();
+    return openRenterArea();
+  }catch(e){
+    console.error('openMyArea failed', e);
+    safeToast('האזור האישי תוקן בטעינה — נסה לפתוח שוב.');
+    ensureStateIntegrity(); renderNav(); renderMyAreaFab();
+  }
 }
 function renderMyAreaFab(){
   const fab=$('my-area-fab'), lab=$('my-area-fab-label');
@@ -2038,120 +2099,6 @@ window.addEventListener('keydown',e=>{
   // אין קיצור מקשים גלוי/נסתר לכניסת מנהל.
 });
 
-/* ===== PASSKEY / WEBAUTHN — Apple Face ID / Touch ID support =====
-   הערה: בגרסת אתר סטטי/שמירה מקומית, פרטי ה-Passkey נשמרים מקומית בדפדפן כדי לאפשר כניסה נוחה.
-   לאבטחת Production מלאה צריך שרת ששומר credential public key ומייצר/מאמת challenge בכל התחברות. */
-const PASSKEY_STORE_KEY='crowndrive_passkeys_v1';
-function passkeySupported(){ return !!(window.PublicKeyCredential && navigator.credentials && window.isSecureContext); }
-function b64urlFromBuf(buf){
-  const bytes=new Uint8Array(buf); let bin=''; bytes.forEach(b=>bin+=String.fromCharCode(b));
-  return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-}
-function bufFromB64url(str){
-  str=(str||'').replace(/-/g,'+').replace(/_/g,'/'); while(str.length%4)str+='=';
-  const bin=atob(str), bytes=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i); return bytes.buffer;
-}
-function randBuf(n=32){const a=new Uint8Array(n); crypto.getRandomValues(a); return a.buffer;}
-function passkeys(){try{return JSON.parse(localStorage.getItem(PASSKEY_STORE_KEY)||'[]')}catch(e){return []}}
-function savePasskeys(list){try{localStorage.setItem(PASSKEY_STORE_KEY,JSON.stringify(list||[]))}catch(e){showToast('לא ניתן לשמור Passkey בדפדפן הזה')}}
-function passkeyUserKey(u){return u?((u.role||'user')+':' +(u.id||u.email||'')):''}
-function hasPasskeyForUser(u){const key=passkeyUserKey(u);return !!key && passkeys().some(p=>p.userKey===key)}
-function updatePasskeyAccountStatus(){
-  const el=document.getElementById('passkey-status'); if(!el)return;
-  el.classList.toggle('on',hasPasskeyForUser(me()));
-}
-let passkeyLoginUsedThisRound=false;
-function shouldOfferPasskeyAfterPasswordLogin(){
-  const u=me();
-  if(!u || passkeyLoginUsedThisRound) return false;
-  if(!passkeySupported()) return false;
-  if(hasPasskeyForUser(u)) return false;
-  return true;
-}
-function offerPasskeyAfterPasswordLogin(){
-  if(!shouldOfferPasskeyAfterPasswordLogin()) return;
-  // נותן לאזור האישי/מנהל להיטען קודם, ואז מציג הצעה ברורה להפעלה.
-  setTimeout(()=>{
-    if(shouldOfferPasskeyAfterPasswordLogin()) openOv('ov-passkey-login-offer');
-  },700);
-}
-function declinePasskeyLoginOffer(){
-  closeOv('ov-passkey-login-offer');
-}
-async function acceptPasskeyLoginOffer(){
-  closeOv('ov-passkey-login-offer');
-  await registerPasskey();
-}
-async function registerPasskey(){
-  const u=me();
-  if(!u){showToast('צריך להתחבר קודם כדי להפעיל Passkey');return}
-  if(!passkeySupported()){showToast('Passkey דורש HTTPS ודפדפן תומך כמו Safari/Chrome');return}
-  try{
-    const userId=randBuf(16);
-    const cred=await navigator.credentials.create({publicKey:{
-      challenge:randBuf(32),
-      rp:{name:'CrownDrive'},
-      user:{id:userId,name:u.email||u.name||u.id,displayName:u.name||u.email||'CrownDrive User'},
-      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
-      authenticatorSelection:{authenticatorAttachment:'platform',residentKey:'preferred',userVerification:'preferred'},
-      timeout:60000,
-      attestation:'none'
-    }});
-    if(!cred||!cred.rawId){showToast('לא נוצר Passkey');return}
-    const list=passkeys().filter(p=>p.userKey!==passkeyUserKey(u));
-    list.push({
-      id:cred.id,
-      rawId:b64urlFromBuf(cred.rawId),
-      userHandle:b64urlFromBuf(userId),
-      userKey:passkeyUserKey(u),
-      role:u.role,idLocal:u.id,name:u.name||'',email:u.email||'',phone:u.phone||'',
-      createdAt:Date.now(),host:location.hostname
-    });
-    savePasskeys(list); updatePasskeyAccountStatus();
-    showToast('Passkey הופעל בהצלחה למכשיר הזה');
-  }catch(e){
-    console.error('passkey register failed',e);
-    showToast(e && e.name==='NotAllowedError' ? 'הפעלת Passkey בוטלה' : 'לא הצלחנו להפעיל Passkey במכשיר הזה');
-  }
-}
-function restoreSessionFromPasskeyRecord(rec){
-  if(!rec)return false;
-  passkeyLoginUsedThisRound=true;
-  if(rec.role==='admin'){
-    state.session={role:'admin',id:'admin',name:rec.name||'מנהל האתר',email:rec.email||ADMIN_EMAIL};
-  }else{
-    const pool=rec.role==='owner'?state.owners:state.renters;
-    const found=pool.find(x=>x.id===rec.idLocal || (rec.email&&x.email===rec.email));
-    state.session=found?{role:rec.role,id:found.id,...found}:{role:rec.role,id:rec.idLocal,name:rec.name||'משתמש',email:rec.email||'',phone:rec.phone||''};
-  }
-  rememberLogin(state.session.role,state.session.email||rec.email||'','');
-  afterLoginUI();
-  showToast('נכנסת עם Passkey');
-  return true;
-}
-async function loginWithPasskey(){
-  if(!passkeySupported()){showToast('Passkey דורש HTTPS ודפדפן תומך כמו Safari/Chrome');return}
-  let list=passkeys();
-  if(authRole) list=list.filter(p=>p.role===authRole || (authRole==='owner'&&p.role==='admin'));
-  if(!list.length){showToast('אין Passkey שמור במכשיר הזה לחשבון שנבחר. התחבר בסיסמה ואז הפעל Passkey באזור החשבון.');return}
-  try{
-    const allowCredentials=list.map(p=>({type:'public-key',id:bufFromB64url(p.rawId)}));
-    const assertion=await navigator.credentials.get({publicKey:{
-      challenge:randBuf(32),
-      allowCredentials,
-      userVerification:'preferred',
-      timeout:60000
-    }});
-    const raw=b64urlFromBuf(assertion.rawId);
-    const rec=list.find(p=>p.rawId===raw || p.id===assertion.id);
-    if(!rec){showToast('ה־Passkey לא נמצא במערכת האתר');return}
-    restoreSessionFromPasskeyRecord(rec);
-  }catch(e){
-    console.error('passkey login failed',e);
-    showToast(e && e.name==='NotAllowedError' ? 'כניסה עם Passkey בוטלה' : 'לא הצלחנו להתחבר עם Passkey');
-  }
-}
-
 const ADMIN_EMAIL='shmuel123770@icloud.com', ADMIN_PASS='amarZ770@';
 let authJustSignedUp=false, pendingProfile=null;
 function afterLoginUI(){
@@ -2163,7 +2110,6 @@ function afterLoginUI(){
   else pendingBookCar=null;
   if(state.session && state.session.role==='admin') openAdmin();
   if(state.session && state.session.role==='owner' && authJustSignedUp){authJustSignedUp=false;openOwner();}
-  offerPasskeyAfterPasswordLogin();
 }
 let acLicData=null;
 function openAccount(){
@@ -2173,7 +2119,6 @@ function openAccount(){
   $('ac-mail').value='';$('ac-pass').value='';
   acLicData=null;$('ac-lic').value='';
   $('ac-renter-extra').style.display = u.role==='renter'?'block':'none';
-  setTimeout(updatePasskeyAccountStatus,0);
   openOv('ov-account');
 }
 $('ac-lic').addEventListener('change',e=>{
@@ -2244,19 +2189,19 @@ function forgotPass(){
   }
 }
 function doLogin(){
-  passkeyLoginUsedThisRound=false;
   const em=$('l-mail').value.trim().toLowerCase(), ps=$('l-pass').value;
+  if(isLoginLocked(em)){ showToast('יותר מדי ניסיונות כניסה. נסה שוב בעוד '+loginLockSeconds(em)+' שניות.'); return; }
   // כניסת מנהל מוסתרת: בוחרים 'אני בעל רכב' ומזינים את פרטי המנהל.
   // אין כפתור מנהל ואין כתובת #admin.
   if(authRole==='owner' && em===ADMIN_EMAIL && ps===ADMIN_PASS){
-    rememberLogin('owner',em,ps);
+    clearLoginFail(em); rememberLogin('owner',em,ps);
     state.session={role:'admin',id:'admin',name:'מנהל האתר',email:ADMIN_EMAIL};
     if(CLOUD)startAdminFeeds();
     afterLoginUI();
     return;
   }
   if(adminSecretMode && em===ADMIN_EMAIL && ps===ADMIN_PASS){
-    rememberLogin('admin',em,ps);
+    clearLoginFail(em); rememberLogin('admin',em,ps);
     state.session={role:'admin',id:'admin',name:'מנהל האתר',email:ADMIN_EMAIL};
     if(CLOUD)startAdminFeeds();
     afterLoginUI();
@@ -2264,7 +2209,8 @@ function doLogin(){
   }
   if(CLOUD){
     mark('lf-mail',false);mark('lf-pass',false);
-    fauth.signInWithEmailAndPassword(em,ps).catch(e=>{
+    fauth.signInWithEmailAndPassword(em,ps).then(()=>clearLoginFail(em)).catch(e=>{
+      noteLoginFail(em);
       if(((e&&e.code)||'').indexOf('user')>-1)mark('lf-mail',true);else mark('lf-pass',true);
     });
     return; /* onAuthStateChanged ממשיך מכאן */
@@ -2272,9 +2218,10 @@ function doLogin(){
   const pool = authRole==='owner'?state.owners:state.renters;
   const u = pool.find(x=>x.email===em);
   mark('lf-mail',!u);
-  if(!u) return;
+  if(!u){ noteLoginFail(em); return; }
   mark('lf-pass',u.pass!==ps);
-  if(u.pass!==ps) return;
+  if(u.pass!==ps){ noteLoginFail(em); return; }
+  clearLoginFail(em);
   rememberLogin(authRole,em,ps);
   state.session={role:authRole,id:u.id,...u};
   afterLoginUI();
@@ -2372,7 +2319,7 @@ let _renderHash='';
 function render(){
   persistState();
   const list = state.cars.filter(matchesSearch).filter(c=>filter==='all'||(filter==='available'?c.status==='available':c.status!=='available')).sort((a,b)=>((b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0)));
-  const hash=list.map(c=>c.id+'|'+(c.status||'')+'|'+(c.updatedAt||c.createdAt||0)).join(',')+':'+filter;
+  const hash=list.map(c=>c.id+'|'+(c.status||'')+'|'+(c.updatedAt||c.createdAt||0)).join(',')+':'+filter+':'+JSON.stringify(searchQ||{});
   if(hash===_renderHash) return;
   _renderHash=hash;
   const g=$('grid'); g.innerHTML='';
@@ -2392,7 +2339,7 @@ function render(){
     el.style.animationDelay=(idx*70)+'ms';
     el.innerHTML=`
       <div class="gallery">
-        <img src="${c.photos[0]}" alt="${esc(c.make)} ${esc(c.model)}">
+        <img src="${(c.photos&&c.photos[0])||fallbackCarPhoto()}" alt="${esc(c.make)} ${esc(c.model)}" loading="lazy" onerror="this.src=fallbackCarPhoto()">
         <span class="g-status"><span class="pill ${s.cls}">${s.txt}</span></span>
         <span class="g-count">1 / ${c.photos.length}</span>
         <button class="g-nav g-prev" onclick="slide('${c.id}',-1,event)" aria-label="תמונה קודמת">‹</button>
@@ -2504,7 +2451,7 @@ function setFilter(f,btn){filter=f;document.querySelectorAll('.filters button').
 function scrollToFleet(){$('fleet').scrollIntoView({behavior:'smooth'})}
 
 function firstAvailableCarId(){
-  const car=(state.cars||[]).find(c=>c.status==='ok') || (state.cars||[])[0];
+  const car=(state.cars||[]).find(c=>c.status==='available') || (state.cars||[])[0];
   return car ? car.id : null;
 }
 function goHowStep(step){
@@ -2979,7 +2926,8 @@ function openRenterArea(){
   const approved=list.filter(b=>(b.status||'approved')==='approved').length;
   const totalSpent=list.filter(b=>(b.status||'approved')!=='rejected').reduce((sum,b)=>sum+(+b.total||0),0);
   const initials=(u.name||'שוכר').trim().split(/\s+/).map(x=>x[0]).join('').slice(0,2);
-  $('renter-body').innerHTML=`
+  const renterBody=$('renter-body'); if(!renterBody){showToast('האזור האישי לא נטען — חסר רכיב במסך');return;}
+  renterBody.innerHTML=`
     <div class="personal-hero">
       <div>
         <h4>שלום ${esc((u.name||'').split(' ')[0]||'שוכר')} 👋</h4>
@@ -3339,12 +3287,13 @@ function emailReceipt(){
 }
 
 /* ================= HELPERS ================= */
-function openOv(id){$(id).classList.add('open');document.body.style.overflow='hidden'}
-function closeOv(id){$(id).classList.remove('open');document.body.style.overflow=''; if(id==='ov-auth') closeHiddenAdminMode()}
-['ov-auth','ov-owner','ov-admin','ov-renter','ov-book','ov-lic','ov-profile','ov-account','ov-passkey-login-offer'].forEach(id=>$(id).addEventListener('click',e=>{if(e.target.id===id)closeOv(id)}));
-document.addEventListener('keydown',e=>{if(e.key==='Escape')['ov-auth','ov-owner','ov-admin','ov-renter','ov-book','ov-lic','ov-profile','ov-account','ov-passkey-login-offer'].forEach(closeOv)});
+function openOv(id){const el=$(id); if(!el){console.warn('Missing overlay',id);return;} el.classList.add('open');document.body.style.overflow='hidden'}
+function closeOv(id){const el=$(id); if(!el)return; el.classList.remove('open');document.body.style.overflow=''; if(id==='ov-auth') closeHiddenAdminMode()}
+['ov-auth','ov-owner','ov-admin','ov-renter','ov-book','ov-lic','ov-profile','ov-account'].forEach(id=>{const el=$(id); if(el) el.addEventListener('click',e=>{if(e.target.id===id)closeOv(id)});});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')['ov-auth','ov-owner','ov-admin','ov-renter','ov-book','ov-lic','ov-profile','ov-account'].forEach(closeOv)});
 function bindDrop(dropId,fileId,single,multi){
   const d=$(dropId),f=$(fileId);
+  if(!d||!f){console.warn('Missing upload control',dropId,fileId);return;}
   d.addEventListener('click',()=>f.click());
   d.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();f.click()}});
   ['dragover','dragenter'].forEach(ev=>d.addEventListener(ev,e=>{e.preventDefault();d.classList.add('drag')}));
@@ -3382,12 +3331,13 @@ function readImg(f,cb){
 function viewLic(bid){
   const b=state.bookings.find(x=>x.id===bid);
   if(!b||!b.lic)return;
-  if(!state.session||state.session.role!=='owner'||b.ownerId!==state.session.id)return;
+  if(!state.session||!((state.session.role==='owner'&&b.ownerId===state.session.id)||state.session.role==='admin'))return;
   $('lic-full').src=b.lic;
   openOv('ov-lic');
 }
 function showToast(msg){
-  const t=$('toast');t.textContent=msg;t.classList.add('show');
+  const t=$('toast'); if(!t){console.warn(msg);return;}
+  t.textContent=msg;t.classList.add('show');
   clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2800);
 }
 
@@ -3823,7 +3773,14 @@ document.querySelectorAll('.sec-head,.fleet-side,.how-grid,.foot-cta,.strip-in')
 
 window.addEventListener('beforeunload', persistState);
 loadState();
-initChoiceLists();initOwnerChoiceLists();updateOwnerPriceFields();renderNav();renderMyAreaFab();render();initSig();updateBadge();
+ensureStateIntegrity();
+try{
+  initChoiceLists();initOwnerChoiceLists();updateOwnerPriceFields();renderNav();renderMyAreaFab();render();initSig();updateBadge();
+}catch(e){
+  console.error('Initial render recovery', e);
+  safeToast('האתר תיקן נתונים ישנים/פגומים ונטען מחדש.');
+  ensureStateIntegrity(); renderNav(); renderMyAreaFab();
+}
 setInterval(()=>{
   if(document.activeElement && ['INPUT','TEXTAREA','SELECT'].includes(document.activeElement.tagName))return;
   refreshOpenViews();
