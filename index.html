@@ -5591,6 +5591,208 @@ setInterval(()=>{
   },900);
 })();
 
+/* ===== CRITICAL REGISTRATION HOTFIX: new Firebase emails must register cleanly ===== */
+(function(){
+  function getRole(){
+    try{return (authRole==='owner'||authRole==='renter'||authRole==='admin') ? authRole : 'renter'}catch(e){return 'renter'}
+  }
+  function validEmail(e){return /^\S+@\S+\.\S+$/.test(String(e||'').trim())}
+  function setSignupBusy(isBusy){
+    try{
+      const btn=document.querySelector('#auth-signup .btn-gold');
+      if(btn){
+        btn.disabled=!!isBusy;
+        btn.dataset.oldText=btn.dataset.oldText||btn.textContent;
+        btn.textContent=isBusy?'יוצר חשבון...':btn.dataset.oldText;
+        btn.style.opacity=isBusy?'.75':'';
+      }
+    }catch(e){}
+  }
+  function markSafe(id,b){try{mark(id,!!b)}catch(e){}}
+  function writeSignupError(id,msg){
+    try{
+      const field=document.getElementById(id);
+      if(!field)return;
+      field.classList.add('err');
+      const m=field.querySelector('.err-msg');
+      if(m && msg)m.textContent=msg;
+    }catch(e){}
+  }
+  async function createOrLoginFirebase(email, pass){
+    email=normalizeEmail(email);
+    if(!firebaseAuthReady()){
+      const ok=await waitForFirebaseAuthReady(5500);
+      if(!ok){
+        const e=new Error('Firebase Auth עדיין נטען. נסה שוב בעוד רגע.');
+        e.code='auth/not-ready';
+        throw e;
+      }
+    }
+    try{
+      allowExplicitAuthAction && allowExplicitAuthAction();
+      const cred=await RT_AUTH.createUserWithEmailAndPassword(email,pass);
+      return {user:cred&&cred.user, created:true};
+    }catch(createErr){
+      const code=(createErr&&createErr.code)||'';
+      if(code==='auth/email-already-in-use'){
+        try{
+          allowExplicitAuthAction && allowExplicitAuthAction();
+          const cred=await RT_AUTH.signInWithEmailAndPassword(email,pass);
+          return {user:cred&&cred.user, created:false, existed:true};
+        }catch(signErr){
+          const friendly=new Error('המייל כבר רשום. אם זה החשבון שלך — עבור לכניסה או השתמש בסיסמה הנכונה.');
+          friendly.code='auth/email-exists-wrong-password';
+          throw friendly;
+        }
+      }
+      throw createErr;
+    }
+  }
+  function authMsg(e){
+    const code=(e&&e.code)||'';
+    if(code==='auth/invalid-email') return 'כתובת המייל לא תקינה.';
+    if(code==='auth/weak-password') return 'הסיסמה חייבת להיות לפחות 6 תווים.';
+    if(code==='auth/email-exists-wrong-password') return 'המייל כבר רשום. עבור לכניסה או השתמש בסיסמה הנכונה.';
+    if(code==='auth/email-already-in-use') return 'המייל כבר רשום. עבור לכניסה.';
+    if(code==='auth/too-many-requests') return 'יותר מדי ניסיונות. חכה כמה דקות ונסה שוב.';
+    if(code==='auth/network-request-failed') return 'בעיית רשת. בדוק אינטרנט ונסה שוב.';
+    if(code==='auth/operation-not-allowed') return 'הרשמה במייל/סיסמה לא מופעלת ב-Firebase Authentication.';
+    if(code==='auth/not-ready') return 'מערכת ההתחברות עדיין נטענת. נסה שוב בעוד רגע.';
+    return (typeof friendlyAuthMessage==='function') ? friendlyAuthMessage(e) : ('שגיאת הרשמה: '+((e&&e.message)||e));
+  }
+  async function finalSignup(){
+    authUserIsEditing=false;
+    clearAuthFieldErrors && clearAuthFieldErrors();
+    const role=getRole();
+    const name=(document.getElementById('s-name')||{}).value ? document.getElementById('s-name').value.trim() : '';
+    const phoneRaw=(document.getElementById('s-phone')||{}).value || '';
+    const phone=phoneRaw.replace(/\D/g,'');
+    const em=normalizeEmail((document.getElementById('s-mail')||{}).value || '');
+    const ps=(document.getElementById('s-pass')||{}).value || '';
+    let bad=false;
+    if(name.length<2){markSafe('sf-name',true);bad=true}else markSafe('sf-name',false);
+    if(phone.length<9){markSafe('sf-phone',true);bad=true}else markSafe('sf-phone',false);
+    if(!validEmail(em)){markSafe('sf-mail',true);writeSignupError('sf-mail','כתובת מייל לא תקינה');bad=true}else markSafe('sf-mail',false);
+    if(ps.length<6){markSafe('sf-pass',true);bad=true}else markSafe('sf-pass',false);
+
+    let extra={};
+    if(role==='renter'){
+      const licStateEl=document.getElementById('lic-state');
+      const licState=licStateEl ? String(licStateEl.value||'').trim() : '';
+      if(licStateEl){markSafe('sf-lic-state',!licState); if(!licState)bad=true;}
+      if(typeof rlicData!=='undefined' && !rlicData && document.getElementById('rlic-err')){
+        document.getElementById('rlic-err').style.display='block';
+        const d=document.getElementById('drop-rlic'); if(d)d.classList.add('err-b');
+        bad=true;
+      }
+      if(typeof rlicBackData!=='undefined' && !rlicBackData && document.getElementById('rlic-back-err')){
+        document.getElementById('rlic-back-err').style.display='block';
+        const d=document.getElementById('drop-rlic-back'); if(d)d.classList.add('err-b');
+        bad=true;
+      }
+      extra={lic:(typeof rlicData!=='undefined'?rlicData:null),licFront:(typeof rlicData!=='undefined'?rlicData:null),licBack:(typeof rlicBackData!=='undefined'?rlicBackData:null),licenseState:licState};
+    }
+    if(bad)return;
+
+    setSignupBusy(true);
+    try{
+      const pool=role==='owner'?state.owners:state.renters;
+      let fb=null, created=false, existed=false;
+      if(REALTIME){
+        const res=await createOrLoginFirebase(em,ps);
+        fb=res.user; created=!!res.created; existed=!!res.existed;
+      }
+      const uid=(fb&&fb.uid) || newId('u');
+      let u=pool.find(x=>normalizeEmail(x.email)===em) || null;
+      if(!u){
+        u={id:uid,name,phone:phoneRaw.trim(),email:em,pass:ps,createdAt:Date.now(),updatedAt:Date.now(),...extra};
+        pool.push(u);
+        if(created && typeof notifyAdminNewUser==='function') notifyAdminNewUser(u,role,'signup');
+      }else{
+        migrateLocalIdToFirebaseUid && migrateLocalIdToFirebaseUid(role,u.id,uid,em);
+        u.id=uid; u.name=name; u.phone=phoneRaw.trim(); u.email=em; u.pass=ps; u.updatedAt=Date.now();
+        Object.assign(u,extra);
+      }
+      state.users[uid]={...(state.users[uid]||{}),...u,role,email:em,blocked:false,updatedAt:Date.now()};
+      state.session={role,id:uid,...u};
+      rememberLogin && rememberLogin(role,em,ps);
+      rememberAuthIdentity && rememberAuthIdentity(uid,em);
+      persistSessionCookie && persistSessionCookie();
+      try{['s-name','s-phone','s-mail','s-pass'].forEach(i=>{const el=document.getElementById(i); if(el)el.value='';});}catch(e){}
+      try{if(typeof clearRLic==='function')clearRLic(true); if(typeof clearRLicBack==='function')clearRLicBack(true); const ls=document.getElementById('lic-state'); if(ls)ls.value='';}catch(e){}
+      safeToast && safeToast(existed?'החשבון כבר קיים — חיברתי אותך בהצלחה':'החשבון נוצר בהצלחה');
+      afterLoginUI && afterLoginUI();
+      pushRealtimeNow && pushRealtimeNow();
+    }catch(e){
+      console.error('signup failed',e);
+      markSafe('sf-mail',true);
+      writeSignupError('sf-mail',authMsg(e));
+      safeToast && safeToast(authMsg(e));
+    }finally{
+      setSignupBusy(false);
+    }
+  }
+  async function finalLogin(){
+    authUserIsEditing=false;
+    clearAuthFieldErrors && clearAuthFieldErrors();
+    const role=getRole();
+    const em=normalizeEmail((document.getElementById('l-mail')||{}).value || '');
+    const ps=(document.getElementById('l-pass')||{}).value || '';
+    if(!validEmail(em)){markSafe('lf-mail',true);safeToast&&safeToast('נא להזין מייל תקין');return;}
+    if(!ps || ps.length<6){markSafe('lf-pass',true);safeToast&&safeToast('נא להזין סיסמה של לפחות 6 תווים');return;}
+    setLoginBusy && setLoginBusy(true);
+    try{
+      if((role==='owner'||role==='admin'||adminSecretMode) && em===normalizeEmail(ADMIN_EMAIL) && ps===ADMIN_PASS){
+        let uid='admin';
+        if(REALTIME){
+          const res=await createOrLoginFirebase(em,ps);
+          if(res&&res.user&&res.user.uid)uid=res.user.uid;
+        }
+        rememberLogin('admin',em,ps); rememberAuthIdentity(uid,em);
+        state.session={role:'admin',id:uid,name:'מנהל האתר',email:em};
+        state.users[uid]={...(state.users[uid]||{}),name:'מנהל האתר',role:'admin',email:em,updatedAt:Date.now()};
+        afterLoginUI(); pushRealtimeNow&&pushRealtimeNow(); return;
+      }
+      if(role!=='owner' && role!=='renter'){safeToast&&safeToast('בחר קודם אם אתה שוכר או בעל רכב'); backToRoles&&backToRoles();return;}
+      const pool=role==='owner'?state.owners:state.renters;
+      let u=pool.find(x=>normalizeEmail(x.email)===em);
+      let fb=null, created=false;
+      if(REALTIME){
+        const res=await createOrLoginFirebase(em,ps);
+        fb=res.user; created=!!res.created;
+      }
+      const uid=(fb&&fb.uid)||(u&&u.id)||newId('u');
+      if(!u){
+        u={id:uid,name:em.split('@')[0],phone:'',email:em,pass:ps,createdAt:Date.now(),updatedAt:Date.now(),autoCreated:true};
+        pool.push(u);
+        if(created && typeof notifyAdminNewUser==='function') notifyAdminNewUser(u,role,'login-auto-create');
+      }else{
+        migrateLocalIdToFirebaseUid&&migrateLocalIdToFirebaseUid(role,u.id,uid,em);
+        u.id=uid; u.email=em; u.pass=ps; u.updatedAt=Date.now();
+      }
+      state.users[uid]={...(state.users[uid]||{}),...u,role,email:em,updatedAt:Date.now()};
+      state.session={role,id:uid,...u};
+      rememberLogin(role,em,ps); rememberAuthIdentity(uid,em); persistSessionCookie&&persistSessionCookie();
+      afterLoginUI(); pushRealtimeNow&&pushRealtimeNow();
+    }catch(e){
+      console.error('login failed',e);
+      const code=(e&&e.code)||'';
+      if(code==='auth/email-exists-wrong-password'||code==='auth/wrong-password'||code==='auth/wrong-password-friendly'||code==='auth/email-already-in-use') markSafe('lf-pass',true);
+      else markSafe('lf-mail',true);
+      safeToast&&safeToast(authMsg(e));
+    }finally{
+      setLoginBusy&&setLoginBusy(false);
+    }
+  }
+  window.doSignup = finalSignup;
+  window.doLogin = finalLogin;
+  try{ doSignup = finalSignup; doLogin = finalLogin; }catch(e){}
+  ['s-mail','l-mail','s-pass','l-pass'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){ el.addEventListener('input',()=>{ clearAuthFieldErrors&&clearAuthFieldErrors(); }); }
+  });
+})();
+
 </script>
 
 <script>
