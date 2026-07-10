@@ -1609,14 +1609,18 @@ html,body{overflow-x:hidden!important}
 
 <div class="toast" id="toast"></div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
+<script src="firebase-config.js"></script>
 <script>
 /* ╔════════════════════════════════════════════════════════════════╗
-   ║ CrownDrive + Netlify Database                                ║
-   ║ הנתונים נשמרים דרך /.netlify/functions/db במסד הנתונים של Netlify ║
+   ║ CrownDrive hardened build + optional Firebase Realtime        ║
+   ║ localStorage עובד תמיד; Firebase מפעיל עדכון חי בין מכשירים. ║
    ╚════════════════════════════════════════════════════════════════╝ */
 const CLOUD = false; // מצב שמירה יציב: עובד בלי Netlify Blobs ובלי שגיאות שרת
 const API_URL = '/.netlify/functions/db';
 let db=null, fauth=null;
+let REALTIME=false, RT_DB=null, RT_REF=null, rtApplying=false, rtWriteTimer=null, rtLastToast=0;
 
 async function api(action, payload={}){
   const res = await fetch(API_URL, {
@@ -1760,6 +1764,64 @@ function prefillSavedLogin(role){
   if(pass && s.pass) pass.value=s.pass;
 }
 function clearSavedLogin(){ try{ localStorage.removeItem(AUTH_MEMORY_KEY); }catch(e){} delCookie(COOKIE_LOGIN_KEY); }
+
+function realtimeData(){
+  return {
+    owners:state.owners||[], renters:state.renters||[], cars:state.cars||[], bookings:state.bookings||[],
+    msgs:state.msgs||[], ratings:state.ratings||[], users:state.users||{}, seq:seq||1,
+    updatedAt:Date.now()
+  };
+}
+function applyRealtimeData(d){
+  if(!d || typeof d!=='object')return;
+  rtApplying=true;
+  try{
+    ['owners','renters','cars','bookings','msgs','ratings'].forEach(k=>{ if(Array.isArray(d[k])) state[k]=d[k]; });
+    if(d.users && typeof d.users==='object')state.users=d.users;
+    if(d.seq && Number.isFinite(+d.seq))seq=+d.seq;
+    ensureStateIntegrity();
+    try{ localStorage.setItem(LOCAL_KEY, JSON.stringify({
+      owners:state.owners||[], renters:state.renters||[], cars:state.cars||[], bookings:state.bookings||[],
+      session:state.session||null, msgs:state.msgs||[], ratings:state.ratings||[], users:state.users||{}, seq
+    })); }catch(e){}
+    renderNav(); renderMyAreaFab(); refreshOpenViews(); render(); updateBadge();
+  }catch(e){console.error('Realtime apply failed',e)}
+  finally{rtApplying=false;}
+}
+function scheduleRealtimeSave(){
+  if(!REALTIME || !RT_REF || rtApplying)return;
+  clearTimeout(rtWriteTimer);
+  rtWriteTimer=setTimeout(pushRealtimeNow,280);
+}
+function pushRealtimeNow(){
+  if(!REALTIME || !RT_REF || rtApplying)return Promise.resolve(false);
+  const payload={version:1,updatedAt:Date.now(),data:realtimeData()};
+  return RT_REF.set(payload).catch(e=>{
+    console.error('Realtime save failed',e);
+    const now=Date.now();
+    if(now-rtLastToast>7000){rtLastToast=now; safeToast('שמירה בזמן אמת נכשלה — האתר ממשיך לשמור מקומית');}
+  });
+}
+function initRealtime(){
+  const cfg=(window.CROWNFIREBASE_CONFIG||window.FIREBASE_CONFIG||null);
+  const ready=cfg && cfg.apiKey && cfg.databaseURL && cfg.projectId;
+  if(!ready){console.warn('CrownDrive realtime: fill firebase-config.js to enable live sync.');return false;}
+  if(typeof firebase==='undefined' || !firebase.initializeApp){console.warn('CrownDrive realtime: Firebase SDK not loaded.');return false;}
+  try{
+    if(!firebase.apps || !firebase.apps.length) firebase.initializeApp(cfg);
+    RT_DB=firebase.database();
+    RT_REF=RT_DB.ref((window.CROWNDRIVE_RT_PATH||'crowndrive-live/state'));
+    REALTIME=true;
+    RT_REF.on('value', snap=>{
+      const v=snap.val();
+      if(v && v.data) applyRealtimeData(v.data);
+      else if(!v) pushRealtimeNow();
+    }, err=>{console.error('Realtime listener failed',err);safeToast('חיבור זמן אמת נכשל — בדוק Firebase config/rules');});
+    window.addEventListener('online',()=>pushRealtimeNow());
+    setTimeout(()=>{ if(state.session) safeToast('זמן אמת פעיל'); },1200);
+    return true;
+  }catch(e){console.error('Realtime init failed',e);safeToast('Firebase לא מוגדר תקין — האתר עובד מקומית');return false;}
+}
 function persistState(){
   try{
     const copy={
@@ -1768,6 +1830,7 @@ function persistState(){
     };
     persistSessionCookie();
     localStorage.setItem(LOCAL_KEY, JSON.stringify(copy));
+    scheduleRealtimeSave();
     return true;
   }catch(e){
     console.error('local save failed', e);
@@ -3699,7 +3762,7 @@ if(CLOUD){
     else{state.session=null;stopUserFeeds();stopAdminFeeds();renderNav();updateBadge();}
   });
 } else {
-  console.warn('CrownDrive: Firebase configuration is missing. Connect FIREBASE_CONFIG for live production data.');
+  console.warn('CrownDrive: CLOUD auth is off. Firebase realtime can still run through firebase-config.js.');
 }
 
 /* ---------- SCROLL DYNAMICS ---------- */
@@ -3774,6 +3837,7 @@ document.querySelectorAll('.sec-head,.fleet-side,.how-grid,.foot-cta,.strip-in')
 window.addEventListener('beforeunload', persistState);
 loadState();
 ensureStateIntegrity();
+initRealtime();
 try{
   initChoiceLists();initOwnerChoiceLists();updateOwnerPriceFields();renderNav();renderMyAreaFab();render();initSig();updateBadge();
 }catch(e){
