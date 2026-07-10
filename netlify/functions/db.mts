@@ -6,7 +6,14 @@ const { Pool } = pg;
 let pool: any = null;
 function getPool() {
   if (pool) return pool;
-  const connectionString = getConnectionString();
+  const connectionString =
+    process.env.NETLIFY_DB_URL ||
+    process.env.DATABASE_URL ||
+    process.env.NETLIFY_DATABASE_URL ||
+    getConnectionString();
+  if (!connectionString) {
+    throw new Error("DB_CONNECTION_STRING_MISSING: Add NETLIFY_DB_URL in Netlify Environment variables with the production database connection string.");
+  }
   pool = new Pool({ connectionString });
   return pool;
 }
