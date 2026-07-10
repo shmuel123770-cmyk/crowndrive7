@@ -1,6 +1,8 @@
 {
   "dependencies": {
     "@netlify/database": "latest",
-    "pg": "latest"
+    "@netlify/blobs": "latest",
+    "pg": "latest",
+    "nodemailer": "latest"
   }
 }
