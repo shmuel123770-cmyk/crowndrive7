@@ -783,6 +783,128 @@ body::after{
 @media(max-width:560px){.role-pick{grid-template-columns:1fr}}
 @media (prefers-reduced-motion: reduce){body::before,body::after,.section,.modal{animation:none!important}.overlay{transition:none!important}}
 
+
+
+/* ================= MOBILE PREMIUM FIX =================
+   Improves phone layout, touch spacing, modals, cards, search, admin tables
+   without changing desktop behavior.
+====================================================== */
+@media (max-width: 760px){
+  html,body{width:100%;overflow-x:hidden;}
+  body{font-size:15px;line-height:1.55;background:#EEF2F7;}
+  .nav{position:sticky;top:0;z-index:80;}
+  .nav-in{padding:10px 12px;gap:8px;}
+  .logo-mark{width:34px;height:34px;border-radius:9px;}
+  .logo b{font-size:.98rem;letter-spacing:.04em;}
+  .logo small{font-size:.48rem;letter-spacing:.14em;max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .nav-side{gap:6px;}
+  .nav-side .btn,.nav-side button{padding:8px 10px;font-size:.76rem;border-radius:9px;}
+
+  .hero-in{padding:50px 16px 118px!important;text-align:center;}
+  .hero h1{font-size:clamp(2rem,11vw,3rem);line-height:1.05;max-width:11ch;}
+  .hero p{font-size:.95rem;margin:16px auto 24px;max-width:31ch;}
+  .hero-actions{gap:9px;margin-top:24px!important;}
+  .hero-actions .btn{width:100%;max-width:310px;padding:13px 18px;font-size:.9rem;}
+  .hero-stats{display:grid;grid-template-columns:1fr 1fr;margin-top:32px;border-radius:15px;max-width:360px;box-shadow:0 14px 34px rgba(0,0,0,.22);}
+  .hstat{padding:14px 6px;border-bottom:1px solid var(--hair);}
+  .hstat:nth-child(odd){border-inline-start:none;}
+  .hstat b{font-size:1.25rem;}
+  .hstat span{font-size:.67rem;}
+  .road{height:86px;}.asphalt{height:42px}.cars-near .sil{width:104px}.cars-far .sil{bottom:38px;width:66px;}
+
+  .strip-in{padding:10px 12px;gap:10px;display:grid;grid-template-columns:1fr 1fr;justify-items:center;font-size:.72rem;}
+  .strip .it{gap:6px;}
+  .strip .it:last-child{grid-column:1/-1;}
+
+  .section{padding:46px 14px;}
+  .sec-head{margin-bottom:24px;}
+  .sec-head h2{font-size:1.55rem;}
+  .fleet-wrap{display:block;}
+  .fleet-side{position:static;margin-bottom:18px;background:rgba(255,255,255,.72);backdrop-filter:blur(14px);border:1px solid rgba(0,0,0,.06);border-radius:20px;padding:14px;box-shadow:0 12px 30px rgba(35,42,51,.08);}
+  .fleet-side .sec-head{text-align:center;margin-bottom:14px;}
+  .fleet-side .sub{max-width:none;font-size:.82rem;}
+  .filters.vert{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;background:#E7ECF2;border-radius:14px;padding:5px;}
+  .filters.vert button{width:100%;text-align:center;border-radius:11px;padding:9px 6px;font-size:.76rem;}
+  .side-live{margin-top:10px;justify-content:center;padding:9px 10px;font-size:.78rem;}
+
+  /* Smart search / advanced search mobile */
+  .search-box,.smart-search,.advanced-search,.fleet-search,.search-panel{border-radius:20px!important;padding:14px!important;margin:0 0 16px!important;}
+  .search-grid,.smart-search-grid,.advanced-grid,.filters-grid{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;}
+  .car-type-options,.type-options,.vehicle-type-options{display:grid!important;grid-template-columns:repeat(2,1fr)!important;gap:8px!important;}
+  .car-type-options button,.type-options button,.vehicle-type-options button{min-height:44px;border-radius:13px!important;font-size:.86rem!important;}
+
+  #fleet .grid,.grid{grid-template-columns:1fr!important;gap:16px;}
+  .card{border-radius:18px;box-shadow:0 14px 35px rgba(22,30,40,.08);}
+  .gallery{aspect-ratio:16/11;}
+  .card-body{padding:17px;gap:11px;}
+  .card-title{display:block;}
+  .card-title h3{font-size:1.08rem;margin-bottom:4px;}
+  .price{text-align:right;margin-top:8px;}
+  .price b{font-size:1.2rem;}
+  .specs{gap:8px;display:grid;grid-template-columns:1fr 1fr;}
+  .spec{font-size:.74rem;}
+  .tags{gap:5px;}.tag{font-size:.67rem;padding:3px 9px;}
+  .card-btn{min-height:45px;font-size:.88rem;}
+
+  .how-grid{grid-template-columns:1fr;gap:12px;}
+  .hstep{padding:24px 18px;border-radius:18px;}
+  .foot-cta{padding:44px 16px 76px!important;border-radius:20px;}
+  .foot-cta h2{font-size:1.45rem;}
+  .foot-cta p{font-size:.88rem;}
+  footer{padding:22px 14px;text-align:center;}.foot-in{justify-content:center;}
+
+  /* Modals: full-screen app-like on phone */
+  .overlay{padding:0;align-items:flex-end;}
+  .modal,.modal.wide{width:100%!important;max-width:none!important;max-height:94dvh;border-radius:22px 22px 0 0;}
+  .m-head{padding:14px 16px;}
+  .m-head h3{font-size:1rem;}
+  .m-body{padding:16px;}
+  .f-row,.f-row3,.card-row,.role-pick{grid-template-columns:1fr!important;gap:10px;}
+  .field{margin-bottom:11px;}
+  .field label{font-size:.76rem;margin-bottom:5px;}
+  .field input,.field select,.field textarea{font-size:16px;padding:11px 12px;border-radius:12px;}
+  .m-actions{position:sticky;bottom:0;background:linear-gradient(transparent,#fff 18%,#fff);padding-top:12px;margin-inline:-4px;}
+  .m-actions .btn,.m-actions button{min-height:46px;}
+  .m-car{padding:10px;border-radius:13px;}.m-car img{width:76px;height:52px;}
+  .summary-box{padding:14px;border-radius:14px;}
+  .terms-box{max-height:185px;font-size:.76rem;}
+  .sig-wrap canvas{height:125px;}
+  .photo-grid{grid-template-columns:repeat(3,1fr);}
+
+  /* Owner/admin dashboard mobile */
+  .dash-tabs{gap:0;overflow-x:auto;-webkit-overflow-scrolling:touch;margin-inline:-16px;padding-inline:12px;}
+  .dash-tabs button{padding:11px 14px;font-size:.78rem;}
+  .kpis{grid-template-columns:1fr 1fr;gap:10px;}
+  .kpi{padding:14px;border-radius:14px;}.kpi b{font-size:1.25rem;}
+  .adm-item{align-items:flex-start;padding:10px;gap:10px;}
+  .adm-item img{width:68px;height:48px;}
+  .adm-item .acts{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+  .mini{padding:8px 9px;font-size:.72rem;text-align:center;}
+  .tbl{display:block;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;border-radius:12px;background:#fff;}
+  .tbl th,.tbl td{padding:9px 10px;font-size:.76rem;}
+  .admin-shell,.admin-full,.admin-grid,.manager-grid{grid-template-columns:1fr!important;gap:12px!important;}
+  .admin-panel,.admin-card{border-radius:18px!important;padding:14px!important;}
+
+  /* Chat better on mobile */
+  #chat-fab{width:54px;height:54px;bottom:14px;inset-inline-start:14px;z-index:130;}
+  #chat-panel{inset-inline:0!important;bottom:0!important;width:100%!important;height:82dvh!important;border-radius:22px 22px 0 0!important;}
+  .cp-head{padding:12px 14px;}.cp-msgs{padding:13px;}.bub{max-width:86%;font-size:.85rem;}.cp-input{padding:10px;}.cp-input input{font-size:16px;}
+
+  /* Less heavy motion on phones */
+  .aur{filter:blur(70px);opacity:.38;}
+  .blueprint{opacity:.06;width:110vw;}
+  .citymap{opacity:.035;}
+  .card:hover{transform:none;}
+}
+
+@media (max-width: 380px){
+  .hero h1{font-size:2.05rem;}
+  .hero-stats{grid-template-columns:1fr 1fr;}
+  .specs{grid-template-columns:1fr;}
+  .kpis{grid-template-columns:1fr;}
+  .car-type-options,.type-options,.vehicle-type-options{grid-template-columns:1fr!important;}
+}
+
 </style>
 </head>
 <body>
