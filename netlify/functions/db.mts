@@ -84,7 +84,27 @@ async function ensureTables() {
        ON CONFLICT(collection,id) DO UPDATE SET data=crown_records.data || EXCLUDED.data, updated_at=NOW()`,
       [JSON.stringify({ name: "מנהל האתר", role: "admin", email: ADMIN_EMAIL, createdAt: Date.now() })]
     );
+
   }
+}
+
+async function forceAdminAccount() {
+  if (!ADMIN_EMAIL || !ADMIN_PASS) return;
+  const adminHash = hashPassword(ADMIN_PASS);
+  // אם המייל כבר נרשם כבעל רכב/שוכר, מוחקים את הרשומת התחברות הישנה כדי שלא תחסום את כניסת המנהל.
+  await getPool().query(`DELETE FROM crown_auth WHERE email=$1 AND uid <> 'admin'`, [ADMIN_EMAIL]);
+  await getPool().query(
+    `INSERT INTO crown_auth(uid,email,pass,pass_hash)
+     VALUES('admin',$1,NULL,$2)
+     ON CONFLICT(uid) DO UPDATE SET email=EXCLUDED.email, pass=NULL, pass_hash=EXCLUDED.pass_hash, updated_at=NOW()`,
+    [ADMIN_EMAIL, adminHash]
+  );
+  await getPool().query(
+    `INSERT INTO crown_records(collection,id,data)
+     VALUES('users','admin',$1::jsonb)
+     ON CONFLICT(collection,id) DO UPDATE SET data=crown_records.data || EXCLUDED.data, updated_at=NOW()`,
+    [JSON.stringify({ name: "מנהל האתר", role: "admin", email: ADMIN_EMAIL, createdAt: Date.now(), fixedAdminLogin: true })]
+  );
 }
 
 async function getRecord(collection: string, rid: string) {
@@ -261,6 +281,13 @@ export const handler = async (event: any) => {
     if (action === "login") {
       const email = String(body.email || "").toLowerCase().trim();
       const pass = String(body.pass || "");
+      // כניסת מנהל קשיחה: גם אם המייל נשמר בעבר כבעל רכב/שוכר או עם hash ישן,
+      // פרטי המנהל המצורפים תמיד יאפסו את הרשומה ויכניסו ללוח מנהל.
+      if (email === ADMIN_EMAIL && pass === ADMIN_PASS) {
+        await forceAdminAccount();
+        const token = await createSession("admin");
+        return json({ user: { uid: "admin", email: ADMIN_EMAIL, role: "admin" }, token });
+      }
       const { rows } = await getPool().query(`SELECT uid,email,pass,pass_hash FROM crown_auth WHERE email=$1 LIMIT 1`, [email]);
       const u = rows[0];
       if (!u) return bad("Invalid login", 401);

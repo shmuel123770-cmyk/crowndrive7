@@ -3,6 +3,10 @@
     "@netlify/database": "latest",
     "@netlify/blobs": "latest",
     "pg": "latest",
-    "nodemailer": "latest"
+    "nodemailer": "latest",
+    "drizzle-orm": "beta"
+  },
+  "devDependencies": {
+    "drizzle-kit": "beta"
   }
 }
