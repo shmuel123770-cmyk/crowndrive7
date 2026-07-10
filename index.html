@@ -1559,6 +1559,29 @@ body.modal-open-stable{overflow:hidden!important;height:100dvh!important;touch-a
 @media(max-width:700px){#ov-admin .admin-modal,#ov-owner .modal,#ov-renter .modal,#ov-account .modal{width:92vw!important;min-width:0!important;max-width:92vw!important;border-radius:0 22px 22px 0!important;}}
 @media(max-width:430px){#ov-admin .admin-modal,#ov-owner .modal,#ov-renter .modal,#ov-account .modal{width:94vw!important;max-width:94vw!important;}}
 
+
+
+/* ===== CrownDrive image + stability hardening 2026-07-10 ===== */
+:root{--cd-card-img-h:clamp(190px,18vw,260px);--cd-card-img-h-mobile:178px}
+.card{contain:layout paint;backface-visibility:hidden;will-change:auto;min-width:0}
+.card:hover{transform:none!important}
+.gallery{height:var(--cd-card-img-h)!important;aspect-ratio:auto!important;display:flex!important;align-items:center!important;justify-content:center!important;background:linear-gradient(180deg,#f7f9fc,#edf2f7)!important;overflow:hidden!important;border-bottom:1px solid rgba(15,23,42,.06)}
+.gallery img{width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important;object-position:center!important;padding:10px!important;transform:none!important;transition:opacity .18s ease!important;background:transparent!important}
+.card:hover .gallery img{transform:none!important}
+.card.off .gallery img{filter:grayscale(.35) brightness(.86)!important;opacity:.92}
+.g-status,.g-count,.g-dots,.g-nav{z-index:2}
+#grid .card,#search-grid .card,#all-cars-grid .card{overflow:hidden;border-radius:18px;box-shadow:0 12px 34px rgba(20,28,40,.08)}
+#grid .card-body,#search-grid .card-body,#all-cars-grid .card-body{min-height:0}
+.overlay.open .modal,.overlay.open .admin-modal,.overlay.open .personal-drawer{transform:translate3d(0,0,0);will-change:auto;backface-visibility:hidden}
+body.cd-drawer-open{overflow:hidden!important;touch-action:none}
+@media(max-width:720px){
+  .gallery{height:var(--cd-card-img-h-mobile)!important}
+  .gallery img{padding:7px!important}
+  #grid .card,#search-grid .card,#all-cars-grid .card{border-radius:16px}
+}
+@media(max-width:420px){.gallery{height:160px!important}}
+@media(prefers-reduced-motion:reduce){.card.card-new{animation:none!important}.gallery img{transition:none!important}}
+
 </style>
 
 <style id="mobile-admin-control-upgrade">
@@ -3721,7 +3744,8 @@ function filteredCars(){
     .sort((a,b)=>((b.updatedAt||b.createdAt||0)-(a.updatedAt||a.createdAt||0)));
 }
 function render(){
-  persistState();
+  // Render is intentionally read-only: user actions save, Realtime updates render.
+  // This prevents Firebase update → render → save → Firebase update loops.
   const list = filteredCars();
   const hash=list.map(c=>c.id+'|'+(c.status||'')+'|'+(c.updatedAt||c.createdAt||0)+'|'+((c.photos||[]).length)).join(',')+':'+state.cars.length+':'+filter+':'+JSON.stringify(searchQ||{});
   if(hash===_renderHash) return;
@@ -5929,6 +5953,72 @@ setInterval(()=>{
   window.addEventListener('pageshow',()=>{attachAuthWatcher(); refreshSessionNav('pageshow');});
   document.addEventListener('visibilitychange',()=>{ if(!document.hidden) refreshSessionNav('visible'); });
   [0,250,800,1600,3000,6000].forEach(ms=>setTimeout(()=>{attachAuthWatcher(); refreshSessionNav('timer-'+ms);},ms));
+})();
+
+
+/* ===== CrownDrive final UI leak guard: no resize/no re-render storms ===== */
+(function(){
+  if(window.CROWNDRIVE_IMAGE_STABILITY_GUARD==='v1') return;
+  window.CROWNDRIVE_IMAGE_STABILITY_GUARD='v1';
+  const now=()=>Date.now();
+  let lastStableRender=0;
+  function isDrawerOpen(){
+    try{return !!document.querySelector('#ov-admin.open,#ov-owner.open,#ov-renter.open,#ov-account.open,#ov-profile.open,#ov-search.open,#ov-all-cars.open,#chat-panel.open');}
+    catch(e){return false;}
+  }
+  function markDrawerState(){
+    try{document.body.classList.toggle('cd-drawer-open',isDrawerOpen());}catch(e){}
+  }
+  const oldCloseOv=window.closeOv;
+  if(typeof oldCloseOv==='function'){
+    window.closeOv=function(){ const r=oldCloseOv.apply(this,arguments); setTimeout(markDrawerState,0); return r; };
+  }
+  ['openAdmin','openOwner','openRenterArea','openAccount','openSearchPage','openAllCarsPage'].forEach(fn=>{
+    const old=window[fn];
+    if(typeof old==='function'){
+      window[fn]=function(){ const r=old.apply(this,arguments); setTimeout(markDrawerState,0); return r; };
+    }
+  });
+  const previousRefreshOpenViews=window.refreshOpenViews;
+  if(typeof previousRefreshOpenViews==='function'){
+    window.refreshOpenViews=function(){
+      try{
+        // When an app drawer is open, avoid full repaint storms that resize cards/drawers.
+        if(isDrawerOpen()){
+          if(typeof updateBadge==='function') updateBadge();
+          if(window.activeTid && typeof renderMsgs==='function') renderMsgs();
+          return;
+        }
+        const t=now();
+        if(t-lastStableRender<650) return;
+        lastStableRender=t;
+        return previousRefreshOpenViews.apply(this,arguments);
+      }catch(e){console.error('refreshOpenViews guarded',e);}
+    };
+  }
+  const previousApplyRealtimeData=window.applyRealtimeData;
+  if(typeof previousApplyRealtimeData==='function'){
+    window.applyRealtimeData=function(data){
+      try{
+        const wasOpen=isDrawerOpen();
+        const r=previousApplyRealtimeData.apply(this,arguments);
+        if(wasOpen) setTimeout(markDrawerState,0);
+        return r;
+      }catch(e){console.error('applyRealtimeData guarded',e);}
+    };
+  }
+  const oldRender=window.render;
+  if(typeof oldRender==='function'){
+    window.render=function(){
+      if(isDrawerOpen()) return;
+      return oldRender.apply(this,arguments);
+    };
+  }
+  window.addEventListener('error',e=>{console.error('UI error recovered',e.error||e.message);});
+  window.addEventListener('unhandledrejection',e=>{console.error('Async UI error recovered',e.reason);});
+  document.addEventListener('click',()=>setTimeout(markDrawerState,0),true);
+  document.addEventListener('DOMContentLoaded',markDrawerState);
+  window.addEventListener('pageshow',markDrawerState);
 })();
 </script>
 
