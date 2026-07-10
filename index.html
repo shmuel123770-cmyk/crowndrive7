@@ -680,12 +680,6 @@ select option{background:var(--bg2);color:var(--ivory)}
 .search-panel input,.search-panel select{width:100%;border:1px solid rgba(31,41,53,.14);border-radius:12px;background:#fff;color:var(--ivory);padding:10px 12px;font-size:.84rem;margin-top:5px;box-shadow:0 3px 10px rgba(10,14,19,.03);transition:border-color .2s,box-shadow .2s,transform .15s}
 .search-panel input:focus,.search-panel select:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 4px rgba(63,107,142,.12)}
 .search-panel .clear{height:32px;padding:5px 12px;background:#fff}
-
-.availability-pick{display:grid;grid-template-columns:1fr;gap:8px;margin:10px 0 12px}
-.avail-chip{border:1px solid rgba(28,124,79,.22);background:linear-gradient(180deg,#fff,#F5FAF7);border-radius:14px;padding:11px 12px;font-size:.86rem;font-weight:800;color:#1C7C4F;box-shadow:0 7px 16px rgba(10,14,19,.05);transition:all .2s var(--ease)}
-.avail-chip:hover{transform:translateY(-1px);border-color:rgba(28,124,79,.45);box-shadow:0 10px 22px rgba(28,124,79,.10)}
-.avail-chip.on{background:#1C7C4F;color:#fff;border-color:#1C7C4F;box-shadow:0 12px 26px rgba(28,124,79,.22)}
-.avail-chip small{display:block;font-size:.68rem;font-weight:600;opacity:.78;margin-top:2px}
 .rent-pick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0 10px}
 .car-type-pick{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0 10px}
 .rent-chip,.type-chip{border:1px solid rgba(63,107,142,.18);background:#fff;color:#263342;border-radius:14px;padding:12px 6px;font-weight:800;font-size:.82rem;box-shadow:0 5px 14px rgba(25,35,45,.05);transition:transform .18s var(--ease),background .2s,border-color .2s,color .2s}
@@ -959,132 +953,12 @@ img{max-width:100%;}
 
 
 
-/* ===== OFFICIAL RENTAL BRAND INSPIRED ELEMENTS ===== */
-.rental-command{max-width:1180px;margin:-46px auto 28px;padding:0 22px;position:relative;z-index:6}
-.rental-command-card{background:rgba(255,255,255,.94);backdrop-filter:blur(18px);border:1px solid rgba(63,107,142,.16);border-radius:22px;box-shadow:0 28px 70px rgba(10,18,28,.18);overflow:hidden}
-.rc-tabs{display:flex;background:#F2F5F8;border-bottom:1px solid var(--hair);padding:8px;gap:8px}
-.rc-tab{border:none;background:transparent;color:#5B6978;border-radius:14px;padding:12px 18px;font-weight:800;font-size:.86rem;transition:.2s}
-.rc-tab.on,.rc-tab:hover{background:#1B222B;color:#fff;box-shadow:0 12px 28px rgba(27,34,43,.18)}
-.rc-form{display:grid;grid-template-columns:1.35fr 1fr 1fr .9fr auto;gap:10px;padding:16px;align-items:end}
-.rc-field{border:1px solid rgba(31,41,53,.1);border-radius:16px;background:#fff;padding:11px 13px;min-height:68px;box-shadow:0 8px 18px rgba(15,30,45,.04)}
-.rc-field span{display:block;font-size:.68rem;color:#6E7B88;font-weight:800;letter-spacing:.07em;text-transform:uppercase;margin-bottom:2px}
-.rc-field b{display:block;font-size:.96rem;color:#1B222B;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rc-field small{display:block;font-size:.72rem;color:#8B97A3;margin-top:1px}
-.rc-action{height:68px;border:none;border-radius:16px;background:linear-gradient(135deg,var(--gold),#244D72);color:#fff;font-weight:900;padding:0 22px;box-shadow:0 18px 36px rgba(63,107,142,.24);transition:.2s}
-.rc-action:hover{transform:translateY(-2px);filter:brightness(1.05)}
-.rc-benefits{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--hair);background:linear-gradient(180deg,#fff,#F8FAFC)}
-.rc-benefit{padding:13px 16px;border-inline-start:1px solid var(--hair);display:flex;gap:9px;align-items:center;font-size:.8rem;color:#465565;font-weight:700}
-.rc-benefit:first-child{border-inline-start:none}.rc-benefit i{font-style:normal;width:25px;height:25px;border-radius:8px;background:rgba(63,107,142,.1);display:grid;place-items:center;color:var(--gold-d);font-weight:900}
-.rental-experience{max-width:1180px;margin:0 auto;padding:0 22px 34px;display:grid;grid-template-columns:1.1fr .9fr;gap:18px;position:relative;z-index:2}
-.pro-grade-panel{background:#fff;border:1px solid rgba(63,107,142,.14);border-radius:22px;padding:22px;box-shadow:0 16px 44px rgba(21,31,43,.08);overflow:hidden;position:relative}
-.pro-grade-panel::after{content:"";position:absolute;inset-inline-end:-40px;top:-60px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(63,107,142,.16),transparent 68%);pointer-events:none}
-.pro-title{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}.pro-title h3{font-size:1.15rem}.pro-title span{font-size:.76rem;color:var(--mut)}
-.pro-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.pro-step{background:#F4F7FA;border:1px solid var(--hair);border-radius:16px;padding:14px 10px;text-align:center;min-height:106px}.pro-step b{display:grid;place-items:center;margin:0 auto 8px;width:34px;height:34px;border-radius:50%;background:#1B222B;color:#fff;font-size:.86rem}.pro-step strong{display:block;font-size:.86rem}.pro-step span{display:block;font-size:.7rem;color:var(--mut);line-height:1.35;margin-top:4px}
-.pro-class-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}.pro-class{background:#F4F7FA;border:1px solid var(--hair);border-radius:16px;padding:13px;display:flex;gap:10px;align-items:center}.pro-class i{font-style:normal;width:40px;height:40px;border-radius:13px;background:#fff;display:grid;place-items:center;font-size:1.15rem;box-shadow:0 6px 16px rgba(10,18,28,.06)}.pro-class b{font-size:.9rem}.pro-class span{display:block;color:var(--mut);font-size:.72rem;line-height:1.3}
-.trust-strip-pro{max-width:1180px;margin:0 auto 28px;padding:0 22px}.trust-inner{background:#1B222B;color:#fff;border-radius:22px;padding:18px 20px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px;box-shadow:0 20px 50px rgba(10,18,28,.18)}.trust-item{display:flex;gap:10px;align-items:center;min-width:0}.trust-item i{font-style:normal;width:34px;height:34px;border-radius:12px;background:rgba(255,255,255,.08);display:grid;place-items:center}.trust-item b{display:block;font-size:.86rem}.trust-item span{display:block;font-size:.72rem;color:#B9C5D0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-@media(max-width:900px){.rental-command{margin:-26px auto 24px}.rc-tabs{overflow:auto}.rc-form{grid-template-columns:1fr 1fr}.rc-action{grid-column:1/-1}.rc-benefits{grid-template-columns:1fr 1fr}.rental-experience{grid-template-columns:1fr}.pro-steps{grid-template-columns:1fr 1fr}.trust-inner{grid-template-columns:1fr 1fr}}
-@media(max-width:540px){.rental-command{padding:0 12px;margin:-18px auto 20px}.rc-tabs{padding:6px}.rc-tab{padding:10px 12px;font-size:.78rem;white-space:nowrap}.rc-form{grid-template-columns:1fr;padding:12px}.rc-field,.rc-action{min-height:58px;height:auto}.rc-benefits{grid-template-columns:1fr}.rc-benefit{padding:11px 13px}.rental-experience,.trust-strip-pro{padding-left:12px;padding-right:12px}.pro-grade-panel{padding:16px;border-radius:18px}.pro-steps,.pro-class-grid,.trust-inner{grid-template-columns:1fr}.trust-inner{padding:14px;border-radius:18px}}
-
-
-/* =========================================================
-   CROWN DRIVE · BLACK PREMIUM THEME
-   Inspired by official car-rental dashboards: dark showroom,
-   gold accent, glass panels, mobile-safe contrast.
-   ========================================================= */
-:root{
-  --bg:#07090D;
-  --bg2:#0E131A;
-  --bg3:#151C25;
-  --card:rgba(15,21,29,.92);
-  --line:rgba(255,255,255,.13);
-  --line2:rgba(255,255,255,.22);
-  --hair:rgba(255,255,255,.08);
-  --gold:#C9A45C;
-  --gold-l:#E0BE72;
-  --gold-d:#B68B3D;
-  --ivory:#F7F7F2;
-  --mut:#AEB6C1;
-  --mut2:#788392;
-  --ok:#35D07F;
-  --ok-bg:rgba(53,208,127,.12);
-  --no:#FF5A6A;
-  --no-bg:rgba(255,90,106,.1);
-  --soon:#F6B64A;
-  --soon-bg:rgba(246,182,74,.12);
-  --sh:0 28px 80px rgba(0,0,0,.45);
-}
-html{background:#07090D}
-body{
-  color:var(--ivory)!important;
-  background:
-    radial-gradient(900px 520px at 18% 8%, rgba(201,164,92,.12), transparent 58%),
-    radial-gradient(820px 520px at 82% 20%, rgba(63,107,142,.18), transparent 62%),
-    linear-gradient(135deg, #07090D 0%, #0B1017 44%, #111823 100%)!important;
-  background-attachment:fixed!important;
-}
-body::before{
-  content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;
-  background-image:
-    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
-  background-size:44px 44px;
-  mask-image:radial-gradient(circle at 50% 20%,#000 0 48%,transparent 80%);
-  -webkit-mask-image:radial-gradient(circle at 50% 20%,#000 0 48%,transparent 80%);
-}
-body::after{
-  content:"CROWN DRIVE";position:fixed;inset-inline-start:50%;top:52%;transform:translate(-50%,-50%);
-  font-weight:800;font-size:min(13vw,160px);letter-spacing:.08em;color:rgba(255,255,255,.025);
-  pointer-events:none;z-index:-1;white-space:nowrap;
-}
-.nav{background:rgba(7,9,13,.82)!important;border-bottom:1px solid var(--hair)!important;backdrop-filter:blur(18px);box-shadow:0 14px 50px rgba(0,0,0,.35)!important}
-.logo-mark{background:linear-gradient(145deg,rgba(201,164,92,.24),rgba(255,255,255,.06))!important;border-color:rgba(201,164,92,.34)!important;color:var(--gold-l)!important}
-.logo b{color:#fff}.logo small{color:#9AA5B3}.nav-links a{color:#C8D0D9!important}.nav-links a:hover{color:var(--gold-l)!important}
-.btn,.mini,.card-btn{border-radius:12px!important}
-.btn-gold,.card-btn.book,.cp-input button{background:linear-gradient(135deg,#C9A45C,#B48132)!important;color:#101216!important;border:none!important;box-shadow:0 12px 34px rgba(201,164,92,.22)!important}
-.btn-gold:hover,.card-btn.book:hover,.cp-input button:hover{filter:brightness(1.06);transform:translateY(-2px)!important}
-.btn-out,.btn-ghost,.btn-dark-out{background:rgba(255,255,255,.055)!important;color:#fff!important;border-color:rgba(255,255,255,.18)!important;backdrop-filter:blur(12px)}
-.btn-out:hover,.btn-ghost:hover,.btn-dark-out:hover{border-color:var(--gold)!important;color:var(--gold-l)!important;background:rgba(201,164,92,.08)!important}
-.hero{background:transparent!important;min-height:640px;isolation:isolate}
-.hero::before{background:
-  radial-gradient(850px 420px at 70% 42%, rgba(63,107,142,.22), transparent 70%),
-  radial-gradient(720px 380px at 24% 12%, rgba(201,164,92,.15), transparent 64%)!important}
-.hero::after{opacity:.65!important}
-.hero h1{color:#fff!important;text-shadow:0 24px 60px rgba(0,0,0,.55)}
-.hero h1 em{color:var(--gold-l)!important}
-.hero p,.sub,.kicker{color:#AEB6C1!important}
-.blueprint{opacity:.16!important;color:#D7E3EE!important}
-.aur{opacity:.36!important;filter:blur(100px)!important}
-.hero-stats,.strip,.side-live,.quick-rental,.search-box,.official-search,.trust-strip,.legal-small{
-  background:rgba(14,19,26,.78)!important;border:1px solid rgba(255,255,255,.1)!important;color:#fff!important;box-shadow:0 24px 70px rgba(0,0,0,.32)!important;backdrop-filter:blur(16px)}
-.hstat{border-color:rgba(255,255,255,.09)!important}.hstat b,.strip .it b{color:#fff!important}.hstat span,.strip .it{color:#AEB6C1!important}
-.section{position:relative}.sec-head h2,.fleet-side .sec-head h2{color:#fff!important}.sec-head h2::after{background:linear-gradient(90deg,var(--gold),rgba(255,255,255,.18))!important}
-.filters,.filters.vert{background:rgba(255,255,255,.055)!important;border:1px solid rgba(255,255,255,.08)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
-.filters button{color:#B9C1CB!important}.filters button.on{background:linear-gradient(135deg,#C9A45C,#B48132)!important;color:#101216!important;box-shadow:0 8px 20px rgba(201,164,92,.2)}
-.grid{gap:24px!important}.card,.hstep,.adm-item,.kpi,.rv-item,.pc-item,.role-card,.summary-box,.empty{
-  background:linear-gradient(180deg,rgba(18,25,34,.94),rgba(12,17,24,.94))!important;
-  border:1px solid rgba(255,255,255,.1)!important;color:#fff!important;box-shadow:0 24px 60px rgba(0,0,0,.32)!important;backdrop-filter:blur(14px)}
-.card:hover{box-shadow:0 36px 90px rgba(0,0,0,.5),0 0 0 1px rgba(201,164,92,.18)!important;transform:translateY(-6px)!important}
-.card-title h3,.adm-item b,.hstep h3,.empty h3,.price b{color:#fff!important}.price b{color:var(--gold-l)!important}.card-title .meta,.spec,.tag,.ret,.empty p,.adm-item .sm,.kpi span,.hstep p,.my-review,.rv-txt,.pc-item .sm{color:#AEB6C1!important}
-.tag{background:rgba(255,255,255,.07)!important;border:1px solid rgba(255,255,255,.06)!important;color:#D4DAE2!important}.specs{border-color:rgba(255,255,255,.08)!important}.spec svg{stroke:var(--gold-l)!important}
-.gallery{background:#0B0F15!important}.g-nav{background:rgba(10,14,19,.76)!important;color:#fff!important;border:1px solid rgba(255,255,255,.12)!important;backdrop-filter:blur(8px)}
-.pill.ok{color:#5DF0A2!important;background:rgba(53,208,127,.14)!important}.pill.no{color:#FF7B88!important;background:rgba(255,90,106,.12)!important}.pill.soon{color:#FFD17C!important;background:rgba(246,182,74,.13)!important}
-.ticker{background:#05070A!important;border-color:rgba(255,255,255,.08)!important}.ticker span{color:#E4E8ED!important}.ticker i{color:var(--gold-l)!important}
-.foot-cta{background:linear-gradient(145deg,#06080C,#121923)!important;border:1px solid rgba(201,164,92,.16)!important;box-shadow:0 28px 90px rgba(0,0,0,.45)!important}.foot-cta h2{color:#fff!important}.foot-cta p{color:#AEB6C1!important}
-footer{background:#05070A!important;border-color:rgba(255,255,255,.08)!important;color:#8D98A8!important}.footer-link,footer a{color:#B9C1CB!important}.footer-link:hover,footer a:hover{color:var(--gold-l)!important}
-.modal{background:linear-gradient(180deg,#111820,#0B0F15)!important;color:#fff!important;border:1px solid rgba(255,255,255,.12)!important;box-shadow:0 36px 110px rgba(0,0,0,.72)!important}
-.m-head{background:rgba(12,17,24,.88)!important;border-color:rgba(255,255,255,.08)!important;color:#fff!important;backdrop-filter:blur(18px)}.m-head h3{color:#fff!important}.m-close{background:rgba(255,255,255,.08)!important;color:#fff!important}.m-car,.note,.terms-box,.drop,.sig-wrap{background:rgba(255,255,255,.055)!important;border-color:rgba(255,255,255,.1)!important;color:#DCE2EA!important}
-.field label{color:#F2F5F8!important}.field input,.field select,.field textarea,.cp-input input,.rv-box input{
-  background:#0B1017!important;color:#fff!important;border-color:rgba(255,255,255,.16)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)}
-.field input::placeholder,.field textarea::placeholder,.cp-input input::placeholder{color:#707B89!important}.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold)!important;box-shadow:0 0 0 4px rgba(201,164,92,.16)!important}select option{background:#0B1017!important;color:#fff!important}
-.tbl th{color:var(--gold-l)!important;border-color:rgba(255,255,255,.12)!important}.tbl td{color:#EDF1F5!important;border-color:rgba(255,255,255,.08)!important}.tbl td .sm{color:#AEB6C1!important}.tbl .num{color:var(--gold-l)!important}
-.dash-tabs{border-color:rgba(255,255,255,.1)!important}.dash-tabs button{color:#AEB6C1!important}.dash-tabs button.on{color:var(--gold-l)!important;border-color:var(--gold)!important}
-#chat-fab{background:linear-gradient(135deg,#C9A45C,#B48132)!important;color:#101216!important;box-shadow:0 18px 46px rgba(0,0,0,.45)!important}#chat-panel{background:#0B0F15!important;color:#fff!important;border:1px solid rgba(255,255,255,.12)!important}.cp-head{background:#080B10!important;border-bottom:1px solid rgba(255,255,255,.08)!important}.cp-list,.cp-msgs{background:#0B0F15!important}.cp-item:hover{background:rgba(255,255,255,.06)!important}.cp-item b{color:#fff!important}.cp-item .last{color:#AEB6C1!important}.bub.me{background:linear-gradient(135deg,#C9A45C,#B48132)!important;color:#101216!important}.bub.them{background:#151C25!important;color:#fff!important;border-color:rgba(255,255,255,.1)!important}.bub.sys{color:#AEB6C1!important}.cp-input{background:#090D13!important;border-color:rgba(255,255,255,.09)!important}
-.drop:hover,.drop.drag{background:rgba(201,164,92,.08)!important;border-color:var(--gold)!important}.lic-prev .ok-band{background:rgba(5,8,12,.92)!important;color:#5DF0A2!important}.receipt{background:#0E131A!important;color:#fff!important;border:1px solid rgba(255,255,255,.1)!important}.receipt .r-row,.receipt .r-head,.receipt .r-foot{border-color:rgba(255,255,255,.14)!important}.receipt .sm,.receipt .r-foot{color:#AEB6C1!important}
-.toast{background:#0B0F15!important;border:1px solid rgba(201,164,92,.25)!important;color:#fff!important;box-shadow:0 20px 60px rgba(0,0,0,.5)!important}
-.citymap{opacity:.08!important}.route-path{stroke:var(--gold)!important;opacity:.16!important}.route-pin{fill:var(--gold)!important}.asphalt{background:linear-gradient(#111923,#070A0F)!important}.sil{fill:#05070A!important}.cars-far .sil{fill:#1B2633!important}
-@media(max-width:720px){
-  body::after{font-size:21vw;top:45%;opacity:.9}.hero{min-height:620px}.hero-in{padding-top:86px!important}.hero-stats{background:rgba(14,19,26,.9)!important}.card,.modal{border-radius:18px!important}
-}
+/* CLEAN HOME FIX — remove duplicate car artwork and keep homepage simple */
+.hero{min-height:auto!important;background:linear-gradient(135deg,#111923 0%,#1B222B 52%,#243140 100%)!important;}
+.hero::after,.blueprint,.road,.cars-far,.cars-near,.asphalt{display:none!important;}
+.hero-in{padding:96px 28px 78px!important;}
+.hero-stats{margin-top:48px!important;}
+@media(max-width:720px){.hero-in{padding:64px 16px 56px!important}.hero-stats{margin-top:30px!important}}
 
 </style>
 
@@ -1140,35 +1014,6 @@ footer{background:#05070A!important;border-color:rgba(255,255,255,.08)!important
   <div class="aur aur-2" aria-hidden="true"></div>
   <div class="aur aur-3" aria-hidden="true"></div>
 
-  <!-- technical blueprint sketch -->
-  <svg class="blueprint" viewBox="0 0 640 300" aria-hidden="true">
-    <g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
-      <!-- body outline -->
-      <path d="M60 210 q4 -30 36 -36 l52 -8 q28 -40 84 -46 l96 -3 q56 2 92 34 l26 24 q56 6 66 30 q6 16 -6 20 l-24 3"/>
-      <path d="M60 210 q-4 12 10 16 l40 2"/>
-      <path d="M174 228 l180 0"/>
-      <path d="M478 228 l36 -2"/>
-      <!-- glasshouse -->
-      <path d="M172 166 q26 -36 78 -42 l92 -3 q50 3 84 32"/>
-      <path d="M258 124 l6 42 M356 121 l10 44"/>
-      <!-- doors & handle -->
-      <path d="M262 166 l-6 60 M362 165 l-2 62"/>
-      <path d="M286 184 l30 0 M388 183 l30 0"/>
-      <!-- lights -->
-      <path d="M64 196 l34 -6 M528 208 l24 -4"/>
-      <!-- wheels -->
-      <circle cx="204" cy="226" r="34"/><circle cx="204" cy="226" r="21"/><circle cx="204" cy="226" r="3"/>
-      <circle cx="452" cy="226" r="34"/><circle cx="452" cy="226" r="21"/><circle cx="452" cy="226" r="3"/>
-      <path d="M204 205 v42 M183 226 h42 M452 205 v42 M431 226 h42" opacity=".55"/>
-      <!-- blueprint construction marks -->
-      <circle cx="204" cy="226" r="48" stroke-dasharray="4 7" opacity=".5"/>
-      <circle cx="452" cy="226" r="48" stroke-dasharray="4 7" opacity=".5"/>
-      <path d="M60 272 l520 0" stroke-dasharray="4 7" opacity=".5"/>
-      <path d="M60 265 l0 14 M580 265 l0 14" opacity=".6"/>
-      <path d="M110 96 l-18 0 0 18 M540 96 l18 0 0 18" opacity=".5"/>
-    </g>
-  </svg>
-
   <div class="hero-in">
     <span class="kicker">קראון הייטס · ברוקלין</span>
     <h1>השכרת רכבים <em>בקראון הייטס</em></h1>
@@ -1184,16 +1029,6 @@ footer{background:#05070A!important;border-color:rgba(255,255,255,.08)!important
     </div>
   </div>
 
-  <!-- layered road scene -->
-  <div class="road" aria-hidden="true">
-    <div class="cars-far">
-      <svg class="sil s1"><use href="#carSil"/></svg>
-    </div>
-    <div class="asphalt"></div>
-    <div class="cars-near">
-      <svg class="sil s3"><use href="#carSil"/></svg>
-    </div>
-  </div>
 </header>
 
 <!-- STATUS STRIP -->
@@ -1205,61 +1040,6 @@ footer{background:#05070A!important;border-color:rgba(255,255,255,.08)!important
     <span class="it" style="color:var(--mut2);font-size:.74rem" id="last-upd"></span>
   </div>
 </div>
-
-<!-- OFFICIAL RENTAL STYLE COMMAND BAR -->
-<section class="rental-command" aria-label="סרגל הזמנה מהיר">
-  <div class="rental-command-card">
-    <div class="rc-tabs" role="tablist" aria-label="אפשרויות השכרה">
-      <button class="rc-tab on" type="button">השכרה עכשיו</button>
-      <button class="rc-tab" type="button">הזמנה ממתינה לאישור</button>
-      <button class="rc-tab" type="button">השכרה ארוכה</button>
-    </div>
-    <div class="rc-form">
-      <div class="rc-field"><span>אזור איסוף</span><b>קראון הייטס · ברוקלין</b><small>בעל הרכב מציין נקודת מסירה מדויקת</small></div>
-      <div class="rc-field"><span>תחילת השכרה</span><b>בחר תאריך ושעה</b><small>לפי שעות / ימים / שבוע</small></div>
-      <div class="rc-field"><span>החזרת רכב</span><b>זמין שוב אוטומטית</b><small>מוצג במודעה לפי ההזמנות</small></div>
-      <div class="rc-field"><span>תשלום</span><b>Pay after approval</b><small>צילום העברה בצ׳אט</small></div>
-      <button class="rc-action" type="button" onclick="scrollToFleet()">חפש רכבים</button>
-    </div>
-    <div class="rc-benefits">
-      <div class="rc-benefit"><i>✓</i> אישור בעל רכב לפני סגירה</div>
-      <div class="rc-benefit"><i>₪</i> מחיר לפי שעה / יום / שבוע</div>
-      <div class="rc-benefit"><i>💬</i> צ׳אט ישיר עם בעל הרכב</div>
-      <div class="rc-benefit"><i>🔒</i> רישיון ותמונות באחסון ענן</div>
-    </div>
-  </div>
-</section>
-
-<section class="rental-experience" aria-label="חוויית השכרה מקצועית">
-  <div class="pro-grade-panel">
-    <div class="pro-title"><div><h3>תהליך בסגנון חברות השכרה גדולות</h3><span>בחירה, אישור, תשלום ותיעוד — בלי בלגן בווטסאפ</span></div></div>
-    <div class="pro-steps">
-      <div class="pro-step"><b>1</b><strong>בחר רכב</strong><span>סינון לפי יצרן, דגם, מושבים וסוג רכב</span></div>
-      <div class="pro-step"><b>2</b><strong>שלח בקשה</strong><span>ההזמנה ממתינה לאישור בעל הרכב</span></div>
-      <div class="pro-step"><b>3</b><strong>שלח תשלום</strong><span>צילום העברה נשמר בצ׳אט ההזמנה</span></div>
-      <div class="pro-step"><b>4</b><strong>איסוף</strong><span>כל הפרטים והמסמכים באזור האישי</span></div>
-    </div>
-  </div>
-  <div class="pro-grade-panel">
-    <div class="pro-title"><div><h3>קטגוריות רכב ברורות</h3><span>כמו באתרים רשמיים: סדאן, SUV, פיקאפ ומיניוואן</span></div></div>
-    <div class="pro-class-grid">
-      <div class="pro-class"><i>🚘</i><div><b>סדאן</b><span>נסיעות עירוניות, מחיר נמוך ונוחות</span></div></div>
-      <div class="pro-class"><i>🚙</i><div><b>SUV</b><span>משפחה, מזוודות ונסיעות ארוכות</span></div></div>
-      <div class="pro-class"><i>🛻</i><div><b>פיקאפ</b><span>הובלות קלות, ציוד ועבודה</span></div></div>
-      <div class="pro-class"><i>🚐</i><div><b>מיניוואן</b><span>קבוצות, משפחות ושדה תעופה</span></div></div>
-    </div>
-  </div>
-</section>
-
-<section class="trust-strip-pro" aria-label="יתרונות האתר">
-  <div class="trust-inner">
-    <div class="trust-item"><i>⚡</i><div><b>עדכון כל שנייה</b><span>זמינות, צ׳אטים והזמנות</span></div></div>
-    <div class="trust-item"><i>☁️</i><div><b>אחסון ענן</b><span>תמונות לא מכבידות על האתר</span></div></div>
-    <div class="trust-item"><i>🧾</i><div><b>תיעוד הזמנה</b><span>מספר הזמנה, סטטוס ותאריכים</span></div></div>
-    <div class="trust-item"><i>🛡️</i><div><b>פרטיות והרשאות</b><span>כל משתמש רואה רק את שלו</span></div></div>
-  </div>
-</section>
-
 
 <!-- FLEET -->
 <section class="section" id="fleet">
@@ -1316,13 +1096,6 @@ footer{background:#05070A!important;border-color:rgba(255,255,255,.08)!important
           <button type="button" class="rent-chip" data-rental="hourly" onclick="setRentalFilter('hourly',this)">לפי שעות</button>
           <button type="button" class="rent-chip" data-rental="daily" onclick="setRentalFilter('daily',this)">לפי ימים</button>
           <button type="button" class="rent-chip" data-rental="long" onclick="setRentalFilter('long',this)">תקופה ארוכה</button>
-        </div>
-
-
-
-        <div class="availability-pick" role="group" aria-label="סינון זמינות">
-          <input id="q-avail" type="hidden" value="">
-          <button type="button" class="avail-chip" data-avail="available" onclick="setAvailableNowFilter(this)">זמינים עכשיו<small>הצג רק רכבים שפנויים להזמנה כרגע</small></button>
         </div>
 
         <div class="car-type-pick" role="group" aria-label="סוג רכב">
@@ -1831,7 +1604,7 @@ async function api(action, payload={}){
   const txt = await res.text();
   let data={};
   try{ data = txt ? JSON.parse(txt) : {}; }catch(e){ data={error:txt||'Invalid JSON'}; }
-  if(!res.ok) throw new Error(data.error || ('שגיאת שרת '+res.status));
+  if(!res.ok) throw new Error(data.error || ('שגיאת סנכרון '+res.status));
   return data;
 }
 
@@ -1964,7 +1737,7 @@ fauth = {
 })();
 function persistState(){ /* נשמר בענן דרך Netlify Database */ }
 function loadState(){ /* נטען אוטומטית דרך onSnapshot */ }
-function cloudErr(e){console.error(e);showToast('שגיאה בשמירה: '+((e&&e.message)||e))}
+function cloudErr(e){console.warn('Cloud sync issue',e); if(!window.__cdCloudWarned){window.__cdCloudWarned=true; showToast('הסנכרון בענן מתאושש — נסה לרענן בעוד רגע'); setTimeout(()=>{window.__cdCloudWarned=false},12000);} }
 
 /* ================= STATE ================= */
 const state = {
@@ -2477,7 +2250,6 @@ function matchesSearch(c){
   if(q.fuel && c.fuel!==q.fuel)return false;
   if(q.seats && String(c.seats)!==String(q.seats))return false;
   if(q.rental && !rentalTypesOf(c).includes(q.rental))return false;
-  if(q.avail && c.status!=='available')return false;
   return true;
 }
 function setRentalFilter(v,btn){
@@ -2497,14 +2269,6 @@ function setCarTypeFilter(v,btn){
   updateSearch();
 }
 
-function setAvailableNowFilter(btn){
-  const input=$('q-avail');
-  const next=input&&input.value==='available'?'':'available';
-  if(input)input.value=next;
-  if(btn)btn.classList.toggle('on',next==='available');
-  updateSearch();
-}
-
 function updateSearch(){
   searchQ={
     free:$('q-free')&&$('q-free').value,
@@ -2514,15 +2278,14 @@ function updateSearch(){
     cat:$('q-cat')&&$('q-cat').value,
     fuel:$('q-fuel')&&$('q-fuel').value,
     seats:$('q-seats')&&$('q-seats').value,
-    rental:$('q-rental')&&$('q-rental').value,
-    avail:$('q-avail')&&$('q-avail').value
+    rental:$('q-rental')&&$('q-rental').value
   };
   render();
 }
 function clearSearch(){
-  ['q-free','q-make','q-model','q-color','q-cat','q-rental','q-fuel','q-seats','q-avail'].forEach(id=>{if($(id))$(id).value=''});
+  ['q-free','q-make','q-model','q-color','q-cat','q-rental','q-fuel','q-seats'].forEach(id=>{if($(id))$(id).value=''});
   populateModelSelect('q-make','q-model');
-  document.querySelectorAll('.rent-chip,.type-chip,.avail-chip').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('.rent-chip,.type-chip').forEach(b=>b.classList.remove('on'));
   searchQ={};render();
 }
 
