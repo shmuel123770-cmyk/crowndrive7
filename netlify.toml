@@ -1,0 +1,20 @@
+# The "netlify-purge-cloudflare-on-deploy" build plugin is installed on this
+# site through the Netlify UI. Its onPostBuild step calls failBuild() — which
+# aborts the entire deploy — whenever the Cloudflare authentication environment
+# variables are undefined. This site is served directly by Netlify (it is not
+# fronted by Cloudflare), so those variables were never configured, and every
+# deploy fails at that step regardless of the site's contents.
+#
+# UI-installed plugins cannot be removed or disabled from netlify.toml, so we
+# define the variables the plugin looks for. With them present, the plugin's
+# auth check passes and the deploy is no longer aborted. The later cache-purge
+# call has nothing valid to authenticate against and fails via failPlugin(),
+# which (unlike failBuild) is non-fatal and lets the deploy complete.
+#
+# Recommended long-term fix: disable this plugin in the Netlify dashboard under
+# Project configuration > Build & deploy > Build plugins, or set real
+# CLOUDFLARE_ZONE_ID / CLOUDFLARE_API_TOKEN values if the site is moved behind
+# Cloudflare.
+[build.environment]
+  CLOUDFLARE_ZONE_ID = ""
+  CLOUDFLARE_API_TOKEN = ""
