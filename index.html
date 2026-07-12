@@ -7,27 +7,16 @@
 <meta http-equiv="Expires" content="0">
 <script>
 (function(){
-  window.CROWNDRIVE_DEPLOY_VERSION = 'cache-hardening-20260710-1';
+  window.CROWNDRIVE_DEPLOY_VERSION = 'auth-stable-20260711-1';
   window.CROWNDRIVE_DISABLE_PWA_CACHE = true;
   try{
     if('serviceWorker' in navigator){
-      var shouldReload = !!navigator.serviceWorker.controller && !sessionStorage.getItem('crowndrive_sw_clean_reload_v1');
       navigator.serviceWorker.getRegistrations().then(function(regs){
-        return Promise.all(regs.map(function(r){ return r.unregister().catch(function(){}); }));
-      }).then(function(){
-        if(window.caches && caches.keys){
-          return caches.keys().then(function(keys){
-            return Promise.all(keys.map(function(k){ return caches.delete(k).catch(function(){}); }));
-          });
-        }
-      }).then(function(){
-        if(shouldReload){
-          sessionStorage.setItem('crowndrive_sw_clean_reload_v1','1');
-          var url = new URL(location.href);
-          url.searchParams.set('v','cache-clean-20260710');
-          location.replace(url.toString());
-        }
+        regs.forEach(function(r){ r.unregister().catch(function(){}); });
       }).catch(function(){});
+    }
+    if(window.caches && caches.keys){
+      caches.keys().then(function(keys){ keys.forEach(function(k){ caches.delete(k).catch(function(){}); }); }).catch(function(){});
     }
   }catch(e){}
 })();
@@ -1799,7 +1788,7 @@ input,select,textarea{font-size:16px!important}
 
   <div class="hero-in home-hero-v3">
     <span class="kicker">קראון הייטס · ברוקלין</span>
-    <h1>רכב קרוב, <em>בדרך שמתאימה לך</em></h1>
+    <h1>השכרת רכבים <em>קראון הייטס</em></h1>
     <p class="home-hero-copy">בחרו זמן איסוף והחזרה — וקבלו רק רכבים שמתאימים לחיפוש.</p>
     <div class="home-quick-search" aria-label="חיפוש מהיר לרכב">
       <label><span>איסוף</span><input id="home-from" type="datetime-local"></label>
@@ -2581,8 +2570,9 @@ fauth = {
   async signOut(){ this.currentUser=null; clearAuthIdentity(); notifyAuth(); }
 };
 (function restoreSession(){
-  const uid=localStorage.getItem('cd_uid')||getCookieRaw('cd_uid'), email=localStorage.getItem('cd_email')||getCookieRaw('cd_email');
-  if(uid&&email){ rememberAuthIdentity(uid,email); fauth.currentUser=makeAuthUser({uid,email}); }
+  // Never manufacture an authenticated user from localStorage/cookies.
+  // Firebase Authentication persistence is the only source of auth truth.
+  fauth.currentUser=null;
 })();
 const LOCAL_KEY = 'crowndrive_site_data_v4';
 const AUTH_MEMORY_KEY = 'crowndrive_saved_login_until_deleted_v1';
@@ -5948,22 +5938,12 @@ ensureStateIntegrity();
 function reviveSessionBeforeFirstRender(){
   try{
     if(state.session && state.session.role && state.session.id) return true;
-    const saved = savedLogin && savedLogin();
-    const cookieSession = getCookieJSON && getCookieJSON(COOKIE_SESSION_KEY);
-    const email = normalizeEmail((saved&&saved.email)||(cookieSession&&cookieSession.email)||'');
-    const role = (saved&&saved.role)||(cookieSession&&cookieSession.role)||'';
-    if(!email || !role) return false;
-    const pool = role==='owner' ? state.owners : (role==='renter' ? state.renters : []);
-    let u = pool.find(x=>normalizeEmail(x.email)===email) || Object.entries(state.users||{}).map(([id,u])=>({id,...u})).find(x=>normalizeEmail(x.email)===email);
-    if(!u){
-      u={id:(cookieSession&&cookieSession.id)||('local-'+email.replace(/[^a-z0-9]/g,'-')),name:email.split('@')[0],email,phone:'',role,restored:true,createdAt:Date.now(),updatedAt:Date.now()};
-      if(role==='owner') state.owners.push(u); else if(role==='renter') state.renters.push(u);
+    if(RT_AUTH && RT_AUTH.currentUser && typeof restoreSessionFromFirebaseUser==='function'){
+      const saved=(typeof savedLogin==='function'&&savedLogin())||null;
+      return !!restoreSessionFromFirebaseUser(RT_AUTH.currentUser,(saved&&saved.role)||'');
     }
-    state.session={role,id:u.id,...u};
-    state.users[u.id]={...(state.users[u.id]||{}),...u,role,email:u.email||email,updatedAt:Date.now()};
-    persistSessionCookie();
-    return true;
-  }catch(e){console.warn('revive session failed',e);return false;}
+  }catch(e){console.warn('safe session revive failed',e);}
+  return false;
 }
 reviveSessionBeforeFirstRender();
 initRealtime();
@@ -6457,37 +6437,26 @@ setInterval(()=>{
   }
   function buildSessionFromStorage(reason){
     if(!window.state) return false;
-    if(state.session && state.session.role && state.session.id) return true;
-    const saved=getStoredLogin()||{};
-    const sess=getStoredSession()||{};
     const fb=(window.RT_AUTH&&RT_AUTH.currentUser)?RT_AUTH.currentUser:null;
-    const email=normEmail((fb&&fb.email)||saved.email||sess.email||localStorage.getItem('cd_email')||'');
-    let role=saved.role||sess.role||'';
-    const uid=(fb&&fb.uid)||sess.id||localStorage.getItem('cd_uid')||'';
-    if(!role && email && typeof ADMIN_EMAIL!=='undefined' && email===normEmail(ADMIN_EMAIL)) role='admin';
-    let prof=findProfile(role,email,uid);
-    if(!role && prof && prof.role) role=prof.role;
-    if(!role && email){
-      if(findProfile('owner',email,uid)) role='owner';
-      else if(findProfile('renter',email,uid)) role='renter';
-    }
-    if(!email || !role) return false;
-    if(role==='admin'){
-      state.session={role:'admin',id:uid||'admin',name:'מנהל האתר',email};
-      state.users=state.users||{};
-      state.users[state.session.id]={...(state.users[state.session.id]||{}),role:'admin',name:'מנהל האתר',email,updatedAt:Date.now()};
-    }else{
-      const pool=role==='owner'?state.owners:state.renters;
-      prof=prof||{id:uid||('restored-'+email.replace(/[^a-z0-9]/g,'-')),name:email.split('@')[0],email,phone:'',role,restored:true,createdAt:Date.now(),updatedAt:Date.now()};
-      if(!pool.some(x=>x&&x.id===prof.id)) pool.push(prof);
-      state.session={role,id:prof.id,...prof};
-      state.users=state.users||{};
-      state.users[prof.id]={...(state.users[prof.id]||{}),...prof,role,email:prof.email||email,updatedAt:Date.now()};
-    }
-    safeCall(()=>{ if(typeof rememberAuthIdentity==='function') rememberAuthIdentity(state.session.id,state.session.email); });
-    safeCall(()=>{ if(typeof persistSessionCookie==='function') persistSessionCookie(); });
-    safeCall(()=>{ localStorage.setItem('crowndrive_site_data_v4', JSON.stringify({owners:state.owners||[],renters:state.renters||[],cars:state.cars||[],bookings:state.bookings||[],session:state.session,msgs:state.msgs||[],ratings:state.ratings||[],notifications:state.notifications||[],users:state.users||{},seq:window.seq||1})); });
-    return true;
+    if(!fb || !fb.uid) return false;
+    try{
+      const saved=getStoredLogin()||{};
+      const sess=getStoredSession()||{};
+      const email=normEmail(fb.email||saved.email||sess.email||'');
+      let role=saved.role||sess.role||'';
+      if(!role && email && typeof ADMIN_EMAIL!=='undefined' && email===normEmail(ADMIN_EMAIL)) role='admin';
+      let prof=findProfile(role,email,fb.uid);
+      if(!role && prof&&prof.role) role=prof.role;
+      if(!role && email){
+        if(findProfile('owner',email,fb.uid)) role='owner';
+        else if(findProfile('renter',email,fb.uid)) role='renter';
+      }
+      if(typeof restoreSessionFromFirebaseUser==='function'){
+        restoreSessionFromFirebaseUser(fb,role||'');
+        return !!(state.session&&state.session.id);
+      }
+      return false;
+    }catch(e){console.warn('firebase-only session rebuild failed',e);return false;}
   }
   function unlockTopButtons(){
     document.querySelectorAll('.nav-guest-login,.nav-area-bubble,#my-area-fab,button,[onclick]').forEach(el=>{
@@ -6503,6 +6472,10 @@ setInterval(()=>{
   }
   const previousOpenMyArea=window.openMyArea;
   window.openMyArea=function(){
+    if(window.REALTIME && (!window.RT_AUTH || !RT_AUTH.currentUser)){
+      if(typeof openAuth==='function') return openAuth();
+      return;
+    }
     buildSessionFromStorage('openMyArea');
     if(window.state && state.session){
       if(state.session.role==='admin' && typeof openAdmin==='function') return openAdmin();
@@ -6767,9 +6740,9 @@ setInterval(()=>{
       else setTimeout(recoverSession,500);
     });
   }
-  document.addEventListener('DOMContentLoaded',()=>{attachStableAuth(window.RT_AUTH);attachStableAuth(window.fauth);recoverSession();});
-  window.addEventListener('pageshow',()=>{attachStableAuth(window.RT_AUTH);attachStableAuth(window.fauth);recoverSession();});
-  [100,400,1000,2200,4500].forEach(ms=>setTimeout(()=>{attachStableAuth(window.RT_AUTH);attachStableAuth(window.fauth);recoverSession();},ms));
+  document.addEventListener('DOMContentLoaded',()=>{attachStableAuth(window.RT_AUTH);recoverSession();});
+  window.addEventListener('pageshow',()=>{attachStableAuth(window.RT_AUTH);recoverSession();});
+  [100,400,1000,2200,4500].forEach(ms=>setTimeout(()=>{attachStableAuth(window.RT_AUTH);recoverSession();},ms));
 
   // Re-render cards after all overrides are installed.
   try{_renderHash='';render();}catch(e){}
@@ -7413,6 +7386,50 @@ function ownerNav(){const nav=document.querySelector('#ov-owner .cd-role-nav');i
 function renterNav(){const nav=document.querySelector('#ov-renter .cd-role-nav');if(nav)nav.innerHTML=`<button class="on" data-sec="home" onclick="cdShowSection('renter','home')">סקירה</button><button data-sec="bookings" onclick="cdShowSection('renter','bookings')">הזמנות</button><button data-sec="profile" onclick="cdShowSection('renter','profile')">אימות ופרופיל</button><button data-sec="messages" onclick="cdShowSection('renter','messages')">הודעות</button>`}
 const oo=window.openOwner;window.openOwner=function(){const r=oo&&oo.apply(this,arguments);setTimeout(()=>{ownerNav();shell('owner')},80);return r};
 const or=window.openRenterArea;window.openRenterArea=function(){const r=or&&or.apply(this,arguments);setTimeout(()=>{renterNav();shell('renter')},80);return r};
+})();
+</script>
+
+
+<script id="crowndrive-auth-authority-final-v1">
+(function(){
+  if(window.CROWNDRIVE_AUTH_AUTHORITY_FINAL) return;
+  window.CROWNDRIVE_AUTH_AUTHORITY_FINAL='v1';
+  let resolved=false, lastUser=null;
+  function safe(fn){try{return fn()}catch(e){console.error('CrownDrive auth guard',e);return null}}
+  function clearOnlySession(){
+    safe(()=>{state.session=null;});
+    safe(()=>{if(typeof delCookie==='function')delCookie(COOKIE_SESSION_KEY);});
+    safe(()=>{if(typeof renderNav==='function')renderNav();});
+    safe(()=>{if(typeof renderMyAreaFab==='function')renderMyAreaFab();});
+  }
+  function onUser(user){
+    resolved=true;lastUser=user||null;window.CROWNDRIVE_AUTH_RESOLVED=true;
+    if(user){
+      safe(()=>{const sv=(typeof savedLogin==='function'&&savedLogin())||null;restoreSessionFromFirebaseUser(user,(sv&&sv.role)||(state.session&&state.session.role)||'');});
+      safe(()=>{if(window.CROWNDRIVE_ATTACH_REALTIME_AFTER_AUTH)window.CROWNDRIVE_ATTACH_REALTIME_AFTER_AUTH();});
+      safe(()=>renderNav());safe(()=>renderMyAreaFab());safe(()=>updateBadge());
+    }else{
+      // Firebase has definitively resolved to signed-out. Keep cached public data,
+      // but never keep a fake personal-area session.
+      clearOnlySession();
+    }
+  }
+  function attach(){
+    if(!window.RT_AUTH||!RT_AUTH.onAuthStateChanged||RT_AUTH.__cdAuthorityAttached)return false;
+    RT_AUTH.__cdAuthorityAttached=true;
+    RT_AUTH.onAuthStateChanged(onUser,function(err){resolved=true;console.error('Firebase auth observer failed',err);});
+    return true;
+  }
+  function ensureUi(){
+    safe(()=>{if(typeof renderNav==='function')renderNav();});
+    safe(()=>{if(typeof renderMyAreaFab==='function')renderMyAreaFab();});
+  }
+  document.addEventListener('DOMContentLoaded',function(){attach();ensureUi();});
+  window.addEventListener('pageshow',function(){attach();ensureUi();if(lastUser&&window.CROWNDRIVE_ATTACH_REALTIME_AFTER_AUTH)safe(()=>window.CROWNDRIVE_ATTACH_REALTIME_AFTER_AUTH());});
+  window.addEventListener('online',function(){attach();if(lastUser&&window.CROWNDRIVE_ATTACH_REALTIME_AFTER_AUTH)safe(()=>window.CROWNDRIVE_ATTACH_REALTIME_AFTER_AUTH());});
+  [0,100,300,800,1600,3000].forEach(function(ms){setTimeout(function(){attach();ensureUi();},ms);});
+  window.addEventListener('error',function(e){console.error('CrownDrive runtime error',e.error||e.message);});
+  window.addEventListener('unhandledrejection',function(e){console.error('CrownDrive promise rejection',e.reason);});
 })();
 </script>
 
