@@ -8,8 +8,3 @@
 בשביל נעילה מלאה 100% ברמת Firebase צריך להפוך את השמירה מפריט state אחד גדול לנתיבים נפרדים:
 /cars/{carId}, /bookings/{bookingId}, /chats/{messageId} וכו׳.
 האתר כבר שומר ownerId/renterId בכל פריט ומוכן לשלב הבא.
-
-עדכון 2026-07-10:
-- הסיסמה אינה נשמרת עוד ב-localStorage, Cookie, state או Realtime Database.
-- התחברות מתמשכת מבוססת רק על Firebase Authentication Persistence.
-- ללא חיבור ל-Firebase Authentication אין fallback מקומי שמאמת סיסמה.
