@@ -1259,8 +1259,8 @@ function carForm(car = null) {
     try {
       note.textContent = 'מחפש תמונה רשמית…';
       const response = await fetch('/api/car-image-search', {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({make, model, year: form.year.value, trim: form.trim.value})});
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'לא נמצאה תמונה');
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.url) throw new Error(result.error || 'לא נמצאה תמונה מתאימה — אפשר להעלות תמונה מהגלריה');
       addPhoto(result.url);
       note.textContent = `${result.title || 'תמונה'} ${result.license ? '· ' + result.license : ''}`;
     } catch (error) { toast(error.message); note.textContent = error.message; }
