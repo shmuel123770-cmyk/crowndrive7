@@ -1,5 +1,7 @@
 [build]
-  command = "npm install --no-audit --no-fund --omit=dev"
+  # Wipe any stale node_modules that a web-upload may have committed, then install
+  # cleanly (a committed node_modules blocks npm's rename step with ENOTEMPTY).
+  command = "rm -rf node_modules package-lock.json && npm install --no-audit --no-fund --omit=dev"
   publish = "."
   functions = "netlify/functions"
 
