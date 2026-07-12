@@ -35,9 +35,28 @@ export async function startPrivate(user) {
   store.user = user;
   store.isAdmin = (await refs.admins.child(user.uid).once('value')).val() === true;
 
+  // FIX (owner-first-session): the bookings/payments query field depends on the role,
+  // but on registration the profile does not exist yet when startPrivate runs, so the
+  // role was unknown and an owner got locked onto the renterUid query. This subscribes
+  // by the current role and re-subscribes once the real role arrives via the profile listener.
+  let ownFeedUnsubs = [];
+  let subscribedField = null;
+  function subscribeOwnFeeds(role) {
+    const field = role === 'owner' ? 'ownerUid' : 'renterUid';
+    if (subscribedField === field) return;
+    subscribedField = field;
+    ownFeedUnsubs.splice(0).forEach(unsub => unsub());
+    ownFeedUnsubs = [
+      listen(refs.bookings.orderByChild(field).equalTo(user.uid), v => { store.bookings = v; }, 'bookings'),
+      listen(refs.payments.orderByChild(field).equalTo(user.uid), v => { store.payments = v; }, 'payments'),
+    ];
+    store.privateUnsubs.push(...ownFeedUnsubs);
+  }
+
   store.privateUnsubs.push(listen(refs.users.child(user.uid), v => {
     const oldStatus = store.profile?.verification?.status || 'missing';
     store.profile = {...(v || {}), verification: {...(v?.verification || {}), status: oldStatus}};
+    if (!store.isAdmin) subscribeOwnFeeds(store.profile.role);
   }, 'profile'));
   store.privateUnsubs.push(listen(refs.verificationStatus.child(user.uid), status => {
     store.profile = store.profile || {};
@@ -51,10 +70,10 @@ export async function startPrivate(user) {
     store.privateUnsubs.push(listen(refs.payments, v => { store.payments = v; }, 'payments'));
   } else {
     const profile = (await refs.users.child(user.uid).once('value')).val() || {};
-    store.profile = profile;
-    const field = profile.role === 'owner' ? 'ownerUid' : 'renterUid';
-    store.privateUnsubs.push(listen(refs.bookings.orderByChild(field).equalTo(user.uid), v => { store.bookings = v; }, 'bookings'));
-    store.privateUnsubs.push(listen(refs.payments.orderByChild(field).equalTo(user.uid), v => { store.payments = v; }, 'payments'));
+    // FIX (verification status race): merge instead of overwriting so the status already
+    // delivered by the verificationStatus listener is not clobbered back to undefined.
+    store.profile = {...profile, verification: {...(profile.verification || {}), status: store.profile?.verification?.status || 'missing'}};
+    subscribeOwnFeeds(profile.role);
   }
   emit('private-ready');
 }

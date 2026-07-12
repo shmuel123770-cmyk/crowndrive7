@@ -1,1 +1,6 @@
-CrownDrive V2 LIVE — prepared with production Firebase config and Netlify scan-safe public API key
+CrownDrive — FINAL build (2026-07-12)
+Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+Includes: Netlify esbuild deploy fix (firebase-admin external), verification-status race fix,
+owner first-session bookings-query fix. All static checks and unit tests pass; all 16 functions
+bundle with zero esbuild errors. Firebase project: amar-75684.
+See התחל_כאן_גרסה_סופית.md to deploy.

@@ -1,15 +1,16 @@
 {
-  "name": "crowndrive-v2-original-design",
+  "name": "crowndrive-v2",
   "version": "2.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node -e \"console.log('CrownDrive V2 original design ready for amar-75684')\""
+    "check": "node tests/static-check.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "test:browser": "node tests/browser-smoke.mjs",
+    "build": "npm run check && npm test"
   },
   "dependencies": {
     "firebase-admin": "^13.0.2"
   },
-  "engines": {
-    "node": "20.x"
-  }
+  "engines": {"node": ">=20"}
 }
