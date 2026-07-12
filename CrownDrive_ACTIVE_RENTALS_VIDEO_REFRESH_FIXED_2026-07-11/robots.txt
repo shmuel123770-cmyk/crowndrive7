@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://crowndrive770.com/sitemap.xml

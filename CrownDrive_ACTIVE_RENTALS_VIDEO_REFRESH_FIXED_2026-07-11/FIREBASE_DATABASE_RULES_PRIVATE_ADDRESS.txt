@@ -1,0 +1,36 @@
+{
+  "rules": {
+    "crowndrive-live": {
+      "state": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      },
+      "_connectionTest": {
+        ".read": "auth != null",
+        ".write": "auth != null"
+      },
+      "admins": {
+        "$uid": {
+          ".read": "auth != null && auth.uid === $uid",
+          ".write": false
+        }
+      },
+      "privateCarDetails": {
+        "$carId": {
+          ".read": "auth != null && (data.child('ownerUid').val() === auth.uid || root.child('crowndrive-live/admins').child(auth.uid).val() === true || root.child('crowndrive-live/approvedCarAccess').child($carId).child(auth.uid).val() === true)",
+          ".write": "auth != null && (root.child('crowndrive-live/admins').child(auth.uid).val() === true || data.child('ownerUid').val() === auth.uid || (!data.exists() && newData.child('ownerUid').val() === auth.uid))",
+          ".validate": "!newData.exists() || (newData.hasChildren(['ownerUid','fullAddress','updatedAt']) && newData.child('ownerUid').isString() && newData.child('fullAddress').isString() && newData.child('fullAddress').val().length <= 500 && newData.child('updatedAt').isNumber())"
+        }
+      },
+      "approvedCarAccess": {
+        "$carId": {
+          "$uid": {
+            ".read": "auth != null && auth.uid === $uid",
+            ".write": "auth != null && (root.child('crowndrive-live/admins').child(auth.uid).val() === true || root.child('crowndrive-live/privateCarDetails').child($carId).child('ownerUid').val() === auth.uid)",
+            ".validate": "newData.val() === true || !newData.exists()"
+          }
+        }
+      }
+    }
+  }
+}

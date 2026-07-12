@@ -1,0 +1,15 @@
+שלב אבטחה שהוכנס לגרסה הזו:
+1. האתר משתמש ב-Firebase Authentication מאחורי הקלעים.
+2. כניסה/הרשמה עם מייל וסיסמה יוצרת או מחברת משתמש Firebase Auth.
+3. Firebase Rules יכולים עכשיו לדרוש auth != null כדי שאורח לא יוכל לכתוב לדאטאבייס.
+
+חשוב:
+במבנה הנוכחי האתר עדיין מסנכרן state אחד גדול, לכן ה-Rules כאן חוסמים כתיבה של אורחים אבל לא מבצעים עדיין נעילה מלאה לכל רכב/הזמנה ברמת Firebase Rules.
+בשביל נעילה מלאה 100% ברמת Firebase צריך להפוך את השמירה מפריט state אחד גדול לנתיבים נפרדים:
+/cars/{carId}, /bookings/{bookingId}, /chats/{messageId} וכו׳.
+האתר כבר שומר ownerId/renterId בכל פריט ומוכן לשלב הבא.
+
+עדכון 2026-07-10:
+- הסיסמה אינה נשמרת עוד ב-localStorage, Cookie, state או Realtime Database.
+- התחברות מתמשכת מבוססת רק על Firebase Authentication Persistence.
+- ללא חיבור ל-Firebase Authentication אין fallback מקומי שמאמת סיסמה.

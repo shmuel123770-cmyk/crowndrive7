@@ -1,0 +1,6 @@
+תיקון Cache/Service Worker:
+- הדפדפן הרגיל לא אמור להחזיק יותר גרסה ישנה של האתר.
+- sw.js מנקה cache ומבטל את עצמו.
+- נוספו Headers של no-cache ל-Netlify.
+- index.html מנקה Service Workers ישנים ומרענן פעם אחת אם צריך.
+- לא שונה Firebase/Auth/Realtime/Rules.
