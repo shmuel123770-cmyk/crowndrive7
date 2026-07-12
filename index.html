@@ -1603,6 +1603,9 @@ body.cd-drawer-open{overflow:hidden!important;touch-action:none}
 @media(max-width:420px){.gallery{height:160px!important}}
 @media(prefers-reduced-motion:reduce){.card.card-new{animation:none!important}.gallery img{transition:none!important}}
 
+
+/* AUTO VEHICLE CATALOG IMAGE */
+.auto-car-image-box{margin-top:12px;padding:14px;border:1px solid var(--line);border-radius:16px;background:#f8fafc}.auto-car-image-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.auto-car-image-preview{margin-top:12px;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#e9eef4;display:flex;align-items:center;justify-content:center}.auto-car-image-preview img{width:100%;height:100%;object-fit:cover;display:block}.auto-car-image-status{font-size:.78rem;color:var(--mut2);margin-top:8px}.auto-car-image-status.good{color:#18794e}.auto-car-image-status.bad{color:#a33}.photo-optional-note{font-size:.78rem;color:var(--mut2);margin-top:8px}
 </style>
 
 <style id="mobile-admin-control-upgrade">
@@ -1814,6 +1817,11 @@ input,select,textarea{font-size:16px!important}
   </div>
 </header>
 
+<!-- OWNER CTA: directly below booking search and home vehicle stats -->
+<section class="section home-owner-cta">
+  <div class="home-split-card owner"><div><span class="kicker">לבעלי רכבים</span><h2>יש לך רכב פנוי?</h2><p>פרסם רכב, קבע תנאים, גיל מינימלי, זמינות ואפשרות מסירה — והכל מנוהל באזור אישי אחד.</p><button class="btn btn-gold" onclick="openAuth('owner')">הוסף רכב</button></div><div class="home-owner-points"><span>ניהול הזמנות</span><span>אימות שוכרים</span><span>תיעוד מסירה והחזרה</span><span>דירוגים וביקורות</span></div></div>
+</section>
+
 <!-- STATUS STRIP -->
 <div class="strip">
   <div class="strip-in">
@@ -1886,10 +1894,6 @@ input,select,textarea{font-size:16px!important}
 </section>
 
 
-
-<section class="section home-owner-cta">
-  <div class="home-split-card owner"><div><span class="kicker">לבעלי רכבים</span><h2>יש לך רכב פנוי?</h2><p>פרסם רכב, קבע תנאים, גיל מינימלי, זמינות ואפשרות מסירה — והכל מנוהל באזור אישי אחד.</p><button class="btn btn-gold" onclick="openAuth('owner')">הוסף רכב</button></div><div class="home-owner-points"><span>ניהול הזמנות</span><span>אימות שוכרים</span><span>תיעוד מסירה והחזרה</span><span>דירוגים וביקורות</span></div></div>
-</section>
 
 
 
@@ -2140,9 +2144,18 @@ input,select,textarea{font-size:16px!important}
       <div id="dash-add" style="display:none">
         <div class="divider" id="form-title">הוספת רכב חדש</div>
         <div class="f-row3">
-          <div class="field" id="af-make"><label>יצרן <span class="req">*</span></label><select id="a-make" onchange="ownerMakeChanged()"></select><input id="a-make-other" class="other-input" placeholder="הקלד יצרן אחר"><div class="err-msg">שדה חובה</div></div>
-          <div class="field" id="af-model"><label>דגם <span class="req">*</span></label><select id="a-model" onchange="toggleOtherInput('a-model','a-model-other')"></select><input id="a-model-other" class="other-input" placeholder="הקלד דגם אחר"><div class="err-msg">שדה חובה</div></div>
-          <div class="field" id="af-yr"><label>שנה <span class="req">*</span></label><select id="a-yr"></select><div class="err-msg">שנה לא תקינה</div></div>
+          <div class="field" id="af-make"><label>יצרן <span class="req">*</span></label><select id="a-make" onchange="ownerMakeChanged();scheduleAutoCarImage()"></select><input id="a-make-other" class="other-input" placeholder="הקלד יצרן אחר" oninput="scheduleAutoCarImage()"><div class="err-msg">שדה חובה</div></div>
+          <div class="field" id="af-model"><label>דגם <span class="req">*</span></label><select id="a-model" onchange="toggleOtherInput('a-model','a-model-other');scheduleAutoCarImage()"></select><input id="a-model-other" class="other-input" placeholder="הקלד דגם אחר" oninput="scheduleAutoCarImage()"><div class="err-msg">שדה חובה</div></div>
+          <div class="field" id="af-yr"><label>שנה <span class="req">*</span></label><select id="a-yr" onchange="scheduleAutoCarImage()"></select><div class="err-msg">שנה לא תקינה</div></div>
+        </div>
+        <div class="f-row">
+          <div class="field"><label>תת־דגם / רמת גימור</label><input id="a-trim" placeholder="לדוגמה: Limited / XLE / M Sport" oninput="scheduleAutoCarImage()"></div>
+          <div class="field"><label>מקור תמונה</label><select id="a-image-mode" onchange="toggleImageMode()"><option value="auto" selected>תמונה אוטומטית לפי הרכב</option><option value="manual">העלאת תמונות ידנית</option></select></div>
+        </div>
+        <div class="auto-car-image-box" id="auto-car-image-box">
+          <div class="auto-car-image-head"><div><b>תמונת רכב אוטומטית</b><div class="sm">ננסה למצוא תמונה תואמת לפי יצרן, דגם, שנה ותת־דגם.</div></div><button type="button" class="mini gold" onclick="resolveAutoCarImage(true)">רענון תמונה</button></div>
+          <div class="auto-car-image-preview"><img id="auto-car-image" src="" alt="תצוגה מקדימה של הרכב" onerror="this.src=fallbackCarPhoto()"></div>
+          <div class="auto-car-image-status" id="auto-car-image-status">בחר יצרן, דגם ושנה כדי לקבל תמונה אוטומטית.</div>
         </div>
         <div class="f-row3">
           <div class="field" id="af-color"><label>צבע <span class="req">*</span></label><select id="a-color" onchange="toggleOtherInput('a-color','a-color-other')"></select><input id="a-color-other" class="other-input" placeholder="הקלד צבע אחר"><div class="err-msg">שדה חובה</div></div>
@@ -2187,16 +2200,16 @@ input,select,textarea{font-size:16px!important}
           <div class="field"><label>אבזור <span style="color:var(--mut2);font-weight:300">(מופרד בפסיקים)</span></label><input id="a-tags" placeholder="ריפודי עור, גג פנורמי, מערכת שמע Burmester"></div>
           <div class="field"><label>סטטוס התחלתי</label><select id="a-status"><option value="available" selected>זמין להשכרה</option><option value="rented">מושכר</option></select></div>
         </div>
-        <div class="field">
-          <label>תמונות הרכב <span class="req">* לפחות 2 תמונות</span></label>
+        <div class="field" id="manual-photo-area" style="display:none">
+          <label>תמונות הרכב <span style="color:var(--mut2);font-weight:400">(אופציונלי — מחליף את התמונה האוטומטית)</span></label>
           <div class="drop" id="drop-photos" tabindex="0" role="button">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
             <b>לחצו לבחירת תמונות או גררו לכאן</b>
-            <span>חזית, צד ופנים הרכב · עד 6 תמונות</span>
+            <span>אפשר להעלות עד 6 תמונות משלך</span>
           </div>
           <input type="file" id="ph-file" accept="image/*" multiple hidden>
           <div class="photo-grid" id="ph-grid"></div>
-          <div class="photo-req bad" id="ph-req">הועלו 0 מתוך 2 תמונות נדרשות</div>
+          <div class="photo-optional-note" id="ph-req">לא הועלו תמונות ידניות — תיבחר תמונה אוטומטית.</div>
         </div>
         <div class="m-actions">
           <button class="btn btn-ghost" id="a-cancel" onclick="resetCarForm(true)" style="display:none">ביטול עריכה</button>
@@ -3188,6 +3201,7 @@ const state = {
   session: null // {role:'owner'|'renter', id}
 };
 let seq = 1; const newId = p => p + (seq++) + Math.random().toString(36).slice(2,6);
+let autoCarImageUrl='', autoCarImageTimer=null, autoCarImageRequest=0;
 let filter='all', searchQ={}, currentCar=null, authRole=null, authMode='login', editId=null, formPhotos=[], rlicData=null, rlicBackData=null, renterSelfieData=null, rlicFileObj=null, rlicBackFileObj=null, renterSelfieFileObj=null, lastBooking=null;
 
 const CAR_MAKES_MODELS={
@@ -3242,6 +3256,53 @@ function ownerMakeChanged(){
   fillSelectWithOther('a-model',models,make&&make!=='אחר'?'בחר דגם':'בחר דגם / אחר');
   toggleOtherInput('a-model','a-model-other');
 }
+function toggleImageMode(){
+  const manual=$('a-image-mode')?.value==='manual';
+  const area=$('manual-photo-area'), auto=$('auto-car-image-box');
+  if(area)area.style.display=manual?'block':'none';
+  if(auto)auto.style.display=manual?'none':'block';
+  if(!manual)scheduleAutoCarImage();
+}
+function scheduleAutoCarImage(){
+  clearTimeout(autoCarImageTimer);
+  autoCarImageTimer=setTimeout(()=>resolveAutoCarImage(false),450);
+}
+function autoImageQuery(){
+  const make=selectedOrOther('a-make','a-make-other');
+  const model=selectedOrOther('a-model','a-model-other');
+  const year=$('a-yr')?.value||'';
+  const trim=$('a-trim')?.value.trim()||'';
+  return [year,make,model,trim,'car'].filter(Boolean).join(' ');
+}
+async function resolveAutoCarImage(force){
+  if($('a-image-mode')?.value==='manual')return '';
+  const make=selectedOrOther('a-make','a-make-other'), model=selectedOrOther('a-model','a-model-other'), year=$('a-yr')?.value||'';
+  const img=$('auto-car-image'), status=$('auto-car-image-status');
+  if(!make||!model||!year){autoCarImageUrl='';if(img)img.src=fallbackCarPhoto();if(status){status.className='auto-car-image-status';status.textContent='בחר יצרן, דגם ושנה כדי לקבל תמונה אוטומטית.'}return ''}
+  const req=++autoCarImageRequest;
+  if(status){status.className='auto-car-image-status';status.textContent='מחפש תמונה תואמת…'}
+  try{
+    const q=autoImageQuery();
+    const url='https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrlimit=12&gsrsearch='+encodeURIComponent(q)+'&prop=imageinfo&iiprop=url&iiurlwidth=1400&format=json&origin=*';
+    const r=await fetch(url,{cache:force?'reload':'default'});
+    if(!r.ok)throw new Error('image lookup failed');
+    const j=await r.json();
+    if(req!==autoCarImageRequest)return autoCarImageUrl;
+    const pages=Object.values(j?.query?.pages||{});
+    const hit=pages.find(p=>{const t=String(p.title||'').toLowerCase();const ii=p.imageinfo&&p.imageinfo[0];return ii&&(ii.thumburl||ii.url)&&!/(logo|badge|emblem|interior|engine|diagram|drawing|icon)/i.test(t)})||pages[0];
+    const ii=hit&&hit.imageinfo&&hit.imageinfo[0];
+    autoCarImageUrl=(ii&&(ii.thumburl||ii.url))||'';
+    if(!autoCarImageUrl)throw new Error('no image');
+    if(img)img.src=autoCarImageUrl;
+    if(status){status.className='auto-car-image-status good';status.textContent='✓ נמצאה תמונה אוטומטית. אפשר לרענן או לעבור להעלאה ידנית.'}
+    return autoCarImageUrl;
+  }catch(e){
+    if(req!==autoCarImageRequest)return autoCarImageUrl;
+    autoCarImageUrl='';if(img)img.src=fallbackCarPhoto();
+    if(status){status.className='auto-car-image-status bad';status.textContent='לא נמצאה תמונה מדויקת כרגע. הרכב עדיין יפורסם עם תמונת ברירת מחדל, או שאפשר לבחור העלאה ידנית.'}
+    return '';
+  }
+}
 function setOwnerSelectValue(selId,inputId,value,items){
   const sel=$(selId), inp=$(inputId); if(!sel)return; value=String(value||'').trim();
   if(value && items && items.includes(value)){sel.value=value;if(inp){inp.value='';inp.classList.remove('show')}}
@@ -3254,6 +3315,7 @@ function initOwnerChoiceLists(){
   const yr=$('a-yr'); if(yr)yr.innerHTML='<option value="">בחר שנה</option>'+yearList().map(y=>`<option value="${y}">${y}</option>`).join('');
   fillSelectWithOther('a-color',VEHICLE_COLORS.filter(x=>x!=='אחר'),'בחר צבע');
   fillSelectWithOther('a-engine',ENGINE_TYPES,'בחר מנוע');
+  setTimeout(()=>{toggleImageMode();if($('auto-car-image')&&!$('auto-car-image').src)$('auto-car-image').src=fallbackCarPhoto()},0);
 }
 
 const US_STATES=["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","District of Columbia","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming","Canada","Israel","Other"];
@@ -4306,8 +4368,8 @@ async function editCar(id){
   $('a-seats').value=c.seats;$('a-gear').value=c.gear;$('a-fuel').value=c.fuel;
   $('a-tags').value=c.tags.join(', ');$('a-status').value=c.status;
   setOwnerSelectValue('a-engine','a-engine-other',c.engine||'',ENGINE_TYPES);$('a-size').value=c.size||'';$('a-location').value=c.location||'';setRentalChecks(c.rentalTypes);
-  const priv=PRIVATE_CAR_CACHE[id]||await loadPrivateCarDetails(id);$('a-full-address').value=(priv&&priv.fullAddress)||'';$('a-min-age').value=c.minAge||21;$('a-delivery-enabled').value=c.deliveryEnabled?'yes':'no';$('a-delivery-cost').value=c.deliveryCost||0;$('a-delivery-note').value=c.deliveryNote||'';toggleDeliveryCostField();
-  formPhotos=[...c.photos];renderPhotoGrid();
+  const priv=PRIVATE_CAR_CACHE[id]||await loadPrivateCarDetails(id);$('a-full-address').value=(priv&&priv.fullAddress)||'';$('a-min-age').value=c.minAge||21;$('a-delivery-enabled').value=c.deliveryEnabled?'yes':'no';$('a-delivery-cost').value=c.deliveryCost||0;$('a-delivery-note').value=c.deliveryNote||'';$('a-trim').value=c.trim||'';toggleDeliveryCostField();
+  formPhotos=[...(c.photos||[])];autoCarImageUrl=c.autoImageUrl||c.photos?.[0]||'';if($('a-image-mode'))$('a-image-mode').value=c.imageMode||'auto';toggleImageMode();if($('auto-car-image'))$('auto-car-image').src=autoCarImageUrl||fallbackCarPhoto();renderPhotoGrid();
   $('form-title').textContent='עריכת '+c.make+' '+c.model;
   $('a-save').textContent='שמירת שינויים';$('a-cancel').style.display='block';
   const box=document.querySelector('#ov-owner .modal');
@@ -4322,9 +4384,9 @@ function toggleDeliveryCostField(){
 }
 function resetCarForm(){
   editId=null;
-  ['a-make','a-model','a-yr','a-color','a-price-hourly','a-price-daily','a-price-weekly','a-tags','a-engine','a-size','a-location','a-full-address','a-delivery-cost','a-delivery-note','a-make-other','a-model-other','a-color-other','a-engine-other'].forEach(i=>{if($(i))$(i).value=''});initOwnerChoiceLists();document.querySelectorAll('.other-input').forEach(x=>x.classList.remove('show'));
+  ['a-make','a-model','a-yr','a-color','a-price-hourly','a-price-daily','a-price-weekly','a-tags','a-engine','a-size','a-location','a-full-address','a-delivery-cost','a-delivery-note','a-trim','a-make-other','a-model-other','a-color-other','a-engine-other'].forEach(i=>{if($(i))$(i).value=''});initOwnerChoiceLists();document.querySelectorAll('.other-input').forEach(x=>x.classList.remove('show'));
   $('a-cat').selectedIndex=0;$('a-seats').value='5';$('a-gear').selectedIndex=0;$('a-fuel').selectedIndex=0;$('a-status').value='available';$('a-min-age').value='21';$('a-delivery-enabled').value='no';$('a-delivery-cost').value='0';toggleDeliveryCostField();setRentalChecks(['hourly']);
-  formPhotos=[];renderPhotoGrid();
+  formPhotos=[];autoCarImageUrl='';if($('a-image-mode'))$('a-image-mode').value='auto';toggleImageMode();if($('auto-car-image'))$('auto-car-image').src=fallbackCarPhoto();renderPhotoGrid();
   ['af-make','af-model','af-yr','af-color','af-rentals','af-price-hourly','af-price-daily','af-price-weekly'].forEach(i=>$(i)&&$(i).classList.remove('err'));
   $('form-title').textContent='הוספת רכב חדש';$('a-save').textContent='פרסום הרכב';$('a-cancel').style.display='none';
   if($('ov-owner').classList.contains('open')&&$('dash-add').style.display==='block'&&arguments[0]===true)setDash('cars');
@@ -4342,8 +4404,7 @@ function renderPhotoGrid(){
   $('ph-grid').innerHTML=formPhotos.map((p,i)=>`
     <div class="ph"><img src="${p}" alt="תמונה ${i+1}"><button onclick="removePhoto(${i})">✕</button>${i===0?'<div class="main-tag">ראשית</div>':''}</div>`).join('');
   const req=$('ph-req'),n=formPhotos.length;
-  if(n>=2){req.className='photo-req good';req.textContent=`✓ הועלו ${n} תמונות — עומד בדרישת המינימום`}
-  else{req.className='photo-req bad';req.textContent=`הועלו ${n} מתוך 2 תמונות נדרשות`}
+  if(req)req.textContent=n?`✓ הועלו ${n} תמונות ידניות — הן ישמשו במודעה`:'לא הועלו תמונות ידניות — תיבחר תמונה אוטומטית.';
   $('drop-photos').classList.remove('err-b');
 }
 async function saveCar(){
@@ -4359,19 +4420,22 @@ async function saveCar(){
   mk('af-price-hourly',rentalTypes.includes('hourly')&&!(priceHourly>0));
   mk('af-price-daily',rentalTypes.includes('daily')&&!(priceDaily>0));
   mk('af-price-weekly',rentalTypes.includes('long')&&!(priceWeekly>0));
-  if(formPhotos.length<2){$('drop-photos').classList.add('err-b');showToast('חובה להעלות לפחות 2 תמונות של הרכב');bad=true}
   const fullAddress=$('a-full-address').value.trim(), minAge=Math.max(18,Math.min(99,+$('a-min-age').value||21));
   const deliveryEnabled=$('a-delivery-enabled').value==='yes', deliveryCost=deliveryEnabled?Math.max(0,+$('a-delivery-cost').value||0):0;
   if(!fullAddress){showToast('יש להזין כתובת מלאה — היא תוצג רק לאחר אישור');bad=true}
   if(bad)return;
   const price = priceHourly || priceDaily || priceWeekly;
+  const imageMode=$('a-image-mode')?.value||'auto';
+  if(imageMode==='auto'&&!autoCarImageUrl)await resolveAutoCarImage(true);
+  const finalPhotos=imageMode==='manual'&&formPhotos.length?[...formPhotos]:[autoCarImageUrl||fallbackCarPhoto()];
+  const trim=$('a-trim')?.value.trim()||'';
   const now=Date.now();
-  const data={make,model,yr,price,priceHourly,priceDaily,priceWeekly,color,cat:$('a-cat').value,rentalTypes,updatedAt:now,
+  const data={make,model,trim,yr,price,priceHourly,priceDaily,priceWeekly,color,cat:$('a-cat').value,rentalTypes,updatedAt:now,
     seats:$('a-seats').value,gear:$('a-gear').value,fuel:$('a-fuel').value,
     engine:selectedOrOther('a-engine','a-engine-other'),size:$('a-size').value.trim(),location:$('a-location').value.trim(),
     minAge,deliveryEnabled,deliveryCost,deliveryNote:$('a-delivery-note').value.trim(),
     tags:$('a-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
-    status:$('a-status').value,photos:[...formPhotos]};
+    status:$('a-status').value,imageMode,autoImageUrl:imageMode==='auto'?autoCarImageUrl:'',photos:finalPhotos};
   if(CLOUD){
     const payload=editId?data:{...data,ownerId:state.session.id,ret:'',createdAt:now};
     const op=editId? db.collection('cars').doc(editId).update(payload)
@@ -7553,6 +7617,112 @@ const or=window.openRenterArea;window.openRenterArea=function(){const r=or&&or.a
   #ov-admin .dash-tabs button{white-space:nowrap!important;font-size:.79rem!important;padding:14px 2px 11px!important}
 }
 </style>
+
+
+<style id="crowndrive-private-user-payment-flow-v1-style">
+#renter-extras.cd-signup-hidden{display:none!important}
+.cd-private-modal{max-width:920px!important}.cd-private-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.cd-private-card{border:1px solid var(--hair);border-radius:18px;padding:14px;background:#fff}.cd-private-card h4{margin:0 0 10px}.cd-private-lines{display:grid;gap:8px}.cd-private-line{display:flex;justify-content:space-between;gap:14px;padding:8px 0;border-bottom:1px solid var(--hair)}.cd-private-line:last-child{border-bottom:0}.cd-docs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.cd-docs figure{margin:0;border:1px solid var(--hair);border-radius:14px;padding:8px;background:#f8fafb}.cd-docs img{width:100%;height:190px;object-fit:contain;border-radius:10px;background:#eef2f5}.cd-docs figcaption{font-size:.76rem;font-weight:900;margin-top:7px}.cd-payment-box{border:1px solid rgba(160,90,0,.28);background:#fff9eb;border-radius:16px;padding:14px;margin-top:14px}.cd-payment-box img{width:100%;max-height:260px;object-fit:contain;border-radius:12px;background:#111;margin-top:9px}.cd-total-highlight{font-size:1.55rem;font-weight:950;color:#0b6b52}.cd-access-note{background:#eef5fb;border-radius:12px;padding:10px;font-size:.78rem;color:#31567a;margin-bottom:12px}
+@media(max-width:760px){.cd-private-grid,.cd-docs{grid-template-columns:1fr}.cd-private-modal{width:100vw!important;height:100dvh!important;border-radius:0!important}.cd-docs img{height:230px}}
+</style>
+<script id="crowndrive-private-user-payment-flow-v1">
+(function(){
+'use strict';
+const byId=id=>document.getElementById(id);
+function cdFullUser(uid){
+  if(!uid)return null;
+  const a=(state.users&&state.users[uid])||{};
+  const b=(state.renters||[]).find(x=>x.id===uid)||(state.owners||[]).find(x=>x.id===uid)||{};
+  return {id:uid,...b,...a,verification:{...((b&&b.verification)||{}),...((a&&a.verification)||{})}};
+}
+function cdVerification(u){
+  const v=(u&&u.verification)||{};
+  return {
+    status:v.status||((u&&(u.lic||u.licFront)&&u.selfie)?'pending':'incomplete'),
+    front:v.licenseFrontUrl||u?.licFront||u?.lic||'',
+    back:v.licenseBackUrl||u?.licBack||'',
+    selfie:v.selfieUrl||u?.selfie||'',
+    state:u?.licenseState||v.licenseState||''
+  };
+}
+function cdStatusLabel(s){return ({approved:'מאומת',pending:'ממתין לבדיקה',requires_input:'נדרש צילום נוסף',rejected:'נדחה',incomplete:'לא הושלם'})[s]||s||'לא הושלם'}
+function cdPersist(){try{persistState()}catch(e){};try{return pushRealtimeNow()}catch(e){return Promise.resolve(false)}}
+function cdPaymentsForUser(uid){return (state.bookings||[]).filter(b=>b.renterId===uid&&(+b.paymentAmount||0)>0)}
+function cdPaidTotalForUser(uid){return cdPaymentsForUser(uid).reduce((s,b)=>s+(+b.paymentAmount||0),0)}
+function cdUserDetailsHTML(u,context,bid){
+  const v=cdVerification(u), pays=cdPaymentsForUser(u.id), total=cdPaidTotalForUser(u.id);
+  const canShowDocs=context==='admin'||context==='owner';
+  return `<div class="cd-access-note">${context==='owner'?'המידע מוצג לבעל הרכב רק כל עוד ההזמנה ממתינה, מאושרת או פעילה. בסיום ההזמנה הגישה נעלמת.':'גישה מלאה למנהל לצורך אימות, בטיחות וטיפול בהזמנות.'}</div>
+  <div class="cd-private-grid">
+    <section class="cd-private-card"><h4>פרטים אישיים</h4><div class="cd-private-lines">
+      <div class="cd-private-line"><span>שם</span><b>${esc(u.name||'—')}</b></div><div class="cd-private-line"><span>אימייל</span><b dir="ltr">${esc(u.email||'—')}</b></div><div class="cd-private-line"><span>טלפון</span><b dir="ltr">${esc(u.phone||'—')}</b></div><div class="cd-private-line"><span>תפקיד</span><b>${u.role==='owner'?'בעל רכב':u.role==='admin'?'מנהל':'שוכר'}</b></div><div class="cd-private-line"><span>מדינת רישיון</span><b>${esc(v.state||'—')}</b></div><div class="cd-private-line"><span>סטטוס אימות</span><b>${cdStatusLabel(v.status)}</b></div>
+    </div></section>
+    <section class="cd-private-card"><h4>סיכום הזמנות ותשלומים</h4><div class="cd-private-lines"><div class="cd-private-line"><span>מספר הזמנות</span><b>${(state.bookings||[]).filter(b=>b.renterId===u.id||b.ownerId===u.id).length}</b></div><div class="cd-private-line"><span>הוכחות תשלום</span><b>${pays.length}</b></div><div class="cd-private-line"><span>סכום תשלומים מדווח</span><b class="cd-total-highlight">${money(total)}</b></div></div></section>
+  </div>
+  ${canShowDocs?`<div class="divider">מסמכי אימות</div><div class="cd-docs">
+    <figure>${v.front?`<img src="${esc(v.front)}" alt="חזית רישיון">`:'<div class="adm-empty">לא הועלה</div>'}<figcaption>רישיון — צד קדמי</figcaption></figure>
+    <figure>${v.back?`<img src="${esc(v.back)}" alt="גב רישיון">`:'<div class="adm-empty">לא הועלה</div>'}<figcaption>רישיון — צד אחורי</figcaption></figure>
+    <figure>${v.selfie?`<img src="${esc(v.selfie)}" alt="סלפי">`:'<div class="adm-empty">לא הועלה</div>'}<figcaption>תמונת סלפי</figcaption></figure>
+  </div>`:''}
+  ${bid?(()=>{const b=(state.bookings||[]).find(x=>x.id===bid)||{};return `<div class="cd-payment-box"><b>הוכחת תשלום להזמנה ${esc(b.num||'')}</b><div>סכום שדווח: <strong>${money(+b.paymentAmount||0)}</strong></div>${b.paymentProof?`<img src="${esc(b.paymentProof)}" alt="הוכחת תשלום">`:'<div class="adm-empty">טרם הועלתה הוכחת תשלום</div>'}</div>`})():''}`;
+}
+function ensureUserModal(){if(byId('ov-user-private'))return;document.body.insertAdjacentHTML('beforeend',`<div class="overlay" id="ov-user-private"><div class="modal cd-private-modal"><div class="m-head"><h3 id="cd-private-title">פרטי משתמש</h3><button class="m-close" onclick="closeOv('ov-user-private')">✕</button></div><div class="m-body" id="cd-private-body"></div></div></div>`)}
+window.adminViewUser=function(uid){if(!state.session||state.session.role!=='admin')return;const u=cdFullUser(uid);if(!u)return safeToast('המשתמש לא נמצא');ensureUserModal();byId('cd-private-title').textContent='פרטי משתמש מלאים';byId('cd-private-body').innerHTML=cdUserDetailsHTML(u,'admin');openOv('ov-user-private')};
+window.ownerViewRenter=function(bid){const b=(state.bookings||[]).find(x=>x.id===bid);if(!b||!state.session||state.session.role!=='owner'||b.ownerId!==state.session.id)return safeToast('אין הרשאה לצפות בפרטים');if(b.done||b.status==='done'||b.status==='rejected'||b.status==='cancelled')return safeToast('הגישה לפרטי השוכר הסתיימה עם סיום ההזמנה');const u=cdFullUser(b.renterId);if(!u)return safeToast('פרטי השוכר לא נמצאו');ensureUserModal();byId('cd-private-title').textContent='פרטי השוכר להזמנה';byId('cd-private-body').innerHTML=cdUserDetailsHTML(u,'owner',bid);openOv('ov-user-private')};
+
+// Registration is intentionally short. Verification documents move to the renter profile.
+function moveDocsOutOfSignup(){const extras=byId('renter-extras');if(extras)extras.classList.add('cd-signup-hidden');const roleCard=document.querySelector('.role-card[onclick*="renter"] span');if(roleCard)roleCard.textContent='הרשמה קצרה; אימות רישיון וסלפי מתבצע לאחר מכן בפרופיל';}
+const oldSignup=window.doSignup;
+window.doSignup=async function(){
+  const role=(typeof authRole!=='undefined'?authRole:'');
+  if(role!=='renter')return oldSignup.apply(this,arguments);
+  const old={lic:window.rlicData,back:window.rlicBackData,selfie:window.renterSelfieData,lf:window.rlicFileObj,lb:window.rlicBackFileObj,sf:window.renterSelfieFileObj,st:byId('lic-state')?.value};
+  try{
+    if(byId('lic-state'))byId('lic-state').value='להשלמה בפרופיל';
+    try{rlicData='PROFILE_PENDING';rlicBackData='PROFILE_PENDING';renterSelfieData='PROFILE_PENDING';rlicFileObj=null;rlicBackFileObj=null;renterSelfieFileObj=null;}catch(e){}
+    await oldSignup.apply(this,arguments);
+    const uid=state.session&&state.session.id;const u=uid?cdFullUser(uid):null;
+    if(u){delete u.lic;delete u.licFront;delete u.licBack;delete u.selfie;u.licenseState='';u.verification={...(u.verification||{}),status:'incomplete',updatedAt:Date.now()};if(state.users&&state.users[uid])Object.assign(state.users[uid],u);const r=(state.renters||[]).find(x=>x.id===uid);if(r)Object.assign(r,u);await cdPersist();}
+  }finally{
+    try{rlicData=old.lic;rlicBackData=old.back;renterSelfieData=old.selfie;rlicFileObj=old.lf;rlicBackFileObj=old.lb;renterSelfieFileObj=old.sf;}catch(e){}
+    if(byId('lic-state'))byId('lic-state').value='';
+  }
+};
+try{doSignup=window.doSignup}catch(e){}
+
+function verificationCompleteForBooking(u){const v=cdVerification(u);return !!(v.front&&v.back&&v.selfie&&v.status==='approved')}
+const oldTryBook=window.tryBook;
+window.tryBook=function(id){const u=state.session&&state.session.role==='renter'?cdFullUser(state.session.id):null;if(u&&!verificationCompleteForBooking(u)){const v=cdVerification(u);if(!v.front||!v.back||!v.selfie){safeToast('לפני הזמנה צריך להעלות רישיון וסלפי בפרופיל');try{openRenterArea();setTimeout(()=>cdShowSection('renter','profile'),80)}catch(e){};return}safeToast('המסמכים ממתינים לאישור מנהל לפני שניתן להזמין');return}return oldTryBook.apply(this,arguments)};
+try{tryBook=window.tryBook}catch(e){}
+
+// Add a compact verification uploader to the renter profile.
+function verificationUploaderHTML(u){const v=cdVerification(u);const pic=(url,label)=>url?`<img src="${esc(url)}" alt="${label}">`:'<div class="adm-empty">לא הועלה</div>';return `<div class="cd-verify-summary"><h3>אימות רישיון וסלפי</h3><p>יש להעלות את שלושת הפריטים. לאחר מכן מנהל האתר יאשר את האימות.</p><div class="cd-docs"><figure>${pic(v.front,'חזית רישיון')}<figcaption>חזית רישיון</figcaption><label class="mini gold">גלריה<input type="file" accept="image/*" hidden onchange="cdUploadVerifyDoc('front',this)"></label><label class="mini">מצלמה<input type="file" accept="image/*" capture="environment" hidden onchange="cdUploadVerifyDoc('front',this)"></label></figure><figure>${pic(v.back,'גב רישיון')}<figcaption>גב רישיון</figcaption><label class="mini gold">גלריה<input type="file" accept="image/*" hidden onchange="cdUploadVerifyDoc('back',this)"></label><label class="mini">מצלמה<input type="file" accept="image/*" capture="environment" hidden onchange="cdUploadVerifyDoc('back',this)"></label></figure><figure>${pic(v.selfie,'סלפי')}<figcaption>סלפי ברור</figcaption><label class="mini gold">גלריה<input type="file" accept="image/*" hidden onchange="cdUploadVerifyDoc('selfie',this)"></label><label class="mini">מצלמה<input type="file" accept="image/*" capture="user" hidden onchange="cdUploadVerifyDoc('selfie',this)"></label></figure></div><div class="field"><label>מדינת הנפקת הרישיון</label><input id="cd-license-state" value="${esc(v.state||'')}" onchange="cdSaveLicenseState(this.value)"></div><div><b>סטטוס: ${cdStatusLabel(v.status)}</b></div></div>`}
+window.cdUploadVerifyDoc=async function(kind,input){const f=input.files&&input.files[0];if(!f)return;const uid=state.session&&state.session.id,u=cdFullUser(uid);if(!u)return;try{safeToast('מעלה תמונה…');const url=await uploadImageFile(f,kind==='selfie'?'selfies':'licenses');u.verification={...(u.verification||{})};if(kind==='front'){u.lic=u.licFront=url;u.verification.licenseFrontUrl=url}else if(kind==='back'){u.licBack=url;u.verification.licenseBackUrl=url}else{u.selfie=url;u.verification.selfieUrl=url}u.verification.status='pending';u.verification.updatedAt=Date.now();if(state.users&&state.users[uid])Object.assign(state.users[uid],u);const r=(state.renters||[]).find(x=>x.id===uid);if(r)Object.assign(r,u);await cdPersist();safeToast('התמונה נשמרה ונשלחה לבדיקה');openRenterArea();setTimeout(()=>cdShowSection('renter','profile'),80)}catch(e){safeToast(e.message||'העלאת התמונה נכשלה')}input.value=''};
+window.cdSaveLicenseState=async function(v){const uid=state.session&&state.session.id,u=cdFullUser(uid);if(!u)return;u.licenseState=String(v||'').trim();if(state.users&&state.users[uid])state.users[uid].licenseState=u.licenseState;const r=(state.renters||[]).find(x=>x.id===uid);if(r)r.licenseState=u.licenseState;await cdPersist()};
+function injectVerificationProfile(){if(!state.session||state.session.role!=='renter')return;const sec=document.querySelector('#ov-renter .cd-section[data-sec="profile"]');if(!sec)return;const old=sec.querySelector('.cd-verify-summary');if(old)old.remove();sec.insertAdjacentHTML('afterbegin',verificationUploaderHTML(cdFullUser(state.session.id)))}
+const oldOpenRenter=window.openRenterArea;window.openRenterArea=function(){const x=oldOpenRenter.apply(this,arguments);setTimeout(injectVerificationProfile,120);return x};
+
+// Payment proof is part of required arrival evidence.
+let cdArrivalBid=null,cdPendingPaymentUrl='';
+const oldOpenArrival=window.openArrivalEvidence;
+window.openArrivalEvidence=function(bid){cdArrivalBid=bid;const b=(state.bookings||[]).find(x=>x.id===bid);cdPendingPaymentUrl=(b&&b.paymentProof)||'';const x=oldOpenArrival.apply(this,arguments);setTimeout(cdInjectPaymentFields,40);return x};
+function cdInjectPaymentFields(){const b=(state.bookings||[]).find(x=>x.id===cdArrivalBid),body=byId('arrival-evidence-body');if(!b||!body||byId('ae-payment-amount'))return;const canEdit=state.session&&state.session.role==='renter'&&b.renterId===state.session.id;body.querySelector('.arrival-form')?.insertAdjacentHTML('beforeend',`<div class="cd-payment-box"><h3>3. הוכחת תשלום</h3><div class="field"><label>הסכום ששולם</label><input id="ae-payment-amount" type="number" min="0" step="0.01" value="${esc(b.paymentAmount||'')}" ${canEdit?'':'disabled'}></div>${cdPendingPaymentUrl?`<img src="${esc(cdPendingPaymentUrl)}" alt="הוכחת תשלום">`:''}${canEdit?`<label class="btn btn-out full">צילום / בחירת הוכחת תשלום<input type="file" accept="image/*" capture="environment" hidden onchange="cdUploadPaymentProof(this)"></label>`:''}</div>`)}
+window.cdUploadPaymentProof=async function(input){const f=input.files&&input.files[0];if(!f)return;try{safeToast('מעלה הוכחת תשלום…');cdPendingPaymentUrl=await uploadImageFile(f,'payments');safeToast('הוכחת התשלום הועלתה');const old=byId('ae-payment-amount')?.value||'';byId('arrival-evidence-body')?.querySelector('.cd-payment-box')?.remove();cdInjectPaymentFields();if(byId('ae-payment-amount'))byId('ae-payment-amount').value=old}catch(e){safeToast(e.message||'העלאת הוכחת התשלום נכשלה')}input.value=''};
+const oldSaveArrival=window.saveArrivalEvidence;
+window.saveArrivalEvidence=async function(){const b=(state.bookings||[]).find(x=>x.id===cdArrivalBid);if(!b)return;const amount=+(byId('ae-payment-amount')?.value||0);if(!cdPendingPaymentUrl)return safeToast('חובה להעלות תמונה של הוכחת התשלום');if(!(amount>0))return safeToast('חובה לרשום את הסכום ששולם');b.paymentProof=cdPendingPaymentUrl;b.paymentAmount=amount;b.paymentProofAt=Date.now();b.updatedAt=Date.now();await cdPersist();const result=await oldSaveArrival.apply(this,arguments);setTimeout(cdInjectPaymentFields,40);return result};
+
+// Add owner/admin controls and summaries to active cards.
+const oldTripCard=window.tripCard;
+window.tripCard=function(b,role){let html=oldTripCard.apply(this,arguments);if(role==='owner'&&!b.done&&!['done','rejected','cancelled'].includes(b.status)){html=html.replace('</div></article>',`<button class="mini" onclick="ownerViewRenter('${b.id}')">פרטי השוכר</button>${['approved','active'].includes(b.status)?`<button class="mini gold" onclick="endRental('${b.id}')">סיום הזמנה</button>`:''}</div></article>`)}if((role==='owner'||role==='admin')&&(+b.paymentAmount||0)>0){html=html.replace('</article>',`<div class="cd-payment-box"><b>תשלום שדווח: ${money(+b.paymentAmount||0)}</b>${b.paymentProof?`<img src="${esc(b.paymentProof)}" alt="הוכחת תשלום">`:''}</div></article>`)}return html};
+try{tripCard=window.tripCard}catch(e){}
+const oldOwnerHome=window.ownerHomeHTML;window.ownerHomeHTML=function(u){let html=oldOwnerHome.apply(this,arguments);const total=(state.bookings||[]).filter(b=>b.ownerId===u.id).reduce((s,b)=>s+(+b.paymentAmount||0),0);return html.replace('<div class="divider">הזמנות פעילות</div>',`<div class="cd-private-card" style="margin:14px 0"><span>סכום תשלומים מדווח</span><b class="cd-total-highlight">${money(total)}</b></div><div class="divider">הזמנות פעילות</div>`)};
+try{ownerHomeHTML=window.ownerHomeHTML}catch(e){}
+
+// Ensure owner booking lists expose renter details and finish action.
+const oldRenderOwnerBookings=window.renderOwnerBookings;window.renderOwnerBookings=function(){const x=oldRenderOwnerBookings.apply(this,arguments);setTimeout(()=>{document.querySelectorAll('#dash-book .adm-item').forEach(card=>{const txt=card.textContent||'';const b=(state.bookings||[]).find(z=>txt.includes(z.num||'__'));if(!b||b.done||['done','rejected','cancelled'].includes(b.status))return;const acts=card.querySelector('.acts');if(acts&&!acts.querySelector('.cd-renter-info'))acts.insertAdjacentHTML('beforeend',`<button class="mini cd-renter-info" onclick="ownerViewRenter('${b.id}')">פרטי השוכר</button>${['approved','active'].includes(b.status)?`<button class="mini gold" onclick="endRental('${b.id}')">סיום הזמנה</button>`:''}`)})},40);return x};
+
+moveDocsOutOfSignup();document.addEventListener('DOMContentLoaded',moveDocsOutOfSignup);setTimeout(moveDocsOutOfSignup,500);
+})();
+</script>
 
 </body>
 </html>
