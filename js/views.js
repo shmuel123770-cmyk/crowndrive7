@@ -1266,7 +1266,7 @@ function carForm(car = null) {
     grid.querySelectorAll('[data-main]').forEach(b => b.onclick = () => { mainUrl = b.dataset.main; renderPhotos(); });
   }
   function addPhoto(url) {
-    if (!/^https:\/\//.test(url)) return;
+    if (!/^(https:\/\/|data:image\/)/i.test(url)) return;  // accept inline data-URL images too
     if (photos.includes(url)) return;
     if (photos.length >= 6) { toast('אפשר עד 6 תמונות'); return; }
     photos.push(url);

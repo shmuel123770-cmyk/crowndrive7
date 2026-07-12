@@ -1,5 +1,10 @@
-CrownDrive — FINAL build (2026-07-12, rev.13)
+CrownDrive — FINAL build (2026-07-12, rev.14)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.14 (2026-07-12) — THE upload bug: addPhoto() in the car form silently rejected any URL not
+starting with https:// — so the new inline data-URL images were dropped and nothing appeared.
+Fixed to accept data:image/ too. Verified end-to-end in the browser: select photo -> it is added
+to the preview as a data URL and displays. Assets ?v=16. 80 scenarios pass.
 
 rev.13 (2026-07-12) — IMAGES STORED IN THE DATABASE (no Storage at all):
 - Uploads kept failing in in-app browsers no matter the Storage/permission fix. New approach:
