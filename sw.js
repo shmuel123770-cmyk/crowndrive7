@@ -1,3 +1,4 @@
+// personal-area-clean-v3
 // CrownDrive no-cache service worker cleanup — 2026-07-10 (fixed)
 const CACHE_BUST = 'crowndrive-home-redesign-v3';
 self.addEventListener('install', event => { self.skipWaiting(); });
@@ -18,3 +19,5 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   event.respondWith(fetch(event.request, { cache: 'no-store' }).catch(() => fetch(event.request)));
 });
+
+// admin reference UI build 2026-07-11

@@ -884,7 +884,7 @@ html,body{overflow-x:hidden!important}
 .search-panel{max-width:920px!important;margin:16px auto 0!important}
 .search-row.two{grid-template-columns:repeat(2,minmax(0,1fr))!important}
 .rent-pick{grid-template-columns:repeat(3,minmax(0,1fr))!important}
-.car-type-pick{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+.car-type-pick{grid-template-columns:repeat(3,minmax(0,1fr))!important}
 .side-live{max-width:920px!important;margin:14px auto 0!important;justify-content:center!important}
 #grid.grid{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))!important;gap:24px!important;align-items:start!important;width:100%!important}
 #grid .card{height:auto!important;min-height:0!important;max-width:100%!important;display:block!important;overflow:hidden!important;border-radius:18px!important;transform:none!important}
@@ -1800,12 +1800,10 @@ input,select,textarea{font-size:16px!important}
   <div class="hero-in home-hero-v3">
     <span class="kicker">קראון הייטס · ברוקלין</span>
     <h1>רכב קרוב, <em>בדרך שמתאימה לך</em></h1>
-    <p class="home-hero-copy">בחרו מיקום, זמן וסוג מחיר — וקבלו רק רכבים שמתאימים לחיפוש.</p>
+    <p class="home-hero-copy">בחרו זמן איסוף והחזרה — וקבלו רק רכבים שמתאימים לחיפוש.</p>
     <div class="home-quick-search" aria-label="חיפוש מהיר לרכב">
-      <label><span>אזור</span><select id="home-location"><option value="">כל האזורים</option><option>Crown Heights</option><option>Brooklyn</option><option>Manhattan</option><option>Queens</option><option>אחר</option></select></label>
       <label><span>איסוף</span><input id="home-from" type="datetime-local"></label>
       <label><span>החזרה</span><input id="home-to" type="datetime-local"></label>
-      <label><span>רמת מחיר</span><select id="home-price-band"><option value="">כל רמות המחיר</option><option value="economy">חסכוני</option><option value="standard">רגיל</option><option value="premium">פרימיום</option></select></label>
       <button class="btn btn-gold home-search-submit" onclick="runHomeSearch()">חפש רכב</button>
     </div>
     <button class="home-more-filters" type="button" onclick="openFullSearch()">מסננים נוספים</button>
@@ -1885,7 +1883,7 @@ input,select,textarea{font-size:16px!important}
 <section class="section home-simple-section" id="how">
   <div class="sec-head"><h2>איך זה עובד</h2><div class="sub">שלושה צעדים ברורים — בלי תהליך מסובך.</div></div>
   <div class="home-three-steps">
-    <button type="button" class="hstep" onclick="goHowStep(2)"><span class="num">1</span><h3>בוחרים רכב</h3><p>מחפשים לפי אזור, זמן ותנאים שמתאימים לכם.</p></button>
+    <button type="button" class="hstep" onclick="goHowStep(2)"><span class="num">1</span><h3>בוחרים רכב</h3><p>מחפשים לפי זמן ותנאים שמתאימים לכם.</p></button>
     <button type="button" class="hstep" onclick="openAuth('renter')"><span class="num">2</span><h3>מקבלים אישור</h3><p>משלימים אימות קצר ובעל הרכב מאשר את הבקשה.</p></button>
     <button type="button" class="hstep" onclick="openRenterArea()"><span class="num">3</span><h3>מתעדים ויוצאים</h3><p>מתעדים את הרכב, הדלק והמיילים ויוצאים לדרך.</p></button>
   </div>
@@ -1896,31 +1894,17 @@ input,select,textarea{font-size:16px!important}
   <div class="home-trust-grid">
     <div><b>✓</b><h3>נהגים מאומתים</h3><p>רישיון, סלפי ובדיקה לפני הזמנה.</p></div>
     <div><b>◎</b><h3>תיעוד מסירה</h3><p>וידאו, תמונות, דלק ומיילים בתחילת ההשכרה.</p></div>
-    <div><b>↔</b><h3>השוואה בהחזרה</h3><p>השוואת מצב הרכב לפני ואחרי.</p></div>
     <div><b>★</b><h3>ביקורות אמיתיות</h3><p>רק לאחר השכרה שהושלמה בפועל.</p></div>
   </div>
 </section>
 
-<section class="section home-delivery-section">
-  <div class="home-split-card">
-    <div><span class="kicker">נוחות</span><h2>מסירה עד אליך</h2><p>סנן רכבים שמציעים מסירה, ראה את התנאים מראש ובחר איסוף או מסירה בתהליך ההזמנה.</p><button class="btn btn-gold" onclick="homeShortcut('delivery')">הצג רכבים עם מסירה</button></div>
-    <div class="home-map-visual" aria-hidden="true"><span>📍</span><span>🚗</span><span>⌂</span></div>
-  </div>
-</section>
+
 
 <section class="section home-owner-cta">
   <div class="home-split-card owner"><div><span class="kicker">לבעלי רכבים</span><h2>יש לך רכב פנוי?</h2><p>פרסם רכב, קבע תנאים, גיל מינימלי, זמינות ואפשרות מסירה — והכל מנוהל באזור אישי אחד.</p><button class="btn btn-gold" onclick="openAuth('owner')">הוסף רכב</button></div><div class="home-owner-points"><span>ניהול הזמנות</span><span>אימות שוכרים</span><span>תיעוד מסירה והחזרה</span><span>דירוגים וביקורות</span></div></div>
 </section>
 
-<section class="section home-faq-section">
-  <div class="sec-head"><h2>שאלות נפוצות</h2></div>
-  <div class="home-faq">
-    <details><summary>מתי רואים את הכתובת המלאה?</summary><p>הכתובת המלאה מוצגת רק לאחר שבעל הרכב מאשר את ההזמנה.</p></details>
-    <details><summary>מה צריך לעשות לפני הנסיעה?</summary><p>השוכר מעלה תיעוד חיצוני של הרכב, תמונת לוח מחוונים, מצב דלק ומיילים.</p></details>
-    <details><summary>איך נקבע אם אפשר לשכור רכב?</summary><p>לכל רכב יש גיל מינימלי ותנאים שבעל הרכב קובע, ובנוסף נדרש אימות שוכר.</p></details>
-    <details><summary>אפשר לבקש הארכה?</summary><p>כן, מתוך ההזמנה הפעילה, בכפוף לאישור בעל הרכב ולזמינות הרכב.</p></details>
-  </div>
-</section>
+
 
 <!-- CONTACT -->
 <section class="section" id="contact" style="padding-top:0">
@@ -6818,7 +6802,7 @@ setInterval(()=>{
 .handover-chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 10px;font-size:.7rem;font-weight:900;background:#F2F4F7;color:#475467;border:1px solid #EAECF0}
 .handover-chip.ok{background:#ECFDF3;color:#027A48;border-color:#ABEFC6}.handover-chip.warn{background:#FFFAEB;color:#B54708;border-color:#FEDF89}
 #ov-handover .modal{max-width:980px;width:min(980px,96vw)}
-.handover-shell{display:grid;gap:14px}.handover-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:14px;border:1px solid var(--hair);border-radius:18px;background:#F8FAFC}.handover-head b{font-size:1.05rem}.handover-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.handover-card{border:1px solid var(--hair);border-radius:18px;background:#fff;padding:14px}.handover-card h4{margin:0 0 10px;font-size:1rem}.handover-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.handover-card .field{margin:0}.handover-card textarea{min-height:88px;resize:vertical}.handover-photo-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:9px}.handover-photo{position:relative;aspect-ratio:4/3;border-radius:12px;overflow:hidden;border:1px solid var(--hair);background:#F2F4F7}.handover-photo img{width:100%;height:100%;object-fit:cover;display:block}.handover-photo button{position:absolute;top:5px;left:5px;border:0;border-radius:999px;background:rgba(17,24,39,.8);color:#fff;width:27px;height:27px;cursor:pointer}.handover-signatures{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}.sig-party{border:1px solid var(--hair);border-radius:14px;padding:10px;background:#F8FAFC}.sig-party b{display:block;margin-bottom:6px}.sig-party img{width:100%;height:82px;object-fit:contain;background:#fff;border:1px dashed #D0D5DD;border-radius:10px}.sig-empty{height:82px;display:flex;align-items:center;justify-content:center;color:#98A2B3;background:#fff;border:1px dashed #D0D5DD;border-radius:10px;font-size:.75rem}.handover-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.sig-pad-wrap{display:none;border:1px solid var(--hair);border-radius:14px;padding:10px;background:#fff;margin-top:10px}.sig-pad-wrap.open{display:block}.sig-pad{width:100%;height:160px;touch-action:none;background:#fff;border:1px dashed #98A2B3;border-radius:10px;display:block}.handover-note{font-size:.76rem;color:#667085;line-height:1.5}.handover-progress{display:flex;gap:8px;flex-wrap:wrap}
+.handover-shell{display:grid;gap:14px}.handover-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:14px;border:1px solid var(--hair);border-radius:18px;background:#F8FAFC}.handover-head b{font-size:1.05rem}.handover-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.handover-card{border:1px solid var(--hair);border-radius:18px;background:#fff;padding:14px}.handover-card h4{margin:0 0 10px;font-size:1rem}.handover-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.handover-card .field{margin:0}.handover-card textarea{min-height:88px;resize:vertical}.handover-photo-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:9px}.handover-photo{position:relative;aspect-ratio:4/3;border-radius:12px;overflow:hidden;border:1px solid var(--hair);background:#F2F4F7}.handover-photo img{width:100%;height:100%;object-fit:cover;display:block}.handover-photo button{position:absolute;top:5px;left:5px;border:0;border-radius:999px;background:rgba(17,24,39,.8);color:#fff;width:27px;height:27px;cursor:pointer}.handover-signatures{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}.sig-party{border:1px solid var(--hair);border-radius:14px;padding:10px;background:#F8FAFC}.sig-party b{display:block;margin-bottom:6px}.sig-party img{width:100%;height:82px;object-fit:contain;background:#fff;border:1px dashed #D0D5DD;border-radius:10px}.sig-empty{height:82px;display:flex;align-items:center;justify-content:center;color:#98A2B3;background:#fff;border:1px dashed #D0D5DD;border-radius:10px;font-size:.75rem}.handover-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.sig-pad-wrap{display:none;border:1px solid var(--hair);border-radius:14px;padding:10px;background:#fff;margin-top:10px}.sig-pad-wrap.open{display:block}.sig-pad{width:100%;height:160px;touch-action:none;background:#fff;border:1px dashed #98A2B3;border-radius:10px;display:block}.handover-note{font-size:.76rem;color:#667085;line-height:1.5}.handover-progress{display:flex;gap:8px;flex-wrap:wrap}
 @media(max-width:720px){.handover-grid,.handover-fields,.handover-signatures{grid-template-columns:1fr}.handover-photo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#ov-handover .modal{width:100%;max-width:none;height:100%;border-radius:0}.handover-head{flex-direction:column}}
 </style>
 
@@ -7111,7 +7095,7 @@ setInterval(()=>{
 #ov-search .full-search-panel select,#ov-search .full-search-panel input{min-height:38px!important;padding:8px 10px!important}
 #ov-search .full-search-panel button{min-height:36px!important;padding:7px 10px!important}
 .admin-modal{max-width:1080px!important}
-#ov-admin .dash-tabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:8px!important;padding:8px!important}
+#ov-admin .dash-tabs{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important;padding:8px!important}
 #ov-admin .dash-tabs button{min-width:0!important;padding:10px 8px!important;font-size:.85rem!important}
 #ov-admin .drawer-userbar{padding:10px 14px!important}
 #ov-admin .admin-panel{padding:14px!important}
@@ -7123,7 +7107,7 @@ setInterval(()=>{
 
 <style id="crowndrive-workflow-redesign-v2">
 .cd-role-nav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px;padding:8px;border:1px solid var(--hair);border-radius:18px;background:#f6f8fa;position:sticky;top:0;z-index:4}.cd-role-nav button{flex:1;min-width:120px;border:0;border-radius:13px;padding:11px 12px;font-weight:900;background:transparent;color:var(--ink);cursor:pointer}.cd-role-nav button.on{background:var(--ink);color:#fff;box-shadow:0 5px 18px rgba(20,35,55,.16)}
-.cd-home-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.cd-home-card{border:1px solid var(--hair);border-radius:18px;padding:16px;background:#fff;box-shadow:0 8px 26px rgba(18,45,68,.06)}.cd-home-card b{font-size:1.55rem;display:block}.cd-home-card span{color:var(--mut2);font-size:.82rem}.cd-section{display:none}.cd-section.on{display:block}.cd-empty{padding:28px;text-align:center;border:1px dashed var(--hair);border-radius:18px;color:var(--mut2)}
+.cd-home-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.cd-home-card{border:1px solid var(--hair);border-radius:18px;padding:16px;background:#fff;box-shadow:0 8px 26px rgba(18,45,68,.06)}.cd-home-card b{font-size:1.55rem;display:block}.cd-home-card span{color:var(--mut2);font-size:.82rem}.cd-section{display:none}.cd-section.on{display:block}.cd-empty{padding:28px;text-align:center;border:1px dashed var(--hair);border-radius:18px;color:var(--mut2)}
 .cd-verify-summary{border:1px solid var(--hair);border-radius:20px;padding:16px;background:linear-gradient(145deg,#fff,#f4f8fb);margin-bottom:14px}.cd-verify-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--hair)}.cd-verify-row:last-child{border-bottom:0}.cd-vstatus{border-radius:999px;padding:5px 9px;font-size:.74rem;font-weight:900}.cd-vstatus.ok{background:#e6faef;color:#087547}.cd-vstatus.wait{background:#fff4dc;color:#945a00}.cd-vstatus.bad{background:#ffeaea;color:#a32121}.cd-doc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.cd-upload-box{border:1px dashed #9bb0bf;border-radius:16px;padding:14px;background:#fafcfd}.cd-upload-box img{width:100%;height:170px;object-fit:contain;border-radius:12px;background:#eef2f5;margin-top:8px}.cd-upload-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.cd-upload-actions label{flex:1;min-width:120px;text-align:center}
 .cd-timeline{display:flex;align-items:flex-start;gap:0;margin:16px 0;overflow:auto;padding-bottom:6px}.cd-step{min-width:135px;position:relative;text-align:center;color:#73808b;font-size:.74rem;font-weight:800}.cd-step:before{content:'';display:block;width:18px;height:18px;border-radius:50%;background:#d9e0e6;margin:0 auto 7px;position:relative;z-index:2}.cd-step:after{content:'';position:absolute;height:3px;background:#d9e0e6;top:8px;right:50%;width:100%;z-index:1}.cd-step:first-child:after{display:none}.cd-step.done{color:#087653}.cd-step.done:before,.cd-step.current:before{background:#17ad7b;box-shadow:0 0 0 5px rgba(23,173,123,.12)}.cd-step.done:after,.cd-step.current:after{background:#17ad7b}.cd-step.current{color:#17384a}
 .cd-trip-card{border:1px solid var(--hair);border-radius:22px;padding:16px;background:#fff;margin-bottom:14px}.cd-trip-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.cd-trip-head h3{margin:0}.cd-trip-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.cd-price-breakdown{display:grid;gap:7px;border:1px solid var(--hair);border-radius:15px;padding:12px;background:#fafbfc}.cd-price-line{display:flex;justify-content:space-between}.cd-price-line.total{font-weight:950;border-top:1px solid var(--hair);padding-top:8px}.cd-trust-badges{display:flex;gap:7px;flex-wrap:wrap}.cd-trust-badges span{border-radius:999px;padding:5px 9px;background:#edf5f8;font-size:.72rem;font-weight:850}.cd-dispute-list{display:grid;gap:10px}.cd-dispute{border:1px solid var(--hair);border-radius:14px;padding:12px}.cd-hidden-old-tabs{display:none!important}
@@ -7194,17 +7178,17 @@ setInterval(()=>{let changed=false;[...(state.renters||[]),...Object.values(stat
 </script>
 
 <style id="crowndrive-home-redesign-v3">
-.home-hero-v3{max-width:1120px}.home-hero-copy{max-width:680px;margin:10px auto 22px;color:rgba(255,255,255,.78);font-size:1.02rem}.home-quick-search{display:grid;grid-template-columns:1.1fr 1fr 1fr .9fr auto;gap:9px;align-items:end;background:rgba(10,20,30,.82);border:1px solid rgba(255,255,255,.16);border-radius:22px;padding:13px;max-width:1080px;margin:0 auto;backdrop-filter:blur(14px)}.home-quick-search label{display:grid;gap:5px;text-align:right}.home-quick-search label span{font-size:.7rem;font-weight:900;color:rgba(255,255,255,.72)}.home-quick-search input,.home-quick-search select{width:100%;min-height:43px;border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:8px 10px;background:#fff;color:#182631;font:inherit}.home-search-submit{min-height:43px;white-space:nowrap}.home-more-filters{border:0;background:transparent;color:#f5d788;text-decoration:underline;margin-top:10px;cursor:pointer;font-weight:800}.home-shortcuts{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.home-shortcuts button{border:1px solid var(--hair);background:#fff;border-radius:999px;padding:9px 14px;font-weight:850;cursor:pointer}.home-shortcuts button:hover{border-color:var(--gold);background:#fffaf0}.home-active-wrap{padding-top:24px!important;padding-bottom:0!important}.home-active-card{border:1px solid rgba(201,157,62,.4);background:linear-gradient(135deg,#fffdf6,#fff);border-radius:22px;padding:18px;display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center;box-shadow:0 12px 38px rgba(31,42,52,.08)}.home-active-card h2{margin:0 0 4px}.home-active-meta{display:flex;gap:10px;flex-wrap:wrap;color:var(--mut2);font-size:.84rem}.home-active-actions{display:flex;gap:8px;flex-wrap:wrap}.home-three-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.home-three-steps .hstep{min-height:210px}.home-trust-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.home-trust-grid>div{border:1px solid var(--hair);border-radius:20px;padding:18px;background:#fff}.home-trust-grid b{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:#eef7f6;color:#087653;font-size:1.2rem}.home-trust-grid h3{margin:12px 0 5px}.home-trust-grid p{margin:0;color:var(--mut2)}.home-split-card{display:grid;grid-template-columns:1.2fr .8fr;gap:24px;align-items:center;border-radius:26px;padding:28px;background:linear-gradient(135deg,#102b36,#1c5361);color:#fff;overflow:hidden}.home-split-card.owner{background:linear-gradient(135deg,#2d2414,#735a22)}.home-split-card h2{font-size:2rem;margin:7px 0}.home-split-card p{color:rgba(255,255,255,.78);max-width:650px}.home-map-visual{min-height:190px;border:1px solid rgba(255,255,255,.18);border-radius:22px;display:flex;align-items:center;justify-content:space-around;font-size:2.2rem;background:radial-gradient(circle at center,rgba(255,255,255,.12),transparent 60%)}.home-owner-points{display:grid;grid-template-columns:1fr 1fr;gap:10px}.home-owner-points span{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:12px;font-weight:850}.home-faq{display:grid;grid-template-columns:1fr 1fr;gap:10px}.home-faq details{border:1px solid var(--hair);border-radius:16px;padding:14px;background:#fff}.home-faq summary{font-weight:900;cursor:pointer}.home-faq p{color:var(--mut2);margin:10px 0 0}.home-simple-section,.home-trust-section,.home-delivery-section,.home-owner-cta,.home-faq-section{padding-top:54px!important;padding-bottom:54px!important}.home-mini-status .linklike{font-weight:900}
+.home-hero-v3{max-width:1120px}.home-hero-copy{max-width:680px;margin:10px auto 22px;color:rgba(255,255,255,.78);font-size:1.02rem}.home-quick-search{display:grid;grid-template-columns:1fr 1fr auto;gap:9px;align-items:end;background:rgba(10,20,30,.82);border:1px solid rgba(255,255,255,.16);border-radius:22px;padding:13px;max-width:1080px;margin:0 auto;backdrop-filter:blur(14px)}.home-quick-search label{display:grid;gap:5px;text-align:right}.home-quick-search label span{font-size:.7rem;font-weight:900;color:rgba(255,255,255,.72)}.home-quick-search input,.home-quick-search select{width:100%;min-height:43px;border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:8px 10px;background:#fff;color:#182631;font:inherit}.home-search-submit{min-height:43px;white-space:nowrap}.home-more-filters{border:0;background:transparent;color:#f5d788;text-decoration:underline;margin-top:10px;cursor:pointer;font-weight:800}.home-shortcuts{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.home-shortcuts button{border:1px solid var(--hair);background:#fff;border-radius:999px;padding:9px 14px;font-weight:850;cursor:pointer}.home-shortcuts button:hover{border-color:var(--gold);background:#fffaf0}.home-active-wrap{padding-top:24px!important;padding-bottom:0!important}.home-active-card{border:1px solid rgba(201,157,62,.4);background:linear-gradient(135deg,#fffdf6,#fff);border-radius:22px;padding:18px;display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center;box-shadow:0 12px 38px rgba(31,42,52,.08)}.home-active-card h2{margin:0 0 4px}.home-active-meta{display:flex;gap:10px;flex-wrap:wrap;color:var(--mut2);font-size:.84rem}.home-active-actions{display:flex;gap:8px;flex-wrap:wrap}.home-three-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.home-three-steps .hstep{min-height:210px}.home-trust-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.home-trust-grid>div{border:1px solid var(--hair);border-radius:20px;padding:18px;background:#fff}.home-trust-grid b{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:#eef7f6;color:#087653;font-size:1.2rem}.home-trust-grid h3{margin:12px 0 5px}.home-trust-grid p{margin:0;color:var(--mut2)}.home-split-card{display:grid;grid-template-columns:1.2fr .8fr;gap:24px;align-items:center;border-radius:26px;padding:28px;background:linear-gradient(135deg,#102b36,#1c5361);color:#fff;overflow:hidden}.home-split-card.owner{background:linear-gradient(135deg,#2d2414,#735a22)}.home-split-card h2{font-size:2rem;margin:7px 0}.home-split-card p{color:rgba(255,255,255,.78);max-width:650px}.home-map-visual{min-height:190px;border:1px solid rgba(255,255,255,.18);border-radius:22px;display:flex;align-items:center;justify-content:space-around;font-size:2.2rem;background:radial-gradient(circle at center,rgba(255,255,255,.12),transparent 60%)}.home-owner-points{display:grid;grid-template-columns:1fr 1fr;gap:10px}.home-owner-points span{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:12px;font-weight:850}.home-faq{display:grid;grid-template-columns:1fr 1fr;gap:10px}.home-faq details{border:1px solid var(--hair);border-radius:16px;padding:14px;background:#fff}.home-faq summary{font-weight:900;cursor:pointer}.home-faq p{color:var(--mut2);margin:10px 0 0}.home-simple-section,.home-trust-section,.home-delivery-section,.home-owner-cta,.home-faq-section{padding-top:54px!important;padding-bottom:54px!important}.home-mini-status .linklike{font-weight:900}
 @media(max-width:980px){.home-quick-search{grid-template-columns:1fr 1fr}.home-search-submit{grid-column:1/-1}.home-trust-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:700px){.home-quick-search{grid-template-columns:1fr;padding:10px;border-radius:17px}.home-search-submit{grid-column:auto}.home-hero-copy{font-size:.9rem}.hero-in h1{font-size:clamp(2rem,11vw,3.3rem)}.home-three-steps,.home-trust-grid,.home-faq{grid-template-columns:1fr}.home-split-card{grid-template-columns:1fr;padding:20px}.home-map-visual{min-height:140px}.home-active-card{grid-template-columns:1fr}.home-active-actions .btn{flex:1}.home-owner-points{grid-template-columns:1fr 1fr}.home-shortcuts{display:grid;grid-template-columns:1fr 1fr}.home-shortcuts button{font-size:.78rem;padding:8px}}
 </style>
 <script id="crowndrive-home-redesign-v3-script">
 (function(){
   const $h=id=>document.getElementById(id);
-  function saveHomePrefs(){try{localStorage.setItem('crowndrive_home_search',JSON.stringify({location:$h('home-location')?.value||'',from:$h('home-from')?.value||'',to:$h('home-to')?.value||'',priceBand:$h('home-price-band')?.value||''}))}catch(e){}}
-  function loadHomePrefs(){try{const d=JSON.parse(localStorage.getItem('crowndrive_home_search')||'{}');if($h('home-location'))$h('home-location').value=d.location||'';if($h('home-from'))$h('home-from').value=d.from||'';if($h('home-to'))$h('home-to').value=d.to||'';if($h('home-price-band'))$h('home-price-band').value=d.priceBand||'';return d}catch(e){return {}}}
+  function saveHomePrefs(){try{localStorage.setItem('crowndrive_home_search',JSON.stringify({from:$h('home-from')?.value||'',to:$h('home-to')?.value||''}))}catch(e){}}
+  function loadHomePrefs(){try{const d=JSON.parse(localStorage.getItem('crowndrive_home_search')||'{}');if($h('home-from'))$h('home-from').value=d.from||'';if($h('home-to'))$h('home-to').value=d.to||'';return d}catch(e){return {}}}
   window.runHomeSearch=function(){
-    const d={location:$h('home-location')?.value||'',from:$h('home-from')?.value||'',to:$h('home-to')?.value||'',priceBand:$h('home-price-band')?.value||''};
+    const d={from:$h('home-from')?.value||'',to:$h('home-to')?.value||''};
     if(d.from&&d.to&&new Date(d.to)<=new Date(d.from)){safeToast('זמן ההחזרה חייב להיות אחרי זמן האיסוף');return}
     saveHomePrefs();searchQ={...(searchQ||{}),location:d.location,priceBand:d.priceBand,availableOnly:true};filter='available';render();openFullSearch();
   };
@@ -7230,6 +7214,205 @@ setInterval(()=>{let changed=false;[...(state.renters||[]),...Object.values(stat
   const oldRender=window.render;window.render=function(){const r=oldRender.apply(this,arguments);try{renderHomeActive()}catch(e){console.warn(e)}return r};
   document.addEventListener('DOMContentLoaded',()=>{loadHomePrefs();setTimeout(renderHomeActive,400)});
   setTimeout(()=>{loadHomePrefs();renderHomeActive()},600);
+})();
+</script>
+
+
+<style id="crowndrive-personal-area-clean-v3">
+/* Personal area v3: one clear navigation, unique content per screen */
+#ov-owner .m-body,#ov-renter .m-body,#ov-admin .m-body{padding:0!important;background:#f5f7fa!important}
+.cd-pa-shell{display:grid;grid-template-columns:190px minmax(0,1fr);min-height:620px}
+.cd-pa-nav{background:#fff;border-left:1px solid rgba(15,23,42,.08);padding:16px 10px;display:flex;flex-direction:column;gap:7px;position:sticky;top:0;height:100%;align-self:start}
+.cd-pa-nav button{border:0;background:transparent;color:#475467;border-radius:13px;padding:12px 13px;text-align:right;font:inherit;font-weight:850;cursor:pointer;display:flex;align-items:center;gap:9px}
+.cd-pa-nav button:hover{background:#f2f5f8}.cd-pa-nav button.on{background:#17212b;color:#fff;box-shadow:0 8px 22px rgba(23,33,43,.16)}
+.cd-pa-main{padding:18px;min-width:0}.cd-pa-section{display:none}.cd-pa-section.on{display:block}.cd-pa-section>h2{font-size:1.35rem;margin:2px 0 14px;color:#101828}
+.cd-pa-welcome{background:linear-gradient(135deg,#17212b,#30465a);color:#fff;border-radius:22px;padding:20px;margin-bottom:14px;display:flex;justify-content:space-between;gap:16px;align-items:center}
+.cd-pa-welcome h2{margin:0 0 5px;font-size:1.5rem}.cd-pa-welcome p{margin:0;color:#d8e1e9;font-size:.88rem}.cd-pa-welcome .btn{white-space:nowrap}
+.cd-pa-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px}.cd-pa-stat{background:#fff;border:1px solid rgba(15,23,42,.08);border-radius:17px;padding:15px}.cd-pa-stat b{font-size:1.45rem;display:block;color:#101828}.cd-pa-stat span{font-size:.76rem;color:#667085;font-weight:750}
+.cd-pa-card{background:#fff;border:1px solid rgba(15,23,42,.08);border-radius:20px;padding:16px;margin-bottom:12px;box-shadow:0 8px 24px rgba(15,23,42,.04)}
+.cd-pa-card-title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}.cd-pa-card-title h3{margin:0;font-size:1.05rem;color:#101828}
+.cd-pa-empty{padding:28px;text-align:center;color:#667085;background:#fff;border:1px dashed #cfd7df;border-radius:18px}
+#ov-owner .dash-tabs,#ov-admin .dash-tabs,#ov-owner>.modal>.m-body>.note,#ov-admin .admin-mobile-note{display:none!important}
+#ov-owner .cd-role-nav,#ov-renter .cd-role-nav{display:none!important}
+#ov-owner #dash-cars .personal-hero,#ov-owner #dash-cars>.note,#ov-owner #dash-cars>div[style*="justify-content:flex-end"]{display:none!important}
+#ov-owner #dash-cars,#ov-owner #dash-book,#ov-owner #dash-prof,#ov-owner #dash-add{display:block!important}
+#ov-owner #dash-add{background:#fff;border:1px solid rgba(15,23,42,.08);border-radius:20px;padding:16px}
+#ov-admin .kpis{grid-template-columns:repeat(4,minmax(0,1fr))!important}.cd-pa-admin-alerts .admin-panel{margin:0!important}
+.drawer-userbar{padding:10px 16px!important}.drawer-actions{gap:6px!important}.drawer-actions .mini{padding:8px 11px!important}
+@media(max-width:900px){.cd-pa-shell{grid-template-columns:1fr}.cd-pa-nav{position:sticky;top:0;z-index:12;height:auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-left:0;border-bottom:1px solid rgba(15,23,42,.08);padding:8px;background:rgba(255,255,255,.96);backdrop-filter:blur(14px)}.cd-pa-nav button{justify-content:center;text-align:center;padding:10px 6px;font-size:.76rem;gap:4px}.cd-pa-main{padding:12px}.cd-pa-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.cd-pa-welcome{align-items:flex-start;flex-direction:column}.cd-pa-welcome .btn{width:100%}}
+@media(max-width:560px){.cd-pa-nav{grid-template-columns:repeat(2,minmax(0,1fr))}.cd-pa-main{padding:10px}.cd-pa-welcome{padding:16px;border-radius:18px}.cd-pa-stats{gap:8px}.cd-pa-stat{padding:12px}.cd-pa-card{padding:13px}.drawer-actions .mini.gold{display:none!important}}
+</style>
+<script id="crowndrive-personal-area-clean-v3-script">
+(function(){
+'use strict';
+const q=(s,r=document)=>r.querySelector(s), qa=(s,r=document)=>[...r.querySelectorAll(s)];
+function userName(){try{return (me()?.name||'').split(' ')[0]||'שלום'}catch(e){return 'שלום'}}
+function navHTML(role,items){return `<nav class="cd-pa-nav" aria-label="ניווט באזור האישי">${items.map((x,i)=>`<button type="button" class="${i===0?'on':''}" data-pa="${x[0]}" onclick="cdPANav('${role}','${x[0]}')"><span>${x[1]}</span>${x[2]}</button>`).join('')}</nav>`}
+window.cdPANav=function(role,sec){
+ const ov=document.getElementById('ov-'+role);if(!ov)return;
+ qa('.cd-pa-section',ov).forEach(x=>x.classList.toggle('on',x.dataset.pa===sec));
+ qa('.cd-pa-nav button',ov).forEach(x=>x.classList.toggle('on',x.dataset.pa===sec));
+ if(role==='owner'){
+   if(sec==='bookings'&&typeof renderOwnerBookings==='function')renderOwnerBookings();
+   if(sec==='cars'&&typeof renderAdminList==='function')renderAdminList();
+   if(sec==='profile'&&typeof renderOwnerProfileSettings==='function')renderOwnerProfileSettings();
+ }
+};
+function bookingLists(role,id){const all=(state.bookings||[]).filter(b=>role==='owner'?b.ownerId===id:b.renterId===id).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));return {all,active:all.filter(b=>['approved','active'].includes(b.status)&&!b.done),pending:all.filter(b=>b.status==='pending'),done:all.filter(b=>b.done||b.status==='done')}}
+function ownerHome(u){const x=bookingLists('owner',u.id),cars=(state.cars||[]).filter(c=>c.ownerId===u.id),avail=cars.filter(c=>c.status==='available').length;return `<div class="cd-pa-welcome"><div><h2>שלום ${esc(userName())}</h2><p>כאן רואים רק מה שדורש טיפול עכשיו.</p></div><button class="btn btn-gold" onclick="cdPANav('owner','cars');setTimeout(()=>{document.getElementById('dash-add')?.scrollIntoView({behavior:'smooth'})},80)">הוסף רכב</button></div><div class="cd-pa-stats"><div class="cd-pa-stat"><b>${x.active.length}</b><span>השכרות פעילות</span></div><div class="cd-pa-stat"><b>${x.pending.length}</b><span>ממתינות לאישור</span></div><div class="cd-pa-stat"><b>${cars.length}</b><span>הרכבים שלי</span></div><div class="cd-pa-stat"><b>${avail}</b><span>זמינים עכשיו</span></div></div><div class="cd-pa-card"><div class="cd-pa-card-title"><h3>הזמנות שדורשות תשומת לב</h3><button class="mini" onclick="cdPANav('owner','bookings')">הצג הכול</button></div>${(x.pending.length||x.active.length)?[...x.pending,...x.active].slice(0,3).map(b=>typeof tripCard==='function'?tripCard(b,'owner'):'').join(''):'<div class="cd-pa-empty">אין כרגע הזמנות שדורשות טיפול</div>'}</div>`}
+function rebuildOwner(){
+ const body=q('#ov-owner .m-body');if(!body)return;
+ const oldCars=document.getElementById('dash-cars'),oldBook=document.getElementById('dash-book'),oldProf=document.getElementById('dash-prof'),oldAdd=document.getElementById('dash-add');
+ if(!oldCars||!oldBook||!oldProf||!oldAdd)return;
+ [oldCars,oldBook,oldProf,oldAdd].forEach(x=>x.remove());
+ body.innerHTML=`<div class="cd-pa-shell">${navHTML('owner',[['home','⌂','בית'],['bookings','▣','הזמנות'],['cars','▤','הרכבים שלי'],['profile','◯','פרופיל']])}<main class="cd-pa-main"><section class="cd-pa-section on" data-pa="home" id="cd-owner-home-v3"></section><section class="cd-pa-section" data-pa="bookings" id="cd-owner-book-v3"><h2>הזמנות</h2></section><section class="cd-pa-section" data-pa="cars" id="cd-owner-cars-v3"><div class="cd-pa-card-title"><h2>הרכבים שלי</h2><button class="btn btn-gold" onclick="document.getElementById('dash-add')?.scrollIntoView({behavior:'smooth'})">הוסף רכב</button></div></section><section class="cd-pa-section" data-pa="profile" id="cd-owner-profile-v3"><h2>פרופיל והעדפות</h2></section></main></div>`;
+ q('#cd-owner-home-v3').innerHTML=ownerHome(me());q('#cd-owner-book-v3').append(oldBook);q('#cd-owner-cars-v3').append(oldCars,oldAdd);q('#cd-owner-profile-v3').append(oldProf);
+ try{renderOwnerBookings();renderAdminList();renderOwnerProfileSettings()}catch(e){console.warn('owner dashboard render',e)}
+}
+const currentOwner=window.openOwner;window.openOwner=function(){const r=currentOwner&&currentOwner.apply(this,arguments);setTimeout(rebuildOwner,40);return r};
+function renterHome(u,list,active,v){return `<div class="cd-pa-welcome"><div><h2>שלום ${esc(userName())}</h2><p>הפעולה הבאה בהשכרה שלך מופיעה כאן.</p></div>${v.status!=='approved'?`<button class="btn btn-gold" onclick="cdPANav('renter','profile')">השלם אימות</button>`:''}</div><div class="cd-pa-stats"><div class="cd-pa-stat"><b>${active.length}</b><span>השכרות פעילות</span></div><div class="cd-pa-stat"><b>${list.filter(b=>b.status==='pending').length}</b><span>ממתינות לאישור</span></div><div class="cd-pa-stat"><b>${list.filter(b=>b.done||b.status==='done').length}</b><span>הושלמו</span></div><div class="cd-pa-stat"><b>${v.status==='approved'?'✓':'!'}</b><span>${vLabel(v)[0]}</span></div></div><div class="cd-pa-card"><div class="cd-pa-card-title"><h3>ההשכרה הפעילה</h3><button class="mini" onclick="cdPANav('renter','bookings')">כל ההזמנות</button></div>${active.length?active.map(b=>tripCard(b,'renter')).join(''):'<div class="cd-pa-empty">אין כרגע השכרה פעילה</div>'}</div>`}
+window.openRenterArea=function(){
+ if(!state.session||state.session.role!=='renter')return openAuth('renter');renderPersonalDrawerChrome();
+ const u=me(),v=ensureVerification(u),list=(state.bookings||[]).filter(b=>b.renterId===u.id).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)),active=list.filter(b=>['approved','active'].includes(b.status)&&!b.done),body=document.getElementById('renter-body');
+ body.innerHTML=`<div class="cd-pa-shell">${navHTML('renter',[['home','⌂','בית'],['bookings','▣','ההזמנות שלי'],['profile','◯','פרופיל ואימות'],['messages','✉','הודעות']])}<main class="cd-pa-main"><section class="cd-pa-section on" data-pa="home">${renterHome(u,list,active,v)}</section><section class="cd-pa-section" data-pa="bookings"><h2>ההזמנות שלי</h2>${list.length?list.map(b=>tripCard(b,'renter')).join(''):'<div class="cd-pa-empty">עדיין אין הזמנות</div>'}</section><section class="cd-pa-section" data-pa="profile"><h2>פרופיל ואימות</h2>${verificationHTML(u)}<div style="margin-top:12px"><button class="btn btn-out" onclick="openAccount()">עריכת פרטים אישיים</button></div></section><section class="cd-pa-section" data-pa="messages"><h2>הודעות</h2><div class="cd-pa-card"><p>כל השיחות מרוכזות במסך אחד.</p><button class="btn btn-gold" onclick="closeOv('ov-renter');openChat()">פתח הודעות</button></div></section></main></div>`;openOv('ov-renter')
+};
+function adminNav(){const tabs=q('#ov-admin .dash-tabs');if(!tabs)return;tabs.innerHTML=`<button class="on" id="ad-all" onclick="setAdminTab('all')">סקירה</button><button id="ad-bookings" onclick="setAdminTab('bookings')">הזמנות</button><button id="ad-cars" onclick="setAdminTab('cars')">רכבים</button><button id="ad-users" onclick="setAdminTab('users')">משתמשים</button><button id="ad-alerts" onclick="setAdminTab('alerts')">התראות</button>`;tabs.style.display='grid';tabs.classList.add('cd-admin-clean-nav')}
+const originalSetAdmin=window.setAdminTab;window.setAdminTab=function(t){adminTab=t;['all','bookings','cars','users','alerts'].forEach(x=>document.getElementById('ad-'+x)?.classList.toggle('on',x===t));const box=document.getElementById('admin-body');if(!box)return;if(t==='all')box.innerHTML=`<div class="cd-pa-welcome"><div><h2>לוח מנהל</h2><p>סקירה קצרה בלבד. כל נושא נמצא במסך נפרד.</p></div></div>${adminKPIs()}<div class="cd-pa-card"><div class="cd-pa-card-title"><h3>הזמנות אחרונות</h3><button class="mini" onclick="setAdminTab('bookings')">הצג הכול</button></div>${adminBookingsTable(allBookingsSorted().slice(0,5))}</div>`;if(t==='bookings')box.innerHTML=`<div class="cd-pa-card"><div class="cd-pa-card-title"><h3>כל ההזמנות</h3></div>${adminBookingsTable()}</div>`;if(t==='cars')box.innerHTML=`<div class="cd-pa-card"><div class="cd-pa-card-title"><h3>כל הרכבים</h3></div>${adminCarsHTML()}</div>`;if(t==='users')box.innerHTML=`<div class="cd-pa-card"><div class="cd-pa-card-title"><h3>משתמשים ואימותים</h3></div>${adminFullUsersHTML()}</div>`;if(t==='alerts')box.innerHTML=`<div class="cd-pa-card cd-pa-admin-alerts"><div class="cd-pa-card-title"><h3>התראות</h3><button class="mini" onclick="markAllAdminNotificationsRead()">סמן הכל כנקרא</button></div>${adminNotificationsHTML()}</div>`};
+const currentAdmin=window.openAdmin;window.openAdmin=function(){const r=currentAdmin&&currentAdmin.apply(this,arguments);setTimeout(()=>{adminNav();window.setAdminTab('all')},30);return r};
+})();
+</script>
+
+
+<style id="crowndrive-admin-reference-ui-v1">
+/* Admin dashboard inspired by the approved clean reference */
+#ov-admin{padding:0!important;background:rgba(12,18,28,.76)!important}
+#ov-admin .admin-modal{width:min(1460px,96vw)!important;height:min(930px,94dvh)!important;border-radius:20px!important;background:#f7f7f5!important;box-shadow:0 28px 80px rgba(0,0,0,.28)!important}
+#ov-admin .m-head{background:#fff!important;color:#171717!important;border-bottom:1px solid #eceae5!important;padding:18px 28px!important}
+#ov-admin .m-head h3{font-size:1.08rem!important;font-weight:650!important}
+#ov-admin .m-close{background:#f3f2ee!important;color:#202020!important}
+#ov-admin .drawer-userbar{background:#fff!important;border-bottom:1px solid #eceae5!important;padding:10px 28px!important}
+#ov-admin .m-body{background:#f7f7f5!important;overflow:auto!important}
+#ov-admin .dash-tabs{order:2;background:transparent!important;box-shadow:none!important;border:0!important;border-bottom:1px solid #ddd9d1!important;margin:0 38px!important;padding:0!important;display:flex!important;gap:36px!important;justify-content:flex-start!important;position:sticky!important;top:0!important;z-index:4!important;backdrop-filter:blur(18px);background:rgba(247,247,245,.94)!important}
+#ov-admin .dash-tabs button{background:transparent!important;color:#6f6b64!important;border:0!important;border-radius:0!important;padding:18px 4px 14px!important;margin:0!important;font-size:.9rem!important;font-weight:600!important;min-height:auto!important;position:relative!important}
+#ov-admin .dash-tabs button.on{color:#171717!important}
+#ov-admin .dash-tabs button.on:after{content:"";position:absolute;right:0;left:0;bottom:-1px;height:2px;background:#171717}
+#admin-body{padding:32px 38px 44px!important;max-width:none!important}
+.cd-ref-admin-head{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;margin-bottom:26px}
+.cd-ref-admin-title small{display:block;color:#a69c8d;font-size:.68rem;letter-spacing:.32em;margin-bottom:8px}
+.cd-ref-admin-title h2{font-size:2.3rem;line-height:1.08;font-weight:420;color:#181818;margin:0}
+.cd-ref-export{background:#fff;border:1px solid #ddd9d1;border-radius:0;padding:12px 18px;color:#222;font-weight:600;cursor:pointer;box-shadow:none}
+.cd-ref-export:hover{background:#f0eee9}
+.cd-ref-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:0 0 34px}
+.cd-ref-kpi{background:#fff;border:1px solid #eeeae3;min-height:118px;padding:22px 24px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 1px 3px rgba(26,23,18,.03)}
+.cd-ref-kpi-top{display:flex;justify-content:space-between;align-items:center;color:#9d8b70;font-size:.72rem;letter-spacing:.18em}
+.cd-ref-kpi-icon{font-size:1.1rem;letter-spacing:0;color:#9b8060}
+.cd-ref-kpi strong{font-size:2.05rem;font-weight:420;color:#141414;line-height:1}
+.cd-ref-panel{background:#fff;border:1px solid #ece8e1;padding:0;overflow:hidden}
+.cd-ref-panel-head{display:flex;justify-content:space-between;align-items:center;padding:20px 22px;border-bottom:1px solid #ece8e1}
+.cd-ref-panel-head h3{font-size:1rem;margin:0;font-weight:650}.cd-ref-panel-head span{font-size:.78rem;color:#888}
+.cd-ref-empty{min-height:180px;display:grid;place-items:center;color:#999;padding:28px;text-align:center}
+.cd-ref-overview-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.cd-ref-list{padding:18px 22px;display:grid;gap:12px}
+.cd-ref-list-row{display:flex;justify-content:space-between;align-items:center;gap:16px;border-bottom:1px solid #f1eee8;padding-bottom:12px}.cd-ref-list-row:last-child{border-bottom:0;padding-bottom:0}
+.cd-ref-list-row b{font-size:.88rem;color:#222}.cd-ref-list-row span{font-size:.76rem;color:#888}
+.cd-ref-tab-title{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}.cd-ref-tab-title h2{font-size:1.45rem;font-weight:500;margin:0}.cd-ref-tab-title p{margin:4px 0 0;color:#888;font-size:.82rem}
+#ov-admin .cd-pa-card{background:#fff!important;border:1px solid #ece8e1!important;border-radius:0!important;box-shadow:none!important;padding:18px!important}
+#ov-admin .tbl{border-radius:0!important;box-shadow:none!important;font-size:.82rem!important}
+#ov-admin .tbl th{background:#f2f0ec!important;color:#6f6a62!important;font-weight:600!important;position:static!important}
+#ov-admin .tbl td,#ov-admin .tbl th{padding:13px 14px!important;border-color:#ede9e2!important}
+#ov-admin .mini{border-radius:4px!important}
+@media(max-width:900px){
+ #ov-admin .admin-modal{width:100vw!important;height:100dvh!important;border-radius:0!important}
+ #ov-admin .dash-tabs{margin:0 12px!important;gap:14px!important;overflow-x:auto!important;justify-content:flex-start!important;display:flex!important}
+ #ov-admin .dash-tabs button{white-space:nowrap!important;font-size:.78rem!important;padding:14px 2px 11px!important}
+ #admin-body{padding:20px 14px 32px!important}
+ .cd-ref-admin-head{align-items:center}.cd-ref-admin-title h2{font-size:1.65rem}
+ .cd-ref-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.cd-ref-kpi{min-height:100px;padding:16px}
+ .cd-ref-overview-grid{grid-template-columns:1fr}
+}
+@media(max-width:520px){.cd-ref-kpis{grid-template-columns:1fr 1fr}.cd-ref-admin-head{flex-direction:column}.cd-ref-export{width:100%}.cd-ref-kpi strong{font-size:1.7rem}}
+</style>
+<script id="crowndrive-admin-reference-ui-v1-script">
+(function(){
+'use strict';
+const money=n=>'$'+Math.round(Number(n)||0).toLocaleString('en-US');
+function allUsers(){
+ const m=new Map();
+ [...(state.owners||[]),...(state.renters||[]),...Object.values(state.users||{})].forEach(u=>{if(u&&u.id)m.set(u.id,{...(m.get(u.id)||{}),...u})});
+ return [...m.values()];
+}
+function dashboardStats(){
+ const users=allUsers(); const cars=state.cars||[]; const bookings=state.bookings||[];
+ const income=bookings.filter(b=>b.status==='approved'||b.status==='active'||b.status==='done'||b.done).reduce((s,b)=>s+(Number(b.total)||0),0);
+ return {users:users.length,cars:cars.length,bookings:bookings.length,income};
+}
+function kpis(){const s=dashboardStats();return `<div class="cd-ref-kpis">
+ <div class="cd-ref-kpi"><div class="cd-ref-kpi-top"><span>משתמשים</span><i class="cd-ref-kpi-icon">♙</i></div><strong>${s.users}</strong></div>
+ <div class="cd-ref-kpi"><div class="cd-ref-kpi-top"><span>רכבים</span><i class="cd-ref-kpi-icon">⌁</i></div><strong>${s.cars}</strong></div>
+ <div class="cd-ref-kpi"><div class="cd-ref-kpi-top"><span>הזמנות</span><i class="cd-ref-kpi-icon">□</i></div><strong>${s.bookings}</strong></div>
+ <div class="cd-ref-kpi"><div class="cd-ref-kpi-top"><span>מחזור מאושר</span><i class="cd-ref-kpi-icon">$</i></div><strong>${money(s.income)}</strong></div>
+ </div>`}
+function header(){return `<div class="cd-ref-admin-head"><div class="cd-ref-admin-title"><small>מרכז הבקרה</small><h2>לוח ניהול מנהל</h2></div><button class="cd-ref-export" onclick="adminExportData()">⇩ ייצוא JSON</button></div>`}
+function recentCars(){const arr=[...(state.cars||[])].slice(-5).reverse();return `<div class="cd-ref-panel"><div class="cd-ref-panel-head"><h3>רכבים חדשים</h3><span>${arr.length} אחרונים</span></div>${arr.length?`<div class="cd-ref-list">${arr.map(c=>`<div class="cd-ref-list-row"><div><b>${esc((c.make||'')+' '+(c.model||''))}</b><span>${esc(c.year||'')} · ${c.status==='rented'?'מושכר':'זמין'}</span></div><b>${esc(c.price||c.dailyPrice||'')}</b></div>`).join('')}</div>`:'<div class="cd-ref-empty">אין רכבים להצגה</div>'}</div>`}
+function recentBookings(){const arr=[...(state.bookings||[])].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,5);return `<div class="cd-ref-panel"><div class="cd-ref-panel-head"><h3>הזמנות אחרונות</h3><span>${arr.length} אחרונות</span></div>${arr.length?`<div class="cd-ref-list">${arr.map(b=>{const c=(state.cars||[]).find(x=>x.id===b.carId)||{};return `<div class="cd-ref-list-row"><div><b>${esc((c.make||'רכב')+' '+(c.model||''))}</b><span>${esc(b.status||'ממתינה')}</span></div><b>${money(b.total)}</b></div>`}).join('')}</div>`:'<div class="cd-ref-empty">אין הזמנות להצגה</div>'}</div>`}
+function title(t,d){return `<div class="cd-ref-tab-title"><div><h2>${t}</h2><p>${d}</p></div></div>`}
+function setTabs(){const tabs=document.querySelector('#ov-admin .dash-tabs');if(!tabs)return;tabs.innerHTML=`<button class="on" id="ad-all" onclick="setAdminTab('all')">סקירה</button><button id="ad-users" onclick="setAdminTab('users')">משתמשים</button><button id="ad-cars" onclick="setAdminTab('cars')">רכבים</button><button id="ad-bookings" onclick="setAdminTab('bookings')">הזמנות</button>`}
+window.setAdminTab=function(t){
+ adminTab=t;['all','users','cars','bookings'].forEach(x=>document.getElementById('ad-'+x)?.classList.toggle('on',x===t));
+ const box=document.getElementById('admin-body');if(!box)return;
+ if(t==='all')box.innerHTML=header()+kpis()+`<div class="cd-ref-overview-grid">${recentBookings()}${recentCars()}</div>`;
+ if(t==='users')box.innerHTML=header()+kpis()+title('משתמשים','ניהול חשבונות, תפקידים ואימותים')+`<div class="cd-pa-card">${typeof adminFullUsersHTML==='function'?adminFullUsersHTML():'<div class="cd-ref-empty">אין נתונים</div>'}</div>`;
+ if(t==='cars')box.innerHTML=header()+kpis()+title('רכבים','ניהול מודעות, סטטוסים ופעולות')+`<div class="cd-pa-card">${typeof adminCarsHTML==='function'?adminCarsHTML():'<div class="cd-ref-empty">אין נתונים</div>'}</div>`;
+ if(t==='bookings')box.innerHTML=header()+kpis()+title('הזמנות','מעקב אחר כל ההזמנות באתר')+`<div class="cd-pa-card">${typeof adminBookingsTable==='function'?adminBookingsTable():'<div class="cd-ref-empty">אין נתונים</div>'}</div>`;
+};
+const prevOpen=window.openAdmin;window.openAdmin=function(){const r=prevOpen&&prevOpen.apply(this,arguments);setTimeout(()=>{setTabs();window.setAdminTab('all')},80);return r};
+document.addEventListener('DOMContentLoaded',()=>{setTimeout(()=>{if(document.getElementById('ov-admin')?.classList.contains('open')){setTabs();window.setAdminTab('all')}},120)});
+})();
+</script>
+
+
+<style id="crowndrive-role-reference-ui-v1">
+/* Clean reference dashboard for owner and renter */
+#ov-owner,#ov-renter{padding:0!important;background:rgba(12,18,28,.76)!important}
+#ov-owner .modal,#ov-renter .modal{width:min(1460px,96vw)!important;height:min(930px,94dvh)!important;border-radius:20px!important;background:#f7f7f5!important;box-shadow:0 28px 80px rgba(0,0,0,.28)!important;overflow:hidden!important}
+#ov-owner .m-head,#ov-renter .m-head{background:#fff!important;color:#171717!important;border-bottom:1px solid #eceae5!important;padding:18px 28px!important}
+#ov-owner .m-close,#ov-renter .m-close{background:#f3f2ee!important;color:#202020!important}
+#ov-owner .drawer-userbar,#ov-renter .drawer-userbar{background:#fff!important;border-bottom:1px solid #eceae5!important;padding:10px 28px!important}
+#ov-owner .m-body,#ov-renter .m-body{background:#f7f7f5!important;overflow:auto!important;padding:0!important}
+.cd-role-ref-wrap{padding:30px 38px 44px}
+.cd-role-ref-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:26px}
+.cd-role-ref-title small{display:block;color:#a69c8d;font-size:.68rem;letter-spacing:.28em;margin-bottom:8px}
+.cd-role-ref-title h2{font-size:2.3rem;line-height:1.08;font-weight:420;color:#181818;margin:0}
+.cd-role-ref-title p{margin:9px 0 0;color:#858078;font-size:.84rem}
+.cd-role-ref-action{background:#171717;color:#fff;border:0;padding:12px 18px;font-weight:700;cursor:pointer}
+.cd-role-ref-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-bottom:28px}
+.cd-role-ref-kpi{background:#fff;border:1px solid #eeeae3;min-height:112px;padding:21px 23px;display:flex;flex-direction:column;justify-content:space-between}
+.cd-role-ref-kpi span{color:#9d8b70;font-size:.72rem;letter-spacing:.12em}.cd-role-ref-kpi strong{font-size:2rem;font-weight:420;color:#141414}
+#ov-owner .cd-role-nav,#ov-renter .cd-role-nav{position:sticky!important;top:0!important;z-index:5!important;display:flex!important;gap:34px!important;justify-content:flex-start!important;margin:0 38px!important;padding:0!important;border:0!important;border-bottom:1px solid #ddd9d1!important;border-radius:0!important;background:rgba(247,247,245,.95)!important;backdrop-filter:blur(16px)}
+#ov-owner .cd-role-nav button,#ov-renter .cd-role-nav button{flex:0 0 auto!important;min-width:0!important;background:transparent!important;color:#6f6b64!important;border:0!important;border-radius:0!important;padding:17px 4px 14px!important;font-size:.9rem!important;font-weight:600!important;box-shadow:none!important;position:relative}
+#ov-owner .cd-role-nav button.on,#ov-renter .cd-role-nav button.on{color:#171717!important}
+#ov-owner .cd-role-nav button.on:after,#ov-renter .cd-role-nav button.on:after{content:"";position:absolute;right:0;left:0;bottom:-1px;height:2px;background:#171717}
+#ov-owner .cd-section,#ov-renter .cd-section{padding:28px 38px 44px!important;max-width:none!important}
+#ov-owner .cd-home-grid,#ov-renter .cd-home-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:16px!important;margin-bottom:26px!important}
+#ov-owner .cd-home-card,#ov-renter .cd-home-card{background:#fff!important;border:1px solid #eeeae3!important;border-radius:0!important;box-shadow:none!important;min-height:108px!important;padding:21px 23px!important}
+#ov-owner .cd-home-card b,#ov-renter .cd-home-card b{font-size:2rem!important;font-weight:420!important;color:#151515!important}
+#ov-owner .cd-home-card span,#ov-renter .cd-home-card span{color:#8b867e!important;font-size:.78rem!important;letter-spacing:.05em!important}
+#ov-owner .personal-hero,#ov-renter .personal-hero{display:none!important}
+#ov-owner .adm-card,#ov-owner .booking-card,#ov-owner .cd-trip-card,#ov-renter .booking-card,#ov-renter .cd-trip-card,#ov-renter .cd-verify-summary{border-radius:0!important;background:#fff!important;border:1px solid #ece8e1!important;box-shadow:none!important}
+#ov-owner .btn,#ov-renter .btn,#ov-owner .mini,#ov-renter .mini{border-radius:4px!important}
+.cd-role-ref-section-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.cd-role-ref-section-title h3{margin:0;font-size:1.35rem;font-weight:500}.cd-role-ref-section-title p{margin:4px 0 0;color:#888;font-size:.82rem}
+@media(max-width:900px){#ov-owner .modal,#ov-renter .modal{width:100vw!important;height:100dvh!important;border-radius:0!important}.cd-role-ref-wrap{padding:20px 14px 26px}.cd-role-ref-title h2{font-size:1.7rem}.cd-role-ref-kpis,#ov-owner .cd-home-grid,#ov-renter .cd-home-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}#ov-owner .cd-role-nav,#ov-renter .cd-role-nav{margin:0 12px!important;gap:16px!important;overflow-x:auto!important}#ov-owner .cd-role-nav button,#ov-renter .cd-role-nav button{white-space:nowrap!important;font-size:.79rem!important;padding:14px 2px 11px!important}#ov-owner .cd-section,#ov-renter .cd-section{padding:20px 14px 32px!important}}
+</style>
+<script id="crowndrive-role-reference-ui-v1-script">
+(function(){
+'use strict';
+function ownerStats(){const uid=state.session?.id;const cars=(state.cars||[]).filter(c=>c.ownerId===uid);const b=(state.bookings||[]).filter(x=>x.ownerId===uid);return {cars:cars.length,available:cars.filter(c=>c.status!=='rented').length,pending:b.filter(x=>x.status==='pending').length,active:b.filter(x=>['approved','active'].includes(x.status)&&!x.done).length}}
+function renterStats(){const uid=state.session?.id;const b=(state.bookings||[]).filter(x=>x.renterId===uid);const u=(state.users&&state.users[uid])||(state.renters||[]).find(x=>x.id===uid)||{};const v=u.verification||{};return {all:b.length,pending:b.filter(x=>x.status==='pending').length,active:b.filter(x=>['approved','active'].includes(x.status)&&!x.done).length,verified:v.status==='approved'?'✓':'!'}}
+function shell(role){const body=document.querySelector(`#ov-${role} .m-body`);if(!body||body.querySelector('.cd-role-ref-wrap'))return;const isOwner=role==='owner',s=isOwner?ownerStats():renterStats();const name=((state.session?.name||'').split(' ')[0]||'');const wrap=document.createElement('div');wrap.className='cd-role-ref-wrap';wrap.innerHTML=`<div class="cd-role-ref-head"><div class="cd-role-ref-title"><small>${isOwner?'מרכז בעל הרכב':'מרכז השוכר'}</small><h2>${isOwner?'לוח ניהול בעל רכב':'האזור האישי שלי'}</h2><p>${name?`שלום ${esc(name)}, `:''}${isOwner?'ניהול רכבים והזמנות במקום אחד':'כל ההזמנות והאימותים במקום אחד'}</p></div><button class="cd-role-ref-action" onclick="${isOwner?"cdShowSection('owner','cars')":"cdShowSection('renter','bookings')"}">${isOwner?'ניהול רכבים':'ההזמנות שלי'}</button></div><div class="cd-role-ref-kpis">${isOwner?`<div class="cd-role-ref-kpi"><span>רכבים</span><strong>${s.cars}</strong></div><div class="cd-role-ref-kpi"><span>רכבים זמינים</span><strong>${s.available}</strong></div><div class="cd-role-ref-kpi"><span>ממתינות לאישור</span><strong>${s.pending}</strong></div><div class="cd-role-ref-kpi"><span>השכרות פעילות</span><strong>${s.active}</strong></div>`:`<div class="cd-role-ref-kpi"><span>כל ההזמנות</span><strong>${s.all}</strong></div><div class="cd-role-ref-kpi"><span>ממתינות</span><strong>${s.pending}</strong></div><div class="cd-role-ref-kpi"><span>השכרות פעילות</span><strong>${s.active}</strong></div><div class="cd-role-ref-kpi"><span>סטטוס אימות</span><strong>${s.verified}</strong></div>`}</div>`;body.prepend(wrap);const nav=body.querySelector('.cd-role-nav');if(nav)wrap.after(nav)}
+function ownerNav(){const nav=document.querySelector('#ov-owner .cd-role-nav');if(nav)nav.innerHTML=`<button class="on" data-sec="home" onclick="cdShowSection('owner','home')">סקירה</button><button data-sec="bookings" onclick="cdShowSection('owner','bookings')">הזמנות</button><button data-sec="cars" onclick="cdShowSection('owner','cars')">רכבים</button><button data-sec="profile" onclick="cdShowSection('owner','profile')">פרופיל</button>`}
+function renterNav(){const nav=document.querySelector('#ov-renter .cd-role-nav');if(nav)nav.innerHTML=`<button class="on" data-sec="home" onclick="cdShowSection('renter','home')">סקירה</button><button data-sec="bookings" onclick="cdShowSection('renter','bookings')">הזמנות</button><button data-sec="profile" onclick="cdShowSection('renter','profile')">אימות ופרופיל</button><button data-sec="messages" onclick="cdShowSection('renter','messages')">הודעות</button>`}
+const oo=window.openOwner;window.openOwner=function(){const r=oo&&oo.apply(this,arguments);setTimeout(()=>{ownerNav();shell('owner')},80);return r};
+const or=window.openRenterArea;window.openRenterArea=function(){const r=or&&or.apply(this,arguments);setTimeout(()=>{renterNav();shell('renter')},80);return r};
 })();
 </script>
 
