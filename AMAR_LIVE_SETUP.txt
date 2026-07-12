@@ -1,0 +1,9 @@
+CrownDrive V2 + original design
+Firebase live project: amar-75684
+
+Required Netlify environment variables (all must belong to amar-75684):
+FIREBASE_DATABASE_URL=https://amar-75684-default-rtdb.firebaseio.com
+FIREBASE_STORAGE_BUCKET=amar-75684.firebasestorage.app
+FIREBASE_SERVICE_ACCOUNT_JSON=<full service-account JSON from amar-75684>
+
+Do not use crowndrive-staging values.
