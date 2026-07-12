@@ -21,20 +21,35 @@ const toBase64 = blob => new Promise((resolve, reject) => {
   reader.readAsDataURL(blob);
 });
 
-// Downscale to <=1600px and re-encode as JPEG so the base64 body stays small (well under the
-// function's request limit). Falls back to the raw bytes if the browser can't decode the image.
-async function toImagePayload(file) {
-  try {
-    const img = await loadImage(file);
-    const max = 1600, scale = Math.min(1, max / Math.max(img.width, img.height));
+const TARGET = 4.5 * 1024 * 1024; // keep the encoded bytes comfortably under the ~6MB request limit
+// Re-encode the canvas as high-quality JPEG, stepping quality (and, if needed, dimensions) down
+// until it fits under TARGET. Lets ANY image type of ANY source size upload at good quality.
+async function encodeToFit(img) {
+  let dim = 2560;
+  for (let pass = 0; pass < 3; pass++) {
+    const scale = Math.min(1, dim / Math.max(img.width, img.height));
     const w = Math.max(1, Math.round(img.width * scale)), h = Math.max(1, Math.round(img.height * scale));
     const canvas = document.createElement('canvas');
     canvas.width = w; canvas.height = h;
     canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-    const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', 0.82));
+    let last = null;
+    for (const q of [0.92, 0.85, 0.75, 0.62]) {
+      const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', q));
+      if (blob && blob.size) { last = blob; if (blob.size <= TARGET) return blob; }
+    }
+    if (last && pass === 2) return last;  // best effort after shrinking twice
+    dim = Math.round(dim * 0.7);          // extreme resolution — shrink and retry
+  }
+  return null;
+}
+async function toImagePayload(file) {
+  try {
+    const img = await loadImage(file);
+    const blob = await encodeToFit(img);
     if (blob && blob.size) return {type: 'image/jpeg', data: await toBase64(blob)};
   } catch {}
-  if (file.size > 4 * 1024 * 1024) throw new Error('התמונה גדולה מדי — נסו תמונה קטנה יותר או צלמו מחדש');
+  // Undecodable format (rare) — send raw bytes if they still fit under the request limit.
+  if (file.size > TARGET) throw new Error('לא ניתן לעבד את הקובץ הזה — נסו תמונה רגילה (JPG/PNG/HEIC)');
   return {type: file.type || 'image/jpeg', data: await toBase64(file)};
 }
 

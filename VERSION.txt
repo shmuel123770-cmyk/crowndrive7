@@ -1,5 +1,19 @@
-CrownDrive — FINAL build (2026-07-12, rev.9)
+CrownDrive — FINAL build (2026-07-12, rev.12)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.11 (2026-07-12): server upload made reliable + self-diagnosing. media-upload now writes via
+the Firebase Storage REST API using the Admin credential's OAuth token (built-in fetch, no
+@google-cloud/storage bundling to fail on Netlify); auto-creates the download token. Bucket name
+is derived/normalised (handles a wrong .appspot.com env). Added @google-cloud/storage to
+external_node_modules (for the other storage functions). If a write still fails, the Hebrew error
+now names the cause (Storage IAM permission / bucket / missing component / service-account key).
+Prices confirmed all USD ($) via money(). Assets unchanged (?v=13).
+
+rev.10 (2026-07-12): any image type + any source size. Server (media-upload) accepts any
+image/* type; client re-encodes to a high-quality JPEG at up to 2560px, stepping quality (and
+if needed dimensions) down so even a worst-case source stays under the request limit. So a photo
+of any type and any size uploads successfully, auto-optimized for quality + fast loading.
+(Assets unchanged at ?v=13 — only network-first modules + the function changed.)
 
 rev.9 (2026-07-12) — DEFINITIVE upload fix:
 - Confirmed via the live site that direct client→Firebase-Storage uploads simply do not work in

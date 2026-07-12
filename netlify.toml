@@ -19,6 +19,7 @@
     "firebase-admin",
     "@firebase/database-compat",
     "@google-cloud/firestore",
+    "@google-cloud/storage",
     "google-auth-library",
     "google-gax",
     "gaxios",

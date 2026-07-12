@@ -1237,7 +1237,7 @@ function carForm(car = null) {
       <button type="button" class="btn outline" id="add-url">הוספת קישור</button>
     </div>
     <div id="photo-suggest"></div>
-    <small id="car-image-note" class="mut">אפשר להעלות תמונות, למשוך תמונה רשמית לפי היצרן/דגם, או להדביק קישור HTTPS. אפשר להעלות עד 6 תמונות (מספיקה תמונה אחת).</small>
+    <small id="car-image-note" class="mut">כל סוג תמונה ובכל גודל — התמונה מותאמת אוטומטית לאיכות גבוהה וטעינה מהירה. אפשר גם למשוך תמונה רשמית לפי היצרן/דגם או להדביק קישור. עד 6 תמונות (מספיקה תמונה אחת).</small>
 
     <p class="form-section-title">סרטון קצר <span class="mut">(רשות)</span></p>
     <div class="chips"><label class="btn outline">העלאת סרטון<input hidden type="file" id="video-file" accept="video/*"></label><span id="video-status" class="mut">${videoUrl ? 'סרטון קיים' : 'לא הועלה סרטון'}</span></div>

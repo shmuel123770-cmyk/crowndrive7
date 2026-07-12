@@ -41,10 +41,13 @@ const fakeApp = {
     getUserByEmail: async email => { const uid = usersByEmail[email]; if (!uid) throw new Error('not found'); return {uid}; },
   }),
   storage: () => ({bucket: () => ({name: 'test-bucket', file: p => ({getSignedUrl: async () => [`https://signed/${p}`], exists: async () => [true], makePublic: async () => {}, save: async () => {}})})}),
+  options: {credential: {getAccessToken: async () => ({access_token: 'test-token', expires_in: 3600})}},
 };
 admin.initializeApp = () => fakeApp;
 admin.credential = {cert: () => ({})};
 process.env.FIREBASE_SERVICE_ACCOUNT_JSON = '{}';
+// media-upload writes via the Firebase Storage REST API — stub fetch to accept the upload.
+globalThis.fetch = async () => ({ok: true, status: 200, json: async () => ({name: 'obj', downloadTokens: 'tok-123'}), text: async () => ''});
 
 const call = (handler, uid, body) => handler({httpMethod: 'POST', headers: {authorization: `Bearer ${uid}`}, body: JSON.stringify(body)});
 let passed = 0, failed = 0;
