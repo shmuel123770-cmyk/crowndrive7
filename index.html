@@ -1718,6 +1718,9 @@ input,select,textarea{font-size:16px!important}
 }
 </style>
 
+<style>.approved-address{margin-top:8px;padding:9px 11px;border-radius:12px;background:#eef6ff;border:1px solid #cfe3fb;color:#173a5e;font-size:.78rem;line-height:1.5}.approved-address b{color:#0d2742}
+</style>
+<meta name="crowndrive-build" content="2026-07-10-private-address-storage-v1">
 </head>
 <body>
 
@@ -1794,18 +1797,23 @@ input,select,textarea{font-size:16px!important}
     </g>
   </svg>
 
-  <div class="hero-in">
+  <div class="hero-in home-hero-v3">
     <span class="kicker">קראון הייטס · ברוקלין</span>
-    <h1>השכרת רכבים <em>בקראון הייטס</em></h1>
-    <div class="hero-actions" style="margin-top:36px">
-      <button class="btn btn-gold" onclick="scrollToFleet()">לצפייה ברכבים</button>
-      <button class="btn btn-dark-out" onclick="openAuth()">כניסה / הרשמה</button>
+    <h1>רכב קרוב, <em>בדרך שמתאימה לך</em></h1>
+    <p class="home-hero-copy">בחרו מיקום, זמן וסוג מחיר — וקבלו רק רכבים שמתאימים לחיפוש.</p>
+    <div class="home-quick-search" aria-label="חיפוש מהיר לרכב">
+      <label><span>אזור</span><select id="home-location"><option value="">כל האזורים</option><option>Crown Heights</option><option>Brooklyn</option><option>Manhattan</option><option>Queens</option><option>אחר</option></select></label>
+      <label><span>איסוף</span><input id="home-from" type="datetime-local"></label>
+      <label><span>החזרה</span><input id="home-to" type="datetime-local"></label>
+      <label><span>רמת מחיר</span><select id="home-price-band"><option value="">כל רמות המחיר</option><option value="economy">חסכוני</option><option value="standard">רגיל</option><option value="premium">פרימיום</option></select></label>
+      <button class="btn btn-gold home-search-submit" onclick="runHomeSearch()">חפש רכב</button>
     </div>
+    <button class="home-more-filters" type="button" onclick="openFullSearch()">מסננים נוספים</button>
     <div class="hero-stats">
       <div class="hstat"><b id="hs-cars">0</b><span>רכבים בצי</span></div>
       <div class="hstat"><b id="hs-ok">0</b><span>זמינים כעת</span></div>
-      <div class="hstat"><b>24/6</b><span>מענה אונליין</span></div>
-      <div class="hstat"><b>מבוטח</b><span>ביטוח מקיף</span></div>
+      <div class="hstat"><b>מאומת</b><span>רישיון וסלפי</span></div>
+      <div class="hstat"><b>מתועד</b><span>לפני ואחרי</span></div>
     </div>
   </div>
 
@@ -1831,6 +1839,10 @@ input,select,textarea{font-size:16px!important}
   </div>
 </div>
 
+<section class="section home-active-wrap" id="home-active-booking" style="display:none">
+  <div class="home-active-card" id="home-active-content"></div>
+</section>
+
 <!-- FLEET -->
 <section class="section" id="fleet">
   <svg class="route" viewBox="0 0 1200 640" preserveAspectRatio="none" aria-hidden="true">
@@ -1843,17 +1855,18 @@ input,select,textarea{font-size:16px!important}
   <div class="fleet-wrap home-fleet-wrap">
     <div class="home-fleet-head">
       <div class="sec-head">
-        <h2>צי הרכבים</h2>
-        <div class="sub">חיפוש מהיר, רכבים זמינים, ולחיצה לפתיחת חיפוש מלא עם כל המסננים</div>
+        <h2>רכבים מומלצים</h2>
+        <div class="sub">רכבים עדכניים עם פרטים ברורים, דירוג ותנאי השכרה.</div>
       </div>
-      <button type="button" class="home-search-bar" onclick="openFullSearch()" aria-label="פתיחת חיפוש רכבים מלא">
-        <span class="hsb-icon">⌕</span>
-        <span class="hsb-main">חפש רכב לפי יצרן, דגם, צבע, מושבים, שעות או ימים</span>
-        <span class="hsb-action">פתח חיפוש מתקדם</span>
-      </button>
+      <div class="home-shortcuts" aria-label="קיצורי חיפוש">
+        <button onclick="homeShortcut('available')">זמינים עכשיו</button>
+        <button onclick="homeShortcut('delivery')">מסירה זמינה</button>
+        <button onclick="homeShortcut('young')">מתאים לנהגים צעירים</button>
+        <button onclick="homeShortcut('saved')">המשך חיפוש אחרון</button>
+      </div>
       <div class="home-mini-status">
         <span><b id="side-avail">0</b> זמינים עכשיו</span>
-        <span>הצגת עד 6 רכבים בדף הבית</span>
+        <button class="linklike" onclick="openFullSearch()">כל המסננים</button>
       </div>
     </div>
     <div class="grid" id="grid"></div>
@@ -1869,15 +1882,43 @@ input,select,textarea{font-size:16px!important}
 </div>
 
 <!-- HOW -->
-<section class="section" id="how">
-  <div class="sec-head">
-    <h2>תהליך ההזמנה</h2>
+<section class="section home-simple-section" id="how">
+  <div class="sec-head"><h2>איך זה עובד</h2><div class="sub">שלושה צעדים ברורים — בלי תהליך מסובך.</div></div>
+  <div class="home-three-steps">
+    <button type="button" class="hstep" onclick="goHowStep(2)"><span class="num">1</span><h3>בוחרים רכב</h3><p>מחפשים לפי אזור, זמן ותנאים שמתאימים לכם.</p></button>
+    <button type="button" class="hstep" onclick="openAuth('renter')"><span class="num">2</span><h3>מקבלים אישור</h3><p>משלימים אימות קצר ובעל הרכב מאשר את הבקשה.</p></button>
+    <button type="button" class="hstep" onclick="openRenterArea()"><span class="num">3</span><h3>מתעדים ויוצאים</h3><p>מתעדים את הרכב, הדלק והמיילים ויוצאים לדרך.</p></button>
   </div>
-  <div class="how-grid">
-    <button type="button" class="hstep" onclick="goHowStep(1)"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0114 0v1"/></svg></div><span class="num">1</span><h3>הרשמה</h3><p>פרטים אישיים וצילום רישיון נהיגה — פחות מ-3 דקות.</p><span class="hstep-btn">התחל הרשמה</span></button>
-    <button type="button" class="hstep" onclick="goHowStep(2)"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 16l1.5-5.5A2 2 0 018.4 9h7.2a2 2 0 011.9 1.5L19 16M5 16h14M5 16v3m14-3v3M7.5 13h.01M16.5 13h.01"/></svg></div><span class="num">2</span><h3>בחירת רכב ותאריכים</h3><p>בחירת רכב זמין וקביעת מועדי איסוף והחזרה. המחיר מחושב מיד.</p><span class="hstep-btn">עבור לרכבים</span></button>
-    <button type="button" class="hstep" onclick="goHowStep(3)"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 19l7-7a2.1 2.1 0 00-3-3l-7 7-1.5 4.5L12 19z"/><path d="M4 21h9"/></svg></div><span class="num">3</span><h3>הסכם וחתימה</h3><p>קריאת תקנון ההשכרה וחתימה דיגיטלית — שם מלא, חתימה ותאריך.</p><span class="hstep-btn">פתח הזמנה</span></button>
-    <button type="button" class="hstep" onclick="goHowStep(4)"><div class="hicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/></svg></div><span class="num">4</span><h3>אישור וקבלה</h3><p>מספר הזמנה וקבלה נשלחים לשוכר. הרכב ממתין בנקודת האיסוף.</p><span class="hstep-btn">ההזמנות שלי</span></button>
+</section>
+
+<section class="section home-trust-section">
+  <div class="sec-head"><h2>אמון ובטיחות</h2><div class="sub">כלים ברורים שמגינים על השוכר ועל בעל הרכב.</div></div>
+  <div class="home-trust-grid">
+    <div><b>✓</b><h3>נהגים מאומתים</h3><p>רישיון, סלפי ובדיקה לפני הזמנה.</p></div>
+    <div><b>◎</b><h3>תיעוד מסירה</h3><p>וידאו, תמונות, דלק ומיילים בתחילת ההשכרה.</p></div>
+    <div><b>↔</b><h3>השוואה בהחזרה</h3><p>השוואת מצב הרכב לפני ואחרי.</p></div>
+    <div><b>★</b><h3>ביקורות אמיתיות</h3><p>רק לאחר השכרה שהושלמה בפועל.</p></div>
+  </div>
+</section>
+
+<section class="section home-delivery-section">
+  <div class="home-split-card">
+    <div><span class="kicker">נוחות</span><h2>מסירה עד אליך</h2><p>סנן רכבים שמציעים מסירה, ראה את התנאים מראש ובחר איסוף או מסירה בתהליך ההזמנה.</p><button class="btn btn-gold" onclick="homeShortcut('delivery')">הצג רכבים עם מסירה</button></div>
+    <div class="home-map-visual" aria-hidden="true"><span>📍</span><span>🚗</span><span>⌂</span></div>
+  </div>
+</section>
+
+<section class="section home-owner-cta">
+  <div class="home-split-card owner"><div><span class="kicker">לבעלי רכבים</span><h2>יש לך רכב פנוי?</h2><p>פרסם רכב, קבע תנאים, גיל מינימלי, זמינות ואפשרות מסירה — והכל מנוהל באזור אישי אחד.</p><button class="btn btn-gold" onclick="openAuth('owner')">הוסף רכב</button></div><div class="home-owner-points"><span>ניהול הזמנות</span><span>אימות שוכרים</span><span>תיעוד מסירה והחזרה</span><span>דירוגים וביקורות</span></div></div>
+</section>
+
+<section class="section home-faq-section">
+  <div class="sec-head"><h2>שאלות נפוצות</h2></div>
+  <div class="home-faq">
+    <details><summary>מתי רואים את הכתובת המלאה?</summary><p>הכתובת המלאה מוצגת רק לאחר שבעל הרכב מאשר את ההזמנה.</p></details>
+    <details><summary>מה צריך לעשות לפני הנסיעה?</summary><p>השוכר מעלה תיעוד חיצוני של הרכב, תמונת לוח מחוונים, מצב דלק ומיילים.</p></details>
+    <details><summary>איך נקבע אם אפשר לשכור רכב?</summary><p>לכל רכב יש גיל מינימלי ותנאים שבעל הרכב קובע, ובנוסף נדרש אימות שוכר.</p></details>
+    <details><summary>אפשר לבקש הארכה?</summary><p>כן, מתוך ההזמנה הפעילה, בכפוף לאישור בעל הרכב ולזמינות הרכב.</p></details>
   </div>
 </section>
 
@@ -2055,6 +2096,22 @@ input,select,textarea{font-size:16px!important}
               </div>
             </div>
 
+            <div class="divider">אימות פנים</div>
+            <div class="field selfie-field">
+              <label>תמונת סלפי ברורה <span class="req">* חובה</span></label>
+              <div class="upload-choice-row">
+                <button type="button" class="mini gold" onclick="document.getElementById('rselfie-gallery').click()">בחירה מהגלריה</button>
+                <button type="button" class="mini" onclick="document.getElementById('rselfie-camera').click()">פתיחת מצלמה</button>
+              </div>
+              <input type="file" id="rselfie-gallery" accept="image/*" hidden>
+              <input type="file" id="rselfie-camera" accept="image/*" capture="user" hidden>
+              <div class="err-msg" id="rselfie-err" style="display:none">חובה להעלות תמונת סלפי ברורה</div>
+              <div class="lic-prev" id="rselfie-prev" style="display:none">
+                <img id="rselfie-img" alt="תצוגה מקדימה של תמונת סלפי">
+                <div class="ok-band"><span>✓ הסלפי הועלה</span><button type="button" onclick="clearRSelfie()">החלפה</button></div>
+              </div>
+              <div class="hint">הסלפי משמש לאימות זהות מול רישיון הנהיגה ואינו מוצג במודעה.</div>
+            </div>
 
             <div class="card-row">
             </div>
@@ -2144,7 +2201,16 @@ input,select,textarea{font-size:16px!important}
         <div class="f-row3">
           <div class="field"><label>מנוע / נפח מנוע</label><select id="a-engine" onchange="toggleOtherInput('a-engine','a-engine-other')"></select><input id="a-engine-other" class="other-input" placeholder="הקלד מנוע אחר"></div>
           <div class="field"><label>גודל רכב</label><input id="a-size" placeholder="קומפקטי / משפחתי / SUV גדול"></div>
-          <div class="field"><label>אזור איסוף</label><input id="a-location" placeholder="קראון הייטס / קינגסטון"></div>
+          <div class="field"><label>אזור איסוף (מוצג במודעה)</label><input id="a-location" placeholder="קראון הייטס / קינגסטון"></div>
+        </div>
+        <div class="f-row3">
+          <div class="field"><label>כתובת מלאה <span class="req">*</span></label><input id="a-full-address" autocomplete="street-address" placeholder="רחוב, מספר, עיר, מדינה, ZIP"><div class="sm">הכתובת המלאה תיחשף לשוכר רק לאחר אישור ההזמנה.</div></div>
+          <div class="field"><label>גיל מינימלי להשכרה</label><input id="a-min-age" type="number" min="18" max="99" value="21" placeholder="21"></div>
+          <div class="field"><label>אפשרות מסירה</label><select id="a-delivery-enabled" onchange="toggleDeliveryCostField()"><option value="no" selected>איסוף עצמי בלבד</option><option value="yes">ניתן להזמין מסירה</option></select></div>
+        </div>
+        <div class="f-row" id="delivery-cost-row" style="display:none">
+          <div class="field"><label>עלות מסירה ($)</label><input id="a-delivery-cost" type="number" min="0" step="1" value="0" placeholder="לדוגמה 25"></div>
+          <div class="field"><label>הערות למסירה</label><input id="a-delivery-note" placeholder="רדיוס מסירה / אזורים זמינים"></div>
         </div>
         <div class="f-row">
           <div class="field"><label>אבזור <span style="color:var(--mut2);font-weight:300">(מופרד בפסיקים)</span></label><input id="a-tags" placeholder="ריפודי עור, גג פנורמי, מערכת שמע Burmester"></div>
@@ -2186,19 +2252,17 @@ input,select,textarea{font-size:16px!important}
 <!-- ============ ADMIN DASHBOARD ============ -->
 <div class="overlay" id="ov-admin" role="dialog" aria-modal="true">
   <div class="modal wide admin-modal">
-    <div class="m-head"><h3>לוח מנהל מערכת · שליטה מלאה באתר</h3><button class="m-close" onclick="closeOv('ov-admin')">✕</button></div>
+    <div class="m-head"><h3>לוח מנהל</h3><button class="m-close" onclick="closeOv('ov-admin')">✕</button></div>
     <div class="drawer-userbar">
       <div class="drawer-ident"><b>אזור אישי · מנהל</b><span class="drawer-email" id="drawer-email-admin"></span></div>
       <div class="drawer-actions"><button class="mini gold" onclick="openAccount()">⚙ חשבון</button><button class="mini danger" onclick="logout()">יציאה</button></div>
     </div>
     <div class="m-body">
       <div class="dash-tabs">
-        <button class="on" id="ad-all" onclick="setAdminTab('all')">כל הפעילות</button>
-        <button id="ad-bookings" onclick="setAdminTab('bookings')">כל ההשכרות</button>
-        <button id="ad-chats" onclick="setAdminTab('chats')">כל הצ׳אטים</button>
-        <button id="ad-cars" onclick="setAdminTab('cars')">ניהול רכבים</button>
+        <button class="on" id="ad-all" onclick="setAdminTab('all')">סקירה</button>
+        <button id="ad-bookings" onclick="setAdminTab('bookings')">השכרות</button>
+        <button id="ad-cars" onclick="setAdminTab('cars')">רכבים</button>
         <button id="ad-users" onclick="setAdminTab('users')">משתמשים</button>
-        <button id="ad-data" onclick="setAdminTab('data')">ייצוא מידע</button>
       </div>
       <div id="admin-body"></div>
     </div>
@@ -2244,6 +2308,10 @@ input,select,textarea{font-size:16px!important}
             <select id="tm-to"><option>00:00</option><option>01:00</option><option>02:00</option><option>03:00</option><option>04:00</option><option>05:00</option><option>06:00</option><option>07:00</option><option>08:00</option><option>09:00</option><option>10:00</option><option>11:00</option><option selected>12:00</option><option>13:00</option><option>14:00</option><option>15:00</option><option>16:00</option><option>17:00</option><option>18:00</option><option>19:00</option><option>20:00</option><option>21:00</option><option>22:00</option><option>23:00</option></select>
           </div>
         </div>
+        <div class="f-row" id="booking-fulfillment-row">
+          <div class="field"><label>אופן קבלת הרכב</label><select id="book-fulfillment" onchange="updatePriceLive()"><option value="pickup">איסוף עצמי</option><option value="delivery">מסירה לכתובת השוכר</option></select></div>
+          <div class="field" id="delivery-address-field" style="display:none"><label>כתובת למסירה</label><input id="book-delivery-address" autocomplete="street-address" placeholder="כתובת מלאה למסירה"></div>
+        </div>
         <div class="summary-box" id="price-live" style="display:none"></div>
         <div class="m-actions"><button class="btn btn-gold grow" onclick="goStep(2)">המשך להסכם ההשכרה</button></div>
       </div>
@@ -2260,7 +2328,7 @@ input,select,textarea{font-size:16px!important}
           <h4>2. הנהג והרישיון</h4>
           <ol>
             <li>רק השוכר הרשום, בעל רישיון נהיגה בתוקף שאומת באתר, רשאי לנהוג ברכב.</li>
-            <li>גיל הנהג המינימלי הוא 21. לנהגים מתחת לגיל 25 תיתכן תוספת נהג צעיר.</li>
+            <li id="terms-min-age">גיל הנהג המינימלי נקבע על ידי בעל הרכב ומוצג במודעה.</li>
           </ol>
           <h4>3. ביטוח והשתתפות עצמית</h4>
           <ol>
@@ -2407,6 +2475,7 @@ input,select,textarea{font-size:16px!important}
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
 <script src="firebase-config.js"></script>
 <script>
 /* ╔════════════════════════════════════════════════════════════════╗
@@ -2416,7 +2485,35 @@ input,select,textarea{font-size:16px!important}
 const CLOUD = false; // מצב שמירה יציב: עובד בלי Netlify Blobs ובלי שגיאות שרת
 const API_URL = '/.netlify/functions/db';
 let db=null, fauth=null;
-let REALTIME=false, RT_DB=null, RT_REF=null, RT_AUTH=null, rtApplying=false, rtWriteTimer=null, rtLastToast=0;
+let REALTIME=false, RT_DB=null, RT_REF=null, RT_AUTH=null, RT_STORAGE=null, rtApplying=false, rtWriteTimer=null, rtLastToast=0;
+const PRIVATE_CAR_CACHE=Object.create(null);
+function privateCarBase(){return (window.CROWNDRIVE_RT_PATH||'crowndrive-live')+'/privateCarDetails';}
+function accessBase(){return (window.CROWNDRIVE_RT_PATH||'crowndrive-live')+'/approvedCarAccess';}
+async function savePrivateCarDetails(carId,fullAddress,ownerUid){
+  if(!RT_DB||!RT_AUTH||!RT_AUTH.currentUser) throw new Error('צריך להיות מחובר כדי לשמור כתובת פרטית');
+  const value={ownerUid:ownerUid||RT_AUTH.currentUser.uid,fullAddress:String(fullAddress||'').trim(),updatedAt:Date.now()};
+  await RT_DB.ref(privateCarBase()+'/'+carId).set(value); PRIVATE_CAR_CACHE[carId]=value; return true;
+}
+async function loadPrivateCarDetails(carId){
+  if(!RT_DB||!RT_AUTH||!RT_AUTH.currentUser||!carId)return null;
+  try{const snap=await RT_DB.ref(privateCarBase()+'/'+carId).once('value');const v=snap.val();if(v)PRIVATE_CAR_CACHE[carId]=v;return v||null;}catch(e){return null;}
+}
+async function refreshPrivateCarDetails(){
+  if(!RT_AUTH||!RT_AUTH.currentUser)return; const uid=RT_AUTH.currentUser.uid;
+  const ids=new Set();
+  (state.cars||[]).forEach(c=>{if(c.ownerId===uid)ids.add(c.id)});
+  (state.bookings||[]).forEach(b=>{if((b.status==='approved'||b.status==='done'||b.done)&&(b.ownerId===uid||b.renterId===uid))ids.add(b.carId)});
+  await Promise.all([...ids].map(loadPrivateCarDetails));
+  try{refreshOpenViews();render();}catch(e){}
+}
+async function grantApprovedAddressAccess(b){
+  if(!RT_DB||!b||!b.carId||!b.renterId)return; await RT_DB.ref(accessBase()+'/'+b.carId+'/'+b.renterId).set(true);
+}
+async function revokeApprovedAddressAccess(b){
+  if(!RT_DB||!b||!b.carId||!b.renterId)return; await RT_DB.ref(accessBase()+'/'+b.carId+'/'+b.renterId).remove().catch(()=>{});
+}
+function privateAddressFor(carId){return (PRIVATE_CAR_CACHE[carId]&&PRIVATE_CAR_CACHE[carId].fullAddress)||'';}
+
 window.CROWNDRIVE_AUTH_REQUIRED_FOR_REALTIME = true;
 
 async function api(action, payload={}){
@@ -2540,13 +2637,11 @@ function persistSessionCookie(){
   if(state && state.session) setCookieJSON(COOKIE_SESSION_KEY, sessionForCookie(state.session));
   else delCookie(COOKIE_SESSION_KEY);
 }
-function rememberLogin(role,email,pass){
-  // שומר התחברות עד יציאה/מחיקת נתוני אתר.
-  // הסיסמה נשמרת רק ב-localStorage ולא בעוגייה, כדי לא לשלוח אותה לשרת בכל בקשה.
-  const localData={role,email,pass:pass||'',ts:Date.now()};
-  const cookieData={role,email,ts:Date.now()};
-  try{ localStorage.setItem(AUTH_MEMORY_KEY, JSON.stringify(localData)); }catch(e){}
-  setCookieJSON(COOKIE_LOGIN_KEY,cookieData);
+function rememberLogin(role,email){
+  // נשמרים רק תפקיד ומייל. הסיסמה נשמרת אך ורק ב-Firebase Authentication.
+  const data={role,email,ts:Date.now()};
+  try{ localStorage.setItem(AUTH_MEMORY_KEY, JSON.stringify(data)); }catch(e){}
+  setCookieJSON(COOKIE_LOGIN_KEY,data);
 }
 function savedLogin(){
   try{ const local=JSON.parse(localStorage.getItem(AUTH_MEMORY_KEY)||'null'); if(local)return local; }catch(e){}
@@ -2558,7 +2653,6 @@ function prefillSavedLogin(role){
   if(role && s.role && role!==s.role)return;
   const mail=document.getElementById('l-mail'), pass=document.getElementById('l-pass');
   if(mail && s.email) mail.value=s.email;
-  if(pass && s.pass) pass.value=s.pass;
 }
 function clearSavedLogin(){ try{ localStorage.removeItem(AUTH_MEMORY_KEY); }catch(e){} delCookie(COOKIE_LOGIN_KEY); }
 
@@ -2607,12 +2701,11 @@ function restoreSessionFromFirebaseUser(fbUser, roleHint){
   if(role!=='owner' && role!=='renter') role='renter';
   let {pool,u}=findUserByRoleEmailOrUid(role,email,fbUser.uid);
   if(!u){
-    u={id:fbUser.uid,name:(email?email.split('@')[0]:'משתמש'),phone:'',email,pass:(saved&&saved.pass)||'',createdAt:Date.now(),restored:true};
+    u={id:fbUser.uid,name:(email?email.split('@')[0]:'משתמש'),phone:'',email,createdAt:Date.now(),restored:true};
     pool.push(u);
   }else{
     u.id=fbUser.uid;
     if(email) u.email=email;
-    if(saved&&saved.pass&&!u.pass) u.pass=saved.pass;
   }
   state.users[fbUser.uid]={...(state.users[fbUser.uid]||{}),...u,role,email:u.email||email,updatedAt:Date.now()};
   state.session={role,id:fbUser.uid,...u};
@@ -2634,21 +2727,7 @@ async function restorePersistentLoginOnLoad(){
   if(RT_AUTH && RT_AUTH.currentUser){
     return restoreSessionFromFirebaseUser(RT_AUTH.currentUser, role);
   }
-  if(!firebaseAuthReady() || !saved.pass || !authRestoreAllowed()) return false;
-  markAuthRestoreTried();
-  try{
-    const cred = await RT_AUTH.signInWithEmailAndPassword(normalizeEmail(saved.email), saved.pass);
-    if(cred && cred.user){
-      restoreSessionFromFirebaseUser(cred.user, role);
-      safeToast('התחברת אוטומטית');
-      pushRealtimeNow();
-      return true;
-    }
-  }catch(e){
-    console.warn('Auto login restore failed', e);
-    // לא מוחקים פרטי התחברות בגלל שגיאה זמנית; רק אם המשתמש ילחץ יציאה נמחק.
-    if((e&&e.code)==='auth/too-many-requests') safeToast('Firebase חסם זמנית כניסות אוטומטיות — נסה עוד כמה דקות');
-  }
+  // אין שחזור באמצעות סיסמה מקומית. Firebase Authentication משחזר את המשתמש בעצמו.
   return false;
 }
 
@@ -2750,8 +2829,8 @@ function cleanFirebaseValue(v, seen){
   if(v===null || typeof v==='boolean') return v;
   if(typeof v==='number') return Number.isFinite(v)?v:null;
   if(typeof v==='string'){
-    // Keep photos, but prevent one huge base64 image from blocking the whole realtime save.
-    if(v.startsWith('data:image/') && v.length>350000) return fallbackCarPhoto();
+    // תמונות נשמרות כ-URL בלבד. data:image מותר רק לחתימות קטנות ולתמונת ברירת מחדל SVG.
+    if(v.startsWith('data:image/') && !v.startsWith('data:image/svg+xml') && v.length>120000) return null;
     return v;
   }
   if(v instanceof Date) return v.toISOString();
@@ -2776,7 +2855,7 @@ function cleanFirebaseValue(v, seen){
 }
 function realtimeData(){
   const data={
-    owners:state.owners||[], renters:state.renters||[], cars:state.cars||[], bookings:state.bookings||[],
+    owners:state.owners||[], renters:state.renters||[], cars:(state.cars||[]).map(c=>{const x={...c};delete x.fullAddress;return x;}), bookings:state.bookings||[],
     msgs:state.msgs||[], ratings:state.ratings||[], notifications:state.notifications||[], users:state.users||{},
     deleted:state.deleted||{}, seq:seq||1,
     updatedAt:Date.now()
@@ -2836,6 +2915,7 @@ function applyRealtimeData(d){
     const sessionBefore=state.session||null;
     const arrKeys=['owners','renters','cars','bookings','msgs','ratings','notifications'];
     arrKeys.forEach(k=>{ state[k]=Array.isArray(d[k]) ? d[k].filter(Boolean) : []; });
+    (state.cars||[]).forEach(c=>{if(c&&c.fullAddress){PRIVATE_CAR_CACHE[c.id]={ownerUid:c.ownerId,fullAddress:c.fullAddress,updatedAt:c.updatedAt||Date.now()};delete c.fullAddress;}});
     state.users=(d.users&&typeof d.users==='object') ? d.users : {};
     state.deleted=(d.deleted&&typeof d.deleted==='object') ? d.deleted : {};
     if(d.seq && Number.isFinite(+d.seq)) seq=+d.seq;
@@ -2850,6 +2930,7 @@ function applyRealtimeData(d){
     renderNav(); renderMyAreaFab(); refreshOpenViews();
     if(!window.CROWNDRIVE_MODAL_IS_OPEN || !window.CROWNDRIVE_MODAL_IS_OPEN()) render();
     updateBadge();
+    setTimeout(()=>{migrateEmbeddedPrivateAddresses();refreshPrivateCarDetails();},120);
   }catch(e){console.error('Realtime apply failed',e)}
   finally{rtApplying=false;}
 }
@@ -2875,13 +2956,13 @@ function firebaseErrorText(e){
 async function ensureRealtimeAuthFromMemory(){
   if(!window.CROWNDRIVE_AUTH_REQUIRED_FOR_REALTIME || !RT_AUTH || RT_AUTH.currentUser) return true;
   try{
+    // אין שימוש בסיסמה מקומית. Firebase Auth Persistence הוא מקור האימות היחיד.
+    if(!RT_AUTH.currentUser)return false;
     const saved=savedLogin&&savedLogin();
     const localUser=(state.session && state.users) ? state.users[state.session.id] : null;
-    const email=normalizeEmail((saved&&saved.email)||(localUser&&localUser.email)||'');
-    const pass=(saved&&saved.pass)||(localUser&&localUser.pass)||'';
+    const email=normalizeEmail((RT_AUTH.currentUser&&RT_AUTH.currentUser.email)||(saved&&saved.email)||(localUser&&localUser.email)||'');
     const role=(state.session&&state.session.role)||((saved&&saved.role)||'');
-    if(!email || !pass) return false;
-    const fbUser=await firebaseLoginOrCreate(email,pass,true);
+    const fbUser=RT_AUTH.currentUser;
     if(fbUser&&fbUser.uid&&state.session){
       migrateLocalIdToFirebaseUid(role, state.session.id, fbUser.uid, email);
       state.session.id=fbUser.uid;
@@ -2952,53 +3033,138 @@ function initRealtime(){
   try{
     if(!firebase.apps || !firebase.apps.length) firebase.initializeApp(cfg);
     RT_DB=firebase.database();
-    RT_AUTH = firebase.auth ? firebase.auth() : null;
+    RT_AUTH=firebase.auth ? firebase.auth() : null;
+    RT_STORAGE=firebase.storage ? firebase.storage() : null;
+    RT_REF=RT_DB.ref((window.CROWNDRIVE_RT_PATH||'crowndrive-live/state'));
+    REALTIME=true;
+
+    let realtimeValueHandler=null;
+    let realtimeErrorHandler=null;
+    let listenerAttached=false;
+
+    function detachRealtimeListener(){
+      if(listenerAttached && RT_REF && realtimeValueHandler){
+        try{RT_REF.off('value',realtimeValueHandler);}catch(e){}
+      }
+      listenerAttached=false;
+      realtimeValueHandler=null;
+      realtimeErrorHandler=null;
+    }
+
+    function attachRealtimeListener(){
+      if(!RT_REF || listenerAttached || !RT_AUTH || !RT_AUTH.currentUser) return false;
+      listenerAttached=true;
+      realtimeValueHandler=snap=>{
+        const v=snap.val();
+        rtInitialSnapshotReceived=true;
+        rtRemoteStateExists=!!(v&&v.data);
+        window.CROWNDRIVE_REALTIME_CONNECTED=true;
+        if(v&&v.data){
+          applyRealtimeData(v.data);
+        }else{
+          // Never seed or overwrite the cloud automatically during page load.
+          // A truly empty database must be initialized only by an explicit admin action.
+          console.warn('Firebase state is empty; automatic bootstrap is disabled for data safety.');
+        }
+      };
+      realtimeErrorHandler=err=>{
+        listenerAttached=false;
+        window.CROWNDRIVE_REALTIME_CONNECTED=false;
+        console.error('Realtime listener failed',err);
+        // Do not replace the current UI/state with empty arrays on a temporary auth/rules error.
+        const now=Date.now();
+        if(now-rtLastToast>7000){rtLastToast=now;safeToast('טעינת הנתונים מ־Firebase נכשלה: '+firebaseErrorText(err));}
+      };
+      RT_REF.on('value',realtimeValueHandler,realtimeErrorHandler);
+      return true;
+    }
+
+    async function runDiagnostic(){
+      if(!RT_AUTH || !RT_AUTH.currentUser) return false;
+      try{
+        await RT_DB.ref('crowndrive-live/_connectionTest').set({ok:true,ts:Date.now(),uid:RT_AUTH.currentUser.uid});
+        window.CROWNDRIVE_REALTIME_CONNECTED=true;
+        return true;
+      }catch(e){
+        console.error('Realtime diagnostic write failed',e);
+        window.CROWNDRIVE_REALTIME_CONNECTED=false;
+        return false;
+      }
+    }
+
     if(RT_AUTH && firebase.auth.Auth && firebase.auth.Auth.Persistence){
       RT_AUTH.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(e=>console.warn('Auth persistence failed',e));
     }
+
     if(RT_AUTH && !window.CROWNDRIVE_AUTH_STATE_WATCH_ATTACHED){
       window.CROWNDRIVE_AUTH_STATE_WATCH_ATTACHED=true;
       RT_AUTH.onAuthStateChanged(user=>{
-        if(user){
-          // בזמן שחלון כניסה פתוח והמשתמש עורך מייל/סיסמה, לא משחזרים סשן ישן ברקע.
-          if(isAuthOverlayOpen() && !isExplicitAuthAction()){
-            const typed=normalizeEmail((document.getElementById('l-mail')&&document.getElementById('l-mail').value)||'');
-            const userEmail=normalizeEmail(user.email||'');
-            if(authUserIsEditing || isAuthInputFocused() || (typed && typed!==userEmail)) return;
-          }
-          const saved=savedLogin&&savedLogin();
-          restoreSessionFromFirebaseUser(user,(saved&&saved.role)||(state.session&&state.session.role));
-          // Session restoration is read-only. Do not write app data during refresh/login recovery.
+        window.CROWNDRIVE_AUTH_RESOLVED=true;
+        if(!user){
+          detachRealtimeListener();
+          // A transient/null auth result must not erase the local UI or session.
+          if(state.session){renderNav();renderMyAreaFab();}
+          return;
         }
+
+        if(isAuthOverlayOpen() && !isExplicitAuthAction()){
+          const typed=normalizeEmail((document.getElementById('l-mail')&&document.getElementById('l-mail').value)||'');
+          const userEmail=normalizeEmail(user.email||'');
+          if(authUserIsEditing || isAuthInputFocused() || (typed&&typed!==userEmail)) return;
+        }
+
+        const saved=savedLogin&&savedLogin();
+        restoreSessionFromFirebaseUser(user,(saved&&saved.role)||(state.session&&state.session.role));
+        attachRealtimeListener();
+        runDiagnostic();
+        setTimeout(()=>{migrateEmbeddedPrivateAddresses();refreshPrivateCarDetails();},250);
       });
+    }else if(RT_AUTH && RT_AUTH.currentUser){
+      attachRealtimeListener();
+      runDiagnostic();
     }
-    RT_REF=RT_DB.ref((window.CROWNDRIVE_RT_PATH||'crowndrive-live/state'));
-    REALTIME=true;
-    RT_REF.on('value', snap=>{
-      const v=snap.val();
-      rtInitialSnapshotReceived=true;
-      rtRemoteStateExists=!!(v && v.data);
-      if(v && v.data) applyRealtimeData(v.data);
-      else if(!v && hasMeaningfulLocalData()) pushRealtimeNow({allowBootstrap:true});
-    }, err=>{console.error('Realtime listener failed',err);safeToast('חיבור זמן אמת נכשל: '+firebaseErrorText(err));});
-    window.addEventListener('online',()=>{ if(RT_REF) RT_REF.once('value').then(s=>{const v=s.val(); if(v&&v.data) applyRealtimeData(v.data);}).catch(e=>console.warn('Realtime refresh after reconnect failed',e)); });
-    // Do a tiny diagnostic write first so permission/config problems are visible immediately.
-    // If secure Rules require auth, this will succeed after login.
-    const diagWrite = ()=>RT_DB.ref((window.CROWNDRIVE_RT_PATH||'crowndrive-live')+'/_connectionTest').set({ok:true,ts:Date.now(),uid:(RT_AUTH&&RT_AUTH.currentUser&&RT_AUTH.currentUser.uid)||null});
-    const diagPromise = (RT_AUTH && !RT_AUTH.currentUser) ? Promise.resolve(true) : diagWrite();
-    diagPromise.then(()=>{
-      window.CROWNDRIVE_REALTIME_CONNECTED=true;
-      if(state.session) safeToast('זמן אמת פעיל');
-    }).catch(e=>{
-      console.error('Realtime diagnostic write failed',e);
-      window.CROWNDRIVE_REALTIME_CONNECTED=false;
-      safeToast('Firebase לא נותן לשמור: '+firebaseErrorText(e));
+
+    window.addEventListener('online',()=>{
+      if(!RT_AUTH || !RT_AUTH.currentUser) return;
+      if(!listenerAttached) attachRealtimeListener();
+      RT_REF.once('value').then(s=>{
+        const v=s.val();
+        rtInitialSnapshotReceived=true;
+        rtRemoteStateExists=!!(v&&v.data);
+        if(v&&v.data) applyRealtimeData(v.data);
+      }).catch(e=>console.warn('Realtime refresh after reconnect failed',e));
     });
+
+    window.CROWNDRIVE_ATTACH_REALTIME_AFTER_AUTH=attachRealtimeListener;
     return true;
-  }catch(e){console.error('Realtime init failed',e);safeToast('Firebase לא מוגדר תקין — האתר עובד מקומית');return false;}
+  }catch(e){
+    console.error('Realtime init failed',e);
+    safeToast('Firebase לא מוגדר תקין — האתר עובד מקומית');
+    return false;
+  }
+}
+
+async function migrateEmbeddedPrivateAddresses(){
+  if(!RT_DB||!RT_AUTH||!RT_AUTH.currentUser)return;
+  const uid=RT_AUTH.currentUser.uid,isAdmin=!!(state.session&&state.session.role==='admin');
+  let changed=false;
+  for(const c of (state.cars||[])){
+    const cached=PRIVATE_CAR_CACHE[c.id];
+    if(cached&&cached.fullAddress&&(c.ownerId===uid||isAdmin)){
+      try{await savePrivateCarDetails(c.id,cached.fullAddress,c.ownerId);changed=true;}catch(e){}
+    }
+  }
+  if(changed)persistState();
+}
+
+function stripPasswordsFromState(){
+  const clean=u=>{if(u&&typeof u==='object')delete u.pass;};
+  (state.owners||[]).forEach(clean);(state.renters||[]).forEach(clean);
+  Object.values(state.users||{}).forEach(clean);clean(state.session);
 }
 function persistState(){
   try{
+    stripPasswordsFromState();
     pruneTombstones();
     const copy={
       owners:state.owners||[], renters:state.renters||[], cars:state.cars||[], bookings:state.bookings||[],
@@ -3034,14 +3200,15 @@ function loadState(){
     if(d.session)state.session=d.session;
     if(!state.session){ const cs=getCookieJSON(COOKIE_SESSION_KEY); if(cs&&cs.role&&cs.id)state.session=cs; }
     if(d.seq&&Number.isFinite(+d.seq))seq=+d.seq;
+    stripPasswordsFromState();
   }catch(e){console.error('local load failed', e)}
 }
 function cloudErr(e){console.error(e);showToast('השמירה עברה למצב מקומי יציב — אין צורך ב-Netlify Blobs')}
 
 /* ================= STATE ================= */
 const state = {
-  owners: [],   // {id,name,phone,email,pass}
-  renters: [],  // {id,name,phone,email,pass,lic}
+  owners: [],   // {id,name,phone,email}
+  renters: [],  // {id,name,phone,email,lic}
   cars: [],     // {id,ownerId,make,model,yr,color,cat,price,priceHourly,priceDaily,priceWeekly,rentalTypes[],seats,gear,fuel,tags[],status,ret,photos[]}
   bookings: [], // {id,num,status:'pending'|'approved'|'rejected'|'done',carId,ownerId,renterId,from,tmFrom,to,tmTo,hours,days,total,signName,signDate,sig,createdAt}
   notifications: [], // admin notifications, e.g. new user signups
@@ -3049,7 +3216,7 @@ const state = {
   session: null // {role:'owner'|'renter', id}
 };
 let seq = 1; const newId = p => p + (seq++) + Math.random().toString(36).slice(2,6);
-let filter='all', searchQ={}, currentCar=null, authRole=null, authMode='login', editId=null, formPhotos=[], rlicData=null, rlicBackData=null, lastBooking=null;
+let filter='all', searchQ={}, currentCar=null, authRole=null, authMode='login', editId=null, formPhotos=[], rlicData=null, rlicBackData=null, renterSelfieData=null, rlicFileObj=null, rlicBackFileObj=null, renterSelfieFileObj=null, lastBooking=null;
 
 const CAR_MAKES_MODELS={
   "Acura":["ILX","Integra","TLX","RLX","RDX","MDX","ZDX"],
@@ -3200,7 +3367,7 @@ function ensureStateIntegrity(){
     state.owners.forEach(u=>{ if(u&&u.id) state.users[u.id]={...(state.users[u.id]||{}),...u,role:'owner'}; });
     state.renters.forEach(u=>{ if(u&&u.id) state.users[u.id]={...(state.users[u.id]||{}),...u,role:'renter'}; });
     state.cars.forEach(c=>{
-      c.id=c.id||newId('c'); c.photos=safeArr(c.photos).filter(Boolean); if(!c.photos.length)c.photos=[fallbackCarPhoto()];
+      c.id=c.id||newId('c'); c.photos=safeArr(c.photos).filter(x=>typeof x==='string'&&(x.startsWith('https://')||x.startsWith('http://')||x.startsWith('data:image/svg+xml'))); if(!c.photos.length)c.photos=[fallbackCarPhoto()];
       c.tags=safeArr(c.tags); c.rentalTypes=safeArr(c.rentalTypes); if(!c.rentalTypes.length)c.rentalTypes=['hourly'];
       if(!['available','rented'].includes(c.status)) c.status='available';
       c.updatedAt=+c.updatedAt||+c.createdAt||Date.now();
@@ -3212,7 +3379,7 @@ function ensureStateIntegrity(){
         const pool=state.session.role==='owner'?state.owners:state.renters;
         let rec=pool.find(x=>x.id===state.session.id);
         if(!rec && state.session.id && (state.session.email||state.session.name)){
-          rec={...state.session,pass:state.session.pass||''}; pool.push(rec);
+          rec={...state.session}; pool.push(rec);
         }
         if(rec) state.session={...rec,role:state.session.role}; else state.session=null;
       }
@@ -3454,11 +3621,10 @@ function openAccount(){
   $('ac-renter-extra').style.display = u.role==='renter'?'block':'none';
   openOv('ov-account');
 }
-$('ac-lic').addEventListener('change',e=>{
+$('ac-lic').addEventListener('change',async e=>{
   const f=e.target.files[0]; if(!f)return;
-  const r=new FileReader();
-  r.onload=()=>{acLicData=r.result;showToast('צילום הרישיון החדש נטען')};
-  r.readAsDataURL(f);
+  try{acLicData=await uploadImageFile(f,'licenses');showToast('צילום הרישיון הועלה ונשמר כ-URL');}
+  catch(err){showToast(err.message||'העלאת הרישיון נכשלה');}
 });
 function saveAccount(){
   const u=me(); if(!u)return;
@@ -3496,13 +3662,12 @@ function saveAccount(){
     rec.email=newMail;
   }
   rec.name=name;rec.phone=phone;rec.updatedAt=Date.now();
-  if(newPass)rec.pass=newPass;
+  if(newPass){showToast('שינוי סיסמה דורש חיבור ל-Firebase Authentication');return;}
   if(acLicData)rec.lic=acLicData;
   state.users[u.id]={...(state.users[u.id]||{}),name,updatedAt:Date.now()};
   Object.assign(state.session,{name,phone});
   if(newMail)state.session.email=newMail;
-  if(newPass)state.session.pass=newPass;
-  if(newMail||newPass) rememberLogin(u.role, state.session.email||rec.email, newPass||rec.pass);
+  if(newMail) rememberLogin(u.role, state.session.email||rec.email);
   if(acLicData)state.session.lic=acLicData;
   persistState(); // FIX: עדכון פרטי חשבון נשמר ומסתנכרן
   renderNav();render();closeOv('ov-account');showToast('הפרטים עודכנו בהצלחה');
@@ -3535,7 +3700,7 @@ async function doLogin(){
     if((authRole==='owner' || adminSecretMode) && em===ADMIN_EMAIL){
       const adm=await adminFirebaseLogin(em,ps);
       if(!adm.ok){ noteLoginFail(em); mark('lf-pass',true); showToast('פרטי מנהל שגויים'); return; }
-      clearLoginFail(em); rememberLogin('admin',em,ps);
+      clearLoginFail(em); rememberLogin('admin',em);
       let uid=adm.uid||'admin';
       state.session={role:'admin',id:uid,name:'מנהל האתר',email:ADMIN_EMAIL};
       state.users[uid]={name:'מנהל האתר',role:'admin',email:ADMIN_EMAIL,updatedAt:Date.now()};
@@ -3571,7 +3736,7 @@ async function doLogin(){
             name: em.split('@')[0],
             phone: '',
             email: em,
-            pass: ps,
+            
             createdAt: Date.now(),
             autoCreated: true
           };
@@ -3582,13 +3747,12 @@ async function doLogin(){
           migrateLocalIdToFirebaseUid(authRole, u.id, uid, em);
           u.id = uid;
           u.email = em;
-          u.pass = ps;
           u.updatedAt = Date.now();
         }
         rememberAuthIdentity(uid, em);
         mark('lf-mail',false); mark('lf-pass',false);
         clearLoginFail(em);
-        rememberLogin(authRole,em,ps);
+        rememberLogin(authRole,em);
         state.session={role:authRole,id:u.id,...u};
         state.users[u.id]={...(state.users[u.id]||{}),name:u.name||em.split('@')[0],role:authRole,email:u.email,createdAt:u.createdAt||Date.now(),updatedAt:Date.now()};
         afterLoginUI();
@@ -3602,19 +3766,8 @@ async function doLogin(){
       }
     }
 
-    // fallback מקומי בלבד, אם Firebase לא נטען.
-    mark('lf-mail',!u);
-    if(!u){ noteLoginFail(em); showToast('לא נמצא חשבון. לחץ הרשמה ליצירת משתמש חדש.'); return; }
-
-    if(u.pass!==ps){
-      mark('lf-pass',true); noteLoginFail(em); return;
-    }else mark('lf-pass',false);
-
-    clearLoginFail(em);
-    rememberLogin(authRole,em,ps);
-    state.session={role:authRole,id:u.id,...u};
-    state.users[u.id]={...(state.users[u.id]||{}),name:u.name,role:authRole,email:u.email,updatedAt:Date.now()};
-    afterLoginUI();
+    // אין כניסה מקומית באמצעות סיסמה. אימות מתבצע רק ב-Firebase Authentication.
+    mark('lf-pass',true);showToast('נדרש חיבור ל-Firebase Authentication כדי להיכנס');return;
   }catch(e){
     noteLoginFail(em);
     console.error('login failed',e);
@@ -3640,9 +3793,10 @@ async function doSignup(){
     const licState=$('lic-state').value;
     mark('sf-lic-state',!licState);
     if(!licState.trim())bad=true;
-    if(!rlicData){$('rlic-err').style.display='block';$('drop-rlic').classList.add('err-b');bad=true}
-    if(!rlicBackData){$('rlic-back-err').style.display='block';$('drop-rlic-back').classList.add('err-b');bad=true}
-    extra={lic:rlicData,licFront:rlicData,licBack:rlicBackData,licenseState:licState.trim()};
+    if(!rlicData&&!rlicFileObj){$('rlic-err').style.display='block';$('drop-rlic').classList.add('err-b');bad=true}
+    if(!rlicBackData&&!rlicBackFileObj){$('rlic-back-err').style.display='block';$('drop-rlic-back').classList.add('err-b');bad=true}
+    if(!renterSelfieData&&!renterSelfieFileObj){$('rselfie-err').style.display='block';bad=true}
+    extra={lic:rlicData,licFront:rlicData,licBack:rlicBackData,selfie:renterSelfieData,licenseState:licState.trim()};
   }
   if(bad) return;
 
@@ -3661,7 +3815,7 @@ async function doSignup(){
         ]);
       }).then(()=>{
         ['s-name','s-phone','s-mail','s-pass'].forEach(i=>$(i).value='');
-        clearRLic(true);clearRLicBack(true);if($('lic-state'))$('lic-state').value='';
+        clearRLic(true);clearRLicBack(true);clearRSelfie();if($('lic-state'))$('lic-state').value='';
         showToast('החשבון נוצר בהצלחה');
       }).catch(e=>{mark('sf-mail',true);showToast('שגיאה: '+((e&&e.message)||e))});
       return;
@@ -3672,15 +3826,15 @@ async function doSignup(){
       const fbUser=await firebaseLoginOrCreate(em,ps,true);
       if(fbUser && fbUser.uid) uid=fbUser.uid;
     }
-    const u={id:uid, name, phone:$('s-phone').value.trim(), email:em, pass:ps, createdAt:Date.now(), ...extra};
+    const u={id:uid, name, phone:$('s-phone').value.trim(), email:em,  createdAt:Date.now(), ...extra};
     pool.push(u);
     state.users[u.id]={name:u.name,role:authRole,email:u.email,createdAt:u.createdAt};
     notifyAdminNewUser(u, authRole, 'signup-form');
     state.session={role:authRole,id:u.id,...u};
-    rememberLogin(authRole,em,ps);
+    rememberLogin(authRole,em);
     rememberAuthIdentity(u.id,u.email);
     ['s-name','s-phone','s-mail','s-pass'].forEach(i=>$(i).value='');
-    clearRLic(true);clearRLicBack(true);if($('lic-state'))$('lic-state').value='';
+    clearRLic(true);clearRLicBack(true);clearRSelfie();if($('lic-state'))$('lic-state').value='';
     showToast('החשבון נוצר בהצלחה');
     authJustSignedUp=(authRole==='owner');
     afterLoginUI();
@@ -3783,7 +3937,7 @@ async function doLogin(){
       if(!adm.ok){ noteLoginFail(em); mark('lf-pass',true); showToast('פרטי מנהל שגויים'); return; }
       let uid=adm.uid||'admin';
       clearLoginFail(em);
-      rememberLogin('admin',em,ps);
+      rememberLogin('admin',em);
       state.session={role:'admin',id:uid,name:'מנהל האתר',email:ADMIN_EMAIL};
       state.users[uid]={...(state.users[uid]||{}),name:'מנהל האתר',role:'admin',email:ADMIN_EMAIL,updatedAt:Date.now()};
       rememberAuthIdentity(uid,ADMIN_EMAIL);
@@ -3806,7 +3960,7 @@ async function doLogin(){
       const uid=(fbUser&&fbUser.uid) || (u&&u.id) || newId('u');
 
       if(!u){
-        u={id:uid,name:em.split('@')[0],phone:'',email:em,pass:ps,createdAt:Date.now(),updatedAt:Date.now(),autoCreated:true};
+        u={id:uid,name:em.split('@')[0],phone:'',email:em,createdAt:Date.now(),updatedAt:Date.now(),autoCreated:true};
         pool.push(u);
         notifyAdminNewUser(u, role, 'login-auto-create');
         showToast('ברוך הבא — יצרתי לך חשבון חדש וחיברתי אותך');
@@ -3814,13 +3968,12 @@ async function doLogin(){
         migrateLocalIdToFirebaseUid(role,u.id,uid,em);
         u.id=uid;
         u.email=em;
-        u.pass=ps;
         u.updatedAt=Date.now();
       }
 
       mark('lf-mail',false); mark('lf-pass',false);
       clearLoginFail(em);
-      rememberLogin(role,em,ps);
+      rememberLogin(role,em);
       rememberAuthIdentity(uid,em);
       state.session={role,id:u.id,...u};
       state.users[u.id]={...(state.users[u.id]||{}),name:u.name||em.split('@')[0],role,email:u.email,createdAt:u.createdAt||Date.now(),updatedAt:Date.now()};
@@ -3829,17 +3982,8 @@ async function doLogin(){
       return;
     }
 
-    // Local fallback only if Firebase failed to initialize at all.
-    if(!u){
-      u={id:newId('u'),name:em.split('@')[0],phone:'',email:em,pass:ps,createdAt:Date.now(),updatedAt:Date.now(),autoCreated:true};
-      pool.push(u);
-    }else if(u.pass!==ps){
-      mark('lf-pass',true); showToast('הסיסמה לא תואמת למייל הזה'); return;
-    }
-    rememberLogin(role,em,ps);
-    state.session={role,id:u.id,...u};
-    state.users[u.id]={...(state.users[u.id]||{}),name:u.name,role,email:u.email,updatedAt:Date.now()};
-    afterLoginUI();
+    // אין fallback מקומי לסיסמאות — Firebase Authentication בלבד.
+    mark('lf-pass',true);showToast('נדרש חיבור ל-Firebase Authentication כדי להיכנס');return;
   }catch(e){
     console.error('login failed',e);
     const code=(e&&e.code)||'';
@@ -3863,18 +4007,19 @@ async function doLogin(){
 });
 
 /* renter license upload in signup */
-bindDrop('drop-rlic','rlic-file',f=>readImg(f,d=>{
-  rlicData=d; $('rlic-img').src=d;
-  $('rlic-prev').style.display='block'; $('drop-rlic').style.display='none';
-  $('drop-rlic').classList.remove('err-b'); $('rlic-err').style.display='none';
-}));
-bindDrop('drop-rlic-back','rlic-back-file',f=>readImg(f,d=>{
-  rlicBackData=d; $('rlic-back-img').src=d;
-  $('rlic-back-prev').style.display='block'; $('drop-rlic-back').style.display='none';
-  $('drop-rlic-back').classList.remove('err-b'); $('rlic-back-err').style.display='none';
-}));
-function clearRLic(s){rlicData=null;$('rlic-file').value='';$('rlic-prev').style.display='none';$('drop-rlic').style.display='block'}
-function clearRLicBack(s){rlicBackData=null;$('rlic-back-file').value='';$('rlic-back-prev').style.display='none';$('drop-rlic-back').style.display='block'}
+function previewSignupImage(file,imgId,prevId,dropId,errId){
+  if(!file||!file.type.startsWith('image/')){showToast('יש לבחור קובץ תמונה');return}
+  const url=URL.createObjectURL(file); $(imgId).src=url; $(prevId).style.display='block';
+  if(dropId)$(dropId).style.display='none'; if(dropId)$(dropId).classList.remove('err-b'); if(errId)$(errId).style.display='none';
+}
+bindDrop('drop-rlic','rlic-file',f=>{rlicFileObj=f;rlicData=null;previewSignupImage(f,'rlic-img','rlic-prev','drop-rlic','rlic-err')});
+bindDrop('drop-rlic-back','rlic-back-file',f=>{rlicBackFileObj=f;rlicBackData=null;previewSignupImage(f,'rlic-back-img','rlic-back-prev','drop-rlic-back','rlic-back-err')});
+function clearRLic(s){rlicData=null;rlicFileObj=null;$('rlic-file').value='';$('rlic-prev').style.display='none';$('drop-rlic').style.display='block'}
+function clearRLicBack(s){rlicBackData=null;rlicBackFileObj=null;$('rlic-back-file').value='';$('rlic-back-prev').style.display='none';$('drop-rlic-back').style.display='block'}
+function handleRenterSelfieFile(f){if(!f)return;renterSelfieFileObj=f;renterSelfieData=null;previewSignupImage(f,'rselfie-img','rselfie-prev',null,'rselfie-err')}
+['rselfie-gallery','rselfie-camera'].forEach(id=>{const el=$(id);if(el)el.addEventListener('change',e=>handleRenterSelfieFile(e.target.files&&e.target.files[0]));});
+function clearRSelfie(){renterSelfieData=null;renterSelfieFileObj=null;['rselfie-gallery','rselfie-camera'].forEach(id=>{const el=$(id);if(el)el.value=''});if($('rselfie-prev'))$('rselfie-prev').style.display='none';if($('rselfie-img'))$('rselfie-img').src='';}
+
 
 /* card formatting */
 
@@ -3931,10 +4076,13 @@ function carCardHTML(c,idx){
           <span class="spec">${ic.fuel} הנעה: ${esc(c.fuel)}</span>
           ${c.engine?`<span class="spec">⚙ ${esc(c.engine)}</span>`:''}
           ${c.size?`<span class="spec">▣ ${esc(c.size)}</span>`:''}
+          <span class="spec">👤 מגיל ${Math.max(18,+c.minAge||21)}</span>
+          <span class="spec">${c.deliveryEnabled?`🚗 מסירה ${(+c.deliveryCost||0)>0?'בתוספת '+money(c.deliveryCost):'ללא תוספת'}`:'📍 איסוף עצמי'}</span>
         </div>
         <div class="rental-tags">${rentalTypesOf(c).map(t=>`<span class="rental-tag">${rentalLabel(t)}</span>`).join('')}</div>
         <div class="rate-list">${ratePills(c)}</div>
         ${(c.tags||[]).length?`<div class="tags">${(c.tags||[]).map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>`:''}
+        ${c.location?`<div class="availability-line">📍 אזור איסוף: ${esc(c.location)} · הכתובת המלאה תוצג לאחר אישור</div>`:''}
         <div class="availability-line">${esc(availabilityText(c))}</div>
         <div class="card-actions">
           <button class="card-btn chat" onclick="startOwnerChat('${c.ownerId}',event)">💬 צ'אט עם בעל הרכב</button>
@@ -4001,6 +4149,16 @@ function matchesSearch(c){
   if(q.fuel && c.fuel!==q.fuel)return false;
   if(q.seats && String(c.seats)!==String(q.seats))return false;
   if(q.rental && !rentalTypesOf(c).includes(q.rental))return false;
+  if(q.availableOnly && c.status!=='available')return false;
+  if(q.deliveryOnly && !c.deliveryEnabled)return false;
+  if(q.youngOnly && Math.max(18,+c.minAge||21)>21)return false;
+  if(q.location && !norm(c.location).includes(norm(q.location)))return false;
+  if(q.priceBand){
+    const price=bestPriceForSearch(c);
+    if(q.priceBand==='economy' && price>45)return false;
+    if(q.priceBand==='standard' && (price<=45||price>90))return false;
+    if(q.priceBand==='premium' && price<=90)return false;
+  }
   return true;
 }
 function setRentalFilter(v,btn){
@@ -4163,11 +4321,11 @@ function deleteCar(id){
   if(editId===id)resetCarForm();
   if(CLOUD){db.collection('cars').doc(id).delete().then(()=>showToast('המודעה נמחקה מהאתר')).catch(cloudErr);return;}
   state.cars=state.cars.filter(x=>x.id!==id);
-  markDeleted(id); // FIX: מחיקה מסומנת ב-tombstone כדי שלא תחזור ממיזוג הענן
+  markDeleted(id); if(RT_DB)RT_DB.ref(privateCarBase()+'/'+id).remove().catch(()=>{}); // FIX: מחיקה מסומנת ב-tombstone כדי שלא תחזור ממיזוג הענן
   persistState();
   render();renderAdminList();showToast('המודעה נמחקה מהאתר');
 }
-function editCar(id){
+async function editCar(id){
   const c=state.cars.find(x=>x.id===id);
   editId=id;
   setDash('add');
@@ -4176,6 +4334,7 @@ function editCar(id){
   $('a-seats').value=c.seats;$('a-gear').value=c.gear;$('a-fuel').value=c.fuel;
   $('a-tags').value=c.tags.join(', ');$('a-status').value=c.status;
   setOwnerSelectValue('a-engine','a-engine-other',c.engine||'',ENGINE_TYPES);$('a-size').value=c.size||'';$('a-location').value=c.location||'';setRentalChecks(c.rentalTypes);
+  const priv=PRIVATE_CAR_CACHE[id]||await loadPrivateCarDetails(id);$('a-full-address').value=(priv&&priv.fullAddress)||'';$('a-min-age').value=c.minAge||21;$('a-delivery-enabled').value=c.deliveryEnabled?'yes':'no';$('a-delivery-cost').value=c.deliveryCost||0;$('a-delivery-note').value=c.deliveryNote||'';toggleDeliveryCostField();
   formPhotos=[...c.photos];renderPhotoGrid();
   $('form-title').textContent='עריכת '+c.make+' '+c.model;
   $('a-save').textContent='שמירת שינויים';$('a-cancel').style.display='block';
@@ -4185,10 +4344,14 @@ function editCar(id){
   const ft=$('form-title');
   ft.classList.remove('flash');void ft.offsetWidth;ft.classList.add('flash');
 }
+function toggleDeliveryCostField(){
+  const on=$('a-delivery-enabled')&&$('a-delivery-enabled').value==='yes';
+  const row=$('delivery-cost-row');if(row)row.style.display=on?'grid':'none';
+}
 function resetCarForm(){
   editId=null;
-  ['a-make','a-model','a-yr','a-color','a-price-hourly','a-price-daily','a-price-weekly','a-tags','a-engine','a-size','a-location','a-make-other','a-model-other','a-color-other','a-engine-other'].forEach(i=>{if($(i))$(i).value=''});initOwnerChoiceLists();document.querySelectorAll('.other-input').forEach(x=>x.classList.remove('show'));
-  $('a-cat').selectedIndex=0;$('a-seats').value='5';$('a-gear').selectedIndex=0;$('a-fuel').selectedIndex=0;$('a-status').value='available';setRentalChecks(['hourly']);
+  ['a-make','a-model','a-yr','a-color','a-price-hourly','a-price-daily','a-price-weekly','a-tags','a-engine','a-size','a-location','a-full-address','a-delivery-cost','a-delivery-note','a-make-other','a-model-other','a-color-other','a-engine-other'].forEach(i=>{if($(i))$(i).value=''});initOwnerChoiceLists();document.querySelectorAll('.other-input').forEach(x=>x.classList.remove('show'));
+  $('a-cat').selectedIndex=0;$('a-seats').value='5';$('a-gear').selectedIndex=0;$('a-fuel').selectedIndex=0;$('a-status').value='available';$('a-min-age').value='21';$('a-delivery-enabled').value='no';$('a-delivery-cost').value='0';toggleDeliveryCostField();setRentalChecks(['hourly']);
   formPhotos=[];renderPhotoGrid();
   ['af-make','af-model','af-yr','af-color','af-rentals','af-price-hourly','af-price-daily','af-price-weekly'].forEach(i=>$(i)&&$(i).classList.remove('err'));
   $('form-title').textContent='הוספת רכב חדש';$('a-save').textContent='פרסום הרכב';$('a-cancel').style.display='none';
@@ -4211,7 +4374,7 @@ function renderPhotoGrid(){
   else{req.className='photo-req bad';req.textContent=`הועלו ${n} מתוך 2 תמונות נדרשות`}
   $('drop-photos').classList.remove('err-b');
 }
-function saveCar(){
+async function saveCar(){
   if(!state.session || state.session.role!=='owner'){ showToast('צריך להיכנס כבעל רכב כדי להוסיף רכב'); return; }
   const make=selectedOrOther('a-make','a-make-other'),model=selectedOrOther('a-model','a-model-other');
   const yr=+$('a-yr').value;
@@ -4225,12 +4388,16 @@ function saveCar(){
   mk('af-price-daily',rentalTypes.includes('daily')&&!(priceDaily>0));
   mk('af-price-weekly',rentalTypes.includes('long')&&!(priceWeekly>0));
   if(formPhotos.length<2){$('drop-photos').classList.add('err-b');showToast('חובה להעלות לפחות 2 תמונות של הרכב');bad=true}
+  const fullAddress=$('a-full-address').value.trim(), minAge=Math.max(18,Math.min(99,+$('a-min-age').value||21));
+  const deliveryEnabled=$('a-delivery-enabled').value==='yes', deliveryCost=deliveryEnabled?Math.max(0,+$('a-delivery-cost').value||0):0;
+  if(!fullAddress){showToast('יש להזין כתובת מלאה — היא תוצג רק לאחר אישור');bad=true}
   if(bad)return;
   const price = priceHourly || priceDaily || priceWeekly;
   const now=Date.now();
   const data={make,model,yr,price,priceHourly,priceDaily,priceWeekly,color,cat:$('a-cat').value,rentalTypes,updatedAt:now,
     seats:$('a-seats').value,gear:$('a-gear').value,fuel:$('a-fuel').value,
     engine:selectedOrOther('a-engine','a-engine-other'),size:$('a-size').value.trim(),location:$('a-location').value.trim(),
+    minAge,deliveryEnabled,deliveryCost,deliveryNote:$('a-delivery-note').value.trim(),
     tags:$('a-tags').value.split(',').map(t=>t.trim()).filter(Boolean),
     status:$('a-status').value,photos:[...formPhotos]};
   if(CLOUD){
@@ -4240,13 +4407,16 @@ function saveCar(){
     op.then(()=>{showToast(editId?'הרכב עודכן':make+' '+model+' נוסף לצי');resetCarForm();if($('ov-owner').classList.contains('open'))setDash('cars');}).catch(cloudErr);
     return; /* הרשימה מתרעננת דרך המאזין */
   }
+  let savedCarId=editId;
   if(editId){
     Object.assign(state.cars.find(x=>x.id===editId),data);
     showToast('הרכב עודכן');
   } else {
-    state.cars.push({id:newId('c'),createdAt:now,updatedAt:now,ownerId:state.session.id,ret:'',...data});
+    savedCarId=newId('c');
+    state.cars.push({id:savedCarId,createdAt:now,updatedAt:now,ownerId:state.session.id,ret:'',...data});
     showToast(make+' '+model+' נוסף לצי');
   }
+  try{await savePrivateCarDetails(savedCarId,fullAddress,state.session.id);}catch(e){showToast(e.message||'הכתובת הפרטית לא נשמרה');return;}
   persistState();
   render();renderAdminList();resetCarForm();
   if($('ov-owner').classList.contains('open'))setDash('cars');
@@ -4287,7 +4457,7 @@ function renderOwnerBookings(){
     return `<div class="adm-item" style="border:1px solid rgba(160,90,0,.35);background:rgba(160,90,0,.06)">
       ${b.lic?`<img src="${b.lic}" alt="רישיון" style="cursor:pointer" onclick="viewLic('${b.id}')">`:''}
       <div class="inf"><b>${esc(c.make)} ${esc(c.model)} · ${esc(b.signName)}</b>
-        <div class="sm">${b.num} · ${fmt(b.from)} ${b.tmFrom} → ${fmt(b.to)} ${b.tmTo} · ${money(b.total)}</div>
+        <div class="sm">${b.num} · ${fmt(b.from)} ${b.tmFrom} → ${fmt(b.to)} ${b.tmTo} · ${money(b.total)}</div>${approvedLocationHTML(b,c)}
         <div class="sm">סטטוס: ${bookingStatusHTML(b)} · דירוג שוכר: ${starsHTML(rst.avg,rst.count)}</div>
       </div>
       <div class="acts">
@@ -4303,7 +4473,7 @@ function renderOwnerBookings(){
     return `<div class="adm-item" style="border:1px solid rgba(28,124,79,.35);background:rgba(28,124,79,.05)">
       ${b.lic?`<img src="${b.lic}" alt="רישיון" style="cursor:pointer" onclick="viewLic('${b.id}')">`:''}
       <div class="inf"><b>${esc(c.make)} ${esc(c.model)} · ${esc(b.signName)}</b>
-        <div class="sm">${b.num} · ${fmt(b.from)} ${b.tmFrom} → ${fmt(b.to)} ${b.tmTo} · ${money(b.total)}</div>
+        <div class="sm">${b.num} · ${fmt(b.from)} ${b.tmFrom} → ${fmt(b.to)} ${b.tmTo} · ${money(b.total)}</div>${approvedLocationHTML(b,c)}
         <div class="sm">${bookingStatusHTML(b)} · דירוג שוכר: ${starsHTML(rst.avg,rst.count)}</div>
       </div>
       <div class="acts"><button class="mini gold" onclick="openChatTo('b${b.id}')">💬 צ'אט עם השוכר</button><button class="mini" style="color:var(--ok);border-color:rgba(28,124,79,.4)" onclick="endRental('${b.id}')">✓ סיום השכרה</button></div>
@@ -4615,6 +4785,14 @@ function renderAdminDashboard(){
 }
 
 /* ================= RENTER AREA ================= */
+
+function approvedLocationHTML(b,c){
+  if((b.status||'')!=='approved'&&!b.done)return '';
+  const addr=c?privateAddressFor(c.id):'';
+  const pickup=addr?`<div class="approved-address">📍 כתובת איסוף מלאה: <b>${esc(addr)}</b></div>`:'';
+  const delivery=b.fulfillment==='delivery'?`<div class="approved-address">🚗 מסירה אל: <b>${esc(b.deliveryAddress||'לא הוזנה')}</b>${(+b.deliveryCost||0)>0?' · '+money(b.deliveryCost):''}</div>`:'';
+  return delivery||pickup;
+}
 function bookingStatusHTML(b){
   const st=b.status||(b.done?'done':'approved');
   const labels={pending:'ממתינה לאישור בעל הרכב',approved:'מאושרת',rejected:'נדחתה',done:'הסתיימה'};
@@ -4684,7 +4862,8 @@ function openRenterArea(){
                   ${((b.status||'approved')==='approved'&&!b.paymentProof)?`<label class="mini gold">העלאת תשלום<input type="file" accept="image/*" style="display:none" onchange="uploadPaymentProof('${b.id}',this)"></label>`:''}
                 </div>
               </div>
-              ${b.paymentProof?'<div style="color:var(--ok);font-size:.78rem;margin-top:8px;font-weight:700">✓ צילום תשלום נשלח</div>':''}
+${approvedLocationHTML(b,c)}
+                            ${b.paymentProof?'<div style="color:var(--ok);font-size:.78rem;margin-top:8px;font-weight:700">✓ צילום תשלום נשלח</div>':''}
               <div style="margin-top:10px">${mine?`<span class="rate-label">דירגת:</span>${starsHTML(mine.stars,null)}${mine.text?`<div class="my-review">&quot;${esc(mine.text)}&quot;</div>`:`<div class="rv-box"><input id="rv-${b.id}" placeholder="כתוב ביקורת קצרה" maxlength="220"><button class="mini gold" onclick="setReview('${b.id}')">פרסום</button></div>`}`:`<span class="rate-label">דירוג אחרי ההשכרה:</span>${ratePicker(b.id)}`}</div>
             </div>`;}).join('')}
         </div>`}
@@ -4703,25 +4882,18 @@ function paymentProofCell(b){
   if(b.paymentProof)return `<span style="color:var(--ok);font-weight:600">✓ נשלח</span><img class="proof-thumb" src="${b.paymentProof}" alt="צילום העברת תשלום">`;
   return `<div class="pay-proof-box">אחרי אישור ההשכרה חובה לשלוח לבעל הרכב צילום מסך של העברת הכסף.<br><label class="mini gold proof-upload">העלאת צילום<input type="file" accept="image/*" style="display:none" onchange="uploadPaymentProof('${b.id}',this)"></label></div>`;
 }
-function uploadPaymentProof(bid,input){
+async function uploadPaymentProof(bid,input){
   const f=input.files&&input.files[0]; if(!f)return;
-  if(!f.type.startsWith('image/')){showToast('נא להעלות תמונה בלבד');input.value='';return}
-  const r=new FileReader();
-  r.onload=()=>{
-    const data=r.result;
+  try{
+    const url=await uploadImageFile(f,'payment-proofs');
     const b=state.bookings.find(x=>x.id===bid); if(!b)return;
-    b.paymentProof=data; b.paymentProofAt=Date.now(); b.updatedAt=Date.now();
-    const txt='השוכר שלח צילום מסך של העברת תשלום עבור הזמנה '+b.num+'.';
-    if(CLOUD){
-      db.collection('bookings').doc(bid).update({paymentProof:data,paymentProofAt:b.paymentProofAt}).catch(cloudErr);
-    }
-    pushMsg('b'+bid,state.session?state.session.role:'renter',state.session?state.session.id:b.renterId,txt,[b.renterId,b.ownerId],{image:data,kind:'paymentProof'});
-    openRenterArea();
-    showToast('צילום התשלום נשלח בצ׳אט לבעל הרכב');
-  };
-  r.readAsDataURL(f);
+    b.paymentProof=url;b.paymentProofAt=Date.now();b.updatedAt=Date.now();
+    if(CLOUD)await db.collection('bookings').doc(bid).update({paymentProof:url,paymentProofAt:b.paymentProofAt,updatedAt:b.updatedAt});
+    pushMsg('b'+bid,state.session?state.session.role:'renter',state.session?state.session.id:b.renterId,'השוכר שלח צילום מסך של העברת תשלום עבור הזמנה '+b.num+'.',[b.renterId,b.ownerId],{image:url,kind:'paymentProof'});
+    openRenterArea();showToast('צילום התשלום נשמר כ-URL ונשלח לבעל הרכב');
+  }catch(e){showToast(e.message||'העלאת צילום התשלום נכשלה');}
+  input.value='';
 }
-
 function applyPrefsToSearch(){
   const p=(me()&&me().prefs)||{};
   closeOv('ov-renter');scrollToFleet();
@@ -4747,6 +4919,7 @@ function tryBook(id){
 function openBook(id){
   currentCar=state.cars.find(c=>c.id===id);
   const u=me();
+  const termsAge=$('terms-min-age');if(termsAge)termsAge.textContent='גיל הנהג המינימלי לרכב זה הוא '+Math.max(18,+currentCar.minAge||21)+'.';
   $('m-car').innerHTML=`<img src="${currentCar.photos[0]}" alt="">
     <div><b>${esc(currentCar.make)} ${esc(currentCar.model)} ${currentCar.yr}</b>
     <div class="p">${esc(currentCar.cat)} · ${rateSummary(currentCar)||money(primaryRate(currentCar))}</div></div>`;
@@ -4755,6 +4928,8 @@ function openBook(id){
   $('dt-from').min=today;$('dt-to').min=today;
   $('dt-from').value='';$('dt-to').value='';
   $('price-live').style.display='none';
+  const ff=$('book-fulfillment');if(ff){ff.innerHTML='<option value="pickup">איסוף עצמי</option>'+(currentCar.deliveryEnabled?'<option value="delivery">מסירה '+((+currentCar.deliveryCost||0)>0?'בתוספת '+money(currentCar.deliveryCost):'ללא תוספת')+'</option>':'');ff.value='pickup';}
+  if($('book-delivery-address'))$('book-delivery-address').value='';
   $('agree').checked=false;$('agree-err').style.display='none';
   $('sign-name').value=u.name;
   $('sign-date').value=today;
@@ -4770,7 +4945,11 @@ function hoursTotal(){
 }
 function daysTotal(){return Math.max(1,Math.ceil(hoursTotal()/24))}
 ['dt-from','dt-to','tm-from','tm-to'].forEach(id=>$(id).addEventListener('change',updatePriceLive));
+function selectedFulfillment(){return $('book-fulfillment')?.value||'pickup';}
+function deliveryFee(){return selectedFulfillment()==='delivery'?Math.max(0,+currentCar.deliveryCost||0):0;}
+function updateDeliveryAddressVisibility(){const f=$('delivery-address-field');if(f)f.style.display=selectedFulfillment()==='delivery'?'block':'none';}
 function updatePriceLive(){
+  updateDeliveryAddressVisibility();
   const h=hoursTotal(),box=$('price-live');
   if(h>0&&currentCar){
     const units=bookingUnits(), rate=bookingRate(), type=selectedBookingRentalType();
@@ -4778,7 +4957,8 @@ function updatePriceLive(){
     box.innerHTML=`<div class="row"><span>משך ההשכרה</span><span>${h} שעות (${daysTotal()} ימים)</span></div>
       <div class="row"><span>סוג השכרה</span><span>${rentalLabel(type)}</span></div>
       <div class="row"><span>${units} ${bookingUnitName()} × ${money(rate)}</span><span>${money(units*rate)}</span></div>
-      <div class="row"><span>סה"כ משוער</span><span>${money(units*rate)}</span></div>`;
+      ${selectedFulfillment()==='delivery'?`<div class="row"><span>דמי מסירה</span><span>${money(deliveryFee())}</span></div>`:''}
+      <div class="row"><span>סה"כ משוער</span><span>${money(units*rate+deliveryFee())}</span></div>`;
   } else box.style.display='none';
 }
 function mark(id,bad){$(id).classList.toggle('err',bad)}
@@ -4788,6 +4968,7 @@ function goStep(n,silent){
       const f=$('dt-from').value,t=$('dt-to').value;
       mark('f-from',!f);mark('f-to',!t||hoursTotal()<1);
       if(!f||!t||hoursTotal()<1)return;
+      if(selectedFulfillment()==='delivery'&&!$('book-delivery-address').value.trim()){showToast('יש להזין כתובת למסירה');return;}
     }
     if(n===3){
       let bad=false;
@@ -4816,9 +4997,12 @@ function buildSummary(){
     <div class="row"><span>החזרה</span><span>${fmt($('dt-to').value)} · ${$('tm-to').value}</span></div>
     <div class="row"><span>משך</span><span>${h} שעות (${d} ימים)</span></div>
     <div class="row"><span>סוג השכרה</span><span>${rentalLabel(selectedBookingRentalType())} · ${money(bookingRate())} ${rateUnitLabel(selectedBookingRentalType())}</span></div>
+    <div class="row"><span>אופן קבלה</span><span>${selectedFulfillment()==='delivery'?'מסירה לכתובת השוכר':'איסוף עצמי'}</span></div>
+    ${selectedFulfillment()==='delivery'?`<div class="row"><span>כתובת למסירה</span><span>${esc($('book-delivery-address').value.trim())}</span></div>`:''}
     <div class="row"><span>שוכר</span><span>${esc($('sign-name').value)}</span></div>
     <div class="row"><span>הסכם השכרה</span><span style="color:var(--ok)">✓ נחתם ב-${fmt($('sign-date').value)}</span></div>
-    <div class="row"><span>סה"כ לתשלום</span><span>${money(bookingUnits()*bookingRate())}</span></div>`;
+    ${selectedFulfillment()==='delivery'?`<div class="row"><span>דמי מסירה</span><span>${money(deliveryFee())}</span></div>`:''}
+    <div class="row"><span>סה"כ לתשלום</span><span>${money(bookingUnits()*bookingRate()+deliveryFee())}</span></div>`;
 }
 function fmt(d){return new Date(d+'T00:00').toLocaleDateString('he-IL',{day:'numeric',month:'long',year:'numeric'})}
 
@@ -4864,12 +5048,12 @@ function bumpCarActivity(carId){
 }
 /* confirm + receipt */
 function confirmBooking(){
-  const u=me(),h=hoursTotal(),d=daysTotal(),rentType=selectedBookingRentalType(),rate=bookingRate(),units=bookingUnits(),total=units*rate;
+  const u=me(),h=hoursTotal(),d=daysTotal(),rentType=selectedBookingRentalType(),rate=bookingRate(),units=bookingUnits(),fulfillment=selectedFulfillment(),deliveryCost=deliveryFee(),total=units*rate+deliveryCost;
   const num='CD-'+Math.floor(100000+Math.random()*900000);
   const b={id:newId('bk'),num,status:'pending',carId:currentCar.id,ownerId:currentCar.ownerId,renterId:u.id,
     lic:u.lic||null,renterName:u.name,
     from:$('dt-from').value,tmFrom:$('tm-from').value,to:$('dt-to').value,tmTo:$('tm-to').value,
-    hours:h,days:d,rentalType:rentType,rate,units,total,
+    hours:h,days:d,rentalType:rentType,rate,units,total,fulfillment,deliveryCost,deliveryAddress:fulfillment==='delivery'?$('book-delivery-address').value.trim():'',
     signName:$('sign-name').value.trim(),signDate:$('sign-date').value,sig:$('sig-pad').toDataURL(),
     createdAt:Date.now()};
   const msg='בקשת הזמנה '+num+' נשלחה לבעל הרכב וממתינה לאישור. אפשר להמשיך להתכתב כאן עד לאישור.';
@@ -4907,13 +5091,14 @@ function approveBooking(bid){
     showToast('ההזמנה אושרה');
     db.collection('bookings').doc(bid).update({status:'approved',approvedAt:b.approvedAt})
       .then(()=>db.collection('cars').doc(b.carId).update({status:'rented',ret:'זמין שוב: '+fmt(b.to)+' בשעה '+b.tmTo,updatedAt:Date.now()}))
-      .then(()=>pushMsg('b'+b.id,'system',0,'בעל הרכב אישר את ההזמנה '+b.num+'. עכשיו השוכר צריך לשלוח בצ׳אט צילום מסך של העברת הכסף לבעל הרכב.',[b.renterId,b.ownerId]))
+      .then(()=>grantApprovedAddressAccess(b)).then(()=>pushMsg('b'+b.id,'system',0,'בעל הרכב אישר את ההזמנה '+b.num+'. עכשיו השוכר צריך לשלוח בצ׳אט צילום מסך של העברת הכסף לבעל הרכב.',[b.renterId,b.ownerId]))
       .catch(cloudErr);return;
   }
   b.status='approved';b.approvedAt=Date.now();b.updatedAt=Date.now();
   if(c){c.status='rented';c.ret='זמין שוב: '+fmt(b.to)+' בשעה '+b.tmTo;c.updatedAt=Date.now();}
   pushMsg('b'+b.id,'system',0,'בעל הרכב אישר את ההזמנה '+b.num+'. עכשיו השוכר צריך לשלוח בצ׳אט צילום מסך של העברת הכסף לבעל הרכב.');
   persistState(); // FIX
+  grantApprovedAddressAccess(b).then(()=>loadPrivateCarDetails(b.carId)).catch(e=>console.warn('Address access grant failed',e));
   render();renderOwnerBookings();showToast('ההזמנה אושרה');
 }
 function rejectBooking(bid){
@@ -4921,7 +5106,7 @@ function rejectBooking(bid){
   if(!b||!state.session||!((state.session.role==='owner'&&b.ownerId===state.session.id)||state.session.role==='admin'))return;
   if(!confirm('לדחות את בקשת ההזמנה '+b.num+'?'))return;
   if(CLOUD){
-    b.status='rejected'; b.rejectedAt=Date.now();
+    b.status='rejected'; b.rejectedAt=Date.now(); revokeApprovedAddressAccess(b);
     render();
     if($('ov-owner').classList.contains('open')) renderOwnerBookings();
     if($('ov-admin')&&$('ov-admin').classList.contains('open')) renderAdminDashboard();
@@ -4930,7 +5115,7 @@ function rejectBooking(bid){
       .then(()=>pushMsg('b'+b.id,'system',0,'בעל הרכב דחה את בקשת ההזמנה '+b.num+'. אפשר להתכתב בצ׳אט או לבחור רכב אחר.',[b.renterId,b.ownerId]))
       .catch(cloudErr);return;
   }
-  b.status='rejected';b.rejectedAt=Date.now();b.updatedAt=Date.now();
+  b.status='rejected';b.rejectedAt=Date.now();revokeApprovedAddressAccess(b);b.updatedAt=Date.now();
   pushMsg('b'+b.id,'system',0,'בעל הרכב דחה את בקשת ההזמנה '+b.num+'. אפשר להתכתב בצ׳אט או לבחור רכב אחר.');
   persistState(); // FIX
   render();renderOwnerBookings();showToast('הבקשה נדחתה');
@@ -5016,26 +5201,19 @@ function bindDrop(dropId,fileId,single,multi){
     else if(f.files[0])single(f.files[0]);
   });
 }
-function readImg(f,cb){
-  if(!f.type.startsWith('image/'))return showToast('יש להעלות קובץ תמונה בלבד');
-  if(f.size>10*1024*1024)return showToast('הקובץ גדול מדי (מקסימום 10MB)');
-  const r=new FileReader();
-  r.onload=()=>{
-    const img=new Image();
-    img.onload=()=>{
-      try{
-        const max=1280;
-        let w=img.width,h=img.height;
-        if(w>max||h>max){const ratio=Math.min(max/w,max/h);w=Math.round(w*ratio);h=Math.round(h*ratio)}
-        const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;
-        const ctx=canvas.getContext('2d');ctx.drawImage(img,0,0,w,h);
-        cb(canvas.toDataURL('image/jpeg',0.78));
-      }catch(e){cb(r.result)}
-    };
-    img.onerror=()=>cb(r.result);
-    img.src=r.result;
-  };
-  r.readAsDataURL(f);
+function storageReady(){return !!(RT_STORAGE&&RT_AUTH&&RT_AUTH.currentUser);}
+function safeStorageName(name){return String(name||'image.jpg').replace(/[^a-zA-Z0-9._-]/g,'_').slice(-100);}
+async function uploadImageFile(file,folder='uploads'){
+  if(!file||!file.type||!file.type.startsWith('image/'))throw new Error('יש להעלות תמונה בלבד');
+  if(file.size>10*1024*1024)throw new Error('הקובץ גדול מדי (מקסימום 10MB)');
+  if(!storageReady())throw new Error('כדי להעלות תמונה צריך להיות מחובר ו-Firebase Storage חייב להיות פעיל');
+  const uid=RT_AUTH.currentUser.uid, path=`crowndrive/${uid}/${folder}/${Date.now()}_${Math.random().toString(36).slice(2,8)}_${safeStorageName(file.name)}`;
+  const snap=await RT_STORAGE.ref(path).put(file,{contentType:file.type,cacheControl:'public,max-age=31536000'});
+  return await snap.ref.getDownloadURL();
+}
+async function readImg(f,cb){
+  try{showToast('מעלה תמונה…');const url=await uploadImageFile(f,'cars');cb(url);showToast('התמונה נשמרה ב-Firebase Storage');}
+  catch(e){console.error(e);showToast(e.message||'העלאת התמונה נכשלה');}
 }
 function viewLic(bid){
   const b=state.bookings.find(x=>x.id===bid);
@@ -5215,20 +5393,15 @@ function sendMsg(){
     showToast('ההודעה נשלחה למנהל המערכת');
   }
 }
-function sendChatImage(input){
+async function sendChatImage(input){
   const f=input.files&&input.files[0]; if(!f||!activeTid)return;
-  if(CLOUD && !state.session && !(activeTid||'').startsWith('sup-')){showToast('כדי לשלוח תמונה יש להתחבר');openAuth();input.value='';return;}
-  if(!f.type.startsWith('image/')){showToast('נא לבחור קובץ תמונה');input.value='';return;}
-  const r=new FileReader();
-  r.onload=()=>{
-    const role=state.session?state.session.role:'guest';
-    const uid=state.session?state.session.id:0;
-    const txt=$('cp-text').value.trim()||'תמונה';
-    pushMsg(activeTid,role,uid,txt,undefined,{image:r.result,kind:'image',fileName:f.name});
-    $('cp-text').value=''; input.value='';
-    showToast('התמונה נשלחה בצ׳אט');
-  };
-  r.readAsDataURL(f);
+  if(CLOUD&&!state.session&&!(activeTid||'').startsWith('sup-')){showToast('כדי לשלוח תמונה יש להתחבר');openAuth();input.value='';return;}
+  try{
+    const url=await uploadImageFile(f,'chat');
+    const role=state.session?state.session.role:'guest',uid=state.session?state.session.id:0,txt=$('cp-text').value.trim()||'תמונה';
+    pushMsg(activeTid,role,uid,txt,undefined,{image:url,kind:'image',fileName:f.name});$('cp-text').value='';showToast('התמונה נשמרה כ-URL ונשלחה בצ׳אט');
+  }catch(e){showToast(e.message||'שליחת התמונה נכשלה');}
+  input.value='';
 }
 $('cp-text').addEventListener('keydown',e=>{if(e.key==='Enter')sendMsg()});
 
@@ -5964,17 +6137,20 @@ setInterval(()=>{
       const licStateEl=document.getElementById('lic-state');
       const licState=licStateEl ? String(licStateEl.value||'').trim() : '';
       if(licStateEl){markSafe('sf-lic-state',!licState); if(!licState)bad=true;}
-      if(typeof rlicData!=='undefined' && !rlicData && document.getElementById('rlic-err')){
+      if(typeof rlicData!=='undefined' && !rlicData && !rlicFileObj && document.getElementById('rlic-err')){
         document.getElementById('rlic-err').style.display='block';
         const d=document.getElementById('drop-rlic'); if(d)d.classList.add('err-b');
         bad=true;
       }
-      if(typeof rlicBackData!=='undefined' && !rlicBackData && document.getElementById('rlic-back-err')){
+      if(typeof rlicBackData!=='undefined' && !rlicBackData && !rlicBackFileObj && document.getElementById('rlic-back-err')){
         document.getElementById('rlic-back-err').style.display='block';
         const d=document.getElementById('drop-rlic-back'); if(d)d.classList.add('err-b');
         bad=true;
       }
-      extra={lic:(typeof rlicData!=='undefined'?rlicData:null),licFront:(typeof rlicData!=='undefined'?rlicData:null),licBack:(typeof rlicBackData!=='undefined'?rlicBackData:null),licenseState:licState};
+      if(typeof renterSelfieData!=='undefined' && !renterSelfieData && !renterSelfieFileObj && document.getElementById('rselfie-err')){
+        document.getElementById('rselfie-err').style.display='block'; bad=true;
+      }
+      extra={lic:(typeof rlicData!=='undefined'?rlicData:null),licFront:(typeof rlicData!=='undefined'?rlicData:null),licBack:(typeof rlicBackData!=='undefined'?rlicBackData:null),selfie:(typeof renterSelfieData!=='undefined'?renterSelfieData:null),licenseState:licState};
     }
     if(bad)return;
     // FIX: אי אפשר להירשם עם מייל המנהל.
@@ -5989,20 +6165,25 @@ setInterval(()=>{
         fb=res.user; created=!!res.created; existed=!!res.existed;
       }
       const uid=(fb&&fb.uid) || newId('u');
+      if(role==='renter' && REALTIME){
+        if(rlicFileObj) extra.lic=extra.licFront=await uploadImageFile(rlicFileObj,'licenses');
+        if(rlicBackFileObj) extra.licBack=await uploadImageFile(rlicBackFileObj,'licenses');
+        if(renterSelfieFileObj) extra.selfie=await uploadImageFile(renterSelfieFileObj,'selfies');
+      }
       let u=pool.find(x=>normalizeEmail(x.email)===em) || null;
       if(!u){
-        u={id:uid,name,phone:phoneRaw.trim(),email:em,pass:ps,createdAt:Date.now(),updatedAt:Date.now(),...extra};
+        u={id:uid,name,phone:phoneRaw.trim(),email:em,createdAt:Date.now(),updatedAt:Date.now(),...extra};
         pool.push(u);
         if(created && typeof notifyAdminNewUser==='function') notifyAdminNewUser(u,role,'signup');
       }else{
         migrateLocalIdToFirebaseUid && migrateLocalIdToFirebaseUid(role,u.id,uid,em);
-        u.id=uid; u.name=name; u.phone=phoneRaw.trim(); u.email=em; u.pass=ps; u.updatedAt=Date.now();
+        u.id=uid; u.name=name; u.phone=phoneRaw.trim(); u.email=em; u.updatedAt=Date.now();
         Object.assign(u,extra);
       }
       // FIX: הרשמה מחדש לא משחררת חסימה של מנהל.
       state.users[uid]={...(state.users[uid]||{}),...u,role,email:em,blocked:!!(state.users[uid]&&state.users[uid].blocked),updatedAt:Date.now()};
       state.session={role,id:uid,...u};
-      rememberLogin && rememberLogin(role,em,ps);
+      rememberLogin && rememberLogin(role,em);
       rememberAuthIdentity && rememberAuthIdentity(uid,em);
       persistSessionCookie && persistSessionCookie();
       try{['s-name','s-phone','s-mail','s-pass'].forEach(i=>{const el=document.getElementById(i); if(el)el.value='';});}catch(e){}
@@ -6037,7 +6218,7 @@ setInterval(()=>{
         if(!adm.ok){ noteLoginFail(em); markSafe('lf-pass',true); safeToast&&safeToast('פרטי מנהל שגויים'); return; }
         let uid=adm.uid||'admin';
         clearLoginFail(em);
-        rememberLogin('admin',em,ps); rememberAuthIdentity(uid,em);
+        rememberLogin('admin',em); rememberAuthIdentity(uid,em);
         state.session={role:'admin',id:uid,name:'מנהל האתר',email:em};
         state.users[uid]={...(state.users[uid]||{}),name:'מנהל האתר',role:'admin',email:em,updatedAt:Date.now()};
         afterLoginUI(); pushRealtimeNow&&pushRealtimeNow(); return;
@@ -6045,11 +6226,7 @@ setInterval(()=>{
       if(role!=='owner' && role!=='renter'){safeToast&&safeToast('בחר קודם אם אתה שוכר או בעל רכב'); backToRoles&&backToRoles();return;}
       const pool=role==='owner'?state.owners:state.renters;
       let u=pool.find(x=>normalizeEmail(x.email)===em);
-      // FIX: כשאין Firebase — חייבים לאמת סיסמה מול הרשומה המקומית (קודם אפשר היה להיכנס לכל חשבון).
-      if(!REALTIME && u){
-        if(!u.pass){ markSafe('lf-pass',true); safeToast&&safeToast('אימות החשבון דורש חיבור אינטרנט — נסה שוב עוד רגע'); return; }
-        if(u.pass!==ps){ noteLoginFail(em); markSafe('lf-pass',true); safeToast&&safeToast('הסיסמה לא תואמת למייל הזה'); return; }
-      }
+      if(!REALTIME){markSafe('lf-pass',true);safeToast&&safeToast('נדרש חיבור ל-Firebase Authentication כדי להיכנס');return;}
       let fb=null, created=false;
       if(REALTIME){
         const res=await createOrLoginFirebase(em,ps);
@@ -6057,17 +6234,17 @@ setInterval(()=>{
       }
       const uid=(fb&&fb.uid)||(u&&u.id)||newId('u');
       if(!u){
-        u={id:uid,name:em.split('@')[0],phone:'',email:em,pass:ps,createdAt:Date.now(),updatedAt:Date.now(),autoCreated:true};
+        u={id:uid,name:em.split('@')[0],phone:'',email:em,createdAt:Date.now(),updatedAt:Date.now(),autoCreated:true};
         pool.push(u);
         if(created && typeof notifyAdminNewUser==='function') notifyAdminNewUser(u,role,'login-auto-create');
       }else{
         migrateLocalIdToFirebaseUid&&migrateLocalIdToFirebaseUid(role,u.id,uid,em);
-        u.id=uid; u.email=em; u.pass=ps; u.updatedAt=Date.now();
+        u.id=uid; u.email=em; u.updatedAt=Date.now();
       }
       state.users[uid]={...(state.users[uid]||{}),...u,role,email:em,updatedAt:Date.now()};
       state.session={role,id:uid,...u};
       clearLoginFail(em);
-      rememberLogin(role,em,ps); rememberAuthIdentity(uid,em); persistSessionCookie&&persistSessionCookie();
+      rememberLogin(role,em); rememberAuthIdentity(uid,em); persistSessionCookie&&persistSessionCookie();
       afterLoginUI(); pushRealtimeNow&&pushRealtimeNow();
     }catch(e){
       console.error('login failed',e);
@@ -6223,7 +6400,7 @@ setInterval(()=>{
   };
   window.renderAdminDashboard=function(){
     const box=document.getElementById('admin-body'); if(!box)return;
-    const note='<div class="admin-mobile-note">מובייל ראשון: כל השליטה זמינה בכרטיסים נוחים; בדסקטופ יש גם טבלאות רחבות.</div>';
+    const note='';
     if(adminTab==='all') box.innerHTML=note+adminOverviewHTML();
     if(adminTab==='bookings') box.innerHTML=note+adminKPIs()+`<div class="admin-panel"><h4>כל ההשכרות באתר</h4>${adminBookingsTable()}</div>`;
     if(adminTab==='chats') box.innerHTML=note+adminKPIs()+`<div class="admin-panel"><h4>כל הצ׳אטים באתר</h4>${adminChatsHTML()}</div>`;
@@ -6635,5 +6812,426 @@ setInterval(()=>{
   });
 })();
 </script>
+
+<style id="crowndrive-handover-style-v1">
+.handover-btn{display:inline-flex;align-items:center;gap:6px}
+.handover-chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 10px;font-size:.7rem;font-weight:900;background:#F2F4F7;color:#475467;border:1px solid #EAECF0}
+.handover-chip.ok{background:#ECFDF3;color:#027A48;border-color:#ABEFC6}.handover-chip.warn{background:#FFFAEB;color:#B54708;border-color:#FEDF89}
+#ov-handover .modal{max-width:980px;width:min(980px,96vw)}
+.handover-shell{display:grid;gap:14px}.handover-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:14px;border:1px solid var(--hair);border-radius:18px;background:#F8FAFC}.handover-head b{font-size:1.05rem}.handover-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.handover-card{border:1px solid var(--hair);border-radius:18px;background:#fff;padding:14px}.handover-card h4{margin:0 0 10px;font-size:1rem}.handover-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.handover-card .field{margin:0}.handover-card textarea{min-height:88px;resize:vertical}.handover-photo-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:9px}.handover-photo{position:relative;aspect-ratio:4/3;border-radius:12px;overflow:hidden;border:1px solid var(--hair);background:#F2F4F7}.handover-photo img{width:100%;height:100%;object-fit:cover;display:block}.handover-photo button{position:absolute;top:5px;left:5px;border:0;border-radius:999px;background:rgba(17,24,39,.8);color:#fff;width:27px;height:27px;cursor:pointer}.handover-signatures{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}.sig-party{border:1px solid var(--hair);border-radius:14px;padding:10px;background:#F8FAFC}.sig-party b{display:block;margin-bottom:6px}.sig-party img{width:100%;height:82px;object-fit:contain;background:#fff;border:1px dashed #D0D5DD;border-radius:10px}.sig-empty{height:82px;display:flex;align-items:center;justify-content:center;color:#98A2B3;background:#fff;border:1px dashed #D0D5DD;border-radius:10px;font-size:.75rem}.handover-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.sig-pad-wrap{display:none;border:1px solid var(--hair);border-radius:14px;padding:10px;background:#fff;margin-top:10px}.sig-pad-wrap.open{display:block}.sig-pad{width:100%;height:160px;touch-action:none;background:#fff;border:1px dashed #98A2B3;border-radius:10px;display:block}.handover-note{font-size:.76rem;color:#667085;line-height:1.5}.handover-progress{display:flex;gap:8px;flex-wrap:wrap}
+@media(max-width:720px){.handover-grid,.handover-fields,.handover-signatures{grid-template-columns:1fr}.handover-photo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}#ov-handover .modal{width:100%;max-width:none;height:100%;border-radius:0}.handover-head{flex-direction:column}}
+</style>
+
+<div class="overlay" id="ov-handover" onclick="if(event.target===this)closeOv('ov-handover')">
+  <div class="modal">
+    <div class="m-head"><h3>פרוטוקול מסירה והחזרה</h3><button class="x" onclick="closeOv('ov-handover')">×</button></div>
+    <div class="m-body" id="handover-body"></div>
+  </div>
+</div>
+
+<script id="crowndrive-handover-v1">
+(function(){
+  const phaseLabels={pickup:'מסירת הרכב',return:'החזרת הרכב'};
+  let handoverBookingId=null, handoverPhase='pickup', pendingPhotos=[], sigDrawing=false, sigCanvas=null, sigCtx=null;
+  const getBooking=id=>(state.bookings||[]).find(b=>b.id===id);
+  const emptyPhase=()=>({mileage:'',fuel:'',damageNotes:'',photos:[],ownerSignature:null,renterSignature:null,updatedAt:0});
+  function ensureProtocol(b){
+    if(!b.inspection||typeof b.inspection!=='object')b.inspection={};
+    if(!b.inspection.pickup)b.inspection.pickup=emptyPhase();
+    if(!b.inspection.return)b.inspection.return=emptyPhase();
+    ['pickup','return'].forEach(k=>{const x=b.inspection[k];x.photos=Array.isArray(x.photos)?x.photos:[];});
+    return b.inspection;
+  }
+  function partyRole(b){
+    if(!state.session)return null;
+    if(state.session.role==='owner'&&b.ownerId===state.session.id)return 'owner';
+    if(state.session.role==='renter'&&b.renterId===state.session.id)return 'renter';
+    return state.session.role==='admin'?'admin':null;
+  }
+  function phaseComplete(x){return !!(x&&String(x.mileage||'').trim()&&String(x.fuel||'').trim()&&(x.photos||[]).length&&x.ownerSignature&&x.renterSignature);}
+  function protocolStatusHTML(b){
+    const i=ensureProtocol(b), p=phaseComplete(i.pickup), r=phaseComplete(i.return);
+    return `<div class="handover-progress"><span class="handover-chip ${p?'ok':'warn'}">${p?'✓':'!'} מסירה ${p?'הושלמה':'חסרה'}</span><span class="handover-chip ${r?'ok':'warn'}">${r?'✓':'!'} החזרה ${r?'הושלמה':'חסרה'}</span></div>`;
+  }
+  function sigHTML(sig,label){return `<div class="sig-party"><b>${label}</b>${sig&&sig.data?`<img src="${sig.data}" alt="חתימה"><div class="handover-note">נחתם: ${esc(sig.name||'')} · ${new Date(sig.at||Date.now()).toLocaleString('he-IL')}</div>`:'<div class="sig-empty">טרם נחתם</div>'}</div>`;}
+  function photoHTML(arr){return (arr||[]).map((src,i)=>`<div class="handover-photo"><img src="${src}" alt="תמונת פרוטוקול ${i+1}"><button type="button" onclick="removeHandoverPhoto(${i})">×</button></div>`).join('');}
+  window.openHandover=function(bid,phase){
+    const b=getBooking(bid);if(!b)return showToast('ההזמנה לא נמצאה');
+    const role=partyRole(b);if(!role)return showToast('אין הרשאה לפרוטוקול הזה');
+    if(!['approved','done'].includes(b.status||'')&&!b.done)return showToast('פרוטוקול זמין רק לאחר אישור ההזמנה');
+    handoverBookingId=bid;handoverPhase=phase==='return'?'return':'pickup';
+    const x=ensureProtocol(b)[handoverPhase];pendingPhotos=[...(x.photos||[])];
+    renderHandover();openOv('ov-handover');
+  };
+  function renderHandover(){
+    const b=getBooking(handoverBookingId);if(!b)return;
+    const c=(state.cars||[]).find(x=>x.id===b.carId)||{};const i=ensureProtocol(b),x=i[handoverPhase],role=partyRole(b);const readonly=role==='admin';
+    const other=handoverPhase==='pickup'?'return':'pickup';
+    $('handover-body').innerHTML=`<div class="handover-shell">
+      <div class="handover-head"><div><b>${esc(c.make||'')} ${esc(c.model||'')} · ${esc(b.num||'')}</b><div class="handover-note">${fmt(b.from)} ${esc(b.tmFrom||'')} עד ${fmt(b.to)} ${esc(b.tmTo||'')}</div></div>${protocolStatusHTML(b)}</div>
+      <div class="handover-actions" style="justify-content:flex-start"><button class="mini ${handoverPhase==='pickup'?'gold':''}" onclick="switchHandoverPhase('pickup')">מסירה — לפני</button><button class="mini ${handoverPhase==='return'?'gold':''}" onclick="switchHandoverPhase('return')">החזרה — אחרי</button></div>
+      <div class="handover-card"><h4>${phaseLabels[handoverPhase]}</h4>
+        <div class="handover-fields"><div class="field"><label>קילומטראז׳</label><input id="ho-mileage" type="number" min="0" step="1" value="${esc(x.mileage||'')}" ${readonly?'disabled':''} placeholder="לדוגמה 42500"></div><div class="field"><label>רמת דלק</label><select id="ho-fuel" ${readonly?'disabled':''}><option value="">בחר</option>${['ריק','רבע','חצי','שלושה רבעים','מלא'].map(v=>`<option ${x.fuel===v?'selected':''}>${v}</option>`).join('')}</select></div></div>
+        <div class="field" style="margin-top:10px"><label>${handoverPhase==='pickup'?'נזקים קיימים / הערות':'נזקים חדשים / הערות החזרה'}</label><textarea id="ho-damage" ${readonly?'disabled':''} placeholder="תאר שריטות, מכות או כתוב אין נזקים">${esc(x.damageNotes||'')}</textarea></div>
+        <div class="divider">תמונות ${handoverPhase==='pickup'?'לפני':'אחרי'} (${pendingPhotos.length}/8)</div>
+        ${readonly?'':`<label class="btn btn-out" style="display:inline-flex;cursor:pointer">הוסף תמונות<input type="file" accept="image/*" multiple style="display:none" onchange="addHandoverPhotos(this)"></label>`}
+        <div class="handover-photo-grid" id="ho-photo-grid">${photoHTML(pendingPhotos)}</div>
+        <div class="divider">חתימות שני הצדדים</div><div class="handover-signatures">${sigHTML(x.ownerSignature,'חתימת בעל הרכב')}${sigHTML(x.renterSignature,'חתימת השוכר')}</div>
+        ${readonly?'':`<div class="handover-actions" style="margin-top:10px"><button class="mini" onclick="openHandoverSignature()">חתימה שלי</button><button class="btn btn-gold" onclick="saveHandover()">שמירת הפרוטוקול</button></div>`}
+        <div class="sig-pad-wrap" id="ho-sig-wrap"><div class="field"><label>שם החותם</label><input id="ho-sig-name" value="${esc((me()&&me().name)||'')}"></div><canvas id="ho-sig-canvas" class="sig-pad"></canvas><div class="handover-actions"><button class="mini" onclick="clearHandoverSignature()">ניקוי</button><button class="mini gold" onclick="acceptHandoverSignature()">אישור חתימה</button></div></div>
+        <div class="handover-note" style="margin-top:10px">התמונות נשמרות ב-Firebase Storage, ובהזמנה נשמרים רק הקישורים (URL). יש לצלם מכל הצדדים, לוח מחוונים ומד דלק.</div>
+      </div>
+    </div>`;
+  }
+  window.switchHandoverPhase=function(phase){
+    const b=getBooking(handoverBookingId);if(!b)return;handoverPhase=phase;pendingPhotos=[...(ensureProtocol(b)[phase].photos||[])];renderHandover();
+  };
+  window.addHandoverPhotos=async function(input){
+    const files=[...(input.files||[])].slice(0,8-pendingPhotos.length);if(!files.length)return;
+    showToast('מעלה תמונות ל-Firebase Storage…');
+    for(const f of files){try{pendingPhotos.push(await uploadImageFile(f,'handover/'+handoverBookingId+'/'+handoverPhase));}catch(e){showToast(e.message||'תמונה אחת לא הועלתה');}}
+    input.value='';renderHandover();
+  };
+  window.removeHandoverPhoto=function(i){pendingPhotos.splice(i,1);renderHandover();};
+  window.openHandoverSignature=function(){
+    const w=$('ho-sig-wrap');if(!w)return;w.classList.add('open');sigCanvas=$('ho-sig-canvas');
+    const ratio=Math.max(1,window.devicePixelRatio||1),rect=sigCanvas.getBoundingClientRect();sigCanvas.width=Math.max(300,rect.width*ratio);sigCanvas.height=160*ratio;sigCtx=sigCanvas.getContext('2d');sigCtx.scale(ratio,ratio);sigCtx.lineWidth=2.4;sigCtx.lineCap='round';sigCtx.strokeStyle='#111827';
+    const point=e=>{const r=sigCanvas.getBoundingClientRect(),t=e.touches?e.touches[0]:e;return [t.clientX-r.left,t.clientY-r.top]};
+    sigCanvas.onpointerdown=e=>{sigDrawing=true;const [x,y]=point(e);sigCtx.beginPath();sigCtx.moveTo(x,y);sigCanvas.setPointerCapture&&sigCanvas.setPointerCapture(e.pointerId)};
+    sigCanvas.onpointermove=e=>{if(!sigDrawing)return;const [x,y]=point(e);sigCtx.lineTo(x,y);sigCtx.stroke()};
+    sigCanvas.onpointerup=sigCanvas.onpointercancel=()=>{sigDrawing=false};
+    setTimeout(()=>w.scrollIntoView({behavior:'smooth',block:'center'}),50);
+  };
+  window.clearHandoverSignature=function(){if(sigCtx&&sigCanvas)sigCtx.clearRect(0,0,sigCanvas.width,sigCanvas.height);};
+  window.acceptHandoverSignature=async function(){
+    const b=getBooking(handoverBookingId),role=partyRole(b);if(!b||!['owner','renter'].includes(role))return showToast('רק בעל הרכב או השוכר יכולים לחתום');
+    const name=($('ho-sig-name')?.value||'').trim();if(!name)return showToast('יש להזין שם מלא');
+    if(!sigCanvas)return showToast('יש לצייר חתימה');
+    const blank=document.createElement('canvas');blank.width=sigCanvas.width;blank.height=sigCanvas.height;if(sigCanvas.toDataURL()===blank.toDataURL())return showToast('יש לצייר חתימה');
+    try{
+      const blob=await new Promise((resolve,reject)=>sigCanvas.toBlob(b=>b?resolve(b):reject(new Error('יצירת החתימה נכשלה')),'image/png'));
+      const file=new File([blob],`signature_${role}_${Date.now()}.png`,{type:'image/png'});
+      const url=await uploadImageFile(file,'handover/'+handoverBookingId+'/'+handoverPhase+'/signatures');
+      const x=ensureProtocol(b)[handoverPhase];x[role+'Signature']={name,data:url,at:Date.now(),uid:state.session.id};x.updatedAt=Date.now();
+      showToast('החתימה הועלתה ונשמרה כ-URL — לחץ שמירת הפרוטוקול');renderHandover();
+    }catch(e){showToast(e.message||'העלאת החתימה נכשלה');}
+  };
+  window.saveHandover=async function(){
+    const b=getBooking(handoverBookingId),role=partyRole(b);if(!b||!['owner','renter'].includes(role))return;
+    const x=ensureProtocol(b)[handoverPhase];x.mileage=($('ho-mileage')?.value||'').trim();x.fuel=$('ho-fuel')?.value||'';x.damageNotes=($('ho-damage')?.value||'').trim();x.photos=[...pendingPhotos];x.updatedAt=Date.now();x.updatedBy=state.session.id;b.updatedAt=Date.now();
+    if(!x.mileage||!x.fuel)return showToast('צריך למלא קילומטראז׳ ורמת דלק');
+    if(!x.photos.length)return showToast('צריך להעלות לפחות תמונה אחת');
+    persistState();
+    let ok=true;if(typeof pushRealtimeNow==='function'&&window.REALTIME!==false){try{ok=await pushRealtimeNow();}catch(e){ok=false;}}
+    showToast(ok?'הפרוטוקול נשמר בענן':'הפרוטוקול נשמר מקומית — בדוק חיבור ל־Firebase');renderHandover();
+    try{if(state.session.role==='owner')renderOwnerBookings();else openRenterArea();}catch(e){}
+  };
+
+  const oldEnd=window.endRental;
+  window.endRental=function(bid){
+    const b=getBooking(bid);if(!b)return;
+    const i=ensureProtocol(b);
+    if(!phaseComplete(i.pickup)){showToast('אי אפשר לסיים: פרוטוקול המסירה עדיין לא הושלם ונחתם על ידי שני הצדדים');openHandover(bid,'pickup');return;}
+    if(!phaseComplete(i.return)){showToast('אי אפשר לסיים: פרוטוקול ההחזרה עדיין לא הושלם ונחתם על ידי שני הצדדים');openHandover(bid,'return');return;}
+    return oldEnd.apply(this,arguments);
+  };
+
+  const oldOwner=window.renderOwnerBookings;
+  window.renderOwnerBookings=function(){
+    const out=oldOwner.apply(this,arguments),box=$('dash-book');if(!box||!state.session)return out;
+    const all=(state.bookings||[]).filter(b=>b.ownerId===state.session.id).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    const visible=[...all.filter(b=>(b.status||'approved')==='pending'),...all.filter(b=>(b.status||'approved')==='approved'&&!b.done)];
+    box.querySelectorAll('.adm-item').forEach((item,index)=>{const b=visible[index];if(!b)return;const acts=item.querySelector('.acts');if(acts&&!acts.querySelector('.handover-btn')&&(b.status==='approved'||b.done))acts.insertAdjacentHTML('beforeend',`<button class="mini handover-btn" onclick="openHandover('${b.id}','pickup')">📋 מסירה</button><button class="mini handover-btn" onclick="openHandover('${b.id}','return')">📸 החזרה</button>`);const inf=item.querySelector('.inf');if(inf&&!inf.querySelector('.handover-progress'))inf.insertAdjacentHTML('beforeend',protocolStatusHTML(b));});
+    box.querySelectorAll('tbody tr').forEach(tr=>{const num=(tr.querySelector('td')?.textContent||'').trim().split(/\s/)[0],b=all.find(x=>String(x.num)===num);if(!b)return;const cell=tr.children[1];if(cell&&!cell.querySelector('.handover-btn'))cell.insertAdjacentHTML('beforeend',`<div style="margin-top:6px"><button class="mini handover-btn" onclick="openHandover('${b.id}','pickup')">פרוטוקול</button></div>`);});
+    return out;
+  };
+  const oldRenter=window.openRenterArea;
+  window.openRenterArea=function(){
+    const out=oldRenter.apply(this,arguments),u=me&&me();if(!u)return out;
+    const list=(state.bookings||[]).filter(b=>b.renterId===u.id).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    document.querySelectorAll('#renter-body .booking-card').forEach((card,index)=>{const b=list[index];if(!b||!['approved','done'].includes(b.status||'')&&!b.done)return;const row=card.querySelector('.mini-row');if(row&&!row.querySelector('.handover-btn'))row.insertAdjacentHTML('beforeend',`<button class="mini handover-btn" onclick="openHandover('${b.id}','pickup')">📋 מסירה</button><button class="mini handover-btn" onclick="openHandover('${b.id}','return')">📸 החזרה</button>`);if(!card.querySelector('.handover-progress'))card.insertAdjacentHTML('beforeend',`<div style="margin-top:9px">${protocolStatusHTML(b)}</div>`);});
+    return out;
+  };
+  window.handoverProtocolStatusHTML=protocolStatusHTML;
+})();
+</script>
+
+<script id="crowndrive-active-rental-evidence-v1">
+(function(){
+  'use strict';
+  window.CROWNDRIVE_ACTIVE_RENTAL_EVIDENCE='v1.0';
+
+  // Uploads media to Firebase Storage and stores only the resulting URL in Realtime Database.
+  window.uploadRentalMedia=async function(file,folder){
+    if(!file) throw new Error('לא נבחר קובץ');
+    const isImage=(file.type||'').startsWith('image/');
+    const isVideo=(file.type||'').startsWith('video/');
+    if(!isImage&&!isVideo) throw new Error('אפשר להעלות רק תמונה או סרטון');
+    const max=isVideo?180*1024*1024:12*1024*1024;
+    if(file.size>max) throw new Error(isVideo?'הסרטון גדול מדי (מקסימום 180MB)':'התמונה גדולה מדי (מקסימום 12MB)');
+    if(!window.RT_STORAGE||!window.RT_AUTH||!RT_AUTH.currentUser) throw new Error('צריך להיות מחובר ו-Firebase Storage חייב להיות פעיל');
+    const uid=RT_AUTH.currentUser.uid;
+    const safe=String(file.name||'media').replace(/[^a-zA-Z0-9._-]/g,'_').slice(-100);
+    const path=`crowndrive/${uid}/${folder}/${Date.now()}_${Math.random().toString(36).slice(2,9)}_${safe}`;
+    const task=await RT_STORAGE.ref(path).put(file,{contentType:file.type,cacheControl:'private,max-age=3600'});
+    return await task.ref.getDownloadURL();
+  };
+
+  function activeBookingsForRole(role,id){
+    return (state.bookings||[]).filter(b=>{
+      if((b.status||'')!=='approved'||b.done) return false;
+      if(role==='admin') return true;
+      if(role==='owner') return b.ownerId===id;
+      return b.renterId===id;
+    }).sort((a,b)=>bookingStartTs(a)-bookingStartTs(b));
+  }
+  function carOf(b){return (state.cars||[]).find(c=>c.id===b.carId)||{};}
+  function renterOf(b){return typeof userOf==='function'?(userOf(b.renterId)||{}):{};}
+  function ownerOf(b){return typeof userOf==='function'?(userOf(b.ownerId)||{}):{};}
+  function pickupEvidence(b){
+    b.arrivalEvidence=b.arrivalEvidence&&typeof b.arrivalEvidence==='object'?b.arrivalEvidence:{};
+    return b.arrivalEvidence;
+  }
+  function evidenceComplete(b){const e=pickupEvidence(b);return !!(e.exteriorVideoUrl&&e.dashboardPhotoUrl&&String(e.mileage||'').trim()&&String(e.fuel||'').trim());}
+  function mediaPreview(e){
+    return `<div class="ar-media-grid">
+      <div class="ar-media"><b>סרטון חוץ</b>${e.exteriorVideoUrl?`<video controls playsinline preload="metadata" src="${esc(e.exteriorVideoUrl)}"></video>`:'<span>טרם הועלה</span>'}</div>
+      <div class="ar-media"><b>דלק ומיילים</b>${e.dashboardPhotoUrl?`<img src="${esc(e.dashboardPhotoUrl)}" alt="לוח מחוונים">`:'<span>טרם הועלה</span>'}</div>
+    </div>`;
+  }
+  function activeRentalCard(b,role){
+    const c=carOf(b),e=pickupEvidence(b),r=renterOf(b),o=ownerOf(b),complete=evidenceComplete(b);
+    const canUpload=role==='renter'&&state.session&&b.renterId===state.session.id;
+    const photo=(c.photos&&c.photos[0])||c.photo||placeholderCar();
+    return `<article class="active-rental-card">
+      <div class="ar-status"><span class="ar-dot"></span><b>השכרה פעילה</b><span class="ar-chip ${complete?'ok':'warn'}">${complete?'פרוטוקול הגעה הושלם':'ממתין לתיעוד הגעה'}</span></div>
+      <div class="ar-main">
+        <div class="ar-details">
+          <div class="ar-record">מספר הזמנה: <b>${esc(b.num||b.id||'')}</b></div>
+          <h3>${esc(c.make||'רכב')} ${esc(c.model||'')}</h3>
+          <div class="ar-date">${fmt(b.from)} ${esc(b.tmFrom||'')} ← ${fmt(b.to)} ${esc(b.tmTo||'')}</div>
+          <div class="ar-person">שוכר: <b>${esc(r.name||b.signName||'')}</b> · בעל הרכב: <b>${esc(o.name||'')}</b></div>
+          ${approvedLocationHTML(b,c)}
+          ${complete?`<div class="ar-readings">מיילים בתחילת ההשכרה: <b>${esc(e.mileage)}</b> · דלק: <b>${esc(e.fuel)}</b></div>`:''}
+          <div class="ar-actions">
+            <button class="btn btn-gold" onclick="openArrivalEvidence('${b.id}')">${canUpload?(complete?'צפייה / עדכון תיעוד':'העלאת תיעוד חובה'):'צפייה בתיעוד'}</button>
+            <button class="btn btn-out" onclick="openChatTo('b${b.id}')">צ׳אט הזמנה</button>
+            ${typeof openHandover==='function'?`<button class="btn btn-out" onclick="openHandover('${b.id}','pickup')">פרוטוקול מסירה</button>`:''}
+          </div>
+        </div>
+        <img class="ar-car" src="${esc(photo)}" alt="${esc(c.make||'')} ${esc(c.model||'')}">
+      </div>
+    </article>`;
+  }
+  function sectionHTML(role,id){
+    const list=activeBookingsForRole(role,id);
+    return `<section class="active-rentals-section"><div class="ar-section-title"><h2>הזמנות פעילות</h2><span>${list.length}</span></div>${list.length?list.map(b=>activeRentalCard(b,role)).join(''):'<div class="adm-empty">אין כרגע הזמנות פעילות.</div>'}</section>`;
+  }
+  function injectOwner(){
+    if(!state.session||state.session.role!=='owner')return;
+    const box=document.getElementById('dash-book');if(!box)return;
+    box.querySelector('.active-rentals-section')?.remove();box.insertAdjacentHTML('afterbegin',sectionHTML('owner',state.session.id));
+  }
+  function injectRenter(){
+    if(!state.session||state.session.role!=='renter')return;
+    const box=document.getElementById('renter-body');if(!box)return;
+    box.querySelector('.active-rentals-section')?.remove();box.insertAdjacentHTML('afterbegin',sectionHTML('renter',state.session.id));
+  }
+  function injectAdmin(){
+    if(!state.session||state.session.role!=='admin'||window.adminTab!=='bookings')return;
+    const box=document.getElementById('admin-body');if(!box)return;
+    box.querySelector('.active-rentals-section')?.remove();box.insertAdjacentHTML('afterbegin',sectionHTML('admin',state.session.id));
+  }
+  const oldOwner=window.renderOwnerBookings; if(oldOwner)window.renderOwnerBookings=function(){const x=oldOwner.apply(this,arguments);setTimeout(injectOwner,0);return x;};
+  const oldRenter=window.openRenterArea; if(oldRenter)window.openRenterArea=function(){const x=oldRenter.apply(this,arguments);setTimeout(injectRenter,0);return x;};
+  const oldAdmin=window.renderAdminDashboard; if(oldAdmin)window.renderAdminDashboard=function(){const x=oldAdmin.apply(this,arguments);setTimeout(injectAdmin,0);return x;};
+
+  function ensureModal(){
+    if(document.getElementById('ov-arrival-evidence'))return;
+    document.body.insertAdjacentHTML('beforeend',`<div class="overlay" id="ov-arrival-evidence"><div class="modal arrival-modal"><button class="x" onclick="closeOv('ov-arrival-evidence')">×</button><div id="arrival-evidence-body"></div></div></div>`);
+  }
+  let currentBid=null, pendingVideo=null, pendingPhoto=null;
+  window.openArrivalEvidence=function(bid){
+    ensureModal();currentBid=bid;const b=(state.bookings||[]).find(x=>x.id===bid);if(!b)return;
+    const e=pickupEvidence(b);pendingVideo=e.exteriorVideoUrl||null;pendingPhoto=e.dashboardPhotoUrl||null;renderArrivalModal();openOv('ov-arrival-evidence');
+  };
+  function renderArrivalModal(){
+    const b=(state.bookings||[]).find(x=>x.id===currentBid);if(!b)return;const c=carOf(b),e=pickupEvidence(b);const canEdit=state.session&&state.session.role==='renter'&&b.renterId===state.session.id;
+    document.getElementById('arrival-evidence-body').innerHTML=`<div class="arrival-head"><span>תיעוד תחילת השכרה</span><h2>${esc(c.make||'')} ${esc(c.model||'')}</h2><p>בעת ההגעה לרכב, השוכר חייב לצלם סרטון רציף מבחוץ ותמונה ברורה של מד הדלק והמיילים.</p></div>
+      <div class="arrival-form">
+        <div class="field"><label>מיילים / קילומטראז׳ בתחילת ההשכרה</label><input id="ae-mileage" type="number" min="0" value="${esc(e.mileage||'')}" ${canEdit?'':'disabled'}></div>
+        <div class="field"><label>רמת דלק</label><select id="ae-fuel" ${canEdit?'':'disabled'}><option value="">בחר</option>${['ריק','רבע','חצי','שלושה רבעים','מלא'].map(v=>`<option ${e.fuel===v?'selected':''}>${v}</option>`).join('')}</select></div>
+        <div class="arrival-upload-grid">
+          <div class="arrival-upload"><b>1. סרטון הרכב מבחוץ</b><small>סרטון רציף מכל הצדדים, עד 180MB</small>${pendingVideo?`<video controls playsinline src="${esc(pendingVideo)}"></video>`:''}${canEdit?`<label class="btn btn-out">בחירת סרטון<input type="file" accept="video/*" capture="environment" hidden onchange="uploadArrivalVideo(this)"></label>`:''}</div>
+          <div class="arrival-upload"><b>2. תמונת דלק ומיילים</b><small>צילום חד של לוח המחוונים</small>${pendingPhoto?`<img src="${esc(pendingPhoto)}" alt="דלק ומיילים">`:''}${canEdit?`<label class="btn btn-out">צילום / בחירת תמונה<input type="file" accept="image/*" capture="environment" hidden onchange="uploadArrivalPhoto(this)"></label>`:''}</div>
+        </div>
+        ${mediaPreview({...e,exteriorVideoUrl:pendingVideo,dashboardPhotoUrl:pendingPhoto})}
+        ${canEdit?`<button class="btn btn-gold full" onclick="saveArrivalEvidence()">שמירת תיעוד ההגעה</button>`:''}
+      </div>`;
+  }
+  window.uploadArrivalVideo=async function(input){const f=input.files&&input.files[0];if(!f)return;try{safeToast('מעלה סרטון… אין לסגור את החלון');pendingVideo=await uploadRentalMedia(f,`rentals/${currentBid}/arrival`);safeToast('הסרטון הועלה');renderArrivalModal();}catch(e){safeToast(e.message||'העלאת הסרטון נכשלה');}input.value='';};
+  window.uploadArrivalPhoto=async function(input){const f=input.files&&input.files[0];if(!f)return;try{safeToast('מעלה תמונה…');pendingPhoto=await uploadRentalMedia(f,`rentals/${currentBid}/arrival`);safeToast('התמונה הועלתה');renderArrivalModal();}catch(e){safeToast(e.message||'העלאת התמונה נכשלה');}input.value='';};
+  window.saveArrivalEvidence=async function(){
+    const b=(state.bookings||[]).find(x=>x.id===currentBid);if(!b||!state.session||state.session.role!=='renter'||b.renterId!==state.session.id)return;
+    const mileage=(document.getElementById('ae-mileage')?.value||'').trim(),fuel=document.getElementById('ae-fuel')?.value||'';
+    if(!pendingVideo)return safeToast('חובה להעלות סרטון של הרכב מבחוץ');if(!pendingPhoto)return safeToast('חובה להעלות תמונה של הדלק והמיילים');if(!mileage||!fuel)return safeToast('חובה למלא מיילים ורמת דלק');
+    b.arrivalEvidence={exteriorVideoUrl:pendingVideo,dashboardPhotoUrl:pendingPhoto,mileage,fuel,submittedAt:Date.now(),submittedBy:state.session.id,status:'submitted'};b.updatedAt=Date.now();persistState();
+    let ok=false;try{ok=await pushRealtimeNow();}catch(e){}safeToast(ok?'תיעוד ההגעה נשמר ונשלח לבעל הרכב':'התיעוד נשמר במכשיר אך לא אושר בענן');renderArrivalModal();setTimeout(()=>{injectRenter();injectOwner();injectAdmin();},0);
+  };
+
+  // Stronger refresh recovery: never render an empty application while Auth is still resolving.
+  window.CROWNDRIVE_BOOT_GUARD=true;
+  let lastGood=null;
+  function snapshotGood(){if(window.state&&(state.cars?.length||state.owners?.length||state.renters?.length||state.bookings?.length))lastGood=JSON.stringify({owners:state.owners,renters:state.renters,cars:state.cars,bookings:state.bookings,msgs:state.msgs,ratings:state.ratings,notifications:state.notifications,users:state.users,session:state.session});}
+  function restoreGood(){if(!lastGood)return false;try{const d=JSON.parse(lastGood);Object.assign(state,d);render();renderNav();renderMyAreaFab();return true;}catch(e){return false;}}
+  setInterval(snapshotGood,1500);
+  window.addEventListener('error',e=>{console.error('CrownDrive recovered runtime error',e.error||e.message);restoreGood();});
+  window.addEventListener('unhandledrejection',e=>{console.error('CrownDrive recovered promise error',e.reason);restoreGood();});
+  window.addEventListener('pageshow',()=>{
+    snapshotGood();
+    if(window.RT_AUTH){
+      let settled=false;const done=()=>{settled=true;if(RT_AUTH.currentUser&&window.CROWNDRIVE_ATTACH_REALTIME_AFTER_AUTH)window.CROWNDRIVE_ATTACH_REALTIME_AFTER_AUTH();};
+      RT_AUTH.onAuthStateChanged(()=>done());setTimeout(()=>{if(!settled){restoreGood();if(RT_AUTH.currentUser&&window.CROWNDRIVE_ATTACH_REALTIME_AFTER_AUTH)window.CROWNDRIVE_ATTACH_REALTIME_AFTER_AUTH();}},3500);
+    }
+  });
+})();
+</script>
+<style id="crowndrive-active-rental-evidence-style-v1">
+.active-rentals-section{margin:0 0 24px}.ar-section-title{display:flex;align-items:center;justify-content:space-between;margin:6px 0 14px}.ar-section-title h2{margin:0;font-size:1.45rem}.ar-section-title span{background:var(--ink);color:white;border-radius:999px;padding:4px 10px;font-weight:900}.active-rental-card{border:2px solid rgba(41,108,126,.85);border-radius:22px;padding:18px;background:linear-gradient(145deg,#f7ffff,#fff);box-shadow:0 12px 35px rgba(18,63,75,.08);margin-bottom:16px}.ar-status{display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:1rem}.ar-dot{width:13px;height:13px;border-radius:50%;background:#18b887;box-shadow:0 0 0 5px rgba(24,184,135,.12)}.ar-chip{margin-inline-start:auto;border-radius:999px;padding:5px 10px;font-size:.72rem;font-weight:900}.ar-chip.ok{background:#e9fbf4;color:#087653}.ar-chip.warn{background:#fff4dd;color:#9b5b00}.ar-main{display:grid;grid-template-columns:1fr minmax(220px,38%);gap:18px;align-items:center;margin-top:14px}.ar-record{font-size:.8rem;color:#57646d}.ar-details h3{font-size:1.45rem;margin:8px 0}.ar-date{font-weight:800;font-size:1.02rem}.ar-person,.ar-readings{margin-top:8px;color:#53616a}.ar-car{width:100%;height:210px;object-fit:contain;border-radius:16px;background:#f2f7f8}.ar-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}.arrival-modal{max-width:900px!important}.arrival-head{padding:8px 4px 16px}.arrival-head span{font-weight:900;color:#23778c}.arrival-head h2{margin:5px 0}.arrival-form{display:grid;gap:14px}.arrival-upload-grid,.ar-media-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.arrival-upload,.ar-media{border:1px solid var(--hair);border-radius:17px;padding:13px;background:#f8fafb;display:grid;gap:9px}.arrival-upload img,.arrival-upload video,.ar-media img,.ar-media video{width:100%;height:220px;object-fit:contain;border-radius:12px;background:#111}.ar-media span{display:grid;place-items:center;height:110px;color:#7b8790}.full{width:100%}
+@media(max-width:720px){.ar-main{grid-template-columns:1fr}.ar-car{order:-1;height:190px}.arrival-upload-grid,.ar-media-grid{grid-template-columns:1fr}.active-rental-card{padding:14px}.ar-actions .btn{flex:1}.ar-chip{margin-inline-start:0}.arrival-upload img,.arrival-upload video{height:190px}}
+
+/* CrownDrive simplicity pass */
+#ov-search .search-page-modal{width:min(1180px,calc(100vw - 28px))!important;height:min(88vh,820px)!important}
+#ov-search .search-page-body{padding:12px!important}
+#ov-search .full-search-panel{max-width:920px!important;padding:14px!important}
+#ov-search .search-page-top{max-width:920px!important;margin-bottom:8px!important}
+#ov-search .search-tabs{max-width:440px!important}
+#ov-search .full-search-panel .search-row{gap:8px!important;margin-bottom:8px!important}
+#ov-search .full-search-panel label{font-size:.78rem!important}
+#ov-search .full-search-panel select,#ov-search .full-search-panel input{min-height:38px!important;padding:8px 10px!important}
+#ov-search .full-search-panel button{min-height:36px!important;padding:7px 10px!important}
+.admin-modal{max-width:1080px!important}
+#ov-admin .dash-tabs{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:8px!important;padding:8px!important}
+#ov-admin .dash-tabs button{min-width:0!important;padding:10px 8px!important;font-size:.85rem!important}
+#ov-admin .drawer-userbar{padding:10px 14px!important}
+#ov-admin .admin-panel{padding:14px!important}
+#ov-admin .admin-kpis{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important}
+.upload-choice-row{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0 10px}.upload-choice-row .mini{flex:1;min-width:150px}.selfie-field{margin-top:10px}.selfie-field .lic-prev img{max-height:260px;object-fit:cover}
+@media(max-width:700px){#ov-search .search-page-modal{width:100vw!important;height:100vh!important}#ov-search .full-search-panel{padding:10px!important}#ov-admin .dash-tabs{grid-template-columns:repeat(2,minmax(0,1fr))!important}#ov-admin .admin-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}.upload-choice-row{display:grid;grid-template-columns:1fr 1fr}.upload-choice-row .mini{min-width:0}}
+</style>
+
+
+<style id="crowndrive-workflow-redesign-v2">
+.cd-role-nav{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 16px;padding:8px;border:1px solid var(--hair);border-radius:18px;background:#f6f8fa;position:sticky;top:0;z-index:4}.cd-role-nav button{flex:1;min-width:120px;border:0;border-radius:13px;padding:11px 12px;font-weight:900;background:transparent;color:var(--ink);cursor:pointer}.cd-role-nav button.on{background:var(--ink);color:#fff;box-shadow:0 5px 18px rgba(20,35,55,.16)}
+.cd-home-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.cd-home-card{border:1px solid var(--hair);border-radius:18px;padding:16px;background:#fff;box-shadow:0 8px 26px rgba(18,45,68,.06)}.cd-home-card b{font-size:1.55rem;display:block}.cd-home-card span{color:var(--mut2);font-size:.82rem}.cd-section{display:none}.cd-section.on{display:block}.cd-empty{padding:28px;text-align:center;border:1px dashed var(--hair);border-radius:18px;color:var(--mut2)}
+.cd-verify-summary{border:1px solid var(--hair);border-radius:20px;padding:16px;background:linear-gradient(145deg,#fff,#f4f8fb);margin-bottom:14px}.cd-verify-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--hair)}.cd-verify-row:last-child{border-bottom:0}.cd-vstatus{border-radius:999px;padding:5px 9px;font-size:.74rem;font-weight:900}.cd-vstatus.ok{background:#e6faef;color:#087547}.cd-vstatus.wait{background:#fff4dc;color:#945a00}.cd-vstatus.bad{background:#ffeaea;color:#a32121}.cd-doc-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.cd-upload-box{border:1px dashed #9bb0bf;border-radius:16px;padding:14px;background:#fafcfd}.cd-upload-box img{width:100%;height:170px;object-fit:contain;border-radius:12px;background:#eef2f5;margin-top:8px}.cd-upload-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.cd-upload-actions label{flex:1;min-width:120px;text-align:center}
+.cd-timeline{display:flex;align-items:flex-start;gap:0;margin:16px 0;overflow:auto;padding-bottom:6px}.cd-step{min-width:135px;position:relative;text-align:center;color:#73808b;font-size:.74rem;font-weight:800}.cd-step:before{content:'';display:block;width:18px;height:18px;border-radius:50%;background:#d9e0e6;margin:0 auto 7px;position:relative;z-index:2}.cd-step:after{content:'';position:absolute;height:3px;background:#d9e0e6;top:8px;right:50%;width:100%;z-index:1}.cd-step:first-child:after{display:none}.cd-step.done{color:#087653}.cd-step.done:before,.cd-step.current:before{background:#17ad7b;box-shadow:0 0 0 5px rgba(23,173,123,.12)}.cd-step.done:after,.cd-step.current:after{background:#17ad7b}.cd-step.current{color:#17384a}
+.cd-trip-card{border:1px solid var(--hair);border-radius:22px;padding:16px;background:#fff;margin-bottom:14px}.cd-trip-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.cd-trip-head h3{margin:0}.cd-trip-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.cd-price-breakdown{display:grid;gap:7px;border:1px solid var(--hair);border-radius:15px;padding:12px;background:#fafbfc}.cd-price-line{display:flex;justify-content:space-between}.cd-price-line.total{font-weight:950;border-top:1px solid var(--hair);padding-top:8px}.cd-trust-badges{display:flex;gap:7px;flex-wrap:wrap}.cd-trust-badges span{border-radius:999px;padding:5px 9px;background:#edf5f8;font-size:.72rem;font-weight:850}.cd-dispute-list{display:grid;gap:10px}.cd-dispute{border:1px solid var(--hair);border-radius:14px;padding:12px}.cd-hidden-old-tabs{display:none!important}
+@media(max-width:760px){.cd-home-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.cd-role-nav{position:static;display:grid;grid-template-columns:repeat(2,1fr)}.cd-role-nav button{min-width:0}.cd-doc-grid{grid-template-columns:1fr}.cd-trip-head{display:block}.cd-step{min-width:110px}}
+</style>
+<script id="crowndrive-workflow-redesign-v2">
+(function(){
+'use strict';
+const $id=id=>document.getElementById(id);
+const now=()=>Date.now();
+function cdUser(uid){return (state.users&&state.users[uid])||(state.owners||[]).find(x=>x.id===uid)||(state.renters||[]).find(x=>x.id===uid)||null}
+function ensureVerification(u){
+  if(!u)return null;
+  u.verification=(u.verification&&typeof u.verification==='object')?u.verification:{};
+  const v=u.verification;
+  v.status=v.status||((u.lic||u.licFront)&&u.selfie?'pending':'incomplete');
+  v.emailVerified=typeof v.emailVerified==='boolean'?v.emailVerified:!!(window.RT_AUTH&&RT_AUTH.currentUser&&RT_AUTH.currentUser.emailVerified);
+  v.phoneVerified=typeof v.phoneVerified==='boolean'?v.phoneVerified:!!u.phone;
+  v.licenseFrontUrl=v.licenseFrontUrl||u.licFront||u.lic||'';
+  v.licenseBackUrl=v.licenseBackUrl||u.licBack||'';
+  v.selfieUrl=v.selfieUrl||u.selfie||'';
+  v.selfieWithLicenseUrl=v.selfieWithLicenseUrl||'';
+  v.provider=v.provider||'manual';
+  v.updatedAt=v.updatedAt||now();
+  return v;
+}
+function verificationReady(u){const v=ensureVerification(u);return !!v&&v.status==='approved'}
+function vLabel(v){const m={approved:['מאומת','ok'],pending:['ממתין לבדיקה','wait'],rejected:['נדחה','bad'],incomplete:['חסר מידע','bad'],requires_input:['נדרש צילום נוסף','wait']};return m[v?.status]||m.incomplete}
+function saveAll(){try{persistState()}catch(e){};try{if(typeof pushRealtimeNow==='function')pushRealtimeNow()}catch(e){}}
+function tripSteps(b){
+ const p=b.arrivalEvidence||{};const ins=b.inspection||{};const ret=ins.return||{};
+ return [
+ ['הזמנה אושרה',['approved','done'].includes(b.status)||b.done],
+ ['אימות שוכר',verificationReady(cdUser(b.renterId))],
+ ['תיעוד לפני נסיעה',!!(p.exteriorVideoUrl&&p.dashboardPhotoUrl&&p.mileage&&p.fuel)],
+ ['נסיעה פעילה',b.status==='active'||!!b.startedAt||b.done],
+ ['תיעוד החזרה',!!(ret.mileage&&ret.fuelLevel&&(ret.photos?.length||ret.exteriorVideoUrl))],
+ ['הושלמה',!!b.done||b.status==='done']
+ ];
+}
+function timelineHTML(b){const s=tripSteps(b);let current=s.findIndex(x=>!x[1]);return `<div class="cd-timeline">${s.map((x,i)=>`<div class="cd-step ${x[1]?'done':i===current?'current':''}">${x[0]}</div>`).join('')}</div>`}
+function priceHTML(b){const base=Math.max(0,(+b.total||0)-(+b.deliveryCost||0)-(+b.youngDriverFee||0)-(+b.serviceFee||0));return `<div class="cd-price-breakdown"><div class="cd-price-line"><span>מחיר השכרה</span><b>${money(base)}</b></div>${+b.deliveryCost?`<div class="cd-price-line"><span>מסירה</span><b>${money(+b.deliveryCost)}</b></div>`:''}${+b.youngDriverFee?`<div class="cd-price-line"><span>נהג צעיר</span><b>${money(+b.youngDriverFee)}</b></div>`:''}${+b.serviceFee?`<div class="cd-price-line"><span>עמלת שירות</span><b>${money(+b.serviceFee)}</b></div>`:''}<div class="cd-price-line total"><span>סה״כ</span><b>${money(+b.total||0)}</b></div></div>`}
+function trustHTML(uid){const u=cdUser(uid)||{};const v=ensureVerification(u);const completed=(state.bookings||[]).filter(b=>b.renterId===uid&&(b.done||b.status==='done')).length;return `<div class="cd-trust-badges"><span>${v.status==='approved'?'✓ זהות מאומתת':'זהות לא מאומתת'}</span><span>${u.phone?'✓ טלפון':'טלפון חסר'}</span><span>${completed} השכרות הושלמו</span><span>חבר מאז ${new Date(u.createdAt||Date.now()).toLocaleDateString('he-IL')}</span></div>`}
+function tripCard(b,role){const c=(state.cars||[]).find(x=>x.id===b.carId)||{};return `<article class="cd-trip-card"><div class="cd-trip-head"><div><div class="sm">הזמנה ${esc(b.num||'')}</div><h3>${esc(c.make||'')} ${esc(c.model||'')}</h3><div>${fmt(b.from)} ${esc(b.tmFrom||'')} → ${fmt(b.to)} ${esc(b.tmTo||'')}</div></div>${bookingStatusHTML(b)}</div>${timelineHTML(b)}${trustHTML(b.renterId)}<div style="margin-top:12px">${priceHTML(b)}</div><div class="cd-trip-actions"><button class="mini gold" onclick="openChatTo('b${b.id}')">הודעות</button>${['approved','active'].includes(b.status)&&role==='renter'?`<button class="mini" onclick="openArrivalEvidence('${b.id}')">תיעוד לפני נסיעה</button>`:''}${['approved','active'].includes(b.status)?`<button class="mini" onclick="openInspection('${b.id}','return')">תיעוד החזרה</button>`:''}<button class="mini" onclick="openDispute('${b.id}')">דווח על בעיה</button></div></article>`}
+window.cdShowSection=function(role,sec){document.querySelectorAll(`#ov-${role} .cd-section`).forEach(x=>x.classList.toggle('on',x.dataset.sec===sec));document.querySelectorAll(`#ov-${role} .cd-role-nav button`).forEach(x=>x.classList.toggle('on',x.dataset.sec===sec));if(role==='owner'){if(sec==='bookings')renderOwnerBookings();if(sec==='cars')renderAdminList();if(sec==='profile')renderOwnerProfileSettings();if(sec==='messages'){closeOv('ov-owner');openChat();}} if(role==='renter'&&sec==='messages'){closeOv('ov-renter');openChat();}}
+function ownerHomeHTML(u){const bs=(state.bookings||[]).filter(b=>b.ownerId===u.id),active=bs.filter(b=>['approved','active'].includes(b.status)&&!b.done),pending=bs.filter(b=>b.status==='pending');return `<div class="cd-home-grid"><div class="cd-home-card"><b>${active.length}</b><span>השכרות פעילות</span></div><div class="cd-home-card"><b>${pending.length}</b><span>ממתינות לאישור</span></div><div class="cd-home-card"><b>${myCars().length}</b><span>רכבים פעילים</span></div><div class="cd-home-card"><b>${money(bs.filter(b=>b.done||b.status==='done').reduce((s,b)=>s+(+b.total||0),0))}</b><span>הכנסה שהושלמה</span></div></div><div class="divider">הזמנות פעילות</div>${active.length?active.map(b=>tripCard(b,'owner')).join(''):'<div class="cd-empty">אין כרגע השכרות פעילות</div>'}`}
+const oldOpenOwner=window.openOwner;
+window.openOwner=function(){if(!state.session||state.session.role!=='owner')return openAuth('owner');oldOpenOwner();setTimeout(()=>{const body=document.querySelector('#ov-owner .m-body');if(!body)return;let nav=$id('cd-owner-nav');if(!nav){nav=document.createElement('div');nav.id='cd-owner-nav';nav.className='cd-role-nav';nav.innerHTML=`<button class="on" data-sec="home" onclick="cdShowSection('owner','home')">בית</button><button data-sec="bookings" onclick="cdShowSection('owner','bookings')">הזמנות</button><button data-sec="cars" onclick="cdShowSection('owner','cars')">הרכבים שלי</button><button data-sec="messages" onclick="cdShowSection('owner','messages')">הודעות</button><button data-sec="profile" onclick="cdShowSection('owner','profile')">פרופיל</button>`;body.prepend(nav);document.querySelector('#ov-owner .dash-tabs')?.classList.add('cd-hidden-old-tabs');const home=document.createElement('div');home.className='cd-section on';home.dataset.sec='home';home.id='cd-owner-home';nav.after(home);['dash-book','dash-cars','dash-prof'].forEach((id,i)=>{const el=$id(id);if(el){el.classList.add('cd-section');el.dataset.sec=['bookings','cars','profile'][i];}});$id('dash-add')?.classList.add('cd-section');$id('dash-rep')?.classList.add('cd-hidden-old-tabs');} $id('cd-owner-home').innerHTML=ownerHomeHTML(me());cdShowSection('owner','home');},0)}
+function renterNavHTML(){return `<div class="cd-role-nav"><button class="on" data-sec="home" onclick="cdShowSection('renter','home')">בית</button><button data-sec="bookings" onclick="cdShowSection('renter','bookings')">ההזמנות שלי</button><button data-sec="messages" onclick="cdShowSection('renter','messages')">הודעות</button><button data-sec="profile" onclick="cdShowSection('renter','profile')">פרופיל ואימות</button></div>`}
+function verificationHTML(u){const v=ensureVerification(u),lab=vLabel(v);const row=(name,ok)=>`<div class="cd-verify-row"><span>${name}</span><span class="cd-vstatus ${ok?'ok':'bad'}">${ok?'✓ הושלם':'חסר'}</span></div>`;return `<div class="cd-verify-summary"><div class="cd-verify-row"><b>סטטוס אימות</b><span class="cd-vstatus ${lab[1]}">${lab[0]}</span></div>${row('אימות מייל',v.emailVerified)}${row('טלפון',v.phoneVerified)}${row('חזית רישיון',!!v.licenseFrontUrl)}${row('גב רישיון',!!v.licenseBackUrl)}${row('סלפי חי',!!v.selfieUrl)}${row('סלפי עם הרישיון',!!v.selfieWithLicenseUrl)}</div><div class="cd-doc-grid">${docBox('licenseFrontUrl','חזית רישיון','environment',v.licenseFrontUrl)}${docBox('licenseBackUrl','גב רישיון','environment',v.licenseBackUrl)}${docBox('selfieUrl','סלפי חי','user',v.selfieUrl)}${docBox('selfieWithLicenseUrl','סלפי עם הרישיון','user',v.selfieWithLicenseUrl)}</div><div class="note" style="margin-top:12px">המסמכים נבדקים ידנית. בעתיד אפשר לחבר Stripe Identity או Persona בלי לשנות את מבנה הפרופיל.</div>`}
+function docBox(field,title,capture,url){return `<div class="cd-upload-box"><b>${title}</b>${url?`<img src="${esc(url)}" alt="${title}">`:''}<div class="cd-upload-actions"><label class="mini">גלריה<input hidden type="file" accept="image/*" onchange="uploadVerificationDoc(this,'${field}')"></label><label class="mini gold">מצלמה<input hidden type="file" accept="image/*" capture="${capture}" onchange="uploadVerificationDoc(this,'${field}')"></label></div></div>`}
+window.uploadVerificationDoc=async function(input,field){const f=input.files&&input.files[0];if(!f)return;try{safeToast('מעלה תמונה…');const url=await uploadImageFile(f,'verification');const u=me(),v=ensureVerification(u);v[field]=url;v.status=(v.licenseFrontUrl&&v.licenseBackUrl&&v.selfieUrl&&v.selfieWithLicenseUrl)?'pending':'incomplete';v.updatedAt=now();u[field==='licenseFrontUrl'?'licFront':field==='licenseBackUrl'?'licBack':field==='selfieUrl'?'selfie':'selfieWithLicense']=url;saveAll();safeToast('התמונה נשמרה ונשלחה לבדיקה');openRenterArea();cdShowSection('renter','profile');}catch(e){safeToast(e.message||'ההעלאה נכשלה')}input.value=''}
+window.openRenterArea=function(){if(!state.session||state.session.role!=='renter')return openAuth('renter');renderPersonalDrawerChrome();const u=me(),v=ensureVerification(u),list=(state.bookings||[]).filter(b=>b.renterId===u.id).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)),active=list.filter(b=>['approved','active'].includes(b.status)&&!b.done);const body=$id('renter-body');body.innerHTML=`${renterNavHTML()}<section class="cd-section on" data-sec="home"><div class="personal-hero"><div><h4>שלום ${esc((u.name||'').split(' ')[0]||'שוכר')} 👋</h4><p>הפעולות החשובות בלבד, לפי השלב שבו נמצאת ההשכרה.</p></div></div><div class="cd-home-grid"><div class="cd-home-card"><b>${active.length}</b><span>השכרות פעילות</span></div><div class="cd-home-card"><b>${list.filter(b=>b.status==='pending').length}</b><span>ממתינות לאישור</span></div><div class="cd-home-card"><b>${list.filter(b=>b.done||b.status==='done').length}</b><span>הושלמו</span></div><div class="cd-home-card"><b>${v.status==='approved'?'✓':'!'}</b><span>${vLabel(v)[0]}</span></div></div><div class="divider">הנסיעה שלי</div>${active.length?active.map(b=>tripCard(b,'renter')).join(''):'<div class="cd-empty">אין כרגע השכרה פעילה</div>'}</section><section class="cd-section" data-sec="bookings"><h3>ההזמנות שלי</h3>${list.length?list.map(b=>tripCard(b,'renter')).join(''):'<div class="cd-empty">עדיין אין הזמנות</div>'}</section><section class="cd-section" data-sec="profile"><h3>פרופיל ואימות</h3>${verificationHTML(u)}<div class="m-actions"><button class="btn btn-out" onclick="openAccount()">עריכת פרטים אישיים</button></div></section>`;openOv('ov-renter')}
+// Block booking until manual verification is approved.
+const originalConfirmBooking=window.confirmBooking;
+window.confirmBooking=function(){const u=me();if(!u||!verificationReady(u)){safeToast('לפני הזמנה צריך להשלים אימות רישיון וסלפי ולקבל אישור');closeOv('ov-book');openRenterArea();setTimeout(()=>cdShowSection('renter','profile'),50);return}return originalConfirmBooking()}
+// Manual admin review actions.
+window.adminVerificationAction=function(uid,status){const u=cdUser(uid);if(!u)return;const v=ensureVerification(u);v.status=status;v.reviewedAt=now();v.reviewedBy=state.session?.id||'admin';v.updatedAt=now();saveAll();safeToast(status==='approved'?'המשתמש אומת':'סטטוס האימות עודכן');renderAdminDashboard()}
+const oldAdminFullUsersHTML=window.adminFullUsersHTML;
+window.adminFullUsersHTML=function(){const users=Object.entries(state.users||{}).map(([id,u])=>({id,...u}));const fallback=[...(state.owners||[]).map(u=>({...u,role:'owner'})),...(state.renters||[]).map(u=>({...u,role:'renter'}))];const list=users.length?users:fallback;if(!list.length)return '<div class="adm-empty">אין משתמשים רשומים עדיין.</div>';return `<div class="admin-user-cards">${list.map(u=>{const v=ensureVerification(u),l=vLabel(v);return `<div class="adm-item"><div class="inf"><b>${esc(u.name||'')}</b><div class="sm">${u.role==='owner'?'בעל רכב':u.role==='admin'?'מנהל':'שוכר'} · ${esc(u.email||'')}</div><div class="cd-trust-badges"><span class="cd-vstatus ${l[1]}">${l[0]}</span><span>${u.phone?'טלפון קיים':'טלפון חסר'}</span></div></div><div class="acts">${u.role==='renter'?`<button class="mini gold" onclick="adminVerificationAction('${u.id}','approved')">אישור אימות</button><button class="mini" onclick="adminVerificationAction('${u.id}','requires_input')">בקש צילום נוסף</button><button class="mini danger" onclick="adminVerificationAction('${u.id}','rejected')">דחייה</button>`:''}</div></div>`}).join('')}</div>`}
+// Disputes / incident reports.
+function ensureDisputeModal(){if($id('ov-dispute'))return;document.body.insertAdjacentHTML('beforeend',`<div class="overlay" id="ov-dispute"><div class="modal"><div class="m-head"><h3>דיווח על בעיה</h3><button class="m-close" onclick="closeOv('ov-dispute')">✕</button></div><div class="m-body"><input type="hidden" id="cd-dispute-bid"><div class="field"><label>סוג הבעיה</label><select id="cd-dispute-type"><option>נזק חדש</option><option>דלק חסר</option><option>איחור</option><option>ניקיון</option><option>קנס או Toll</option><option>רכב לא תואם למודעה</option><option>בעיית מסירה</option></select></div><div class="field"><label>תיאור</label><textarea id="cd-dispute-text" rows="5"></textarea></div><div class="field"><label>סכום מבוקש, אם רלוונטי</label><input id="cd-dispute-amount" type="number" min="0"></div><button class="btn btn-gold full" onclick="saveDispute()">שליחת הדיווח</button></div></div></div>`)}
+window.openDispute=function(bid){ensureDisputeModal();$id('cd-dispute-bid').value=bid;openOv('ov-dispute')}
+window.saveDispute=function(){const bid=$id('cd-dispute-bid').value,b=(state.bookings||[]).find(x=>x.id===bid);if(!b)return;b.disputes=Array.isArray(b.disputes)?b.disputes:[];b.disputes.push({id:'d_'+now(),type:$id('cd-dispute-type').value,text:$id('cd-dispute-text').value.trim(),amount:+$id('cd-dispute-amount').value||0,status:'open',createdAt:now(),createdBy:state.session?.id,role:state.session?.role});b.updatedAt=now();saveAll();closeOv('ov-dispute');safeToast('הדיווח נשלח למנהל')}
+// Keep verification metadata present without deleting old users.
+setInterval(()=>{let changed=false;[...(state.renters||[]),...Object.values(state.users||{})].forEach(u=>{if(u&&u.role==='renter'&&!u.verification){ensureVerification(u);changed=true}});if(changed)try{persistState()}catch(e){}},5000);
+})();
+</script>
+
+<style id="crowndrive-home-redesign-v3">
+.home-hero-v3{max-width:1120px}.home-hero-copy{max-width:680px;margin:10px auto 22px;color:rgba(255,255,255,.78);font-size:1.02rem}.home-quick-search{display:grid;grid-template-columns:1.1fr 1fr 1fr .9fr auto;gap:9px;align-items:end;background:rgba(10,20,30,.82);border:1px solid rgba(255,255,255,.16);border-radius:22px;padding:13px;max-width:1080px;margin:0 auto;backdrop-filter:blur(14px)}.home-quick-search label{display:grid;gap:5px;text-align:right}.home-quick-search label span{font-size:.7rem;font-weight:900;color:rgba(255,255,255,.72)}.home-quick-search input,.home-quick-search select{width:100%;min-height:43px;border:1px solid rgba(255,255,255,.16);border-radius:12px;padding:8px 10px;background:#fff;color:#182631;font:inherit}.home-search-submit{min-height:43px;white-space:nowrap}.home-more-filters{border:0;background:transparent;color:#f5d788;text-decoration:underline;margin-top:10px;cursor:pointer;font-weight:800}.home-shortcuts{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.home-shortcuts button{border:1px solid var(--hair);background:#fff;border-radius:999px;padding:9px 14px;font-weight:850;cursor:pointer}.home-shortcuts button:hover{border-color:var(--gold);background:#fffaf0}.home-active-wrap{padding-top:24px!important;padding-bottom:0!important}.home-active-card{border:1px solid rgba(201,157,62,.4);background:linear-gradient(135deg,#fffdf6,#fff);border-radius:22px;padding:18px;display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center;box-shadow:0 12px 38px rgba(31,42,52,.08)}.home-active-card h2{margin:0 0 4px}.home-active-meta{display:flex;gap:10px;flex-wrap:wrap;color:var(--mut2);font-size:.84rem}.home-active-actions{display:flex;gap:8px;flex-wrap:wrap}.home-three-steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.home-three-steps .hstep{min-height:210px}.home-trust-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.home-trust-grid>div{border:1px solid var(--hair);border-radius:20px;padding:18px;background:#fff}.home-trust-grid b{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:#eef7f6;color:#087653;font-size:1.2rem}.home-trust-grid h3{margin:12px 0 5px}.home-trust-grid p{margin:0;color:var(--mut2)}.home-split-card{display:grid;grid-template-columns:1.2fr .8fr;gap:24px;align-items:center;border-radius:26px;padding:28px;background:linear-gradient(135deg,#102b36,#1c5361);color:#fff;overflow:hidden}.home-split-card.owner{background:linear-gradient(135deg,#2d2414,#735a22)}.home-split-card h2{font-size:2rem;margin:7px 0}.home-split-card p{color:rgba(255,255,255,.78);max-width:650px}.home-map-visual{min-height:190px;border:1px solid rgba(255,255,255,.18);border-radius:22px;display:flex;align-items:center;justify-content:space-around;font-size:2.2rem;background:radial-gradient(circle at center,rgba(255,255,255,.12),transparent 60%)}.home-owner-points{display:grid;grid-template-columns:1fr 1fr;gap:10px}.home-owner-points span{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:12px;font-weight:850}.home-faq{display:grid;grid-template-columns:1fr 1fr;gap:10px}.home-faq details{border:1px solid var(--hair);border-radius:16px;padding:14px;background:#fff}.home-faq summary{font-weight:900;cursor:pointer}.home-faq p{color:var(--mut2);margin:10px 0 0}.home-simple-section,.home-trust-section,.home-delivery-section,.home-owner-cta,.home-faq-section{padding-top:54px!important;padding-bottom:54px!important}.home-mini-status .linklike{font-weight:900}
+@media(max-width:980px){.home-quick-search{grid-template-columns:1fr 1fr}.home-search-submit{grid-column:1/-1}.home-trust-grid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:700px){.home-quick-search{grid-template-columns:1fr;padding:10px;border-radius:17px}.home-search-submit{grid-column:auto}.home-hero-copy{font-size:.9rem}.hero-in h1{font-size:clamp(2rem,11vw,3.3rem)}.home-three-steps,.home-trust-grid,.home-faq{grid-template-columns:1fr}.home-split-card{grid-template-columns:1fr;padding:20px}.home-map-visual{min-height:140px}.home-active-card{grid-template-columns:1fr}.home-active-actions .btn{flex:1}.home-owner-points{grid-template-columns:1fr 1fr}.home-shortcuts{display:grid;grid-template-columns:1fr 1fr}.home-shortcuts button{font-size:.78rem;padding:8px}}
+</style>
+<script id="crowndrive-home-redesign-v3-script">
+(function(){
+  const $h=id=>document.getElementById(id);
+  function saveHomePrefs(){try{localStorage.setItem('crowndrive_home_search',JSON.stringify({location:$h('home-location')?.value||'',from:$h('home-from')?.value||'',to:$h('home-to')?.value||'',priceBand:$h('home-price-band')?.value||''}))}catch(e){}}
+  function loadHomePrefs(){try{const d=JSON.parse(localStorage.getItem('crowndrive_home_search')||'{}');if($h('home-location'))$h('home-location').value=d.location||'';if($h('home-from'))$h('home-from').value=d.from||'';if($h('home-to'))$h('home-to').value=d.to||'';if($h('home-price-band'))$h('home-price-band').value=d.priceBand||'';return d}catch(e){return {}}}
+  window.runHomeSearch=function(){
+    const d={location:$h('home-location')?.value||'',from:$h('home-from')?.value||'',to:$h('home-to')?.value||'',priceBand:$h('home-price-band')?.value||''};
+    if(d.from&&d.to&&new Date(d.to)<=new Date(d.from)){safeToast('זמן ההחזרה חייב להיות אחרי זמן האיסוף');return}
+    saveHomePrefs();searchQ={...(searchQ||{}),location:d.location,priceBand:d.priceBand,availableOnly:true};filter='available';render();openFullSearch();
+  };
+  window.homeShortcut=function(type){
+    if(type==='saved'){const d=loadHomePrefs();searchQ={...(searchQ||{}),location:d.location||'',priceBand:d.priceBand||''};filter='all'}
+    if(type==='available'){searchQ={availableOnly:true};filter='available'}
+    if(type==='delivery'){searchQ={deliveryOnly:true,availableOnly:true};filter='available'}
+    if(type==='young'){searchQ={youngOnly:true,availableOnly:true};filter='available'}
+    render();openFullSearch();
+  };
+  function roleBooking(){
+    const ses=state.session;if(!ses)return null;
+    const list=(state.bookings||[]).filter(b=>ses.role==='admin'||(ses.role==='owner'?b.ownerId===ses.id:b.renterId===ses.id));
+    return list.filter(b=>['approved','active'].includes(b.status)&&!b.done).sort((a,b)=>(a.from||'').localeCompare(b.from||''))[0]||null;
+  }
+  function renderHomeActive(){
+    const wrap=$h('home-active-booking'),box=$h('home-active-content');if(!wrap||!box)return;
+    const b=roleBooking();if(!b){wrap.style.display='none';return}const c=(state.cars||[]).find(x=>x.id===b.carId)||{};
+    const title=state.session?.role==='renter'?'ההשכרה שלך':state.session?.role==='owner'?'השכרה פעילה':'הזמנה פעילה';
+    box.innerHTML=`<div><span class="kicker">${esc(title)}</span><h2>${esc(c.make||'')} ${esc(c.model||'')}</h2><div class="home-active-meta"><span>${esc(b.from||'')} ${esc(b.tmFrom||'')}</span><span>סטטוס: ${b.status==='active'?'נסיעה פעילה':'אושרה'}</span><span>הזמנה ${esc(b.num||b.id||'')}</span></div></div><div class="home-active-actions"><button class="btn btn-gold" onclick="${state.session?.role==='owner'?"openOwner()":state.session?.role==='admin'?"openAdmin()":"openRenterArea()"}">פתח את ההשכרה</button></div>`;
+    wrap.style.display='block';
+  }
+  const oldRender=window.render;window.render=function(){const r=oldRender.apply(this,arguments);try{renderHomeActive()}catch(e){console.warn(e)}return r};
+  document.addEventListener('DOMContentLoaded',()=>{loadHomePrefs();setTimeout(renderHomeActive,400)});
+  setTimeout(()=>{loadHomePrefs();renderHomeActive()},600);
+})();
+</script>
+
 </body>
 </html>

@@ -1,5 +1,5 @@
 // CrownDrive no-cache service worker cleanup — 2026-07-10 (fixed)
-const CACHE_BUST = 'crowndrive-no-cache-20260710-imagefix2';
+const CACHE_BUST = 'crowndrive-home-redesign-v3';
 self.addEventListener('install', event => { self.skipWaiting(); });
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
