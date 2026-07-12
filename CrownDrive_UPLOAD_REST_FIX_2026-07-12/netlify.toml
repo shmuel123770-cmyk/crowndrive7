@@ -1,0 +1,41 @@
+[build]
+  # Wipe any stale node_modules that a web-upload may have committed, then install
+  # cleanly (a committed node_modules blocks npm's rename step with ENOTEMPTY).
+  command = "rm -rf node_modules package-lock.json && npm install --no-audit --no-fund --omit=dev"
+  publish = "."
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "20"
+
+# firebase-admin (and its google-gax / google-auth-library chain) use dynamic
+# requires that esbuild cannot bundle ("Could not resolve @firebase/database-compat/
+# standalone", "google-auth-library", "gaxios", "gtoken", "retry-request", ...).
+# Marking the whole chain external ships them as real node_modules inside the
+# function instead of trying to inline them at bundle time.
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = [
+    "firebase-admin",
+    "@firebase/database-compat",
+    "@google-cloud/firestore",
+    "@google-cloud/storage",
+    "google-auth-library",
+    "google-gax",
+    "gaxios",
+    "gcp-metadata",
+    "gtoken",
+    "retry-request",
+    "teeny-request",
+    "farmhash-modern"
+  ]
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

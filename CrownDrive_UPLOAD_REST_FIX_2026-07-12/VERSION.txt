@@ -1,0 +1,102 @@
+CrownDrive — FINAL build (2026-07-12, rev.11)
+Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.11 (2026-07-12): server upload made reliable + self-diagnosing. media-upload now writes via
+the Firebase Storage REST API using the Admin credential's OAuth token (built-in fetch, no
+@google-cloud/storage bundling to fail on Netlify); auto-creates the download token. Bucket name
+is derived/normalised (handles a wrong .appspot.com env). Added @google-cloud/storage to
+external_node_modules (for the other storage functions). If a write still fails, the Hebrew error
+now names the cause (Storage IAM permission / bucket / missing component / service-account key).
+Prices confirmed all USD ($) via money(). Assets unchanged (?v=13).
+
+rev.10 (2026-07-12): any image type + any source size. Server (media-upload) accepts any
+image/* type; client re-encodes to a high-quality JPEG at up to 2560px, stepping quality (and
+if needed dimensions) down so even a worst-case source stays under the request limit. So a photo
+of any type and any size uploads successfully, auto-optimized for quality + fast loading.
+(Assets unchanged at ?v=13 — only network-first modules + the function changed.)
+
+rev.9 (2026-07-12) — DEFINITIVE upload fix:
+- Confirmed via the live site that direct client→Firebase-Storage uploads simply do not work in
+  in-app browsers (Telegram/IG webviews block the cross-origin request). New approach: images are
+  resized client-side (<=1600px JPEG) and POSTed as base64 to a NEW same-origin function
+  (media-upload.mjs) that writes them with the Admin SDK and returns a permanent token URL.
+  This works in every browser and needs NO Storage rules (Admin SDK bypasses them). Videos keep
+  the SDK path (too large for a base64 body). Assets ?v=13; 19 server functions; 76 scenarios pass.
+
+rev.8 (2026-07-12):
+- Added a small discreet "כניסת מנהל" link in a new footer at the very bottom of the home page →
+  a dedicated admin sign-in screen (email+password only, no renter/owner step). openAdminLogin().
+- Maintenance mode now shows two interlocking rotating gears (steel-blue + gold) instead of a
+  static emoji; its "כניסת מנהל" button opens the same admin sign-in. Assets ?v=12.
+
+rev.7 (2026-07-12):
+- FIX upload + the "Unexpected … JSON at position 6" toast: getDownloadURL() made a second
+  network request that in-app browsers (Telegram/Instagram webviews) corrupt, throwing a raw
+  JSON error that was toasted and blocked the photo. Now the display url is built from the
+  token in the upload response itself — no second request — with getDownloadURL only as fallback.
+- Manufacturer images: now pulled from the Wikipedia article's lead image (a clean, current-
+  generation photo) instead of random Commons uploads (no more "dirty Moscow Jeep"); Commons is
+  a filtered fallback that rejects wash/dirty/snow/damaged/old-year shots and prefers recent years.
+- Daily & hourly price are now optional; a car with no daily price shows "מחיר לפי בקשה".
+- All user-facing errors are Hebrew only: the global handler now swallows any non-Hebrew /
+  technical message (shows nothing) and never leaks SDK/JSON English text.
+- Fixed admin verificationStatus subscription (added a top-level admin read rule) — was
+  permission-denied, flooding the console and breaking the admin verification display. Assets ?v=11.
+
+rev.6 (2026-07-12):
+- FIX "stuck on complete-profile": accounts with a name but no role could never enter their
+  area (the client rule blocks writing a role to an existing profile). Now the role is set
+  via the server, and dashboard() shows a spinner (not the setup screen) while the profile
+  is still loading (store.profileLoaded).
+- Personal area made more professional: redesigned dashboard header (personal greeting +
+  title on one row, avatar + close on the other, actions in their own row), removed the
+  floating back button that overlapped the header, removed the redundant add-car FAB, and
+  hid the redundant top-bar actions while inside the personal area. Assets bumped to ?v=10.
+
+rev.5 (2026-07-12):
+- Admin area now has a "צ׳אטים" tab (opens the full messaging page) and a profile view with
+  avatar upload (via the header avatar) — admin can set a profile picture like everyone else.
+- Chat is fully real-time: the admin thread list now live-updates/re-orders on every incoming
+  message (was a one-time fetch); open conversations were already live.
+- Car photos: removed the 2-photo minimum — 1 to 6 photos allowed (at least one).
+- Manufacturer image search rewritten: scores by exact make+model(+year) and prefers official
+  exterior/press shots, so it returns the right car or nothing (never a wrong look-alike).
+- More admin control: promote/demote a user's role (owner↔renter) from the user modal
+  (adds to existing block/delete/edit, car edit/hide/reassign/delete, booking edit, maintenance).
+
+rev.4 fixes (2026-07-12):
+- PHOTO/VIDEO UPLOAD FIXED: uploads now go through the Firebase Storage SDK
+  (firebasestorage.googleapis.com — CORS-enabled by Google) instead of a raw PUT to a
+  signed storage.googleapis.com URL, which needed bucket CORS that can't be set from the
+  Firebase console. Requires the updated Storage rules (already in FIREBASE_STORAGE_RULES_V2.txt).
+- JSON error toast ("תו בלתי צפוי … JSON במיקום 6") eliminated: every fetch/parse is guarded
+  and the global handler suppresses raw SyntaxError text.
+- MAINTENANCE MODE FIXED: the admin toggle writes config/maintenance directly (admin-only DB
+  rule) with a server fallback, so it always works; the same button turns the site back to
+  normal ("האתר בתחזוקה — לחצו לפתיחה"). Requires the updated Realtime DB rules (config branch).
+- Faster load + robust cache: service worker now cache-first for versioned assets, network-first
+  for HTML/modules (never serves a stale/mismatched bundle); JS modules preloaded; assets ?v=9.
+- 12,500-iteration fuzz suite added (tests/stress.test.mjs); all checks + unit tests pass.
+
+Home: hero + animated car, booking widget, owner CTA, up to 8 available cars + "לכל הרכבים",
+"איך זה עובד" (3 steps), "אמון ובטיחות" (4 trust cards).
+
+Cars page: filter bar (search / availability / type / fuel / gear / sort). Car cards: photo,
+availability badge (פנוי/מושכר), make·model·year·type·fuel·gear, rating, price, owner name,
+video badge. Detail modal: photo gallery + thumbnails + optional demo video + reviews + booking.
+
+Add-car form: make→model→year from lists (with "אחר" free text), sub-model optional, car type,
+2–6 photos with a chosen main photo, optional short video, manufacturer image auto-fetch.
+Server (car-action) stores category/fuel/gear/seats/photos[]/videoUrl/ownerName; requires ≥2 photos.
+
+Chats: dedicated page, WhatsApp-style thread list (right) + conversation (left), mobile slide.
+Chat is open only from booking approval until the rental ends. Admin gets a full users list and
+can message any user (messages/admin/<uid>). Before a rental starts the renter must send through
+the chat: exterior video + fuel photo + odometer photo + payment proof; the owner then has two
+buttons — "התחלת השכרה" (gated on those four) and "סיום השכרה".
+
+Unified dashboards (admin/owner/renter). Deploy fixes retained (firebase-admin external, no-op
+build, CSP fonts). New server function: car-media-public (makes owner car media public).
+All static/security checks and unit tests pass; 17 Netlify functions. Firebase project: amar-75684.
+See התחל_כאן_גרסה_סופית.md to deploy. Remember to publish the updated Realtime DB rules
+(messages/admin branch) and Storage rules (car videos) in the Firebase console.

@@ -1,0 +1,129 @@
+import {auth, db} from './firebase.js';
+import {api} from './api.js';
+import {validPassword} from './core.js';
+import {startPrivate, stopPrivate} from './store.js';
+
+// Create the user's own profile directly (works even if the server functions are
+// down). Firebase rules allow this write once, for the user's own uid, with the
+// role limited to renter/owner — see FIREBASE_DATABASE_RULES_V2.json.
+export async function createOwnProfile({name, phone, role}) {
+  const user = auth.currentUser;
+  if (!user) throw new Error('נדרשת התחברות');
+  const txt = (v, n) => String(v ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, n);
+  const digits = v => String(v ?? '').replace(/[^\d+ ]/g, '').trim().slice(0, 40);
+  const chosenRole = ['renter', 'owner'].includes(role) ? role : 'renter';
+  const ref = db.ref(`users/${user.uid}`);
+  const snap = await ref.once('value');
+  if (snap.exists()) {
+    // Legacy/partial profile (has a name but no role). Client rules forbid writing to an
+    // existing profile row (the create rule requires !data.exists), so set the role through
+    // the server — its Admin SDK can add a role to a role-less profile. This is what unblocks
+    // "עוד צעד אחד וסיימנו" for old accounts that were created without a role.
+    if (!snap.val().role && role) await api('profile-save', {action: 'update', role: chosenRole});
+    return;
+  }
+  try {
+    await ref.set({ // client-write:own-profile
+      name: txt(name, 100) || txt(user.displayName, 100),
+      email: txt(user.email, 200),
+      phone: digits(phone),
+      role: chosenRole,
+      createdAt: Date.now(),
+      verification: {email: !!user.emailVerified, licenseFront: false, licenseBack: false, selfie: false},
+    });
+  } catch (error) {
+    if (/permission_denied/i.test(String(error?.message || ''))) {
+      throw new Error('כמעט סיימנו — יש לפרסם את חוקי ה-Firebase המעודכנים (Realtime Database ← Rules) ואז ההרשמה תושלם. החשבון כבר נוצר, אפשר להיכנס איתו אחרי הפרסום.');
+    }
+    throw error;
+  }
+}
+
+let resolveReady;
+export const authReady = new Promise(resolve => { resolveReady = resolve; });
+let initialResolved = false;
+
+// The only Firebase Auth observer in the project.
+auth.onAuthStateChanged(async user => {
+  try {
+    if (user) {
+      await startPrivate(user);
+      try { await user.reload(); await user.getIdToken(true); await api('profile-save', {action: 'sync-email'}); } catch (error) { console.warn('email verification sync skipped', error.message); }
+    }
+    else stopPrivate();
+  } catch (error) {
+    console.error('auth bootstrap failed', error);
+    stopPrivate();
+  } finally {
+    if (!initialResolved) {
+      initialResolved = true;
+      resolveReady();
+    }
+    window.dispatchEvent(new Event('authchange'));
+  }
+});
+
+// Translate Firebase Auth error codes into clear Hebrew messages.
+function authError(error) {
+  const map = {
+    'auth/invalid-credential': 'המייל או הסיסמה שגויים',
+    'auth/wrong-password': 'הסיסמה שגויה לחשבון הזה',
+    'auth/user-not-found': 'לא נמצא חשבון עם המייל הזה — נסו להירשם',
+    'auth/invalid-email': 'כתובת המייל אינה תקינה',
+    'auth/email-already-in-use': 'המייל כבר רשום באתר — נסו להתחבר',
+    'auth/too-many-requests': 'יותר מדי ניסיונות — נסו שוב בעוד כמה דקות',
+    'auth/network-request-failed': 'בעיית רשת — בדקו את החיבור לאינטרנט',
+    'auth/user-disabled': 'החשבון הושבת — פנו למנהל האתר',
+    'auth/unauthorized-domain': 'הדומיין לא מאושר ב-Firebase Auth (Authentication ← Settings ← Authorized domains)',
+  };
+  return new Error(map[String(error?.code || '')] || error?.message || 'שגיאת התחברות');
+}
+
+export async function register({name, email, phone, password, role}) {
+  if (!validPassword(password)) {
+    throw new Error('הסיסמה חייבת לכלול לפחות 6 תווים, אות גדולה ואות קטנה באנגלית');
+  }
+  let credential;
+  try {
+    credential = await auth.createUserWithEmailAndPassword(email.trim(), password);
+  } catch (error) {
+    // Existing email + the correct password = just sign in instead of failing.
+    if (error?.code === 'auth/email-already-in-use') {
+      try { return (await auth.signInWithEmailAndPassword(email.trim(), password)).user; }
+      catch { throw new Error('המייל כבר רשום באתר אבל הסיסמה שגויה — התחברו או אפסו סיסמה'); }
+    }
+    throw authError(error);
+  }
+  await credential.user.updateProfile({displayName: name.trim()});
+  await createOwnProfile({name, phone, role});
+  return credential.user;
+}
+
+export async function login(email, password) {
+  try { return (await auth.signInWithEmailAndPassword(email.trim(), password)).user; }
+  catch (error) { throw authError(error); }
+}
+
+export async function logout() {
+  await auth.signOut();
+}
+
+export async function sendVerify() {
+  if (!auth.currentUser) throw new Error('אין משתמש מחובר');
+  await auth.currentUser.sendEmailVerification();
+}
+
+// Secure password management: passwords are never readable (Firebase stores only
+// hashes). The admin can send the user a reset link instead of ever seeing it.
+export async function sendPasswordReset(email) {
+  if (!email) throw new Error('אין כתובת מייל למשתמש');
+  await auth.sendPasswordResetEmail(email.trim());
+}
+
+export async function refreshEmailStatus() {
+  if (!auth.currentUser) return false;
+  await auth.currentUser.reload();
+  const verified = auth.currentUser.emailVerified;
+  await api('profile-save', {action: 'sync-email'});
+  return verified;
+}
