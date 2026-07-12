@@ -144,8 +144,9 @@ function openCalendar(button) {
   }), 0);
 }
 
-let pendingAuthRole = null, pendingAuthTab = null;
+let pendingAuthRole = null, pendingAuthTab = null, pendingAdminLogin = false;
 export function openAuthAs(role, tab) { pendingAuthRole = role; pendingAuthTab = tab; if (store.route === 'auth') authView(); else location.hash = 'auth'; }
+export function openAdminLogin() { pendingAdminLogin = true; if (store.route === 'auth') authView(); else location.hash = 'auth'; }
 
 export function nav() {
   const node = document.querySelector('#main-nav');
@@ -224,7 +225,8 @@ export function home() {
     <div class="trust-card"><div class="trust-icon">${ICON.star}</div><h3>ביקורות אמיתיות</h3><p>רק לאחר השכרה שהושלמה בפועל.</p></div>
     <div class="trust-card"><div class="trust-icon">${ICON.chat}</div><h3>שירות לקוחות</h3><p>מענה מהיר ואישי לכל שאלה, ישירות בצ׳אט.</p></div>
   </div></section>
-  <section class="info-section reveal" id="contact"><div class="foot-cta"><p class="kicker">צור קשר</p><h2>צריכים עזרה? אנחנו כאן</h2><p>צ׳אט ישיר עם שירות הלקוחות — מענה מהיר לכל שאלה.</p><button class="btn gold" id="contact-support">פתיחת צ׳אט עם התמיכה</button></div></section>`;
+  <section class="info-section reveal" id="contact"><div class="foot-cta"><p class="kicker">צור קשר</p><h2>צריכים עזרה? אנחנו כאן</h2><p>צ׳אט ישיר עם שירות הלקוחות — מענה מהיר לכל שאלה.</p><button class="btn gold" id="contact-support">פתיחת צ׳אט עם התמיכה</button></div></section>
+  <footer class="site-foot"><span>© Crown Drive · קראון הייטס</span><button type="button" class="admin-entry" id="admin-entry">כניסת מנהל</button></footer>`;
   bindCarButtons();
   bindDateFields();
   document.querySelector('#cta-add-car')?.addEventListener('click', () => {
@@ -236,12 +238,13 @@ export function home() {
     if (!store.user) { toast('נדרשת התחברות קצרה כדי לפתוח צ׳אט'); location.hash = 'auth'; return; }
     openChatThread(`a:${store.user.uid}`);
   });
+  document.querySelector('#admin-entry')?.addEventListener('click', () => openAdminLogin());
 }
 
 function carCard(car) {
   const rating = carRating(car.id);
   const type = car.category || 'רכב';
-  return `<article class="card car"><div class="car-photo"><img src="${esc(carImage(car))}" alt="${esc(`${car.make || ''} ${car.model || ''}`)}" loading="lazy" data-car-image>${availPill(car.status)}${car.videoUrl ? '<span class="has-video">▶ וידאו</span>' : ''}</div><div class="car-body"><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3><div class="car-specs"><span>${esc(car.year || '—')}</span><span>·</span><span>${esc(type)}</span>${car.fuel ? `<span>·</span><span>${esc(car.fuel)}</span>` : ''}${car.gear ? `<span>·</span><span>${esc(car.gear)}</span>` : ''}</div><div class="rating" aria-label="דירוג ${rating.toFixed(1)} מתוך 5">${stars(rating)} <small>${rating ? rating.toFixed(1) : 'חדש'}</small></div><div class="car-foot"><div class="price-stack"><div class="price">${money(car.dailyPrice || 0)}<small> ליום</small></div>${car.priceHourly || car.priceWeekly ? `<small class="price-alt">${car.priceHourly ? `${money(car.priceHourly)} לשעה` : ''}${car.priceHourly && car.priceWeekly ? ' · ' : ''}${car.priceWeekly ? `${money(car.priceWeekly)} לשבוע` : ''}</small>` : ''}</div>${car.ownerName ? `<span class="owner-tag">בעל הרכב: ${esc(car.ownerName)}</span>` : ''}</div><button class="btn primary block" data-car="${esc(car.id)}">${car.status === 'available' ? 'פרטים והזמנה' : 'צפייה בפרטים'}</button></div></article>`;
+  return `<article class="card car"><div class="car-photo"><img src="${esc(carImage(car))}" alt="${esc(`${car.make || ''} ${car.model || ''}`)}" loading="lazy" data-car-image>${availPill(car.status)}${car.videoUrl ? '<span class="has-video">▶ וידאו</span>' : ''}</div><div class="car-body"><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3><div class="car-specs"><span>${esc(car.year || '—')}</span><span>·</span><span>${esc(type)}</span>${car.fuel ? `<span>·</span><span>${esc(car.fuel)}</span>` : ''}${car.gear ? `<span>·</span><span>${esc(car.gear)}</span>` : ''}</div><div class="rating" aria-label="דירוג ${rating.toFixed(1)} מתוך 5">${stars(rating)} <small>${rating ? rating.toFixed(1) : 'חדש'}</small></div><div class="car-foot"><div class="price-stack"><div class="price">${car.dailyPrice ? `${money(car.dailyPrice)}<small> ליום</small>` : '<span class="price-request">מחיר לפי בקשה</span>'}</div>${car.priceHourly || car.priceWeekly ? `<small class="price-alt">${car.priceHourly ? `${money(car.priceHourly)} לשעה` : ''}${car.priceHourly && car.priceWeekly ? ' · ' : ''}${car.priceWeekly ? `${money(car.priceWeekly)} לשבוע` : ''}</small>` : ''}</div>${car.ownerName ? `<span class="owner-tag">בעל הרכב: ${esc(car.ownerName)}</span>` : ''}</div><button class="btn primary block" data-car="${esc(car.id)}">${car.status === 'available' ? 'פרטים והזמנה' : 'צפייה בפרטים'}</button></div></article>`;
 }
 function carGrid(cars) {
   return `<div class="grid">${cars.length ? cars.map(carCard).join('') : '<div class="card empty">אין כרגע רכבים זמינים</div>'}</div>`;
@@ -311,7 +314,7 @@ function openCar(id) {
       ${car.gear ? `<div class="summary"><span>תיבת הילוכים</span><b>${esc(car.gear)}</b></div>` : ''}
       ${car.seats ? `<div class="summary"><span>מושבים</span><b>${esc(car.seats)}</b></div>` : ''}
       <div class="summary"><span>גיל מינימלי</span><b>${esc(car.minAge || 21)}</b></div>
-      ${car.priceHourly ? `<div class="summary"><span>מחיר לשעה</span><b>${money(car.priceHourly)}</b></div>` : ''}<div class="summary"><span>מחיר יומי</span><b>${money(car.dailyPrice)}</b></div>${car.priceWeekly ? `<div class="summary"><span>מחיר לשבוע</span><b>${money(car.priceWeekly)}</b></div>` : ''}
+      ${car.priceHourly ? `<div class="summary"><span>מחיר לשעה</span><b>${money(car.priceHourly)}</b></div>` : ''}<div class="summary"><span>מחיר יומי</span><b>${car.dailyPrice ? money(car.dailyPrice) : 'לפי בקשה'}</b></div>${car.priceWeekly ? `<div class="summary"><span>מחיר לשבוע</span><b>${money(car.priceWeekly)}</b></div>` : ''}
       ${car.deliveryEnabled ? `<div class="summary"><span>מסירה</span><b>${car.deliveryCost ? money(car.deliveryCost) : 'זמינה'}</b></div>` : ''}
       <div class="summary"><span>דירוג</span><b>${stars(carRating(car.id))} ${carRating(car.id) ? carRating(car.id).toFixed(1) : 'חדש'}</b></div>
     </div>
@@ -410,12 +413,42 @@ export function authView() {
     };
   }
 
-  if (pendingAuthRole) { const role = pendingAuthRole, mode = pendingAuthTab; pendingAuthRole = pendingAuthTab = null; (mode === 'register' ? registerScreen : loginScreen)(role); }
+  // Admin sign-in — reached from the small "כניסת מנהל" link at the bottom of the home page.
+  // Just email + password; admin rights come from the account's UID being under /admins.
+  function adminLoginScreen() {
+    content().innerHTML = `<button class="link-back" id="auth-back">→ חזרה</button>
+      <div class="auth-head"><span class="role-pill">מנהל האתר</span><h2>כניסת מנהל · Sign in</h2><p>הזינו מייל וסיסמה של חשבון המנהל</p></div>
+      <form id="login-form"><div class="field"><label>מייל</label><input name="email" type="email" autocomplete="email" required></div><div class="field"><label>סיסמה</label><input name="password" type="password" autocomplete="current-password" required></div><button class="btn primary block">כניסת מנהל</button><button type="button" class="forgot-pw" id="forgot-pw">שכחתי סיסמה</button></form>`;
+    content().querySelector('#auth-back').onclick = roleChoice;
+    content().querySelector('#login-form').onsubmit = async event => {
+      event.preventDefault();
+      const data = formData(event.target);
+      try { await login(data.email, data.password); location.hash = 'dashboard'; }
+      catch (error) { toast(error.message); }
+    };
+    content().querySelector('#forgot-pw').onclick = async () => {
+      const email = content().querySelector('#login-form')?.email?.value?.trim() || prompt('כתובת המייל של החשבון:');
+      if (!email) return;
+      try { await sendPasswordReset(email); toast('נשלח אליכם מייל עם קישור לאיפוס הסיסמה'); }
+      catch (error) { toast(error.message); }
+    };
+  }
+
+  if (pendingAdminLogin) { pendingAdminLogin = false; adminLoginScreen(); }
+  else if (pendingAuthRole) { const role = pendingAuthRole, mode = pendingAuthTab; pendingAuthRole = pendingAuthTab = null; (mode === 'register' ? registerScreen : loginScreen)(role); }
   else roleChoice();
 }
 
 function dashboardLayout(title, tabs, active, content, actions = '') {
-  return `<div class="dashboard-shell"><header class="dashboard-head"><div><p class="eyebrow">CrownDrive</p><h1>${esc(title)}</h1></div><div class="dash-head-side">${actions}<button type="button" class="avatar-btn" data-goto-profile title="לפרופיל שלי">${avatarHtml(store.profile, 72)}</button><button type="button" class="dash-close" data-route="home" aria-label="סגירת האזור האישי">✕</button></div></header><nav class="dashboard-tabs" aria-label="תפריט אזור אישי">${tabs.map(([key, label]) => `<button class="tab ${key === active ? 'active' : ''}" data-dashboard-tab="${key}"><i class="tab-ic">${(TAB_ICONS[key] || (() => ''))()}</i><span>${label}</span></button>`).join('')}</nav><section class="card panel dashboard-panel">${content}</section></div>`;
+  const firstName = String(store.profile?.name || '').trim().split(/\s+/)[0];
+  const eyebrow = firstName ? `שלום, ${esc(firstName)}` : 'האזור האישי';
+  return `<div class="dashboard-shell"><header class="dashboard-head">
+      <div class="dash-head-top">
+        <div class="dash-head-titles"><p class="eyebrow">${eyebrow}</p><h1>${esc(title)}</h1></div>
+        <div class="dash-head-controls"><button type="button" class="avatar-btn" data-goto-profile title="לפרופיל שלי">${avatarHtml(store.profile, 60)}</button><button type="button" class="dash-close" data-route="home" aria-label="סגירת האזור האישי">✕</button></div>
+      </div>
+      ${actions ? `<div class="dash-head-actions">${actions}</div>` : ''}
+    </header><nav class="dashboard-tabs" aria-label="תפריט אזור אישי">${tabs.map(([key, label]) => `<button class="tab ${key === active ? 'active' : ''}" data-dashboard-tab="${key}"><i class="tab-ic">${(TAB_ICONS[key] || (() => ''))()}</i><span>${label}</span></button>`).join('')}</nav><section class="card panel dashboard-panel">${content}</section></div>`;
 }
 function bindDashboardTabs(renderer) {
   document.querySelectorAll('[data-dashboard-tab]').forEach(button => button.onclick = () => {
@@ -435,6 +468,7 @@ export function dashboard() {
   if (role === 'admin') adminDashboard();
   else if (role === 'owner') ownerDashboard();
   else if (role === 'renter') renterDashboard();
+  else if (!store.isAdmin && !store.profileLoaded) app().innerHTML = '<div class="app-loader"><div class="spinner"></div><p>טוען את האזור האישי…</p></div>';
   else completeProfile();
 }
 
@@ -493,11 +527,9 @@ function ownerDashboard(tab = 'overview') {
     profile: ownerProfileView(),
   };
   app().innerHTML = dashboardLayout('לוח בעל רכב', [['overview','סקירה'],['bookings','הזמנות'],['cars','רכבים'],['chats','צ׳אטים'],['profile','פרופיל']], tab, contents[tab] || contents.overview, '<button class="btn gold" id="add-car-head">+ הוספת רכב</button>');
-  app().insertAdjacentHTML('beforeend', '<button class="fab" id="add-car-fab" title="הוספת רכב" aria-label="הוספת רכב">+</button>');
   bindDashboardTabs(ownerDashboard); bindActions(); bindCarButtons(); bindProfileActions();
   document.querySelector('#add-car')?.addEventListener('click', () => carForm());
   document.querySelector('#add-car-head')?.addEventListener('click', () => carForm());
-  document.querySelector('#add-car-fab')?.addEventListener('click', () => carForm());
 }
 
 function adminDashboard(tab = 'overview') {
@@ -1191,8 +1223,8 @@ function carForm(car = null) {
       <div class="field"><label>סוג דלק</label><select name="fuel">${selectOptions(['בנזין','דיזל','היברידי','PHEV','חשמלי'], car?.fuel)}</select></div>
       <div class="field"><label>תיבת הילוכים</label><select name="gear">${selectOptions(['אוטומט','ידני'], car?.gear)}</select></div>
       <div class="field"><label>מספר מושבים</label><input name="seats" type="number" min="1" max="20" value="${esc(car?.seats || 5)}"></div>
-      <div class="field"><label>מחיר לשעה</label><input name="priceHourly" type="number" min="0" value="${esc(car?.priceHourly || '')}" required></div>
-      <div class="field"><label>מחיר יומי</label><input name="dailyPrice" type="number" min="0" value="${esc(car?.dailyPrice || '')}" required></div>
+      <div class="field"><label>מחיר לשעה <span class="mut">(רשות)</span></label><input name="priceHourly" type="number" min="0" value="${esc(car?.priceHourly || '')}"></div>
+      <div class="field"><label>מחיר יומי <span class="mut">(רשות)</span></label><input name="dailyPrice" type="number" min="0" value="${esc(car?.dailyPrice || '')}"></div>
       <div class="field"><label>מחיר לשבוע <span class="mut">(רשות)</span></label><input name="priceWeekly" type="number" min="0" value="${esc(car?.priceWeekly || '')}"></div>
       <div class="field"><label>גיל מינימלי</label><input name="minAge" type="number" min="18" max="99" value="${esc(car?.minAge || 21)}"></div>
     </div>

@@ -18,25 +18,37 @@ async function putFile(file, kind, entityId = '') {
   // that cannot be configured from the Firebase console. Storage Rules authorize the
   // write to the user's own folder (cars/<uid>, avatars/<uid>, users/<uid>, bookings/.../<uid>).
   try {
-    await storage.ref(path).put(file, {contentType: file.type});
+    const snapshot = await storage.ref(path).put(file, {contentType: file.type});
+    return {path, snapshot};
   } catch (error) {
     if (error?.code === 'storage/unauthorized') throw new Error('אין הרשאה להעלאה — יש לפרסם את חוקי ה-Storage המעודכנים');
     if (error?.code === 'storage/retry-limit-exceeded') throw new Error('החיבור איטי מדי — נסו שוב עם רשת יציבה');
+    if (error?.code === 'storage/canceled') throw new Error('ההעלאה בוטלה');
     throw new Error('העלאת הקובץ נכשלה — נסו שוב');
   }
-  return path;
 }
 
 // Private media (payment proof, handover video/photo): the server issues a short-lived,
 // access-controlled signed READ url when someone authorized wants to view it.
-export async function uploadPrivate(file, kind, entityId = '') { return putFile(file, kind, entityId); }
+export async function uploadPrivate(file, kind, entityId = '') { return (await putFile(file, kind, entityId)).path; }
 
-// Public media (car photos/videos, profile avatars): read the display url straight from the
-// Storage SDK. It always points at the exact bucket/object we just uploaded to, so it cannot
-// break on a client/server bucket-name mismatch the way the server makePublic() url could.
+// Public media (car photos/videos, profile avatars): build the display url from the token
+// that the upload response itself carries — with NO second network request. getDownloadURL()
+// makes an extra XHR that some in-app browsers (Telegram/Instagram webviews) corrupt, which
+// used to throw a raw JSON "Unexpected … position 6" error. getDownloadURL() is only a fallback.
 export async function uploadPublicMedia(file, kind, entityId = '') {
-  const path = await putFile(file, kind, entityId);
-  return storage.ref(path).getDownloadURL();
+  const {path, snapshot} = await putFile(file, kind, entityId);
+  try {
+    const meta = snapshot?.metadata || {};
+    const token = String(meta.downloadTokens || '').split(',')[0];
+    const bucket = meta.bucket || window.CROWNDRIVE_FIREBASE_CONFIG?.storageBucket;
+    if (token && bucket) {
+      return `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(path)}?alt=media&token=${token}`;
+    }
+    return await storage.ref(path).getDownloadURL();
+  } catch (error) {
+    throw new Error('התמונה הועלתה אך לא הצלחנו לקבל קישור להצגה — נסו שוב');
+  }
 }
 
 export async function signedRead(path) {

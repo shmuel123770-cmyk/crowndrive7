@@ -1,5 +1,35 @@
-CrownDrive — FINAL build (2026-07-12, rev.5)
+CrownDrive — FINAL build (2026-07-12, rev.8)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.8 (2026-07-12):
+- Added a small discreet "כניסת מנהל" link in a new footer at the very bottom of the home page →
+  a dedicated admin sign-in screen (email+password only, no renter/owner step). openAdminLogin().
+- Maintenance mode now shows two interlocking rotating gears (steel-blue + gold) instead of a
+  static emoji; its "כניסת מנהל" button opens the same admin sign-in. Assets ?v=12.
+
+rev.7 (2026-07-12):
+- FIX upload + the "Unexpected … JSON at position 6" toast: getDownloadURL() made a second
+  network request that in-app browsers (Telegram/Instagram webviews) corrupt, throwing a raw
+  JSON error that was toasted and blocked the photo. Now the display url is built from the
+  token in the upload response itself — no second request — with getDownloadURL only as fallback.
+- Manufacturer images: now pulled from the Wikipedia article's lead image (a clean, current-
+  generation photo) instead of random Commons uploads (no more "dirty Moscow Jeep"); Commons is
+  a filtered fallback that rejects wash/dirty/snow/damaged/old-year shots and prefers recent years.
+- Daily & hourly price are now optional; a car with no daily price shows "מחיר לפי בקשה".
+- All user-facing errors are Hebrew only: the global handler now swallows any non-Hebrew /
+  technical message (shows nothing) and never leaks SDK/JSON English text.
+- Fixed admin verificationStatus subscription (added a top-level admin read rule) — was
+  permission-denied, flooding the console and breaking the admin verification display. Assets ?v=11.
+
+rev.6 (2026-07-12):
+- FIX "stuck on complete-profile": accounts with a name but no role could never enter their
+  area (the client rule blocks writing a role to an existing profile). Now the role is set
+  via the server, and dashboard() shows a spinner (not the setup screen) while the profile
+  is still loading (store.profileLoaded).
+- Personal area made more professional: redesigned dashboard header (personal greeting +
+  title on one row, avatar + close on the other, actions in their own row), removed the
+  floating back button that overlapped the header, removed the redundant add-car FAB, and
+  hid the redundant top-bar actions while inside the personal area. Assets bumped to ?v=10.
 
 rev.5 (2026-07-12):
 - Admin area now has a "צ׳אטים" tab (opens the full messaging page) and a profile view with

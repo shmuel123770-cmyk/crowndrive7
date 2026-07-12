@@ -3,6 +3,7 @@ import {refs} from './firebase.js';
 export const store = {
   user: null,
   profile: null,
+  profileLoaded: false,
   isAdmin: false,
   authSettled: false,
   cars: {},
@@ -60,6 +61,7 @@ export async function startPrivate(user) {
   store.privateUnsubs.push(listen(refs.users.child(user.uid), v => {
     const oldStatus = store.profile?.verification?.status || 'missing';
     store.profile = {...(v || {}), verification: {...(v?.verification || {}), status: oldStatus}};
+    store.profileLoaded = true;  // the real profile row (or its absence) has now arrived
     if (!store.isAdmin) subscribeOwnFeeds(store.profile.role);
   }, 'profile'));
   store.privateUnsubs.push(listen(refs.verificationStatus.child(user.uid), status => {
@@ -88,6 +90,7 @@ export function stopPrivate() {
   store.privateUnsubs.splice(0).forEach(unsub => unsub());
   store.user = null;
   store.profile = null;
+  store.profileLoaded = false;
   store.isAdmin = false;
   store.bookings = {};
   store.payments = {};

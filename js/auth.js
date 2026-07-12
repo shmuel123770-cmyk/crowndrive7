@@ -15,7 +15,11 @@ export async function createOwnProfile({name, phone, role}) {
   const ref = db.ref(`users/${user.uid}`);
   const snap = await ref.once('value');
   if (snap.exists()) {
-    if (!snap.val().role && role) { try { await ref.child('role').set(chosenRole); } catch (error) { console.warn('role set skipped', error.message); } }
+    // Legacy/partial profile (has a name but no role). Client rules forbid writing to an
+    // existing profile row (the create rule requires !data.exists), so set the role through
+    // the server — its Admin SDK can add a role to a role-less profile. This is what unblocks
+    // "עוד צעד אחד וסיימנו" for old accounts that were created without a role.
+    if (!snap.val().role && role) await api('profile-save', {action: 'update', role: chosenRole});
     return;
   }
   try {

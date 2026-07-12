@@ -237,6 +237,12 @@ r = await call(fn['profile-save'], 'a1', {action: 'update', name: 'מנהל הא
 check('מנהל בלי פרופיל מעדכן תמונה (נוצר פרופיל)', S(r) === 200 && get('users/a1/photoURL') === 'https://cdn/admin.jpg');
 r = await call(fn['profile-save'], 'zz', {action: 'update', photoURL: 'https://cdn/x.jpg'});
 check('משתמש רגיל בלי פרופיל עדיין נדחה (404)', S(r) === 404);
+// Partial/legacy profile: has a name but no role — "complete profile" must be able to set it.
+set('users/partial1', {name: 'ללא תפקיד', email: 'partial1@x.com'});
+r = await call(fn['profile-save'], 'partial1', {action: 'update', role: 'owner'});
+check('פרופיל חלקי בלי תפקיד — השרת קובע תפקיד', S(r) === 200 && get('users/partial1/role') === 'owner');
+r = await call(fn['profile-save'], 'partial1', {action: 'update', role: 'renter'});
+check('אחרי שנקבע תפקיד — לא ניתן לשנות ללא מנהל (403)', S(r) === 403 && get('users/partial1/role') === 'owner');
 
 console.log(`\n========== ${passed} עברו · ${failed} נכשלו ==========`);
 process.exit(failed ? 1 : 0);
