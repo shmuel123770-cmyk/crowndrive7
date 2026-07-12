@@ -1,5 +1,13 @@
-CrownDrive — FINAL build (2026-07-12, rev.8)
+CrownDrive — FINAL build (2026-07-12, rev.9)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.9 (2026-07-12) — DEFINITIVE upload fix:
+- Confirmed via the live site that direct client→Firebase-Storage uploads simply do not work in
+  in-app browsers (Telegram/IG webviews block the cross-origin request). New approach: images are
+  resized client-side (<=1600px JPEG) and POSTed as base64 to a NEW same-origin function
+  (media-upload.mjs) that writes them with the Admin SDK and returns a permanent token URL.
+  This works in every browser and needs NO Storage rules (Admin SDK bypasses them). Videos keep
+  the SDK path (too large for a base64 body). Assets ?v=13; 19 server functions; 76 scenarios pass.
 
 rev.8 (2026-07-12):
 - Added a small discreet "כניסת מנהל" link in a new footer at the very bottom of the home page →

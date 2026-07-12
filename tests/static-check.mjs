@@ -28,6 +28,6 @@ if (rules.rules['.write'] !== false) throw new Error('database root writes are n
 const storageRules = read('FIREBASE_STORAGE_RULES_V2.txt');
 if (/allow\s+(read\s*,\s*)?write\s*:\s*if\s+true/.test(storageRules)) throw new Error('storage allows unrestricted write');
 if (!/request\.auth\.uid\s*==\s*uid/.test(storageRules)) throw new Error('storage writes are not scoped to the file owner');
-const requiredFunctions = ['profile-save.mjs','document-register.mjs','verification-review.mjs','car-action.mjs','booking-create.mjs','booking-action.mjs','payment-submit.mjs','message-send.mjs','rating-submit.mjs','private-car-details.mjs','media-sign-upload.mjs','media-sign-read.mjs','user-private-profile.mjs','migrate-legacy.mjs','car-media-public.mjs','admin-action.mjs'];
+const requiredFunctions = ['profile-save.mjs','document-register.mjs','verification-review.mjs','car-action.mjs','booking-create.mjs','booking-action.mjs','payment-submit.mjs','message-send.mjs','rating-submit.mjs','private-car-details.mjs','media-sign-upload.mjs','media-upload.mjs','media-sign-read.mjs','user-private-profile.mjs','migrate-legacy.mjs','car-media-public.mjs','admin-action.mjs'];
 for (const file of requiredFunctions) if (!functionFiles.includes(file)) throw new Error(`missing function ${file}`);
 console.log(`Static/security check passed: ${jsFiles.length} client modules, ${functionFiles.length} server functions, ${ids.length} static ids`);

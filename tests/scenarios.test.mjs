@@ -40,7 +40,7 @@ const fakeApp = {
     deleteUser: async () => {},
     getUserByEmail: async email => { const uid = usersByEmail[email]; if (!uid) throw new Error('not found'); return {uid}; },
   }),
-  storage: () => ({bucket: () => ({name: 'test-bucket', file: p => ({getSignedUrl: async () => [`https://signed/${p}`], exists: async () => [true], makePublic: async () => {}})})}),
+  storage: () => ({bucket: () => ({name: 'test-bucket', file: p => ({getSignedUrl: async () => [`https://signed/${p}`], exists: async () => [true], makePublic: async () => {}, save: async () => {}})})}),
 };
 admin.initializeApp = () => fakeApp;
 admin.credential = {cert: () => ({})};
@@ -53,7 +53,7 @@ const S = r => r.statusCode;
 const B = r => JSON.parse(r.body);
 
 const fn = {};
-for (const f of ['profile-save', 'car-action', 'booking-create', 'booking-action', 'message-send', 'payment-submit', 'rating-submit', 'document-register', 'verification-review', 'private-car-details', 'user-private-profile', 'media-sign-upload', 'media-sign-read', 'car-media-public', 'admin-action', 'migrate-legacy', 'car-image-search'])
+for (const f of ['profile-save', 'car-action', 'booking-create', 'booking-action', 'message-send', 'payment-submit', 'rating-submit', 'document-register', 'verification-review', 'private-car-details', 'user-private-profile', 'media-sign-upload', 'media-upload', 'media-sign-read', 'car-media-public', 'admin-action', 'migrate-legacy', 'car-image-search'])
   fn[f] = (await import(`../netlify/functions/${f}.mjs`)).handler;
 
 // ---------- seed ----------
@@ -155,6 +155,16 @@ r = await call(fn['media-sign-upload'], 'r1', {name: 'big.jpg', type: 'image/jpe
 check('קובץ גדול מדי נדחה (400)', S(r) === 400);
 r = await call(fn['media-sign-upload'], 'r1', {name: 'a.jpg', type: 'image/jpeg', size: 1000, kind: 'avatar'});
 check('חתימת תמונת פרופיל', S(r) === 200 && B(r).path.startsWith('avatars/r1/'));
+// Direct server image upload (base64 → Admin SDK write). 1x1 png:
+const png1x1 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQAY3Y2wAAAAAElFTkSuQmCC';
+r = await call(fn['media-upload'], 'o1', {name: 'car.jpg', type: 'image/jpeg', kind: 'car-image', data: png1x1});
+check('העלאת תמונת רכב בשרת (מחזיר url+path)', S(r) === 200 && B(r).path.startsWith('cars/o1/') && /firebasestorage.*token=/.test(B(r).url));
+r = await call(fn['media-upload'], 'r1', {name: 'car.jpg', type: 'image/jpeg', kind: 'car-image', data: png1x1});
+check('שוכר לא יכול להעלות תמונת רכב (403)', S(r) === 403);
+r = await call(fn['media-upload'], 'r1', {name: 'x.exe', type: 'application/x-msdownload', kind: 'avatar', data: png1x1});
+check('סוג לא-תמונה בהעלאת שרת נדחה (400)', S(r) === 400);
+r = await call(fn['media-upload'], 'r1', {name: 'a.jpg', type: 'image/jpeg', kind: 'avatar', data: ''});
+check('העלאת שרת בלי נתונים נדחית (400)', S(r) === 400);
 r = await call(fn['media-sign-read'], 'r1', {path: `bookings/${bId}/media/r1/v.mp4`});
 check('קריאת מדיה של הזמנה מורשית', S(r) === 200);
 r = await call(fn['media-sign-read'], 'x9', {path: '../../etc/passwd'});
