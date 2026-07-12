@@ -1,8 +1,43 @@
+כללי Firebase Storage — גרסה מהודקת (2026-07-12)
+====================================================
+
+מה השתנה לעומת הגרסה הקודמת:
+- קודם: כל משתמש מחובר יכול היה לקרוא את *כל* הקבצים תחת crowndrive/** —
+  כולל רישיונות, סלפי, מסמכי אימות והוכחות תשלום של משתמשים אחרים.
+- עכשיו: תיקיות רגישות (licenses, selfies, verification, payment-proofs)
+  ניתנות לקריאה ישירה רק לבעל הקבצים עצמו (לפי uid).
+  תיקיות תפעוליות (cars, chat, handover, uploads) נשארות קריאות לכל משתמש
+  מחובר, כי תמונות רכב וצ'אט מוצגות לכל המשתמשים.
+
+למה שום פיצ'ר קיים לא נשבר:
+- האתר מציג תמונות דרך קישורי getDownloadURL עם token שנשמרים בהזמנה/בפרופיל.
+  קישורים כאלה עובדים בלי קשר ל-Rules, ולכן בעל רכב/מנהל שצופה ברישיון דרך
+  הקישור השמור בהזמנה — ימשיך לראות אותו.
+- ההידוק חוסם ניחוש/סריקה של נתיבים ישירות מול ה-API של Storage.
+
+⚠️ מגבלה שנשארה (חשוב להבין):
+קישורי ה-token עצמם שמורים ב-Realtime Database בצומת המשותף, וכל משתמש
+מחובר שקורא את ה-state רואה גם אותם. הסגירה המלאה דורשת פיצול ה-DB לפי
+משתמש (השינוי הארכיטקטוני המתוכנן) — Rules של Storage לבדם לא מספיקים.
+
+יש להדביק ב: Firebase Console → Storage → Rules → Publish
+
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    match /crowndrive/{uid}/{allPaths=**} {
-      allow read: if request.auth != null;
+    match /crowndrive/{uid}/{folder}/{allPaths=**} {
+      // קריאה: בעל הקבצים תמיד; אחרים — רק בתיקיות לא-רגישות
+      allow read: if request.auth != null
+                  && (
+                    request.auth.uid == uid
+                    || (
+                      folder != 'licenses'
+                      && folder != 'selfies'
+                      && folder != 'verification'
+                      && folder != 'payment-proofs'
+                    )
+                  );
+      // כתיבה: רק בעל התיקייה, תמונה עד 12MB או וידאו עד 180MB
       allow write: if request.auth != null
                    && request.auth.uid == uid
                    && (
@@ -12,3 +47,8 @@ service firebase.storage {
     }
   }
 }
+
+הערה טכנית: הכול מנוסח כחוק אחד עם תנאי-תיקייה במקום שני חוקים חופפים,
+כי ב-Firebase Storage חוקים חופפים פועלים כ-OR — חוק כללי רחב היה מבטל
+כל הידוק בחוק ספציפי. אם מוסיפים בעתיד תיקייה רגישה חדשה — להוסיף אותה
+לרשימת התנאים למעלה.
