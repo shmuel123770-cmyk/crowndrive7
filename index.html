@@ -1846,7 +1846,7 @@ input,select,textarea{font-size:16px!important}
       <div class="home-shortcuts" aria-label="קיצורי חיפוש">
         <button onclick="homeShortcut('available')">זמינים עכשיו</button>
         <button onclick="homeShortcut('delivery')">מסירה זמינה</button>
-        <button onclick="homeShortcut('young')">מתאים לנהגים צעירים</button>
+        
         <button onclick="homeShortcut('saved')">המשך חיפוש אחרון</button>
       </div>
       <div class="home-mini-status">
@@ -7167,7 +7167,6 @@ setInterval(()=>{let changed=false;[...(state.renters||[]),...Object.values(stat
     if(type==='saved'){const d=loadHomePrefs();searchQ={...(searchQ||{}),location:d.location||'',priceBand:d.priceBand||''};filter='all'}
     if(type==='available'){searchQ={availableOnly:true};filter='available'}
     if(type==='delivery'){searchQ={deliveryOnly:true,availableOnly:true};filter='available'}
-    if(type==='young'){searchQ={youngOnly:true,availableOnly:true};filter='available'}
     render();openFullSearch();
   };
   function roleBooking(){
@@ -7508,5 +7507,52 @@ const or=window.openRenterArea;window.openRenterArea=function(){const r=or&&or.a
   #ov-admin .cd-ref-overview-grid{grid-template-columns:1fr!important}
 }
 </style>
+
+<style id="crowndrive-final-hour-merge-v1">
+/* Final merged UI overrides — keep dashboard tabs readable and consistent. */
+#ov-admin .dash-tabs{
+  display:flex!important;
+  gap:34px!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  background:transparent!important;
+  border:0!important;
+  border-bottom:1px solid #ddd9d1!important;
+  border-radius:0!important;
+  padding:0!important;
+  margin:0 38px!important;
+  box-shadow:none!important;
+}
+#ov-admin .dash-tabs button{
+  flex:0 0 auto!important;
+  width:auto!important;
+  min-width:0!important;
+  padding:17px 4px 14px!important;
+  color:#6f6b64!important;
+  background:transparent!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  position:relative!important;
+}
+#ov-admin .dash-tabs button.on{
+  color:#171717!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+#ov-admin .dash-tabs button.on::after{
+  content:"";
+  position:absolute;
+  right:0;left:0;bottom:-1px;
+  height:2px;
+  background:#171717;
+}
+@media(max-width:900px){
+  #ov-admin .dash-tabs{margin:0 12px!important;gap:16px!important;overflow-x:auto!important}
+  #ov-admin .dash-tabs button{white-space:nowrap!important;font-size:.79rem!important;padding:14px 2px 11px!important}
+}
+</style>
+
 </body>
 </html>
