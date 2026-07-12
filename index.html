@@ -2029,7 +2029,7 @@ input,select,textarea{font-size:16px!important}
           </div>
           <div class="f-row">
             <div class="field" id="sf-mail"><label>אימייל <span class="req">*</span></label><input id="s-mail" type="email" dir="ltr" style="text-align:right" placeholder="name@email.com"><div class="err-msg">אימייל לא תקין או כבר רשום</div></div>
-            <div class="field" id="sf-pass"><label>סיסמה <span class="req">*</span></label><div class="pass-wrap"><input id="s-pass" type="password"><button class="pass-toggle" type="button" onclick="togglePassword('s-pass',this)">הצג סיסמה</button></div><div class="err-msg">לפחות 6 תווים</div></div>
+            <div class="field" id="sf-pass"><label>סיסמה <span class="req">*</span></label><div class="pass-wrap"><input id="s-pass" type="password" minlength="6" autocomplete="new-password" aria-describedby="signup-password-help"><button class="pass-toggle" type="button" onclick="togglePassword('s-pass',this)">הצג סיסמה</button></div><div id="signup-password-help" style="margin-top:7px;font-size:.78rem;line-height:1.45;color:#5f6875">חובה: לפחות 6 תווים, אות גדולה ואות קטנה באנגלית. לדוגמה: Crown2026</div><div class="err-msg">הסיסמה חייבת לכלול לפחות 6 תווים, אות גדולה ואות קטנה באנגלית</div></div>
           </div>
 
           <!-- renter extras -->
@@ -2759,7 +2759,7 @@ function friendlyAuthMessage(e){
   if(code==='auth/wrong-password' || code==='auth/wrong-password-friendly') return 'הסיסמה לא תואמת למייל הזה.';
   if(code==='auth/email-already-in-use') return 'המייל הזה כבר רשום. לחץ כניסה או אפס סיסמה.';
   if(code==='auth/too-many-requests') return 'יותר מדי ניסיונות. חכה כמה דקות או נסה ממכשיר/רשת אחרת.';
-  if(code==='auth/weak-password') return 'הסיסמה קצרה מדי. צריך לפחות 6 תווים.';
+  if(code==='auth/weak-password' || code==='auth/password-does-not-meet-requirements') return 'הסיסמה חייבת לכלול לפחות 6 תווים, אות גדולה ואות קטנה באנגלית.';
   if(code==='auth/invalid-email') return 'כתובת המייל לא תקינה.';
   return raw.replace('Firebase: ','');
 }
@@ -3820,7 +3820,7 @@ async function doSignup(){
   mk('sf-name',name.length<2);
   mk('sf-phone',phone.length<9);
   mk('sf-mail',!/^\S+@\S+\.\S+$/.test(em) || pool.some(x=>x.email===em));
-  mk('sf-pass',ps.length<6);
+  mk('sf-pass',ps.length<6 || !/[a-z]/.test(ps) || !/[A-Z]/.test(ps));
 
   let extra={};
   if(authRole==='renter'){
@@ -6134,7 +6134,7 @@ setInterval(()=>{
   function authMsg(e){
     const code=(e&&e.code)||'';
     if(code==='auth/invalid-email') return 'כתובת המייל לא תקינה.';
-    if(code==='auth/weak-password') return 'הסיסמה חייבת להיות לפחות 6 תווים.';
+    if(code==='auth/weak-password' || code==='auth/password-does-not-meet-requirements') return 'הסיסמה חייבת לכלול לפחות 6 תווים, אות גדולה ואות קטנה באנגלית.';
     if(code==='auth/email-exists-wrong-password') return 'המייל כבר רשום. עבור לכניסה או השתמש בסיסמה הנכונה.';
     if(code==='auth/email-already-in-use') return 'המייל כבר רשום. עבור לכניסה.';
     if(code==='auth/too-many-requests') return 'יותר מדי ניסיונות. חכה כמה דקות ונסה שוב.';
@@ -6156,7 +6156,7 @@ setInterval(()=>{
     if(name.length<2){markSafe('sf-name',true);bad=true}else markSafe('sf-name',false);
     if(phone.length<9){markSafe('sf-phone',true);bad=true}else markSafe('sf-phone',false);
     if(!validEmail(em)){markSafe('sf-mail',true);writeSignupError('sf-mail','כתובת מייל לא תקינה');bad=true}else markSafe('sf-mail',false);
-    if(ps.length<6){markSafe('sf-pass',true);bad=true}else markSafe('sf-pass',false);
+    if(ps.length<6 || !/[a-z]/.test(ps) || !/[A-Z]/.test(ps)){markSafe('sf-pass',true);writeSignupError('sf-pass','הסיסמה חייבת לכלול לפחות 6 תווים, אות גדולה ואות קטנה באנגלית');bad=true}else markSafe('sf-pass',false);
 
     let extra={};
     if(role==='renter'){
