@@ -19,14 +19,27 @@ function loadImage(file) {
 // upload endpoint, no permissions, no CORS, no in-app-browser blocking. It just works everywhere.
 // Kept modest (<=1024px, q0.72) because the data URL lives inside the DB record.
 async function toImageDataUrl(file) {
-  let img;
-  try { img = await loadImage(file); }
-  catch { throw new Error('לא ניתן לעבד את התמונה — נסו תמונה רגילה (JPG/PNG)'); }
-  const max = 1024, scale = Math.min(1, max / Math.max(img.width, img.height));
-  const w = Math.max(1, Math.round(img.width * scale)), h = Math.max(1, Math.round(img.height * scale));
+  let source, sw, sh;
+  // Prefer createImageBitmap — it uses the OS image decoder, so it handles iPhone HEIC/HEIF
+  // photos that an <img> element often refuses to decode inside in-app browsers. Fall back to
+  // an <img> element for older browsers.
+  try {
+    source = await createImageBitmap(file);
+    sw = source.width; sh = source.height;
+  } catch {
+    try {
+      source = await loadImage(file);
+      sw = source.naturalWidth || source.width; sh = source.naturalHeight || source.height;
+    } catch {
+      throw new Error('לא ניתן לעבד את התמונה הזו — נסו לצלם מחדש או לבחור תמונה אחרת');
+    }
+  }
+  const max = 1024, scale = Math.min(1, max / Math.max(sw || 1, sh || 1));
+  const w = Math.max(1, Math.round((sw || max) * scale)), h = Math.max(1, Math.round((sh || max) * scale));
   const canvas = document.createElement('canvas');
   canvas.width = w; canvas.height = h;
-  canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+  canvas.getContext('2d').drawImage(source, 0, 0, w, h);
+  if (source.close) source.close();  // release the decoded bitmap
   return canvas.toDataURL('image/jpeg', 0.72);
 }
 
