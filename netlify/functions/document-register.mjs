@@ -1,10 +1,12 @@
-import {getAdmin, verify, json, cleanText, audit} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, cleanText, audit, parseBody} from './_firebase-admin.mjs';
 const allowed = new Set(['licenseFront', 'licenseBack', 'selfie']);
 export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const token = await verify(event);
-    const {documentType, path} = JSON.parse(event.body || '{}');
+    const parsed = parseBody(event);
+    if (!parsed) return json(400, {error: 'הבקשה גדולה או פגומה — נסו תמונה קטנה יותר'});
+    const {documentType, path} = parsed;
     if (!allowed.has(documentType)) return json(400, {error: 'סוג מסמך לא תקין'});
     // The document image is now stored inline as a data URL; also accept a legacy storage path.
     const value = String(path || '');

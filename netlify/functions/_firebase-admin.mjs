@@ -32,6 +32,15 @@ export const json = (statusCode, body) => ({
   },
   body: JSON.stringify(body),
 });
+// Parse the request JSON body robustly. Netlify may deliver a large body base64-encoded
+// (event.isBase64Encoded); decode it first so JSON.parse doesn't choke. Returns null on a
+// genuinely malformed/truncated body so the caller can answer with a clean Hebrew message
+// instead of leaking a raw "Unexpected … JSON at position N" error to the user.
+export function parseBody(event) {
+  let raw = event?.body || '';
+  if (event?.isBase64Encoded && raw) { try { raw = Buffer.from(raw, 'base64').toString('utf8'); } catch {} }
+  try { return JSON.parse(raw || '{}'); } catch { return null; }
+}
 export async function isAdmin(uid) {
   return (await getAdmin().database().ref(`admins/${uid}`).once('value')).val() === true;
 }

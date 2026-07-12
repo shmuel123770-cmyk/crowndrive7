@@ -1,4 +1,4 @@
-import {getAdmin, verify, json, isAdmin, profile, cleanText, audit, notifyAdmin} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, isAdmin, profile, cleanText, audit, notifyAdmin, parseBody} from './_firebase-admin.mjs';
 // A photo is either an inline data-URL image (stored straight in the record — capped at ~1MB)
 // or an https link. Anything else is dropped.
 const httpsUrl = value => {
@@ -45,7 +45,8 @@ export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const token = await verify(event);
-    const body = JSON.parse(event.body || '{}');
+    const body = parseBody(event);
+    if (!body) return json(400, {error: 'הבקשה גדולה או פגומה — נסו תמונה קטנה יותר'});
     const admin = await isAdmin(token.uid);
     const userProfile = await profile(token.uid);
     const db = getAdmin().database();

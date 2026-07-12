@@ -34,13 +34,15 @@ async function toImageDataUrl(file) {
       throw new Error('לא ניתן לעבד את התמונה הזו — נסו לצלם מחדש או לבחור תמונה אחרת');
     }
   }
-  const max = 1024, scale = Math.min(1, max / Math.max(sw || 1, sh || 1));
+  // Keep images modest (<=900px, q0.6) — they live inline in the DB record and travel inside the
+  // request body, so small = reliable delivery through the serverless function + fast public reads.
+  const max = 900, scale = Math.min(1, max / Math.max(sw || 1, sh || 1));
   const w = Math.max(1, Math.round((sw || max) * scale)), h = Math.max(1, Math.round((sh || max) * scale));
   const canvas = document.createElement('canvas');
   canvas.width = w; canvas.height = h;
   canvas.getContext('2d').drawImage(source, 0, 0, w, h);
   if (source.close) source.close();  // release the decoded bitmap
-  return canvas.toDataURL('image/jpeg', 0.72);
+  return canvas.toDataURL('image/jpeg', 0.6);
 }
 
 // Videos are far too large to inline — keep the Firebase Storage SDK path (works in a normal

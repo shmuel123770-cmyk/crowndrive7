@@ -1,9 +1,10 @@
-import {getAdmin, verify, json, profile, cleanText, audit, isAdmin} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, profile, cleanText, audit, isAdmin, parseBody} from './_firebase-admin.mjs';
 export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const token = await verify(event);
-    const body = JSON.parse(event.body || '{}');
+    const body = parseBody(event);
+    if (!body) return json(400, {error: 'הבקשה גדולה או פגומה — נסו תמונה קטנה יותר'});
     const db = getAdmin().database();
     const ref = db.ref(`users/${token.uid}`);
     let existing = await profile(token.uid);

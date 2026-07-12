@@ -1,5 +1,20 @@
-CrownDrive — FINAL build (2026-07-12, rev.14)
+CrownDrive — FINAL build (2026-07-12, rev.16)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.16 (2026-07-12) — DEFINITIVE car-publish fix: createCar/updateCar now write the car DIRECTLY
+to the database (client SDK), like registration, instead of POSTing the big data-URL photos through
+the car-action Netlify function (which was mangling the large body -> the position-6 JSON error).
+db.js buildCar() mirrors the server publicCar sanitiser; new DB rules restrict cars/privateCarDetails
+writes to the owner's own cars (+ admin). Verified in-browser: createCar writes cars/<id> +
+privateCarDetails/<id> with NO Netlify call, photo preserved. car-action kept for delete/status.
+MUST publish the updated Database rules. Assets ?v=18. 80 scenarios pass.
+
+rev.15 (2026-07-12) — car publish JSON error: car-action received a MANGLED large request body
+from Netlify (car-action parses fine locally with a 280KB data-URL body), so its JSON.parse threw
+and returned the raw SyntaxError text. Fixes: (1) shared parseBody(event) decodes base64 bodies +
+returns null->clean Hebrew error (no more raw "position 6" leak) in car-action/profile-save/
+document-register/payment-submit/message-send; (2) images shrunk to <=900px q0.6 (~50-80KB) so the
+body stays tiny. Assets ?v=17. 80 scenarios pass.
 
 rev.14 (2026-07-12) — THE upload bug: addPhoto() in the car form silently rejected any URL not
 starting with https:// — so the new inline data-URL images were dropped and nothing appeared.

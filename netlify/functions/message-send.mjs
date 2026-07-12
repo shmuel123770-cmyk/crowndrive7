@@ -1,4 +1,4 @@
-import {getAdmin, verify, json, booking, isAdmin, cleanText, audit, notifyAdmin} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, booking, isAdmin, cleanText, audit, notifyAdmin, parseBody} from './_firebase-admin.mjs';
 
 // Chat is open only while the rental is live: from owner approval (pre-pickup
 // coordination + evidence) until the rental is marked done. Admin support
@@ -11,7 +11,8 @@ export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const token = await verify(event);
-    const body = JSON.parse(event.body || '{}');
+    const body = parseBody(event);
+    if (!body) return json(400, {error: 'הבקשה גדולה או פגומה — נסו תמונה קטנה יותר'});
     const db = getAdmin().database();
     const admin = await isAdmin(token.uid);
     const text = cleanText(body.text, 2000);

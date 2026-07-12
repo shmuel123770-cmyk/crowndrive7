@@ -1,9 +1,10 @@
-import {getAdmin, verify, json, booking, cleanText, audit, notifyAdmin} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, booking, cleanText, audit, notifyAdmin, parseBody} from './_firebase-admin.mjs';
 export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const token = await verify(event);
-    const body = JSON.parse(event.body || '{}');
+    const body = parseBody(event);
+    if (!body) return json(400, {error: 'הבקשה גדולה או פגומה — נסו תמונה קטנה יותר'});
     const value = await booking(body.bookingId);
     if (!value) return json(404, {error: 'הזמנה לא נמצאה'});
     if (value.renterUid !== token.uid) return json(403, {error: 'רק השוכר יכול לשלוח הוכחת תשלום'});
