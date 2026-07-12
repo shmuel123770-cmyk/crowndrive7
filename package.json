@@ -1,1 +1,7 @@
-{"scripts":{"build":"echo CrownDrive realtime ready"},"dependencies":{}}
+{
+  "name":"crowndrive-v2",
+  "private":true,
+  "type":"module",
+  "scripts":{"build":"node tests/static-check.mjs && node --test tests/*.test.mjs","test":"node --test tests/*.test.mjs"},
+  "dependencies":{"firebase-admin":"^13.0.2"}
+}

@@ -1,0 +1,17 @@
+import {refs} from './firebase.js';
+import {auth} from './firebase.js';
+import {store,myRole} from './store.js';
+import {now,uid} from './core.js';
+export async function saveUser(patch){if(!store.user)throw Error('נדרשת התחברות');await refs.users.child(store.user.uid).update({...patch,updatedAt:now()})}
+export async function createCar(data){if(myRole()!=='owner'&&!store.isAdmin)throw Error('אין הרשאה');const id=uid(),{fullAddress,...publicData}=data;const updates={};updates[`cars/${id}`]={...publicData,ownerUid:store.user.uid,status:'available',createdAt:now()};updates[`privateCarDetails/${id}`]={ownerUid:store.user.uid,fullAddress:fullAddress||'',updatedAt:now()};await refs.cars.root.update(updates);return id}
+export async function updateCar(id,patch){const c=(await refs.cars.child(id).once('value')).val();if(!c)throw Error('רכב לא נמצא');if(!store.isAdmin&&c.ownerUid!==store.user.uid)throw Error('אין הרשאה');await refs.cars.child(id).update({...patch,updatedAt:now()})}
+export async function deleteCar(id){const c=(await refs.cars.child(id).once('value')).val();if(!store.isAdmin&&c?.ownerUid!==store.user.uid)throw Error('אין הרשאה');await refs.cars.child(id).remove()}
+export async function createBooking(car,{startAt,endAt,fulfillment='pickup',deliveryAddress=''}){if(!store.user)throw Error('נדרשת התחברות');const v=store.profile?.verification||{};if(!(v.email&&v.licenseFront&&v.licenseBack&&v.selfie&&v.status==='approved'))throw Error('יש להשלים אימות מייל, רישיון וסלפי ולקבל אישור מנהל');const id=uid();await refs.bookings.child(id).set({carId:car.id,ownerUid:car.ownerUid,renterUid:store.user.uid,startAt,endAt,fulfillment,deliveryAddress:fulfillment==='delivery'?deliveryAddress:'',status:'pending',createdAt:now()});return id}
+async function bookingAction(payload){const token=await auth.currentUser?.getIdToken();if(!token)throw Error('נדרשת התחברות');const r=await fetch('/api/booking-action',{method:'POST',headers:{'content-type':'application/json','authorization':`Bearer ${token}`},body:JSON.stringify(payload)});const body=await r.json();if(!r.ok)throw Error(body.error||'הפעולה נכשלה');return body}
+export async function setBookingStatus(id,status){return bookingAction({action:'status',bookingId:id,status})}
+export async function savePayment(id,{amount,mediaPath}){const b=(await refs.bookings.child(id).once('value')).val();if(!b||b.renterUid!==store.user.uid)throw Error('אין הרשאה');await refs.payments.child(id).set({bookingId:id,renterUid:b.renterUid,ownerUid:b.ownerUid,amount:Number(amount),mediaPath,createdAt:now()})}
+export async function saveVerification(patch){if(!store.user)throw Error('נדרשת התחברות');await refs.users.child(store.user.uid).child('verification').update({...patch,updatedAt:now()})}
+export async function approveVerification(uidValue,status){if(!store.isAdmin)throw Error('מנהל בלבד');await refs.verificationStatus.child(uidValue).set(status)}
+export async function sendMessage(bookingId,text){if(!text.trim())return;const b=(await refs.bookings.child(bookingId).once('value')).val();if(!b)throw Error('הזמנה לא נמצאה');if(!store.isAdmin&&![b.ownerUid,b.renterUid].includes(store.user.uid))throw Error('אין הרשאה');const id=uid();await refs.messages.child(bookingId).child(id).set({senderUid:store.user.uid,text:text.trim(),createdAt:now()})}
+
+export async function saveHandover(id,stage,data){return bookingAction({action:'handover',bookingId:id,stage,data})}

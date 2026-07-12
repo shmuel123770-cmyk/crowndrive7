@@ -1,16 +1,5 @@
 /*
-  Cache-Control: no-cache, no-store, must-revalidate
-  Pragma: no-cache
-  Expires: 0
-
-/index.html
-  Cache-Control: no-cache, no-store, must-revalidate
-
-/firebase-config.js
-  Cache-Control: no-cache, no-store, must-revalidate
-
-/sw.js
-  Cache-Control: no-cache, no-store, must-revalidate
-
-/manifest.json
-  Cache-Control: no-cache, no-store, must-revalidate
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(self), microphone=(), geolocation=()
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://www.gstatic.com; connect-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebasestorage.googleapis.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
