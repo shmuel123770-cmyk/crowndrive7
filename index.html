@@ -7431,5 +7431,82 @@ const or=window.openRenterArea;window.openRenterArea=function(){const r=or&&or.a
 })();
 </script>
 
+
+<style id="crowndrive-admin-layout-emergency-fix-v2">
+/* Final authoritative admin layout fix: full desktop workspace, correct RTL order */
+#ov-admin{
+  direction:rtl!important;
+  display:none;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:18px!important;
+  background:rgba(12,18,28,.78)!important;
+}
+#ov-admin.open{display:flex!important}
+#ov-admin .admin-modal{
+  position:relative!important;
+  flex:none!important;
+  width:min(1460px,calc(100vw - 36px))!important;
+  min-width:0!important;
+  max-width:1460px!important;
+  height:min(930px,calc(100dvh - 36px))!important;
+  min-height:0!important;
+  max-height:calc(100dvh - 36px)!important;
+  margin:auto!important;
+  border-radius:22px!important;
+  transform:none!important;
+  animation:none!important;
+  box-shadow:0 28px 90px rgba(0,0,0,.34)!important;
+  overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
+  contain:none!important;
+}
+#ov-admin .m-head,#ov-admin .drawer-userbar{flex:0 0 auto!important}
+#ov-admin .m-body{
+  flex:1 1 auto!important;
+  min-height:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+  direction:rtl!important;
+}
+#ov-admin .dash-tabs{
+  order:0!important;
+  flex:0 0 auto!important;
+  position:relative!important;
+  top:auto!important;
+  width:auto!important;
+  margin:0 38px!important;
+  display:flex!important;
+  flex-direction:row!important;
+  justify-content:flex-start!important;
+  align-items:center!important;
+  gap:30px!important;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+}
+#admin-body{
+  order:1!important;
+  flex:1 1 auto!important;
+  min-height:0!important;
+  width:100%!important;
+  overflow:auto!important;
+  padding:30px 38px 44px!important;
+  direction:rtl!important;
+}
+#ov-admin .cd-ref-kpis{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+#ov-admin .cd-ref-overview-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+#ov-admin .tbl{direction:rtl!important}
+#ov-admin .tbl th,#ov-admin .tbl td{text-align:right!important}
+@media(max-width:900px){
+  #ov-admin{padding:0!important;align-items:stretch!important}
+  #ov-admin .admin-modal{width:100vw!important;max-width:none!important;height:100dvh!important;max-height:100dvh!important;border-radius:0!important}
+  #ov-admin .dash-tabs{margin:0 12px!important;gap:16px!important}
+  #admin-body{padding:18px 14px 28px!important}
+  #ov-admin .cd-ref-kpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #ov-admin .cd-ref-overview-grid{grid-template-columns:1fr!important}
+}
+</style>
 </body>
 </html>
