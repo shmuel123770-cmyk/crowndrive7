@@ -3,8 +3,10 @@ import {authReady} from './auth.js';
 import {nav, home, cars, authView, dashboard, chatsPage} from './views.js';
 import {toast, closeModal} from './core.js';
 
-await startPublic();
-await authReady;
+// Start data + auth in the background — do NOT block first paint on them.
+// The home page renders instantly; auth-gated views wait via store.authSettled.
+startPublic();
+authReady.then(() => { store.authSettled = true; render(); });
 
 const routes = {home, cars, auth: authView, dashboard, chats: chatsPage};
 

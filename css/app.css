@@ -920,3 +920,7 @@ body[data-page="dashboard"] .page-back,body[data-page="chats"] .page-back{backgr
   .nav-btn.pill,.dark-pill,.gold-pill{padding:8px 11px;font-size:.74rem}
   .owner-cta-features{grid-template-columns:1fr}
 }
+
+/* dashboard/chat containers must NOT carry a transform (fadeUp) — it breaks the
+   position:fixed mobile bottom tab bar. Use an opacity-only entrance instead. */
+.dashboard-shell,.chat-shell{animation:fadeIn .4s var(--ease) both!important}

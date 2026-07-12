@@ -4,6 +4,7 @@ export const store = {
   user: null,
   profile: null,
   isAdmin: false,
+  authSettled: false,
   cars: {},
   bookings: {},
   payments: {},

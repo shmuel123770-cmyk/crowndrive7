@@ -423,7 +423,10 @@ function bindDashboardTabs(renderer) {
   if (headAvatar) headAvatar.onclick = () => renderer('profile');
 }
 export function dashboard() {
-  if (!store.user) { location.hash = 'auth'; return; }
+  if (!store.user) {
+    if (!store.authSettled) { app().innerHTML = '<div class="app-loader"><div class="spinner"></div><p>טוען…</p></div>'; return; }
+    location.hash = 'auth'; return;
+  }
   const role = myRole();
   if (role === 'admin') adminDashboard();
   else if (role === 'owner') ownerDashboard();
@@ -874,7 +877,10 @@ const evidenceState = (booking, bookingId) => {
 };
 
 export function chatsPage() {
-  if (!store.user) { location.hash = 'auth'; return; }
+  if (!store.user) {
+    if (!store.authSettled) { app().innerHTML = '<div class="app-loader"><div class="spinner"></div><p>טוען…</p></div>'; return; }
+    location.hash = 'auth'; return;
+  }
   app().innerHTML = `<div class="chat-shell" id="chat-shell">
     <aside class="chat-list">
       <div class="chat-list-head"><h2>צ׳אטים</h2>${store.isAdmin ? '<input id="chat-search" placeholder="חיפוש משתמש…" autocomplete="off">' : ''}</div>
