@@ -14,11 +14,17 @@ export async function handler(event) {
     const profile = profileSnap.val() || {};
     profile.verification = {...(profile.verification || {}), status: statusSnap.val() || 'missing'};
     const docs = docsSnap.val() || {};
-    const bucket = getAdmin().storage().bucket();
     const documents = {};
+    let bucket = null;
     for (const [key, path] of Object.entries(docs)) {
-      const [url] = await bucket.file(path).getSignedUrl({version: 'v4', action: 'read', expires: Date.now() + 5 * 60 * 1000});
-      documents[key] = url;
+      // Documents are now stored inline as data URLs — return them as-is. Only a legacy
+      // storage path needs a short-lived signed url.
+      if (/^data:/.test(String(path))) { documents[key] = path; continue; }
+      try {
+        bucket = bucket || getAdmin().storage().bucket();
+        const [url] = await bucket.file(path).getSignedUrl({version: 'v4', action: 'read', expires: Date.now() + 5 * 60 * 1000});
+        documents[key] = url;
+      } catch { documents[key] = ''; }
     }
     return json(200, {profile, documents});
   } catch (error) {

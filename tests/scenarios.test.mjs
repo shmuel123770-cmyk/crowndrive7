@@ -257,5 +257,16 @@ check('פרופיל חלקי בלי תפקיד — השרת קובע תפקיד'
 r = await call(fn['profile-save'], 'partial1', {action: 'update', role: 'renter'});
 check('אחרי שנקבע תפקיד — לא ניתן לשנות ללא מנהל (403)', S(r) === 403 && get('users/partial1/role') === 'owner');
 
+console.log('\nתרחיש M: תמונות inline (data URL — נשמרות במסד, בלי Storage)');
+const dataImg = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA==';
+r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'Kia', model: 'Niro', dailyPrice: 120, photos: [dataImg]}});
+check('פרסום רכב עם תמונת data URL', S(r) === 200 && get(`cars/${B(r).id}/photos`)[0] === dataImg);
+r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'X', model: 'Y', photos: ['ftp://bad/x.png', 'javascript:evil']}});
+check('תמונה לא-תקינה (לא https/לא data) נדחית', S(r) === 400);
+r = await call(fn['profile-save'], 'o1', {action: 'update', photoURL: dataImg});
+check('תמונת פרופיל data URL נשמרת', S(r) === 200 && get('users/o1/photoURL') === dataImg);
+r = await call(fn['document-register'], 'r2', {documentType: 'selfie', path: dataImg});
+check('מסמך אימות data URL נשמר', S(r) === 200 && get('privateUserDocuments/r2/selfie') === dataImg);
+
 console.log(`\n========== ${passed} עברו · ${failed} נכשלו ==========`);
 process.exit(failed ? 1 : 0);

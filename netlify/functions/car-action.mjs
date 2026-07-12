@@ -1,5 +1,12 @@
 import {getAdmin, verify, json, isAdmin, profile, cleanText, audit, notifyAdmin} from './_firebase-admin.mjs';
-const httpsUrl = value => /^https:\/\//i.test(String(value || '')) ? String(value).slice(0, 1000) : '';
+// A photo is either an inline data-URL image (stored straight in the record — capped at ~1MB)
+// or an https link. Anything else is dropped.
+const httpsUrl = value => {
+  const s = String(value || '');
+  if (/^data:image\//i.test(s)) return s.slice(0, 1000000);
+  if (/^https:\/\//i.test(s)) return s.slice(0, 1000);
+  return '';
+};
 const photoList = value => Array.isArray(value) ? [...new Set(value.map(httpsUrl).filter(Boolean))].slice(0, 6) : null;
 const number = (value, min, max, fallback = 0) => {
   const n = Number(value);

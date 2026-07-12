@@ -39,9 +39,12 @@ export async function handler(event) {
     let stored = null;
     if (attachment) {
       const type = String(attachment.type || '');
-      const path = cleanText(attachment.path, 500);
+      // Evidence photos are stored inline as a data URL; a video keeps a storage path.
+      const raw = String(attachment.path || '');
+      const isImage = /^data:image\//i.test(raw);
+      const path = isImage ? raw.slice(0, 1000000) : cleanText(attachment.path, 500);
       if (!ATTACHMENT_TYPES.has(type)) return json(400, {error: 'סוג צירוף לא תקין'});
-      if (!path.startsWith(`bookings/${bookingId}/media/${token.uid}/`)) return json(400, {error: 'נתיב קובץ לא תקין'});
+      if (!isImage && !path.startsWith(`bookings/${bookingId}/media/${token.uid}/`)) return json(400, {error: 'נתיב קובץ לא תקין'});
       if (EVIDENCE_KEYS[type]) {
         if (token.uid !== value.renterUid && !admin) return json(403, {error: 'תיעוד לפני נסיעה נשלח על ידי השוכר'});
         if (value.status !== 'approved' && !admin) return json(409, {error: 'תיעוד נשלח לפני תחילת ההשכרה'});

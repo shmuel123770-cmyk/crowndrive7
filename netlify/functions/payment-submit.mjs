@@ -10,14 +10,17 @@ export async function handler(event) {
     if (!['approved', 'active'].includes(value.status)) return json(409, {error: 'אפשר לשלוח הוכחה רק להזמנה מאושרת או פעילה'});
     const amount = Number(body.amount);
     if (!Number.isFinite(amount) || amount <= 0 || amount > 1000000) return json(400, {error: 'הסכום אינו תקין'});
+    // The proof image is stored inline as a data URL; also accept a legacy storage path.
+    const media = String(body.mediaPath || '');
+    const isImage = /^data:image\//i.test(media);
     const expected = `bookings/${body.bookingId}/payments/${token.uid}/`;
-    if (!String(body.mediaPath || '').startsWith(expected)) return json(400, {error: 'נתיב הוכחה לא תקין'});
+    if (!isImage && !media.startsWith(expected)) return json(400, {error: 'נתיב הוכחה לא תקין'});
     await getAdmin().database().ref(`payments/${body.bookingId}`).set({
       bookingId: body.bookingId,
       renterUid: value.renterUid,
       ownerUid: value.ownerUid,
       amount,
-      mediaPath: cleanText(body.mediaPath, 500),
+      mediaPath: isImage ? media.slice(0, 1000000) : cleanText(body.mediaPath, 500),
       createdAt: Date.now(),
     });
     await audit(token.uid, 'payment_submit', 'booking', body.bookingId, {amount});

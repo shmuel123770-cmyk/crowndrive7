@@ -14,55 +14,24 @@ function loadImage(file) {
     img.src = url;
   });
 }
-const toBase64 = blob => new Promise((resolve, reject) => {
-  const reader = new FileReader();
-  reader.onload = () => resolve(String(reader.result).replace(/^data:[^,]*,/, ''));
-  reader.onerror = () => reject(new Error('read'));
-  reader.readAsDataURL(blob);
-});
-
-const TARGET = 4.5 * 1024 * 1024; // keep the encoded bytes comfortably under the ~6MB request limit
-// Re-encode the canvas as high-quality JPEG, stepping quality (and, if needed, dimensions) down
-// until it fits under TARGET. Lets ANY image type of ANY source size upload at good quality.
-async function encodeToFit(img) {
-  let dim = 2560;
-  for (let pass = 0; pass < 3; pass++) {
-    const scale = Math.min(1, dim / Math.max(img.width, img.height));
-    const w = Math.max(1, Math.round(img.width * scale)), h = Math.max(1, Math.round(img.height * scale));
-    const canvas = document.createElement('canvas');
-    canvas.width = w; canvas.height = h;
-    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-    let last = null;
-    for (const q of [0.92, 0.85, 0.75, 0.62]) {
-      const blob = await new Promise(res => canvas.toBlob(res, 'image/jpeg', q));
-      if (blob && blob.size) { last = blob; if (blob.size <= TARGET) return blob; }
-    }
-    if (last && pass === 2) return last;  // best effort after shrinking twice
-    dim = Math.round(dim * 0.7);          // extreme resolution — shrink and retry
-  }
-  return null;
-}
-async function toImagePayload(file) {
-  try {
-    const img = await loadImage(file);
-    const blob = await encodeToFit(img);
-    if (blob && blob.size) return {type: 'image/jpeg', data: await toBase64(blob)};
-  } catch {}
-  // Undecodable format (rare) — send raw bytes if they still fit under the request limit.
-  if (file.size > TARGET) throw new Error('לא ניתן לעבד את הקובץ הזה — נסו תמונה רגילה (JPG/PNG/HEIC)');
-  return {type: file.type || 'image/jpeg', data: await toBase64(file)};
+// Downscale the image and return it as an inline JPEG data URL. The image is stored DIRECTLY in
+// the database record (car photos, avatar, license, payment proof) — no Firebase Storage, no
+// upload endpoint, no permissions, no CORS, no in-app-browser blocking. It just works everywhere.
+// Kept modest (<=1024px, q0.72) because the data URL lives inside the DB record.
+async function toImageDataUrl(file) {
+  let img;
+  try { img = await loadImage(file); }
+  catch { throw new Error('לא ניתן לעבד את התמונה — נסו תמונה רגילה (JPG/PNG)'); }
+  const max = 1024, scale = Math.min(1, max / Math.max(img.width, img.height));
+  const w = Math.max(1, Math.round(img.width * scale)), h = Math.max(1, Math.round(img.height * scale));
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+  return canvas.toDataURL('image/jpeg', 0.72);
 }
 
-// Images upload through our OWN function (same-origin POST → Admin SDK writes the file). This
-// works even inside in-app browsers that block direct uploads to firebasestorage.googleapis.com,
-// and needs no Storage rules. Returns {path, url}.
-async function uploadImageViaServer(file, kind, entityId) {
-  if (!file) throw new Error('לא נבחר קובץ');
-  const {type, data} = await toImagePayload(file);
-  return api('media-upload', {name: file.name, type, kind, entityId, data});
-}
-
-// Videos are too large for a base64 body — keep the Firebase Storage SDK path for them.
+// Videos are far too large to inline — keep the Firebase Storage SDK path (works in a normal
+// browser; a video is optional). Returns {path, url}.
 async function uploadVideoViaSdk(file, kind, entityId) {
   if (!storage) throw new Error('שירות ההעלאות לא נטען — רעננו את הדף ונסו שוב');
   const {path} = await api('media-sign-upload', {name: file.name, type: file.type, size: file.size, kind, entityId});
@@ -74,25 +43,24 @@ async function uploadVideoViaSdk(file, kind, entityId) {
     const url = token && bucket ? `https://firebasestorage.googleapis.com/v0/b/${bucket}/o/${encodeURIComponent(path)}?alt=media&token=${token}` : await storage.ref(path).getDownloadURL();
     return {path, url};
   } catch (error) {
-    if (error?.code === 'storage/unauthorized') throw new Error('אין הרשאה להעלאת הסרטון — יש לפרסם את חוקי ה-Storage');
     throw new Error('העלאת הסרטון נכשלה — לסרטונים נסו בדפדפן רגיל (Safari/Chrome)');
   }
 }
 
-// Private media (payment proof, handover photo/video): the server issues a short-lived,
-// access-controlled signed READ url later, so we only need the storage path here.
+// Images become an inline data URL stored straight in the record; videos keep the SDK path.
 export async function uploadPrivate(file, kind, entityId = '') {
   if (!file) throw new Error('לא נבחר קובץ');
-  return (isVideo(file) ? await uploadVideoViaSdk(file, kind, entityId) : await uploadImageViaServer(file, kind, entityId)).path;
+  return isVideo(file) ? (await uploadVideoViaSdk(file, kind, entityId)).path : await toImageDataUrl(file);
 }
-
-// Public media (car photos/videos, profile avatars): return a permanent display url.
 export async function uploadPublicMedia(file, kind, entityId = '') {
   if (!file) throw new Error('לא נבחר קובץ');
-  return (isVideo(file) ? await uploadVideoViaSdk(file, kind, entityId) : await uploadImageViaServer(file, kind, entityId)).url;
+  return isVideo(file) ? (await uploadVideoViaSdk(file, kind, entityId)).url : await toImageDataUrl(file);
 }
 
+// A stored image is already an inline data URL — return it as-is. Only true storage paths
+// (legacy / video) still need a server-signed read url.
 export async function signedRead(path) {
+  if (/^data:/.test(String(path || ''))) return path;
   return (await api('media-sign-read', {path})).url;
 }
 

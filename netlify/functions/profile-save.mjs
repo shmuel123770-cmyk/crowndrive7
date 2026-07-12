@@ -45,7 +45,10 @@ export async function handler(event) {
       }
       if ('name' in body) patch.name = cleanText(body.name, 100);
       if ('phone' in body) patch.phone = cleanText(body.phone, 40);
-      if ('photoURL' in body) patch.photoURL = /^https:\/\//.test(String(body.photoURL || '')) ? String(body.photoURL).slice(0, 1000) : '';
+      if ('photoURL' in body) {
+        const v = String(body.photoURL || '');
+        patch.photoURL = /^data:image\//i.test(v) ? v.slice(0, 1000000) : (/^https:\/\//.test(v) ? v.slice(0, 1000) : '');
+      }
       if ('birthDate' in body) {
         const date = /^\d{4}-\d{2}-\d{2}$/.test(String(body.birthDate)) ? String(body.birthDate) : '';
         patch.birthDate = date;

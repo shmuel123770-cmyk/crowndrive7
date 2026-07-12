@@ -1,5 +1,14 @@
-CrownDrive — FINAL build (2026-07-12, rev.12)
+CrownDrive — FINAL build (2026-07-12, rev.13)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.13 (2026-07-12) — IMAGES STORED IN THE DATABASE (no Storage at all):
+- Uploads kept failing in in-app browsers no matter the Storage/permission fix. New approach:
+  every image is resized client-side to a <=1024px JPEG DATA URL and stored directly in the DB
+  record (car.photos, users.photoURL, privateUserDocuments, payments.mediaPath, chat attachment).
+  No Firebase Storage, no IAM permissions, no Google Cloud, no CORS, no in-app-browser blocking.
+  Server functions (car-action, profile-save, document-register, payment-submit, message-send,
+  user-private-profile) accept data:image URLs; signedRead returns them as-is. Videos keep the SDK
+  path. 80 scenarios pass.
 
 rev.11 (2026-07-12): server upload made reliable + self-diagnosing. media-upload now writes via
 the Firebase Storage REST API using the Admin credential's OAuth token (built-in fetch, no
