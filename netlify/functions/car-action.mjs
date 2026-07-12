@@ -47,7 +47,7 @@ export async function handler(event) {
       const id = db.ref('cars').push().key;
       const car = publicCar(body.data || {}, token.uid, {}, userProfile?.name || '');
       if (!car.make || !car.model) return json(400, {error: 'יצרן ודגם הם חובה'});
-      if (car.photos.length < 2) return json(400, {error: 'יש להעלות לפחות 2 תמונות של הרכב'});
+      if (!car.photos.length) return json(400, {error: 'יש להוסיף לפחות תמונה אחת של הרכב'});
       const fullAddress = cleanText(body.data?.fullAddress, 500);
       await db.ref().update({
         [`cars/${id}`]: {...car, status: 'available', createdAt: Date.now()},

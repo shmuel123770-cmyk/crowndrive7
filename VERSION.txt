@@ -1,5 +1,30 @@
-CrownDrive — FINAL build (2026-07-12, rev.3)
+CrownDrive — FINAL build (2026-07-12, rev.5)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.5 (2026-07-12):
+- Admin area now has a "צ׳אטים" tab (opens the full messaging page) and a profile view with
+  avatar upload (via the header avatar) — admin can set a profile picture like everyone else.
+- Chat is fully real-time: the admin thread list now live-updates/re-orders on every incoming
+  message (was a one-time fetch); open conversations were already live.
+- Car photos: removed the 2-photo minimum — 1 to 6 photos allowed (at least one).
+- Manufacturer image search rewritten: scores by exact make+model(+year) and prefers official
+  exterior/press shots, so it returns the right car or nothing (never a wrong look-alike).
+- More admin control: promote/demote a user's role (owner↔renter) from the user modal
+  (adds to existing block/delete/edit, car edit/hide/reassign/delete, booking edit, maintenance).
+
+rev.4 fixes (2026-07-12):
+- PHOTO/VIDEO UPLOAD FIXED: uploads now go through the Firebase Storage SDK
+  (firebasestorage.googleapis.com — CORS-enabled by Google) instead of a raw PUT to a
+  signed storage.googleapis.com URL, which needed bucket CORS that can't be set from the
+  Firebase console. Requires the updated Storage rules (already in FIREBASE_STORAGE_RULES_V2.txt).
+- JSON error toast ("תו בלתי צפוי … JSON במיקום 6") eliminated: every fetch/parse is guarded
+  and the global handler suppresses raw SyntaxError text.
+- MAINTENANCE MODE FIXED: the admin toggle writes config/maintenance directly (admin-only DB
+  rule) with a server fallback, so it always works; the same button turns the site back to
+  normal ("האתר בתחזוקה — לחצו לפתיחה"). Requires the updated Realtime DB rules (config branch).
+- Faster load + robust cache: service worker now cache-first for versioned assets, network-first
+  for HTML/modules (never serves a stale/mismatched bundle); JS modules preloaded; assets ?v=9.
+- 12,500-iteration fuzz suite added (tests/stress.test.mjs); all checks + unit tests pass.
 
 Home: hero + animated car, booking widget, owner CTA, up to 8 available cars + "לכל הרכבים",
 "איך זה עובד" (3 steps), "אמון ובטיחות" (4 trust cards).

@@ -17,8 +17,8 @@
   --ease:cubic-bezier(.22,.9,.26,1);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html{scroll-behavior:smooth}
-html,body{margin:0;min-height:100%;color:var(--text);
+html{scroll-behavior:smooth;overflow-x:hidden;width:100%;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html,body{margin:0;min-height:100%;max-width:100%;color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,'Heebo','Noto Sans Hebrew',Arial,sans-serif;font-weight:400;line-height:1.7}
 body{direction:rtl;overflow-x:hidden;background:var(--bg)}
 /* Fixed atmospheric backdrop as a layer (background-attachment:fixed is broken on iOS Safari). */
@@ -71,7 +71,8 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
 
 /* ================= HERO (full-bleed dark, road scene, aurora) ================= */
 .hero{position:relative;background:var(--dark);overflow:hidden;isolation:isolate;
-  margin-inline:calc(50% - 50vw);width:100vw}
+  /* full-bleed of the main container (no 100vw — it overflows/zooms on iOS Safari) */
+  margin-inline:-3vw;width:calc(100% + 6vw)}
 .hero::before{content:"";position:absolute;inset:0;z-index:0;
   background:radial-gradient(1000px 500px at 80% -20%, rgba(120,155,185,.12), transparent 60%)}
 .hero::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
@@ -124,7 +125,7 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
 @keyframes drive{from{inset-inline-start:-220px}to{inset-inline-start:calc(100% + 60px)}}
 
 /* ---------- status strip ---------- */
-.strip{margin-inline:calc(50% - 50vw);width:100vw;border-block:1px solid var(--hair);background:var(--bg2)}
+.strip{margin-inline:-3vw;width:calc(100% + 6vw);border-block:1px solid var(--hair);background:var(--bg2)}
 .strip-in{max-width:1200px;margin:auto;padding:15px 28px;display:flex;justify-content:center;gap:44px;flex-wrap:wrap;font-size:.82rem;letter-spacing:.05em}
 .strip .it{display:flex;gap:9px;align-items:center;color:var(--muted)}
 .strip .it b{font-weight:800;font-size:1.05rem;color:var(--text);font-variant-numeric:tabular-nums}
@@ -840,7 +841,8 @@ body[data-page="dashboard"] .page-back,body[data-page="chats"] .page-back{backgr
     background:rgba(24,29,38,.82);backdrop-filter:saturate(1.6) blur(20px);-webkit-backdrop-filter:saturate(1.6) blur(20px);
     border:none;border-top:1px solid rgba(255,255,255,.1);display:flex;justify-content:space-around;gap:0;
     padding:10px 8px max(10px,env(safe-area-inset-bottom))}
-  .dashboard-tabs .tab{flex-direction:column;gap:4px;padding:6px 10px;font-size:.66rem;letter-spacing:0;color:#8E97A3;border-radius:12px;flex:1}
+  .dashboard-tabs .tab{flex-direction:column;gap:4px;padding:6px 3px;font-size:.64rem;letter-spacing:0;color:#8E97A3;border-radius:12px;flex:1;min-width:0}
+  .dashboard-tabs .tab span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .dashboard-tabs .tab svg{width:22px;height:22px}
   .dashboard-tabs .tab.active{background:transparent;box-shadow:none;color:#fff}
   .dashboard-tabs .tab.active svg{stroke:#E9C46A}
@@ -878,3 +880,48 @@ body[data-page="dashboard"] .page-back,body[data-page="chats"] .page-back{backgr
 .nav-link:hover::after,.nav-link.active::after{transform:scaleX(1)}
 .nav-link:hover{color:#E9C46A}
 .brand img{background:none;border:none;padding:0;width:42px;height:42px;border-radius:11px;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+
+/* ================= FINAL MOBILE OVERRIDES (must be last — wins the cascade) ================= */
+@media(max-width:820px){
+  /* top bar: one tight row, never wrap a pill into a circle */
+  .topbar{padding:10px 12px;gap:8px}
+  .brand{gap:8px}
+  .brand img{width:34px;height:34px}
+  .brand span{font-size:.9rem}
+  #main-nav{gap:6px;margin-inline-start:0;flex:1;justify-content:flex-end}
+  .nav-links{display:none}
+  .nav-actions{gap:7px}
+  .nav-btn.pill,.dark-pill,.gold-pill{white-space:nowrap;padding:9px 14px;font-size:.8rem;font-weight:700;border-radius:99px;min-height:0}
+
+  /* owner CTA: force a real single column (reset the explicit grid-column placement) */
+  .owner-cta-rich{grid-template-columns:1fr!important;text-align:center;padding:24px}
+  .owner-cta-main,.owner-cta-features{grid-column:auto!important}
+  .owner-cta-features{grid-template-columns:1fr 1fr}
+  .owner-cta-main .kicker,.owner-cta-main .eyebrow,.owner-cta-main h2,.owner-cta-main p{text-align:center}
+  .owner-cta-main p{margin-inline:auto}
+
+  /* dashboard header controls: compact, wrap neatly */
+  .dashboard-head{padding:18px 16px}
+  .dash-head-side{gap:8px;flex-wrap:wrap}
+  .dash-head-side .btn{padding:9px 13px;font-size:.8rem}
+  .dash-close{width:34px;height:34px}
+  .avatar-btn .avatar,.avatar-btn .avatar-fallback{width:48px!important;height:48px!important}
+
+  /* data tables: horizontal scroll instead of clipping columns */
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:14px}
+  table.data{min-width:680px}
+  .panel-head-actions .chips{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .panel-head-actions .chips .btn{width:100%}
+
+  /* keep the floating page-back clear of the topbar */
+  .page-back{top:72px}
+}
+@media(max-width:400px){
+  .brand span{font-size:.82rem}
+  .nav-btn.pill,.dark-pill,.gold-pill{padding:8px 11px;font-size:.74rem}
+  .owner-cta-features{grid-template-columns:1fr}
+}
+
+/* dashboard/chat containers must NOT carry a transform (fadeUp) — it breaks the
+   position:fixed mobile bottom tab bar. Use an opacity-only entrance instead. */
+.dashboard-shell,.chat-shell{animation:fadeIn .4s var(--ease) both!important}

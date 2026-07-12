@@ -1,17 +1,42 @@
 import {api} from './api.js';
+import {storage} from './firebase.js';
 
-export async function uploadPrivate(file, kind, entityId = '') {
+async function putFile(file, kind, entityId = '') {
   if (!file) throw new Error('לא נבחר קובץ');
-  const {uploadUrl, path} = await api('media-sign-upload', {
+  if (!storage) throw new Error('שירות ההעלאות לא נטען — רעננו את הדף ונסו שוב');
+  // The server validates type/size/role/booking-access and returns the canonical path.
+  const {path} = await api('media-sign-upload', {
     name: file.name,
     type: file.type,
     size: file.size,
     kind,
     entityId,
   });
-  const response = await fetch(uploadUrl, {method: 'PUT', headers: {'content-type': file.type}, body: file});
-  if (!response.ok) throw new Error('העלאת הקובץ נכשלה');
+  // Upload the bytes through the Firebase Storage SDK. It targets
+  // firebasestorage.googleapis.com, which Google already serves with permissive CORS —
+  // unlike a raw PUT to a v4-signed storage.googleapis.com URL, which needs bucket CORS
+  // that cannot be configured from the Firebase console. Storage Rules authorize the
+  // write to the user's own folder (cars/<uid>, avatars/<uid>, users/<uid>, bookings/.../<uid>).
+  try {
+    await storage.ref(path).put(file, {contentType: file.type});
+  } catch (error) {
+    if (error?.code === 'storage/unauthorized') throw new Error('אין הרשאה להעלאה — יש לפרסם את חוקי ה-Storage המעודכנים');
+    if (error?.code === 'storage/retry-limit-exceeded') throw new Error('החיבור איטי מדי — נסו שוב עם רשת יציבה');
+    throw new Error('העלאת הקובץ נכשלה — נסו שוב');
+  }
   return path;
+}
+
+// Private media (payment proof, handover video/photo): the server issues a short-lived,
+// access-controlled signed READ url when someone authorized wants to view it.
+export async function uploadPrivate(file, kind, entityId = '') { return putFile(file, kind, entityId); }
+
+// Public media (car photos/videos, profile avatars): read the display url straight from the
+// Storage SDK. It always points at the exact bucket/object we just uploaded to, so it cannot
+// break on a client/server bucket-name mismatch the way the server makePublic() url could.
+export async function uploadPublicMedia(file, kind, entityId = '') {
+  const path = await putFile(file, kind, entityId);
+  return storage.ref(path).getDownloadURL();
 }
 
 export async function signedRead(path) {

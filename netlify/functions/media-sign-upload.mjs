@@ -33,9 +33,10 @@ export async function handler(event) {
       if (kind === 'car-video' && group !== 'video') return json(400, {error: 'סרטון רכב חייב להיות וידאו'});
       path = `cars/${user.uid}/${Date.now()}-${safe(name)}`;
     } else return json(400, {error: 'סוג העלאה לא תקין'});
-    const file = getAdmin().storage().bucket().file(path);
-    const [uploadUrl] = await file.getSignedUrl({version: 'v4', action: 'write', expires: Date.now() + 10 * 60 * 1000, contentType: type});
-    return json(200, {uploadUrl, path});
+    // The client uploads the bytes via the Firebase Storage SDK (Storage Rules authorize
+    // the write to the user's own folder). We only validate and hand back the canonical
+    // path — no signed URL needed, so there is no dependency on IAM signBlob / bucket CORS.
+    return json(200, {path});
   } catch (error) {
     console.error(error);
     return json(error.status || 500, {error: error.message});

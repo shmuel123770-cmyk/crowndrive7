@@ -17,9 +17,11 @@ const allClient = jsFiles.map(file => read(`js/${file}`)).join('\n');
 const authObservers = (allClient.match(/onAuthStateChanged/g) || []).length;
 if (authObservers !== 1) throw new Error(`expected exactly one auth observer, found ${authObservers}`);
 if (/RT_REF\.set/.test(allClient)) throw new Error('unsafe legacy full-state write found');
-// Direct client DB writes are forbidden EXCEPT the one intentional, rules-guarded
-// self-profile create (tagged "client-write:own-profile").
-const writeLines = allClient.split('\n').filter(line => /\.ref\([^)]*\)\.(set|update|remove|push)\(/.test(line) && !line.includes('client-write:own-profile'));
+// Direct client DB writes are forbidden EXCEPT the intentional, rules-guarded ones:
+//  - "client-write:own-profile"      self-profile create on registration
+//  - "client-write:admin-maintenance" admin toggling config/maintenance (admin-only rule)
+const allowedClientWrites = ['client-write:own-profile', 'client-write:admin-maintenance'];
+const writeLines = allClient.split('\n').filter(line => /\.ref\([^)]*\)\.(set|update|remove|push)\(/.test(line) && !allowedClientWrites.some(tag => line.includes(tag)));
 if (writeLines.length) throw new Error(`direct client database write found: ${writeLines[0].trim()}`);
 const rules = JSON.parse(read('FIREBASE_DATABASE_RULES_V2.json'));
 if (rules.rules['.write'] !== false) throw new Error('database root writes are not denied');

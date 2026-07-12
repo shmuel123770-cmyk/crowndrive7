@@ -1,8 +1,8 @@
 import {store, list, myRole, myBookings, myCars, carRating, userRating} from './store.js';
 import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars} from './core.js';
 import {register, login, logout, sendVerify, refreshEmailStatus, sendPasswordReset, createOwnProfile} from './auth.js';
-import {saveUser, createCar, updateCar, deleteCar, createBooking, setBookingStatus, registerDocument, approveVerification, sendMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction} from './db.js';
-import {uploadPrivate, signedRead, capturePhoto} from './media.js';
+import {saveUser, createCar, updateCar, deleteCar, createBooking, setBookingStatus, registerDocument, approveVerification, sendMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction, setMaintenance} from './db.js';
+import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './media.js';
 import {legacyStatus, migrateLegacy} from './migrate.js';
 import {api} from './api.js';
 
@@ -41,7 +41,7 @@ const ICON = {
   image: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
 };
 
-const TAB_ICONS = {overview: () => ICON.grid, bookings: () => ICON.calendar, cars: () => ICON.car, profile: () => ICON.selfie, messages: () => ICON.chat, users: () => ICON.users, notifications: () => ICON.bell};
+const TAB_ICONS = {overview: () => ICON.grid, bookings: () => ICON.calendar, cars: () => ICON.car, profile: () => ICON.selfie, messages: () => ICON.chat, chats: () => ICON.chat, users: () => ICON.users, notifications: () => ICON.bell};
 const kpi = (icon, value, label) => `<div class="kpi"><div class="kpi-head"><span class="kpi-label">${label}</span><i class="kpi-icon">${ICON[icon] || ''}</i></div><b>${value}</b></div>`;
 const carStatusPill = status => `<span class="pill ${status === 'available' ? 'ok' : 'mut'}">${status === 'available' ? 'זמין' : status === 'rented' ? 'מושכר' : 'מוסתר'}</span>`;
 const DIAL_CODES = [
@@ -418,12 +418,19 @@ function dashboardLayout(title, tabs, active, content, actions = '') {
   return `<div class="dashboard-shell"><header class="dashboard-head"><div><p class="eyebrow">CrownDrive</p><h1>${esc(title)}</h1></div><div class="dash-head-side">${actions}<button type="button" class="avatar-btn" data-goto-profile title="לפרופיל שלי">${avatarHtml(store.profile, 72)}</button><button type="button" class="dash-close" data-route="home" aria-label="סגירת האזור האישי">✕</button></div></header><nav class="dashboard-tabs" aria-label="תפריט אזור אישי">${tabs.map(([key, label]) => `<button class="tab ${key === active ? 'active' : ''}" data-dashboard-tab="${key}"><i class="tab-ic">${(TAB_ICONS[key] || (() => ''))()}</i><span>${label}</span></button>`).join('')}</nav><section class="card panel dashboard-panel">${content}</section></div>`;
 }
 function bindDashboardTabs(renderer) {
-  document.querySelectorAll('[data-dashboard-tab]').forEach(button => button.onclick = () => renderer(button.dataset.dashboardTab));
+  document.querySelectorAll('[data-dashboard-tab]').forEach(button => button.onclick = () => {
+    const tab = button.dataset.dashboardTab;
+    if (tab === 'chats') { location.hash = 'chats'; return; }  // full-screen messaging page
+    renderer(tab);
+  });
   const headAvatar = document.querySelector('[data-goto-profile]');
   if (headAvatar) headAvatar.onclick = () => renderer('profile');
 }
 export function dashboard() {
-  if (!store.user) { location.hash = 'auth'; return; }
+  if (!store.user) {
+    if (!store.authSettled) { app().innerHTML = '<div class="app-loader"><div class="spinner"></div><p>טוען…</p></div>'; return; }
+    location.hash = 'auth'; return;
+  }
   const role = myRole();
   if (role === 'admin') adminDashboard();
   else if (role === 'owner') ownerDashboard();
@@ -471,7 +478,7 @@ function renterDashboard(tab = 'overview') {
     profile: profileView(),
     messages: messagesView(),
   };
-  app().innerHTML = dashboardLayout('האזור האישי', [['overview','סקירה'],['bookings','הזמנות'],['profile','פרופיל ואימות'],['messages','הודעות']], tab, contents[tab] || contents.overview);
+  app().innerHTML = dashboardLayout('האזור האישי', [['overview','סקירה'],['bookings','הזמנות'],['chats','צ׳אטים'],['profile','פרופיל ואימות']], tab, contents[tab] || contents.overview);
   bindDashboardTabs(renterDashboard); bindActions(); bindProfileActions();
 }
 
@@ -485,7 +492,7 @@ function ownerDashboard(tab = 'overview') {
     cars: `<div class="section-head"><h2>הרכבים שלי</h2><button class="btn gold" id="add-car">הוספת רכב</button></div>${carGrid(cars)}`,
     profile: ownerProfileView(),
   };
-  app().innerHTML = dashboardLayout('לוח בעל רכב', [['overview','סקירה'],['bookings','הזמנות'],['cars','רכבים'],['profile','פרופיל']], tab, contents[tab] || contents.overview, '<button class="btn gold" id="add-car-head">+ הוספת רכב</button>');
+  app().innerHTML = dashboardLayout('לוח בעל רכב', [['overview','סקירה'],['bookings','הזמנות'],['cars','רכבים'],['chats','צ׳אטים'],['profile','פרופיל']], tab, contents[tab] || contents.overview, '<button class="btn gold" id="add-car-head">+ הוספת רכב</button>');
   app().insertAdjacentHTML('beforeend', '<button class="fab" id="add-car-fab" title="הוספת רכב" aria-label="הוספת רכב">+</button>');
   bindDashboardTabs(ownerDashboard); bindActions(); bindCarButtons(); bindProfileActions();
   document.querySelector('#add-car')?.addEventListener('click', () => carForm());
@@ -512,13 +519,14 @@ function adminDashboard(tab = 'overview') {
     cars: `<h2 style="margin-bottom:16px">רכבים</h2>${adminCarsTable(cars)}`,
     bookings: `<h2 style="margin-bottom:16px">הזמנות</h2>${bookingList(bookings, 'admin')}`,
     notifications: adminNotificationsView(),
+    profile: ownerProfileView(),
   };
   const unread = adminUnreadCount();
-  app().innerHTML = dashboardLayout('לוח ניהול מנהל', [['overview','סקירה'],['users','משתמשים'],['cars','רכבים'],['bookings','הזמנות'],['notifications', `התראות${unread ? ` (${unread})` : ''}`]], tab, contents[tab] || contents.overview, '<button class="btn gold" id="admin-add-car">+ הוספת רכב</button><button class="btn dark-out" id="admin-refresh" title="רענון נתונים">רענון</button><button class="btn dark-out" id="admin-logout">יציאה</button>');
+  app().innerHTML = dashboardLayout('לוח ניהול מנהל', [['overview','סקירה'],['chats','צ׳אטים'],['users','משתמשים'],['cars','רכבים'],['bookings','הזמנות'],['notifications', `התראות${unread ? ` (${unread})` : ''}`]], tab, contents[tab] || contents.overview, '<button class="btn gold" id="admin-add-car">+ הוספת רכב</button><button class="btn dark-out" id="admin-refresh" title="רענון נתונים">רענון</button><button class="btn dark-out" id="admin-logout">יציאה</button>');
   document.querySelector('#admin-add-car')?.addEventListener('click', () => carForm());
   document.querySelector('#admin-refresh')?.addEventListener('click', () => window.location.reload());
   document.querySelector('#admin-logout')?.addEventListener('click', async () => { try { await logout(); location.hash = 'home'; } catch (error) { toast(error.message); } });
-  bindDashboardTabs(adminDashboard); bindActions(); bindCarButtons();
+  bindDashboardTabs(adminDashboard); bindActions(); bindCarButtons(); bindProfileActions();
   document.querySelectorAll('[data-admin-user]').forEach(button => button.onclick = () => adminUserModal(button.dataset.adminUser));
   document.querySelectorAll('[data-admin-rentals]').forEach(button => button.onclick = () => adminUserBookingsModal(button.dataset.adminRentals));
   document.querySelectorAll('[data-user-edit]').forEach(button => button.onclick = async () => {
@@ -551,11 +559,13 @@ function adminDashboard(tab = 'overview') {
     catch (error) { toast(error.message); }
   });
   document.querySelector('#legacy-migrate')?.addEventListener('click', migratePrompt);
-  document.querySelector('#maintenance-toggle')?.addEventListener('click', async () => {
+  document.querySelector('#maintenance-toggle')?.addEventListener('click', async event => {
+    const button = event.currentTarget;
     const on = !store.config?.maintenance?.on;
-    if (!confirm(on ? 'להעביר את האתר למצב תחזוקה? רק מנהלים יוכלו לגלוש.' : 'לפתוח את האתר לכולם?')) return;
-    try { await adminAction('maintenance', {on}); toast(on ? 'האתר במצב תחזוקה' : 'האתר פתוח'); }
-    catch (error) { toast(error.message); }
+    if (!confirm(on ? 'להעביר את האתר למצב תחזוקה? רק מנהלים יוכלו לגלוש.' : 'לפתוח את האתר לכולם? כל המבקרים יחזרו לגלישה רגילה.')) return;
+    button.disabled = true;
+    try { await setMaintenance(on); toast(on ? 'האתר עבר למצב תחזוקה' : 'האתר חזר למצב רגיל — פתוח לכולם'); }
+    catch (error) { toast('לא ניתן לעדכן את מצב התחזוקה — יש לפרסם את חוקי ה-Firebase המעודכנים'); button.disabled = false; }
   });
   bindAdminSearch();
   if (tab === 'notifications') localStorage.setItem('cd-admin-seen', String(Date.now()));
@@ -795,8 +805,7 @@ function avatarCropper(file) {
         canvas.width = OUT; canvas.height = OUT;
         canvas.getContext('2d').drawImage(source, x * k, y * k, iw * s * k, ih * s * k);
         const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
-        const path = await uploadPrivate(new File([blob], 'avatar.jpg', {type: 'image/jpeg'}), 'avatar');
-        const publicUrl = await carMediaPublic(path);
+        const publicUrl = await uploadPublicMedia(new File([blob], 'avatar.jpg', {type: 'image/jpeg'}), 'avatar');
         await saveUser({photoURL: publicUrl});
         URL.revokeObjectURL(objectUrl);
         closeModal(); toast('תמונת הפרופיל עודכנה ✓');
@@ -874,7 +883,10 @@ const evidenceState = (booking, bookingId) => {
 };
 
 export function chatsPage() {
-  if (!store.user) { location.hash = 'auth'; return; }
+  if (!store.user) {
+    if (!store.authSettled) { app().innerHTML = '<div class="app-loader"><div class="spinner"></div><p>טוען…</p></div>'; return; }
+    location.hash = 'auth'; return;
+  }
   app().innerHTML = `<div class="chat-shell" id="chat-shell">
     <aside class="chat-list">
       <div class="chat-list-head"><h2>צ׳אטים</h2>${store.isAdmin ? '<input id="chat-search" placeholder="חיפוש משתמש…" autocomplete="off">' : ''}</div>
@@ -882,6 +894,7 @@ export function chatsPage() {
     </aside>
     <section class="chat-pane" id="chat-pane"><div class="chat-empty"><span class="chat-empty-ic">${ICON.chat}</span><p>בחרו שיחה מהרשימה</p></div></section>
   </div>`;
+  if (store.isAdmin) ensureAdminChatFeed();
   renderChatItems();
   document.querySelector('#chat-search')?.addEventListener('input', renderChatItems);
   const wanted = pendingThread || chatState.thread;
@@ -893,18 +906,31 @@ export function chatsPage() {
   }
 }
 
+// Real-time feed of every support thread, so the admin's chat list re-orders and updates
+// the moment any user sends a message — not just on the first load.
+let adminFeedRef = null;
+function teardownAdminChatFeed() {
+  if (adminFeedRef) { adminFeedRef.off(); adminFeedRef = null; }
+  adminChatActivity = null;
+}
+function ensureAdminChatFeed() {
+  if (adminFeedRef || !store.isAdmin) return;
+  const ref = firebase.database().ref('messages/admin');
+  adminFeedRef = ref;
+  ref.on('value', snap => {
+    if (!store.isAdmin) return teardownAdminChatFeed();  // e.g. after logout
+    adminChatActivity = {};
+    for (const [uid, msgs] of Object.entries(snap.val() || {})) {
+      const times = Object.values(msgs || {}).map(m => Number(m.createdAt || 0));
+      adminChatActivity[uid] = times.length ? Math.max(...times) : 0;
+    }
+    if (store.route === 'chats') renderChatItems();
+  }, () => teardownAdminChatFeed());  // permission change / error → reset so it re-inits on next admin login
+}
+
 function chatItems() {
   if (store.isAdmin) {
-    if (adminChatActivity === null) {
-      adminChatActivity = {};
-      firebase.database().ref('messages/admin').once('value').then(snap => {
-        for (const [uid, msgs] of Object.entries(snap.val() || {})) {
-          const times = Object.values(msgs || {}).map(m => Number(m.createdAt || 0));
-          adminChatActivity[uid] = times.length ? Math.max(...times) : 0;
-        }
-        if (store.route === 'chats') renderChatItems();
-      }).catch(() => {});
-    }
+    if (adminChatActivity === null) adminChatActivity = {};
     const query = (document.querySelector('#chat-search')?.value || '').trim().toLowerCase();
     return list(store.users)
       .filter(user => !query || `${user.name || ''} ${user.email || ''}`.toLowerCase().includes(query))
@@ -1118,10 +1144,16 @@ async function adminUserModal(uid) {
     for (const payment of userPayments) {
       try { paymentLinks.push({payment, url: await signedRead(payment.mediaPath)}); } catch {}
     }
-    modal(`<div class="modal-head"><h2 class="with-avatar">${avatarHtml(data.profile, 38)} ${esc(data.profile.name || data.profile.email || 'משתמש')}</h2><button class="close" data-close-modal>×</button></div><div class="summary"><span>מייל</span><b>${esc(data.profile.email || '—')}</b></div><div class="summary"><span>טלפון</span><b>${esc(data.profile.phone || '—')}</b></div><div class="summary"><span>תפקיד</span><b>${esc(roleName(data.profile.role))}</b></div><div class="summary"><span>סך תשלומים מדווחים</span><b>${money(paymentTotal)}</b></div><div class="summary"><span>סטטוס</span><b>${esc(verificationLabel(data.profile.verification?.status))}</b></div><div class="list">${Object.entries(data.documents || {}).map(([key, url]) => `<a class="btn outline" href="${esc(url)}" target="_blank" rel="noopener">${esc(key)}</a>`).join('') || '<div class="empty">אין מסמכים</div>'}</div>${paymentLinks.length ? `<h3>הוכחות תשלום</h3><div class="list">${paymentLinks.map(({payment,url}) => `<a class="btn outline" href="${esc(url)}" target="_blank" rel="noopener">${money(payment.amount)} · ${fmtDate(payment.createdAt)}</a>`).join('')}</div>` : ''}<div class="summary"><span>סיסמה</span><b>מוצפנת · לא ניתנת לצפייה</b></div><div class="chips"><button class="btn primary" data-review="approved">אישור אימות</button><button class="btn danger" data-review="rejected">דחייה</button><button class="btn outline" data-review="needs_resubmission">בקשת צילום מחדש</button><button class="btn outline" data-reset-pw="${esc(data.profile.email || '')}">שליחת קישור לאיפוס סיסמה</button></div>`);
+    modal(`<div class="modal-head"><h2 class="with-avatar">${avatarHtml(data.profile, 38)} ${esc(data.profile.name || data.profile.email || 'משתמש')}</h2><button class="close" data-close-modal>×</button></div><div class="summary"><span>מייל</span><b>${esc(data.profile.email || '—')}</b></div><div class="summary"><span>טלפון</span><b>${esc(data.profile.phone || '—')}</b></div><div class="summary"><span>תפקיד</span><b>${esc(roleName(data.profile.role))}</b></div><div class="summary"><span>סך תשלומים מדווחים</span><b>${money(paymentTotal)}</b></div><div class="summary"><span>סטטוס</span><b>${esc(verificationLabel(data.profile.verification?.status))}</b></div><div class="list">${Object.entries(data.documents || {}).map(([key, url]) => `<a class="btn outline" href="${esc(url)}" target="_blank" rel="noopener">${esc(key)}</a>`).join('') || '<div class="empty">אין מסמכים</div>'}</div>${paymentLinks.length ? `<h3>הוכחות תשלום</h3><div class="list">${paymentLinks.map(({payment,url}) => `<a class="btn outline" href="${esc(url)}" target="_blank" rel="noopener">${money(payment.amount)} · ${fmtDate(payment.createdAt)}</a>`).join('')}</div>` : ''}<div class="summary"><span>סיסמה</span><b>מוצפנת · לא ניתנת לצפייה</b></div><div class="chips"><button class="btn primary" data-review="approved">אישור אימות</button><button class="btn danger" data-review="rejected">דחייה</button><button class="btn outline" data-review="needs_resubmission">בקשת צילום מחדש</button><button class="btn outline" data-role-toggle="${data.profile.role === 'owner' ? 'renter' : 'owner'}">${data.profile.role === 'owner' ? 'הפיכה לשוכר' : 'הפיכה לבעל רכב'}</button><button class="btn outline" data-reset-pw="${esc(data.profile.email || '')}">שליחת קישור לאיפוס סיסמה</button></div>`);
     document.querySelectorAll('[data-review]').forEach(button => button.onclick = async () => {
       const note = button.dataset.review === 'approved' ? '' : prompt('הערה למשתמש:') || '';
       try { await approveVerification(uid, button.dataset.review, note); closeModal(); toast('סטטוס האימות עודכן'); }
+      catch (error) { toast(error.message); }
+    });
+    document.querySelector('[data-role-toggle]')?.addEventListener('click', async event => {
+      const role = event.currentTarget.dataset.roleToggle;
+      if (!confirm(`לשנות את התפקיד של המשתמש ל${roleName(role)}?`)) return;
+      try { await adminAction('user-update', {uid, patch: {role}}); closeModal(); toast('התפקיד עודכן'); }
       catch (error) { toast(error.message); }
     });
     document.querySelector('[data-reset-pw]')?.addEventListener('click', async event => {
@@ -1173,7 +1205,7 @@ function carForm(car = null) {
       <button type="button" class="btn outline" id="add-url">הוספת קישור</button>
     </div>
     <div id="photo-suggest"></div>
-    <small id="car-image-note" class="mut">אפשר להעלות תמונות, למשוך תמונה רשמית לפי היצרן/דגם, או להדביק קישור HTTPS. חובה לפחות 2 תמונות.</small>
+    <small id="car-image-note" class="mut">אפשר להעלות תמונות, למשוך תמונה רשמית לפי היצרן/דגם, או להדביק קישור HTTPS. אפשר להעלות עד 6 תמונות (מספיקה תמונה אחת).</small>
 
     <p class="form-section-title">סרטון קצר <span class="mut">(רשות)</span></p>
     <div class="chips"><label class="btn outline">העלאת סרטון<input hidden type="file" id="video-file" accept="video/*"></label><span id="video-status" class="mut">${videoUrl ? 'סרטון קיים' : 'לא הועלה סרטון'}</span></div>
@@ -1233,7 +1265,7 @@ function carForm(car = null) {
     box.innerHTML = '<div class="suggest-bubble typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>';
     try {
       const response = await fetch('/api/car-image-search', {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({make, model, year: form.year.value})});
-      const result = await response.json();
+      const result = await response.json().catch(() => ({}));
       if (!response.ok || !result.url) { box.innerHTML = ''; return; }
       box.innerHTML = `<div class="suggest-bubble"><img class="suggest-img" src="${esc(result.url)}" alt=""><div class="suggest-text"><b>מצאתי תמונה של ${esc(make)} ${esc(model)}</b><small>רוצים שאוסיף אותה לגלריה?</small><div class="chips"><button type="button" class="btn primary" id="suggest-yes">כן, הוסף</button><button type="button" class="btn outline" id="suggest-no">לא תודה</button></div></div></div>`;
       box.querySelector('#suggest-yes').onclick = () => { addPhoto(result.url); box.innerHTML = ''; toast('התמונה נוספה לגלריה'); };
@@ -1247,7 +1279,7 @@ function carForm(car = null) {
   document.querySelector('#photo-files').onchange = async event => {
     const files = [...event.target.files].slice(0, 6 - photos.length);
     for (const file of files) {
-      try { note.textContent = 'מעלה תמונה…'; const path = await uploadPrivate(file, 'car-image'); const url = await carMediaPublic(path); addPhoto(url); }
+      try { note.textContent = 'מעלה תמונה…'; const url = await uploadPublicMedia(file, 'car-image'); addPhoto(url); }
       catch (error) { toast(error.message); }
     }
     note.textContent = `${photos.length} תמונות נוספו`;
@@ -1259,8 +1291,8 @@ function carForm(car = null) {
     try {
       note.textContent = 'מחפש תמונה רשמית…';
       const response = await fetch('/api/car-image-search', {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({make, model, year: form.year.value, trim: form.trim.value})});
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'לא נמצאה תמונה');
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.url) throw new Error(result.error || 'לא נמצאה תמונה מתאימה — אפשר להעלות תמונה מהגלריה');
       addPhoto(result.url);
       note.textContent = `${result.title || 'תמונה'} ${result.license ? '· ' + result.license : ''}`;
     } catch (error) { toast(error.message); note.textContent = error.message; }
@@ -1270,13 +1302,13 @@ function carForm(car = null) {
     const file = event.target.files[0];
     if (!file) return;
     const status = document.querySelector('#video-status');
-    try { status.textContent = 'מעלה סרטון…'; const path = await uploadPrivate(file, 'car-video'); videoUrl = await carMediaPublic(path); status.textContent = 'הסרטון הועלה ✓'; }
+    try { status.textContent = 'מעלה סרטון…'; videoUrl = await uploadPublicMedia(file, 'car-video'); status.textContent = 'הסרטון הועלה ✓'; }
     catch (error) { toast(error.message); status.textContent = error.message; }
   };
 
   form.onsubmit = async event => {
     event.preventDefault();
-    if (photos.length < 2) return toast('יש להעלות לפחות 2 תמונות של הרכב');
+    if (!photos.length) return toast('יש להוסיף לפחות תמונה אחת של הרכב');
     const make = currentMake();
     const model = modelSelect.value === '__other' ? modelInput.value.trim() : modelSelect.value;
     if (!make || !model) return toast('יש לבחור יצרן ודגם');

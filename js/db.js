@@ -1,5 +1,18 @@
 import {api} from './api.js';
+import {db} from './firebase.js';
 import {store, myRole} from './store.js';
+
+// Maintenance toggle: write config/maintenance directly (rules allow admins only). This
+// does not depend on a deployed server function, so the admin can always open/close the
+// site. Falls back to the server endpoint if the client rule has not been published yet.
+export async function setMaintenance(on) {
+  const value = {on: on === true, updatedAt: Date.now(), by: store.user?.uid || 'admin'};
+  try {
+    await db.ref('config/maintenance').set(value); // client-write:admin-maintenance
+  } catch (error) {
+    await api('admin-action', {action: 'maintenance', on: on === true});
+  }
+}
 
 export async function saveUser(patch) {
   if (!store.user) throw new Error('נדרשת התחברות');

@@ -3,8 +3,10 @@ import {authReady} from './auth.js';
 import {nav, home, cars, authView, dashboard, chatsPage} from './views.js';
 import {toast, closeModal} from './core.js';
 
-await startPublic();
-await authReady;
+// Start data + auth in the background — do NOT block first paint on them.
+// The home page renders instantly; auth-gated views wait via store.authSettled.
+startPublic();
+authReady.then(() => { store.authSettled = true; render(); });
 
 const routes = {home, cars, auth: authView, dashboard, chats: chatsPage};
 
@@ -64,6 +66,9 @@ window.addEventListener('storechange', event => {
 window.addEventListener('authchange', render);
 window.addEventListener('unhandledrejection', event => {
   console.error('unhandled rejection', event.reason);
+  // JSON/parse failures (e.g. a non-JSON API response) are already handled at every call
+  // site; never surface the raw "Unexpected … JSON at position N" text to the user.
+  if (event.reason?.name === 'SyntaxError') { event.preventDefault(); return; }
   toast(event.reason?.message || 'אירעה שגיאה');
 });
 window.addEventListener('error', event => {

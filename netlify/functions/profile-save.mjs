@@ -1,4 +1,4 @@
-import {getAdmin, verify, json, profile, cleanText, audit} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, profile, cleanText, audit, isAdmin} from './_firebase-admin.mjs';
 export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
@@ -6,7 +6,7 @@ export async function handler(event) {
     const body = JSON.parse(event.body || '{}');
     const db = getAdmin().database();
     const ref = db.ref(`users/${token.uid}`);
-    const existing = await profile(token.uid);
+    let existing = await profile(token.uid);
     if (body.action === 'create') {
       if (existing) return json(200, {ok: true});
       const role = ['renter', 'owner'].includes(body.role) ? body.role : '';
@@ -23,7 +23,14 @@ export async function handler(event) {
       await audit(token.uid, 'profile_create', 'user', token.uid, {role});
       return json(200, {ok: true});
     }
-    if (!existing) return json(404, {error: 'פרופיל לא נמצא'});
+    if (!existing) {
+      // Admins may not have registered through the renter/owner signup flow — let them keep
+      // their own profile (name/photo) by auto-creating a minimal record. Regular users
+      // always have a profile from registration, so this branch only ever fires for admins.
+      if (!await isAdmin(token.uid)) return json(404, {error: 'פרופיל לא נמצא'});
+      existing = {name: cleanText(token.name, 100) || 'מנהל האתר', email: cleanText(token.email, 200), role: '', createdAt: Date.now()};
+      await ref.set(existing);
+    }
     if (body.action === 'sync-email') {
       await ref.child('verification/email').set(!!token.email_verified);
       return json(200, {ok: true, emailVerified: !!token.email_verified});

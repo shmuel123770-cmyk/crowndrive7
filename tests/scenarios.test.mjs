@@ -80,6 +80,10 @@ check('פרסום רכב (2+ תמונות)', S(r) === 200);
 const carId = B(r).id;
 check('כתובת מלאה נשמרה בפרטי מעטים', get(`privateCarDetails/${carId}/fullAddress`) === '123 Kingston Ave');
 check('תמונה לא-תקינה סוננה', get(`cars/${carId}/photos`).length === 2);
+r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'Honda', model: 'Civic', dailyPrice: 120, photos: ['https://a/only.jpg']}});
+check('פרסום רכב עם תמונה אחת מתקבל (אין מינימום של 2)', S(r) === 200);
+r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'Mazda', model: '3', dailyPrice: 120, photos: []}});
+check('פרסום רכב בלי אף תמונה נדחה (400)', S(r) === 400);
 r = await call(fn['car-action'], 'r1', {action: 'create', data: {make: 'BMW', model: 'X5', photos: ['https://a/1.jpg', 'https://b/2.jpg']}});
 check('שוכר לא יכול לפרסם רכב (403)', S(r) === 403);
 r = await call(fn['car-action'], 'r1', {action: 'update', id: carId, patch: {dailyPrice: 1}});
@@ -226,6 +230,13 @@ r = await fn['car-action']({httpMethod: 'GET', headers: {}, body: ''});
 check('GET נדחה (405)', S(r) === 405);
 r = await fn['car-action']({httpMethod: 'POST', headers: {}, body: '{}'});
 check('בלי טוקן נדחה (401)', S(r) === 401);
+
+console.log('\nתרחיש L: פרופיל מנהל (avatar upsert)');
+// a1 is an admin with no /users profile — updating a photo must auto-create it.
+r = await call(fn['profile-save'], 'a1', {action: 'update', name: 'מנהל האתר', photoURL: 'https://cdn/admin.jpg'});
+check('מנהל בלי פרופיל מעדכן תמונה (נוצר פרופיל)', S(r) === 200 && get('users/a1/photoURL') === 'https://cdn/admin.jpg');
+r = await call(fn['profile-save'], 'zz', {action: 'update', photoURL: 'https://cdn/x.jpg'});
+check('משתמש רגיל בלי פרופיל עדיין נדחה (404)', S(r) === 404);
 
 console.log(`\n========== ${passed} עברו · ${failed} נכשלו ==========`);
 process.exit(failed ? 1 : 0);

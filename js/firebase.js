@@ -4,6 +4,9 @@ if (!cfg) throw new Error('Firebase config missing');
 const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(cfg);
 export const auth = firebase.auth();
 export const db = firebase.database();
+// Defensive: if the storage-compat script ever fails to load, keep the whole app alive
+// (auth + database still work) and let uploads fail gracefully instead of white-screening.
+export const storage = typeof firebase.storage === 'function' ? firebase.storage() : null;
 
 await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
 
