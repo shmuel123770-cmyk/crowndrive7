@@ -11,6 +11,19 @@ const fallbackImage = 'https://images.unsplash.com/photo-1492144534655-ae79c964c
 const carImage = car => car.photoUrl || fallbackImage;
 const roleName = role => ({renter:'שוכר', owner:'בעל רכב', admin:'מנהל'}[role] || 'משתמש');
 
+// Inline icons for the KPI cards (match the reference dashboard look).
+const ICON = {
+  money: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
+  calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  car: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l1.5-4.5A2 2 0 0 1 8.4 7h7.2a2 2 0 0 1 1.9 1.5L19 13v5a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H8v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z"/><circle cx="7.5" cy="16.5" r="1"/><circle cx="16.5" cy="16.5" r="1"/></svg>',
+  users: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+  eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
+};
+const kpi = (icon, value, label) => `<div class="kpi"><div class="kpi-head"><span class="kpi-label">${label}</span><i class="kpi-icon">${ICON[icon] || ''}</i></div><b>${value}</b></div>`;
+const carStatusPill = status => `<span class="pill ${status === 'available' ? 'ok' : 'mut'}">${status === 'available' ? 'זמין' : status === 'rented' ? 'מושכר' : 'מוסתר'}</span>`;
+
 export function nav() {
   const node = document.querySelector('#main-nav');
   node.innerHTML = `<button class="nav-btn" data-route="home">בית</button><button class="nav-btn" data-route="cars">רכבים</button>${store.user ? '<button class="nav-btn" data-route="dashboard">האזור שלי</button><button class="nav-btn" id="logout">יציאה</button>' : '<button class="nav-btn primary" data-route="auth">כניסה / הרשמה</button>'}`;
@@ -98,7 +111,7 @@ function renterDashboard(tab = 'overview') {
   const bookings = myBookings();
   const verification = store.profile?.verification || {};
   const contents = {
-    overview: `<div class="kpis"><div class="kpi"><b>${bookings.filter(b => b.status === 'active').length}</b><span>פעילות</span></div><div class="kpi"><b>${bookings.filter(b => b.status === 'pending').length}</b><span>ממתינות</span></div><div class="kpi"><b>${bookings.filter(b => b.status === 'done').length}</b><span>הושלמו</span></div><div class="kpi"><b>${verification.status === 'approved' ? '✓' : '!'}</b><span>${verificationLabel(verification.status)}</span></div></div><h2>הזמנות אחרונות</h2>${bookingList(bookings, 'renter')}`,
+    overview: `<div class="kpis">${kpi('calendar', bookings.filter(b => b.status === 'active').length, 'השכרות פעילות')}${kpi('check', bookings.filter(b => b.status === 'pending').length, 'ממתינות לאישור')}${kpi('car', bookings.filter(b => b.status === 'done').length, 'הושלמו')}${kpi('users', verification.status === 'approved' ? '✓' : '!', verificationLabel(verification.status))}</div><h2>הזמנות אחרונות</h2>${bookingList(bookings, 'renter')}`,
     bookings: `<h2>ההזמנות שלי</h2>${bookingList(bookings, 'renter')}`,
     profile: profileView(),
     messages: messagesView(bookings),
@@ -112,7 +125,7 @@ function ownerDashboard(tab = 'overview') {
   const cars = myCars();
   const total = Object.values(store.payments).reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
   const contents = {
-    overview: `<div class="kpis"><div class="kpi"><b>${cars.length}</b><span>רכבים</span></div><div class="kpi"><b>${cars.filter(c => c.status === 'available').length}</b><span>זמינים</span></div><div class="kpi"><b>${bookings.filter(b => b.status === 'pending').length}</b><span>ממתינות</span></div><div class="kpi"><b>${money(total)}</b><span>תשלומים מדווחים</span></div></div><h2>הזמנות פעילות</h2>${bookingList(bookings.filter(b => ['pending','approved','active'].includes(b.status)), 'owner')}`,
+    overview: `<div class="kpis">${kpi('car', cars.length, 'רכבים')}${kpi('check', cars.filter(c => c.status === 'available').length, 'זמינים')}${kpi('calendar', bookings.filter(b => b.status === 'pending').length, 'ממתינות לאישור')}${kpi('money', money(total), 'תשלומים מדווחים')}</div><h2>הזמנות פעילות</h2>${bookingList(bookings.filter(b => ['pending','approved','active'].includes(b.status)), 'owner')}`,
     bookings: `<h2>הזמנות</h2>${bookingList(bookings, 'owner')}`,
     cars: `<div class="section-head"><h2>הרכבים שלי</h2><button class="btn gold" id="add-car">הוספת רכב</button></div>${carGrid(cars)}`,
     profile: ownerProfileView(),
@@ -127,20 +140,45 @@ function adminDashboard(tab = 'overview') {
   const bookings = myBookings();
   const cars = list(store.cars);
   const total = Object.values(store.payments).reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+  const recentCars = cars.slice().sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0)).slice(0, 5);
+  const recentBookings = bookings.slice().sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0)).slice(0, 5);
   const contents = {
-    overview: `<div class="section-head"><h2>סקירה</h2><button class="btn outline" id="legacy-migrate">העברת נתונים ישנים</button></div><div class="kpis"><div class="kpi"><b>${users.length}</b><span>משתמשים</span></div><div class="kpi"><b>${cars.length}</b><span>רכבים</span></div><div class="kpi"><b>${bookings.length}</b><span>הזמנות</span></div><div class="kpi"><b>${money(total)}</b><span>תשלומים מדווחים</span></div></div><h2>הזמנות אחרונות</h2>${bookingList(bookings.slice().sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0)).slice(0, 10), 'admin')}`,
-    users: `<h2>משתמשים</h2>${adminUserList(users)}`,
-    cars: `<h2>רכבים</h2>${carGrid(cars)}`,
-    bookings: `<h2>הזמנות</h2>${bookingList(bookings, 'admin')}`,
+    overview: `<div class="panel-head-actions"><h2>סקירה</h2><div class="chips"><button class="btn outline" id="export-json">⬇ ייצוא JSON</button><button class="btn outline" id="legacy-migrate">העברת נתונים ישנים</button></div></div>
+      <div class="kpis">${kpi('money', money(total), 'תשלומים מדווחים')}${kpi('calendar', bookings.length, 'הזמנות')}${kpi('car', cars.length, 'רכבים')}${kpi('users', users.length, 'משתמשים')}</div>
+      <div class="overview-grid">
+        <div class="mini-panel"><div class="mini-panel-head"><h3>רכבים חדשים</h3><span>${recentCars.length} אחרונים</span></div>${recentCars.length ? recentCars.map(c => `<div class="mini-row"><b>${esc(c.make || '')} ${esc(c.model || '')}</b><span class="mut">${money(c.dailyPrice || 0)}/יום</span></div>`).join('') : '<div class="mini-row"><span class="mut">אין רכבים</span></div>'}</div>
+        <div class="mini-panel"><div class="mini-panel-head"><h3>הזמנות אחרונות</h3><span>${recentBookings.length} אחרונות</span></div>${recentBookings.length ? recentBookings.map(b => { const c = store.cars[b.carId] || {}; return `<div class="mini-row"><b>${esc(c.make || 'רכב')} ${esc(c.model || '')}</b><span class="mut">${statusLabel(b.status)}</span></div>`; }).join('') : '<div class="mini-row"><span class="mut">אין הזמנות</span></div>'}</div>
+      </div>`,
+    users: `<h2 style="margin-bottom:16px">משתמשים ואימותים</h2>${adminUsersTable(users)}`,
+    cars: `<h2 style="margin-bottom:16px">רכבים</h2>${adminCarsTable(cars)}`,
+    bookings: `<h2 style="margin-bottom:16px">הזמנות</h2>${bookingList(bookings, 'admin')}`,
   };
   app().innerHTML = dashboardLayout('לוח ניהול מנהל', [['overview','סקירה'],['users','משתמשים'],['cars','רכבים'],['bookings','הזמנות']], tab, contents[tab] || contents.overview);
   bindDashboardTabs(adminDashboard); bindActions(); bindCarButtons();
   document.querySelectorAll('[data-admin-user]').forEach(button => button.onclick = () => adminUserModal(button.dataset.adminUser));
+  document.querySelectorAll('[data-car-delete]').forEach(button => button.onclick = async () => {
+    if (!confirm('למחוק את הרכב לצמיתות?')) return;
+    try { await deleteCar(button.dataset.carDelete); toast('הרכב נמחק'); }
+    catch (error) { toast(error.message); }
+  });
   document.querySelector('#legacy-migrate')?.addEventListener('click', migratePrompt);
+  document.querySelector('#export-json')?.addEventListener('click', () => {
+    const payload = {exportedAt: new Date().toISOString(), users: store.users, cars: store.cars, bookings: store.bookings, payments: store.payments};
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url; anchor.download = `crowndrive-export-${Date.now()}.json`; anchor.click();
+    URL.revokeObjectURL(url);
+  });
 }
 
-function adminUserList(users) {
-  return `<div class="list">${users.length ? users.map(user => `<div class="row"><div><b>${esc(user.name || user.email)}</b><small>${esc(user.email || '')}</small></div><span>${esc(roleName(user.role))}</span><span class="status ${user.verification?.status === 'approved' ? 'ok' : 'warn'}">${esc(verificationLabel(user.verification?.status))}</span><button class="btn outline" data-admin-user="${esc(user.id)}">פרטים</button></div>`).join('') : '<div class="empty">אין משתמשים</div>'}</div>`;
+function adminUsersTable(users) {
+  if (!users.length) return '<div class="empty">אין משתמשים</div>';
+  return `<div class="table-wrap"><table class="data"><thead><tr><th>שם</th><th>אימייל</th><th>תפקיד</th><th>סטטוס אימות</th><th>פעולות</th></tr></thead><tbody>${users.map(user => `<tr><td class="t-main">${esc(user.name || '—')}</td><td>${esc(user.email || '')}</td><td>${esc(roleName(user.role))}</td><td><span class="pill ${user.verification?.status === 'approved' ? 'ok' : 'warn'}">${esc(verificationLabel(user.verification?.status))}</span></td><td><div class="t-actions"><button class="btn outline" data-admin-user="${esc(user.id)}">פרטים</button></div></td></tr>`).join('')}</tbody></table></div>`;
+}
+function adminCarsTable(cars) {
+  if (!cars.length) return '<div class="empty">אין רכבים</div>';
+  return `<div class="table-wrap"><table class="data"><thead><tr><th>רכב</th><th>יצרן</th><th>מחיר/יום</th><th>סטטוס</th><th>פעולות</th></tr></thead><tbody>${cars.map(car => `<tr><td class="t-main">${esc(car.make || '')} ${esc(car.model || '')} ${esc(car.year || '')}</td><td>${esc(car.make || '')}</td><td>${money(car.dailyPrice || 0)}</td><td>${carStatusPill(car.status)}</td><td><div class="t-actions"><button class="icon-btn danger" title="מחיקה" data-car-delete="${esc(car.id)}">${ICON.trash}</button></div></td></tr>`).join('')}</tbody></table></div>`;
 }
 
 function bookingList(bookings, role) {

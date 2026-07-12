@@ -1,5 +1,10 @@
-CrownDrive — FINAL build (2026-07-12)
+CrownDrive — FINAL build (2026-07-12, rev.2)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+Unified dashboard design for all three roles (each keeps its own distinct tabs/content):
+  - big clean dark title, four icon KPI cards, top tabs, no side drawer
+  - admin: overview (KPIs + JSON export + two panels) / users table / cars table / bookings
+  - owner: overview / bookings / cars grid + add-car / profile
+  - renter: overview / bookings / profile & verification / messages
 Includes: Netlify esbuild deploy fix (firebase-admin external), verification-status race fix,
 owner first-session bookings-query fix. All static checks and unit tests pass; all 16 functions
 bundle with zero esbuild errors. Firebase project: amar-75684.

@@ -1,11 +1,37 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Browser SDK access is intentionally disabled.
-    // Upload and read access use short-lived signed URLs issued by
-    // Netlify Functions after Firebase ID-token and role checks.
-    match /{allPaths=**} {
-      allow read, write: if false;
+
+    function isImage() {
+      return request.resource.contentType.matches('image/.*')
+             && request.resource.size < 12 * 1024 * 1024;   // up to 12MB
     }
+    function isVideo() {
+      return request.resource.contentType.matches('video/.*')
+             && request.resource.size < 180 * 1024 * 1024;  // up to 180MB
+    }
+
+    // User documents (license / selfie) — private to the owner. Images only.
+    match /users/{uid}/{allPaths=**} {
+      allow read:  if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid && isImage();
+    }
+
+    // Car images — owner uploads, any signed-in user may read. Images only.
+    match /cars/{uid}/{allPaths=**} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid && isImage();
+    }
+
+    // Booking media (payment proof, handover photos/videos) — images or videos.
+    match /bookings/{bookingId}/{folder}/{uid}/{allPaths=**} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid && (isImage() || isVideo());
+    }
+
+    // Note: CrownDrive V2 normally uploads/reads through short-lived signed URLs
+    // issued by Netlify Functions (Admin SDK), which bypass these rules. These
+    // rules are a defense-in-depth layer that also permits correct, size-limited
+    // direct image/video writes scoped to each user's own folder.
   }
 }
