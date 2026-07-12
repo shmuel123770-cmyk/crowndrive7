@@ -1,88 +1,71 @@
 {
   "rules": {
+    ".read": false,
+    ".write": false,
     "admins": {
       "$uid": {
-        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
-        ".write": false
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)"
       }
     },
     "users": {
       ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
       "$uid": {
-        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
-        ".write": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
-        ".validate": "!newData.exists() || (newData.child('email').isString() && newData.child('role').val().matches(/^(renter|owner)$/))"
-      }
-    },
-    "cars": {
-      ".read": true,
-      "$carId": {
-        ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || data.child('ownerUid').val() === auth.uid || (!data.exists() && newData.child('ownerUid').val() === auth.uid))"
-      }
-    },
-    "bookings": {
-      ".indexOn": [
-        "ownerUid",
-        "renterUid"
-      ],
-      ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || (query.orderByChild === 'ownerUid' && query.equalTo === auth.uid) || (query.orderByChild === 'renterUid' && query.equalTo === auth.uid))",
-      "$id": {
-        ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || data.child('ownerUid').val() === auth.uid || data.child('renterUid').val() === auth.uid)",
-        ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || data.child('ownerUid').val() === auth.uid || data.child('renterUid').val() === auth.uid || (!data.exists() && newData.child('renterUid').val() === auth.uid))"
-      }
-    },
-    "messages": {
-      "$bookingId": {
-        ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('bookings').child($bookingId).child('ownerUid').val() === auth.uid || root.child('bookings').child($bookingId).child('renterUid').val() === auth.uid)",
-        ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('bookings').child($bookingId).child('ownerUid').val() === auth.uid || root.child('bookings').child($bookingId).child('renterUid').val() === auth.uid)"
-      }
-    },
-    "payments": {
-      ".indexOn": [
-        "ownerUid",
-        "renterUid"
-      ],
-      ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || (query.orderByChild === 'ownerUid' && query.equalTo === auth.uid) || (query.orderByChild === 'renterUid' && query.equalTo === auth.uid))",
-      "$bookingId": {
-        ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || data.child('ownerUid').val() === auth.uid || data.child('renterUid').val() === auth.uid)",
-        ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('bookings').child($bookingId).child('renterUid').val() === auth.uid)"
-      }
-    },
-    "privateUserDocuments": {
-      "$uid": {
-        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
-        ".write": "auth != null && auth.uid === $uid"
-      }
-    },
-    "privateCarDetails": {
-      "$carId": {
-        ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || data.child('ownerUid').val() === auth.uid)",
-        ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || data.child('ownerUid').val() === auth.uid || (!data.exists() && newData.child('ownerUid').val() === auth.uid))"
-      }
-    },
-    "ratings": {
-      ".read": true,
-      "$id": {
-        ".write": "auth != null && (!data.exists() && newData.child('authorUid').val() === auth.uid)"
-      }
-    },
-    "migration": {
-      ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
-      ".write": "auth != null && root.child('admins').child(auth.uid).val() === true"
-    },
-    "crowndrive-live": {
-      "state": {
-        "data": {
-          ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
-          ".write": false
-        }
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)"
       }
     },
     "verificationStatus": {
       "$uid": {
-        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
-        ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
-        ".validate": "newData.val().matches(/^(missing|pending|approved|rejected)$/)"
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)"
+      }
+    },
+    "cars": {
+      ".read": true,
+      ".indexOn": ["ownerUid", "status"]
+    },
+    "bookings": {
+      ".indexOn": ["ownerUid", "renterUid", "carId"],
+      ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || (query.orderByChild === 'ownerUid' && query.equalTo === auth.uid) || (query.orderByChild === 'renterUid' && query.equalTo === auth.uid))",
+      "$id": {
+        ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || data.child('ownerUid').val() === auth.uid || data.child('renterUid').val() === auth.uid)"
+      }
+    },
+    "messages": {
+      "$bookingId": {
+        ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('bookings').child($bookingId).child('ownerUid').val() === auth.uid || root.child('bookings').child($bookingId).child('renterUid').val() === auth.uid)"
+      }
+    },
+    "payments": {
+      ".indexOn": ["ownerUid", "renterUid"],
+      ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || (query.orderByChild === 'ownerUid' && query.equalTo === auth.uid) || (query.orderByChild === 'renterUid' && query.equalTo === auth.uid))",
+      "$bookingId": {
+        ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || data.child('ownerUid').val() === auth.uid || data.child('renterUid').val() === auth.uid)"
+      }
+    },
+    "privateUserDocuments": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)"
+      }
+    },
+    "privateCarDetails": {
+      "$carId": {
+        ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || data.child('ownerUid').val() === auth.uid)"
+      }
+    },
+    "ratings": {
+      ".read": true,
+      ".indexOn": ["carId", "targetUid", "bookingId"]
+    },
+    "auditLogs": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).val() === true"
+    },
+    "migration": {
+      ".read": "auth != null && root.child('admins').child(auth.uid).val() === true"
+    },
+    "crowndrive-live": {
+      "state": {
+        "data": {
+          ".read": "auth != null && root.child('admins').child(auth.uid).val() === true"
+        }
       }
     }
   }

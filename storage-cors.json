@@ -1,0 +1,12 @@
+[
+  {
+    "origin": [
+      "https://crowndrive770.com",
+      "https://www.crowndrive770.com",
+      "https://crowndrive-staging.netlify.app"
+    ],
+    "method": ["GET", "PUT", "HEAD"],
+    "responseHeader": ["Content-Type", "ETag", "x-goog-resumable"],
+    "maxAgeSeconds": 3600
+  }
+]

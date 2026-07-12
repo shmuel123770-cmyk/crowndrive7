@@ -1,2 +1,21 @@
-import {getAdmin,verify,json,isAdmin,canAccessBooking,canReadUserDocs} from './_firebase-admin.mjs';
-export async function handler(event){try{if(event.httpMethod!=='POST')return json(405,{error:'Method not allowed'});const user=await verify(event),{path}=JSON.parse(event.body||'{}');if(!path||path.includes('..'))return json(400,{error:'Invalid path'});const p=String(path).split('/');let allowed=false;if(p[0]==='users'&&p[2]==='documents')allowed=await canReadUserDocs(user.uid,p[1]);else if(p[0]==='bookings')allowed=await canAccessBooking(user.uid,p[1]);else if(p[0]==='cars')allowed=true;else allowed=await isAdmin(user.uid);if(!allowed)return json(403,{error:'Forbidden'});const [url]=await getAdmin().storage().bucket().file(path).getSignedUrl({version:'v4',action:'read',expires:Date.now()+5*60*1000});return json(200,{url})}catch(e){console.error(e);return json(e.status||500,{error:e.message})}}
+import {getAdmin, verify, json, isAdmin, canAccessBooking, canReadUserDocs} from './_firebase-admin.mjs';
+export async function handler(event) {
+  try {
+    if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
+    const user = await verify(event);
+    const {path} = JSON.parse(event.body || '{}');
+    if (!path || String(path).includes('..')) return json(400, {error: 'נתיב לא תקין'});
+    const parts = String(path).split('/');
+    let allowed = false;
+    if (parts[0] === 'users' && parts[2] === 'documents') allowed = await canReadUserDocs(user.uid, parts[1]);
+    else if (parts[0] === 'bookings') allowed = await canAccessBooking(user.uid, parts[1]);
+    else if (parts[0] === 'cars') allowed = true;
+    else allowed = await isAdmin(user.uid);
+    if (!allowed) return json(403, {error: 'אין הרשאה'});
+    const [url] = await getAdmin().storage().bucket().file(path).getSignedUrl({version: 'v4', action: 'read', expires: Date.now() + 5 * 60 * 1000});
+    return json(200, {url});
+  } catch (error) {
+    console.error(error);
+    return json(error.status || 500, {error: error.message});
+  }
+}
