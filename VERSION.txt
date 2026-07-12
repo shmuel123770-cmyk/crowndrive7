@@ -1,11 +1,25 @@
-CrownDrive — FINAL build (2026-07-12, rev.2)
+CrownDrive — FINAL build (2026-07-12, rev.3)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
-Unified dashboard design for all three roles (each keeps its own distinct tabs/content):
-  - big clean dark title, four icon KPI cards, top tabs, no side drawer
-  - admin: overview (KPIs + JSON export + two panels) / users table / cars table / bookings
-  - owner: overview / bookings / cars grid + add-car / profile
-  - renter: overview / bookings / profile & verification / messages
-Includes: Netlify esbuild deploy fix (firebase-admin external), verification-status race fix,
-owner first-session bookings-query fix. All static checks and unit tests pass; all 16 functions
-bundle with zero esbuild errors. Firebase project: amar-75684.
-See התחל_כאן_גרסה_סופית.md to deploy.
+
+Home: hero + animated car, booking widget, owner CTA, up to 8 available cars + "לכל הרכבים",
+"איך זה עובד" (3 steps), "אמון ובטיחות" (4 trust cards).
+
+Cars page: filter bar (search / availability / type / fuel / gear / sort). Car cards: photo,
+availability badge (פנוי/מושכר), make·model·year·type·fuel·gear, rating, price, owner name,
+video badge. Detail modal: photo gallery + thumbnails + optional demo video + reviews + booking.
+
+Add-car form: make→model→year from lists (with "אחר" free text), sub-model optional, car type,
+2–6 photos with a chosen main photo, optional short video, manufacturer image auto-fetch.
+Server (car-action) stores category/fuel/gear/seats/photos[]/videoUrl/ownerName; requires ≥2 photos.
+
+Chats: dedicated page, WhatsApp-style thread list (right) + conversation (left), mobile slide.
+Chat is open only from booking approval until the rental ends. Admin gets a full users list and
+can message any user (messages/admin/<uid>). Before a rental starts the renter must send through
+the chat: exterior video + fuel photo + odometer photo + payment proof; the owner then has two
+buttons — "התחלת השכרה" (gated on those four) and "סיום השכרה".
+
+Unified dashboards (admin/owner/renter). Deploy fixes retained (firebase-admin external, no-op
+build, CSP fonts). New server function: car-media-public (makes owner car media public).
+All static/security checks and unit tests pass; 17 Netlify functions. Firebase project: amar-75684.
+See התחל_כאן_גרסה_סופית.md to deploy. Remember to publish the updated Realtime DB rules
+(messages/admin branch) and Storage rules (car videos) in the Firebase console.

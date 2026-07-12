@@ -1,5 +1,5 @@
 [build]
-  command = "echo CrownDrive build ok"
+  command = "npm install --no-audit --no-fund --omit=dev"
   publish = "."
   functions = "netlify/functions"
 
