@@ -33,10 +33,14 @@ function watchReveals() {
 // bookings/users/…) resolve over the first ~200ms, spread across several animation frames — so a
 // per-frame guard still let ~5 renders through (the "jumping / refreshing 5 times" on open). A
 // short TRAILING debounce collapses the whole burst into a single render once it goes quiet.
-let renderTimer = null;
+let renderTimer = null, renderFirstAt = 0;
 function scheduleRender() {
+  const now = Date.now();
+  if (!renderTimer) renderFirstAt = now;
   clearTimeout(renderTimer);
-  renderTimer = setTimeout(() => { renderTimer = null; render(); }, 110);
+  // Debounce a burst by 110ms, but NEVER hold a render longer than 700ms even under a continuous
+  // stream of events — otherwise a chatty listener could starve the render and freeze the spinner.
+  renderTimer = setTimeout(() => { renderTimer = null; render(); }, (now - renderFirstAt) >= 700 ? 0 : 110);
 }
 
 let rendering = false;

@@ -15,11 +15,20 @@ export async function createOwnProfile({name, phone, role}) {
   const ref = db.ref(`users/${user.uid}`);
   const snap = await ref.once('value');
   if (snap.exists()) {
-    // Legacy/partial profile (has a name but no role). Client rules forbid writing to an
-    // existing profile row (the create rule requires !data.exists), so set the role through
-    // the server — its Admin SDK can add a role to a role-less profile. This is what unblocks
-    // "עוד צעד אחד וסיימנו" for old accounts that were created without a role.
-    if (!snap.val().role && role) await api('profile-save', {action: 'update', role: chosenRole});
+    // Legacy/partial profile (has a name but no role). Set the role DIRECTLY — the rules now allow a
+    // user to write their own users/<uid>/role once, while it's still empty (renter|owner). This is
+    // what makes "עוד צעד אחד וסיימנו" actually work: it no longer depends on the serverless function
+    // (which has been unreliable). Falls back to the server only if the new rule isn't published yet.
+    if (!snap.val().role && role) {
+      try {
+        await db.ref(`users/${user.uid}/role`).set(chosenRole); // client-write:own-role
+      } catch (error) {
+        if (/permission_denied/i.test(String(error?.message || ''))) {
+          try { await api('profile-save', {action: 'update', role: chosenRole}); }
+          catch { throw new Error('כמעט סיימנו — יש לפרסם את חוקי ה-Firebase המעודכנים ואז ההרשמה תושלם'); }
+        } else throw new Error('שמירת הפרטים נכשלה — נסו שוב');
+      }
+    }
     return;
   }
   try {

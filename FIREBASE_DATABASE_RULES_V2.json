@@ -16,6 +16,10 @@
         "photoURL": {
           ".write": "auth != null && auth.uid === $uid",
           ".validate": "newData.isString() && newData.val().length <= 1400000"
+        },
+        "role": {
+          ".write": "auth != null && auth.uid === $uid && !data.exists()",
+          ".validate": "newData.val() === 'renter' || newData.val() === 'owner'"
         }
       }
     },

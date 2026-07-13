@@ -88,7 +88,7 @@ export async function startPrivate(user) {
     store.privateUnsubs.push(() => profileRef.off('value', onProfile));
   }
   // Last-resort safety net: never let the personal area spin for more than a few seconds.
-  setTimeout(() => { if (!store.profileLoaded) { store.profileLoaded = true; emit('profile'); } }, 8000);
+  setTimeout(() => { if (!store.profileLoaded) { store.profileLoaded = true; emit('profile'); } }, 5000);
   store.privateUnsubs.push(listen(refs.verificationStatus.child(user.uid), status => {
     store.profile = store.profile || {};
     // The listen() helper coerces empty snapshots to {} — keep status a string.

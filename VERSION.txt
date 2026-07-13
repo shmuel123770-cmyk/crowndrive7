@@ -1,5 +1,35 @@
-CrownDrive — FINAL build (2026-07-13, rev.31)
+CrownDrive — FINAL build (2026-07-13, rev.33)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.33 (2026-07-13) — THE stuck root cause (CSP) + auto-cache-recovery + full make/model list:
+- *** THE REAL "loads for an hour" *** — found in the user's DevTools: dozens of
+  `firebase-database-compat` long-poll requests (`.lp?start=…`) were `blocked:CSP`. The CSP allowed
+  the database in connect-src (WebSocket) but script-src only had 'self' + gstatic — so on any
+  network where WebSockets don't work, Firebase's long-poll fallback (loaded as <script>) was blocked
+  and the database NEVER connected → the personal area hung forever. FIX (_headers): script-src +
+  connect-src now include https://*.firebaseio.com and https://*.firebasedatabase.app (+ wss). This
+  is device/network-dependent, which is exactly why it hit "some users".
+- NO MORE MANUAL CACHE CLEARING: the service worker, on activate, now force-reloads any open page
+  still running old code (client.navigate) — so stale users recover automatically, no "clear cache".
+- CAR MAKES/MODELS: expanded to 49 manufacturers (Acura…Volvo) with full model lists, ALWAYS sorted
+  A→Z (makes + models). "אחר…" still lets you type any make/model not in the list.
+- Changed: _headers, sw.js, js/views.js (+ rev.32: role client-write, render anti-starvation).
+  Re-publish the Firebase rules (rev.32 role rule). Assets ?v=26.
+
+rev.32 (2026-07-13) — "complete profile" save works + spinner can't starve:
+- CONFIRMED bug: on the "עוד צעד אחד" screen, picking a role wrote it through the SERVER function
+  (api profile-save) — the unreliable path — so for a user like מנחם "clicking did nothing". FIX:
+  the role is now written DIRECTLY (client-write:own-role). New DB rule: a user may set their OWN
+  users/<uid>/role ONCE while it's empty (renter|owner) — can't change an existing role. Server kept
+  only as a fallback. So the profile completes reliably and the user lands on their dashboard.
+  MUST re-publish the rules.
+- Anti-stuck hardening: scheduleRender now forces a paint within 700ms even under a continuous event
+  stream (a chatty listener could otherwise starve the render and freeze the "loading personal area"
+  spinner). Safety-net that force-clears the spinner lowered 8s → 5s. Changed: js/auth.js, js/app.js,
+  js/store.js, rules. Assets ?v=26.
+- NOTE: the anti-stuck safety net + adminChecked were already live and verified deployed; if a device
+  still hangs after a fully-clean load, the render was being starved (now fixed) — else capture the
+  browser Console error so the exact cause can be pinned.
 
 rev.31 (2026-07-13) — admin login no longer asks "renter or owner":
 - RACE: right after the admin signs in, dashboard() rendered BEFORE startPrivate finished reading

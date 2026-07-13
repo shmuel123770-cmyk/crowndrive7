@@ -12,6 +12,12 @@ self.addEventListener('activate', event => event.waitUntil((async () => {
   const keys = await caches.keys();
   await Promise.all(keys.map(key => caches.delete(key)));   // wipe EVERYTHING — nothing stays cached
   await self.clients.claim();
+  // Force any page still running OLD cached code to reload itself onto the fresh code the instant
+  // this worker takes over — so users NEVER have to clear their cache by hand. Runs once per update.
+  try {
+    const windows = await self.clients.matchAll({type: 'window'});
+    for (const client of windows) client.navigate(client.url);
+  } catch (error) { /* older browsers: they'll just get fresh code on their next navigation */ }
 })()));
 
 // NO 'fetch' handler on purpose → the browser always fetches the freshest code from the network,

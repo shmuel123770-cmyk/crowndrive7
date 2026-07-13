@@ -66,24 +66,59 @@ const selectOptions = (options, selected) => `<option value="">בחר…</option
 
 // Car reference data — the owner picks make → model from these lists when listing a car.
 const CAR_TYPES = ['סדאן', 'סדאן יוקרה', 'SUV', 'SUV יוקרה', 'פיקאפ', 'מיניוואן', 'קרוסאובר', 'האצ׳בק', 'קופה', 'ספורט', 'מסחרי'];
-const CAR_MAKES = ['Toyota', 'Honda', 'Hyundai', 'Kia', 'Mazda', 'Nissan', 'Subaru', 'Volkswagen', 'Škoda', 'Ford', 'Chevrolet', 'Jeep', 'Dodge', 'Chrysler', 'RAM', 'GMC', 'Tesla', 'BMW', 'Mercedes-Benz', 'Audi', 'Lexus', 'Volvo', 'Mitsubishi', 'Suzuki', 'Peugeot', 'Renault', 'Citroën', 'Fiat', 'Seat', 'Cupra'];
 const MODELS_BY_MAKE = {
-  Toyota: ['Corolla', 'Camry', 'RAV4', 'Prius', 'Highlander', 'Yaris', 'C-HR', 'Land Cruiser', 'Sienna', 'Tacoma'],
-  Honda: ['Civic', 'Accord', 'CR-V', 'HR-V', 'Pilot', 'Odyssey', 'Fit'],
-  Hyundai: ['i10', 'i20', 'Elantra', 'Tucson', 'Santa Fe', 'Kona', 'Ioniq 5', 'Sonata'],
-  Kia: ['Picanto', 'Rio', 'Ceed', 'Sportage', 'Sorento', 'Niro', 'EV6', 'Seltos'],
-  Mazda: ['2', '3', '6', 'CX-3', 'CX-5', 'CX-30', 'MX-5'],
-  Nissan: ['Micra', 'Sentra', 'Altima', 'Qashqai', 'X-Trail', 'Juke', 'Leaf'],
-  Tesla: ['Model 3', 'Model Y', 'Model S', 'Model X'],
-  BMW: ['1 Series', '3 Series', '5 Series', 'X1', 'X3', 'X5', 'i4'],
-  'Mercedes-Benz': ['A-Class', 'C-Class', 'E-Class', 'GLA', 'GLC', 'GLE', 'EQC'],
-  Audi: ['A3', 'A4', 'A6', 'Q3', 'Q5', 'Q7', 'e-tron'],
-  Volkswagen: ['Polo', 'Golf', 'Passat', 'Tiguan', 'T-Roc', 'ID.4'],
-  Ford: ['Fiesta', 'Focus', 'Fusion', 'Escape', 'Explorer', 'F-150', 'Mustang'],
-  Jeep: ['Renegade', 'Compass', 'Cherokee', 'Grand Cherokee', 'Wrangler'],
-  Chevrolet: ['Spark', 'Malibu', 'Equinox', 'Traverse', 'Tahoe', 'Silverado'],
-  Lexus: ['IS', 'ES', 'NX', 'RX', 'UX'],
+  Acura: ['ILX', 'Integra', 'MDX', 'RDX', 'TLX', 'ZDX'],
+  'Alfa Romeo': ['Giulia', 'Stelvio', 'Tonale'],
+  'Aston Martin': ['DB11', 'DB12', 'DBX', 'Vantage'],
+  Audi: ['A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'e-tron', 'Q3', 'Q4 e-tron', 'Q5', 'Q7', 'Q8', 'R8', 'RS 5', 'S4', 'TT'],
+  Bentley: ['Bentayga', 'Continental GT', 'Flying Spur'],
+  BMW: ['2 Series', '3 Series', '4 Series', '5 Series', '7 Series', '8 Series', 'i4', 'i5', 'i7', 'iX', 'M3', 'M4', 'X1', 'X2', 'X3', 'X4', 'X5', 'X6', 'X7', 'Z4'],
+  Buick: ['Enclave', 'Encore GX', 'Envision', 'Envista'],
+  Cadillac: ['CT4', 'CT5', 'Escalade', 'LYRIQ', 'XT4', 'XT5', 'XT6'],
+  Chevrolet: ['Blazer', 'Bolt EV', 'Camaro', 'Colorado', 'Corvette', 'Equinox', 'Malibu', 'Silverado', 'Spark', 'Suburban', 'Tahoe', 'Trailblazer', 'Traverse', 'Trax'],
+  Chrysler: ['300', 'Pacifica', 'Voyager'],
+  Citroën: ['Berlingo', 'C3', 'C4', 'C5 Aircross'],
+  Cupra: ['Born', 'Formentor', 'Leon'],
+  Dodge: ['Challenger', 'Charger', 'Durango', 'Hornet'],
+  Ferrari: ['296 GTB', 'F8', 'Portofino', 'Purosangue', 'Roma', 'SF90'],
+  Fiat: ['500', '500X', '600', 'Panda', 'Tipo'],
+  Ford: ['Bronco', 'Bronco Sport', 'Edge', 'Escape', 'Expedition', 'Explorer', 'F-150', 'F-250', 'Fiesta', 'Focus', 'Fusion', 'Maverick', 'Mustang', 'Mustang Mach-E', 'Ranger', 'Transit'],
+  Genesis: ['G70', 'G80', 'G90', 'GV60', 'GV70', 'GV80'],
+  GMC: ['Acadia', 'Canyon', 'Hummer EV', 'Sierra', 'Terrain', 'Yukon'],
+  Honda: ['Accord', 'Civic', 'CR-V', 'Fit', 'HR-V', 'Odyssey', 'Passport', 'Pilot', 'Prologue', 'Ridgeline'],
+  Hyundai: ['Accent', 'Elantra', 'Ioniq 5', 'Ioniq 6', 'Kona', 'Palisade', 'Santa Cruz', 'Santa Fe', 'Sonata', 'Tucson', 'Venue'],
+  Infiniti: ['Q50', 'QX50', 'QX55', 'QX60', 'QX80'],
+  Jaguar: ['E-Pace', 'F-Pace', 'F-Type', 'I-Pace', 'XF'],
+  Jeep: ['Cherokee', 'Compass', 'Gladiator', 'Grand Cherokee', 'Renegade', 'Wagoneer', 'Wrangler'],
+  Kia: ['Carnival', 'EV6', 'EV9', 'Forte', 'K5', 'Niro', 'Rio', 'Seltos', 'Sorento', 'Soul', 'Sportage', 'Stinger', 'Telluride'],
+  Lamborghini: ['Aventador', 'Huracán', 'Revuelto', 'Urus'],
+  'Land Rover': ['Defender', 'Discovery', 'Discovery Sport', 'Range Rover', 'Range Rover Evoque', 'Range Rover Sport', 'Range Rover Velar'],
+  Lexus: ['ES', 'GX', 'IS', 'LC', 'LS', 'LX', 'NX', 'RX', 'RZ', 'UX'],
+  Lincoln: ['Aviator', 'Corsair', 'Nautilus', 'Navigator'],
+  Maserati: ['Ghibli', 'Grecale', 'GranTurismo', 'Levante', 'MC20', 'Quattroporte'],
+  Mazda: ['CX-30', 'CX-5', 'CX-50', 'CX-70', 'CX-90', 'Mazda3', 'Mazda6', 'MX-5 Miata'],
+  McLaren: ['720S', 'Artura', 'GT'],
+  'Mercedes-Benz': ['A-Class', 'C-Class', 'CLA', 'E-Class', 'EQB', 'EQE', 'EQS', 'G-Class', 'GLA', 'GLB', 'GLC', 'GLE', 'GLS', 'S-Class', 'SL'],
+  MINI: ['Clubman', 'Convertible', 'Countryman', 'Hardtop'],
+  Mitsubishi: ['Eclipse Cross', 'Mirage', 'Outlander', 'Outlander Sport'],
+  Nissan: ['Altima', 'Ariya', 'Frontier', 'Kicks', 'Leaf', 'Maxima', 'Murano', 'Pathfinder', 'Rogue', 'Sentra', 'Titan', 'Versa', 'Z'],
+  Peugeot: ['208', '2008', '308', '3008', '5008'],
+  Polestar: ['Polestar 2', 'Polestar 3', 'Polestar 4'],
+  Porsche: ['718 Cayman', '911', 'Cayenne', 'Macan', 'Panamera', 'Taycan'],
+  RAM: ['1500', '2500', '3500', 'ProMaster'],
+  Renault: ['Arkana', 'Captur', 'Clio', 'Megane', 'Austral'],
+  'Rolls-Royce': ['Cullinan', 'Ghost', 'Phantom', 'Spectre'],
+  SEAT: ['Arona', 'Ateca', 'Ibiza', 'Leon'],
+  Škoda: ['Fabia', 'Kamiq', 'Karoq', 'Kodiaq', 'Octavia', 'Superb'],
+  Subaru: ['Ascent', 'BRZ', 'Crosstrek', 'Forester', 'Impreza', 'Legacy', 'Outback', 'Solterra', 'WRX'],
+  Suzuki: ['Jimny', 'Swift', 'Vitara'],
+  Tesla: ['Cybertruck', 'Model 3', 'Model S', 'Model X', 'Model Y'],
+  Toyota: ['4Runner', 'bZ4X', 'Camry', 'C-HR', 'Corolla', 'Corolla Cross', 'GR86', 'Highlander', 'Land Cruiser', 'Prius', 'RAV4', 'Sequoia', 'Sienna', 'Tacoma', 'Tundra', 'Venza', 'Yaris'],
+  Volkswagen: ['Arteon', 'Atlas', 'Golf', 'ID.4', 'Jetta', 'Passat', 'Taos', 'Tiguan'],
+  Volvo: ['C40', 'EX30', 'EX90', 'S60', 'S90', 'V60', 'XC40', 'XC60', 'XC90'],
 };
+// Every manufacturer above, always sorted A→Z. Models are sorted A→Z at render (populateModels).
+const CAR_MAKES = Object.keys(MODELS_BY_MAKE).sort((a, b) => a.localeCompare(b, 'en'));
 const carYears = () => { const now = new Date().getFullYear() + 1; return Array.from({length: 30}, (_, i) => String(now - i)); };
 const carPhotoList = car => { const arr = (Array.isArray(car.photos) ? car.photos : []).filter(Boolean); const main = car.photoUrl; return [...new Set([main, ...arr].filter(Boolean))]; };
 const carReviews = carId => list(store.ratings).filter(r => r.type === 'car' && r.carId === carId && (r.review || r.score)).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
@@ -1327,7 +1362,7 @@ function carForm(car = null) {
   }
   function populateModels() {
     const make = currentMake();
-    const models = MODELS_BY_MAKE[make] || [];
+    const models = (MODELS_BY_MAKE[make] || []).slice().sort((a, b) => a.localeCompare(b, 'en'));
     modelSelect.innerHTML = `${selectOptions(models, models.includes(car?.model) ? car.model : '')}<option value="__other" ${car?.model && !models.includes(car.model) ? 'selected' : ''}>אחר…</option>`;
     const useInput = !models.length || modelSelect.value === '__other';
     modelInput.style.display = useInput ? '' : 'none';
