@@ -1,6 +1,13 @@
-CrownDrive — FINAL build (2026-07-13, rev.45)
+CrownDrive — FINAL build (2026-07-13, rev.46)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
+rev.46 (2026-07-13) — home page: show all cars (with availability marker) + smaller cards:
+- The home fleet section now shows ALL cars (available AND rented, hidden excluded), available ones
+  first, each with its פנוי/מושכר badge so it's obvious what's free and what's taken. (js/views.js)
+- Section title changed "רכבים זמינים" → "הרכבים באתר".
+- Car cards SHRANK a bit everywhere: 16:9 photo + tighter padding/text on desktop, and an even more
+  compact 2:1 photo on phones (card height ~447px → ~405px on mobile). (css/app.css)
+- Assets ?v=33. No rules change.
 rev.45 (2026-07-13) — audit remediation batch 3 (Phase 3–4 pure-code, no infra decisions):
 - #14 Rental mode ENFORCED server-side: booking-create now rejects a range the car's mode doesn't cover
   (hours/days/weeks + weekend), mirroring the client's carServesPeriod — a hand-crafted request can no

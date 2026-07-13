@@ -171,7 +171,7 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
 .sec-head h2::after{content:"";position:absolute;bottom:0;inset-inline-start:50%;transform:translateX(50%);height:4px;width:0;border-radius:99px;background:linear-gradient(90deg,var(--brand),var(--accent));opacity:.75;transition:width .8s var(--ease) .2s}
 .reveal.in .sec-head h2::after,.sec-head.in h2::after{width:64px}
 .sec-head .sec-sub{color:var(--muted);margin:10px 0 0;font-weight:300}
-.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px;position:relative;z-index:1}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px;position:relative;z-index:1}
 .see-all{display:flex;justify-content:center;margin-top:28px;position:relative;z-index:1}
 
 /* premium fleet backdrop: watermark + framed gradient panel */
@@ -192,7 +192,7 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
   background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.35) 48%,transparent 62%);
   transform:translateX(-140%);transition:transform .9s var(--ease)}
 .car:hover::after{transform:translateX(0)}
-.car-photo{position:relative;aspect-ratio:16/10;background:var(--bg3);overflow:hidden}
+.car-photo{position:relative;aspect-ratio:16/9;background:var(--bg3);overflow:hidden}
 .car-photo img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s var(--ease)}
 .car:hover .car-photo img{transform:scale(1.04)}
 .avail-badge{position:absolute;top:12px;inset-inline-start:12px;font-weight:700;font-size:.78rem;letter-spacing:.02em;padding:6px 15px;border-radius:99px;border:1px solid;backdrop-filter:blur(6px)}
@@ -207,14 +207,14 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
 .car-manage .btn.gold:hover{filter:brightness(1.06)}
 .car-manage .btn.outline{background:#fff;color:var(--brand-d);border:1px solid var(--line)}
 .car-manage .btn.outline:hover{background:rgba(63,107,142,.06);border-color:var(--brand)}
-.car-body{padding:22px;display:flex;flex-direction:column;gap:13px;flex:1}
-.car-body h3{margin:0;font-size:1.2rem}
+.car-body{padding:17px 18px;display:flex;flex-direction:column;gap:10px;flex:1}
+.car-body h3{margin:0;font-size:1.1rem}
 .car-specs{display:flex;flex-wrap:wrap;gap:6px;color:var(--muted);font-size:.8rem;font-weight:300;letter-spacing:.03em}
 .car-specs span{white-space:nowrap}
 .rating{color:#E9A93D;letter-spacing:1px;font-size:.95rem}
 .rating small{color:var(--muted);letter-spacing:0}
 .car-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px solid var(--hair);padding-top:13px}
-.price{font-size:1.35rem;font-weight:800;color:var(--brand-d)}
+.price{font-size:1.2rem;font-weight:800;color:var(--brand-d)}
 .price-request{font-size:1rem;font-weight:700;color:var(--muted)}
 .price-stack{display:grid;gap:2px}
 .price-alt{color:var(--muted);font-weight:600;font-size:.74rem;letter-spacing:.02em}
@@ -1057,13 +1057,13 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 
 /* More compact car cards on phones — comfortable, less scrolling (the whole site is mobile-first) */
 @media (max-width:600px){
-  .car-photo{aspect-ratio:16/9}
-  .car-body{padding:14px 16px;gap:9px}
-  .car-body h3{font-size:1.06rem}
-  .car-specs{font-size:.76rem;gap:5px}
-  .rating{font-size:.85rem}
-  .mode-line{font-size:.76rem;margin:1px 0}
-  .price{font-size:1.15rem}
-  .car .btn{padding:11px}
-  .grid{gap:16px}
+  .car-photo{aspect-ratio:2/1}
+  .car-body{padding:12px 14px;gap:7px}
+  .car-body h3{font-size:1.02rem}
+  .car-specs{font-size:.74rem;gap:5px}
+  .rating{font-size:.82rem}
+  .mode-line{font-size:.74rem;margin:1px 0}
+  .price{font-size:1.1rem}
+  .car .btn{padding:10px}
+  .grid{gap:14px}
 }
