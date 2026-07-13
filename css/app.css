@@ -1042,3 +1042,15 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 .price-contact-cta small{color:var(--muted);font-size:.82rem}
 .price-contact-cta .btn{white-space:nowrap}
 .period-note.contact{background:rgba(63,107,142,.08);border-color:rgba(63,107,142,.24);color:var(--brand-d)}
+
+/* prominent "כל הרכבים באתר" button on the home page */
+.see-all-btn{font-size:1.12rem;font-weight:800;padding:16px 42px;border-radius:16px;letter-spacing:.01em;box-shadow:0 14px 32px rgba(63,107,142,.42)}
+.see-all-btn:hover{transform:translateY(-2px)}
+/* empty-results message spans the whole grid so it sits centered (not stuck in the first column) */
+.grid > .empty{grid-column:1 / -1;padding:64px 30px;font-size:1.05rem;display:flex;align-items:center;justify-content:center;min-height:200px}
+/* chats page: back-to-personal-area button + header row */
+.chat-list-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+.chat-list-head h2{margin:0;flex:1;min-width:0}
+.chat-list-head #chat-search{flex-basis:100%;margin-top:2px}
+.chat-page-back{background:rgba(255,255,255,.12);border:none;color:#fff;font-size:1.25rem;cursor:pointer;width:36px;height:36px;border-radius:9px;flex:none;display:grid;place-items:center;transition:background .18s}
+.chat-page-back:hover{background:rgba(255,255,255,.22)}

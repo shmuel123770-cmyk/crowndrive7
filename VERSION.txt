@@ -1,6 +1,26 @@
-CrownDrive — FINAL build (2026-07-13, rev.39)
+CrownDrive — FINAL build (2026-07-13, rev.40)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
+rev.40 (2026-07-13) — the 5x flicker fixed for real + admin-messaging fix + several UI fixes:
+- *** THE "site flashes 5 times on load" — REAL FIX (verified in-browser). *** Every Firebase listener
+  (cars/ratings/config/bookings/users…) resolves seconds apart and each used to FULLY rebuild #app —
+  the 110ms debounce couldn't coalesce events that far apart, so the whole page rebuilt ~5 times. Now
+  paintApp() memoizes: it diffs the new HTML against what's on screen and only touches the DOM when it
+  truly differs. PROVEN: firing the 10-event load burst now causes 0 repaints (was ~5); a real route
+  change still repaints exactly once. (js/core.js paintApp/resetPaint; home/cars use it; app.js guards
+  the single "→ חזרה" so a skipped repaint can't duplicate it.)
+- *** "can't message users" — the real cause + fix. *** The admin message set fromAdmin from
+  store.isAdmin; if that flag was momentarily false (a re-render race) the value mismatched the DB rule
+  (fromAdmin === isAdmin) and the write was REJECTED with a misleading "publish the rules" toast.
+  sendMessage now reads admins/<uid> directly (checkIsAdmin) for both the target thread and fromAdmin,
+  so it's correct regardless of timing. (js/db.js)
+- CHATS PAGE now has a "→" back button (to the personal area) — there was no way to leave it (its own
+  page-back was removed in rev.37 assuming the thread's back was enough; the LIST had none). (views.js)
+- HOME shows 9 cars (was 8) and the "כל הרכבים באתר" button is now large + prominent. (views.js + css)
+- "אין רכבים זמינים" now spans the whole grid and is centered (was stuck in the first column). (css)
+- Removed the "החלפת בעלים" (change-owner) button from the admin cars list. (views.js)
+- Only css/app.css is versioned (?v=31). No Firebase rules change in THIS rev (the photo-prefix rules
+  from rev.39 still need publishing if not done yet).
 rev.39 (2026-07-13) — REPAIR_PLAN #1: rate limiting + real file validation (security):
 - RATE LIMITING on every sensitive server function — a per-user, per-action sliding window backed by
   the Realtime DB (admin-only node, default-deny), enforced with a transaction so concurrent requests

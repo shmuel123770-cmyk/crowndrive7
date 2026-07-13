@@ -12,6 +12,21 @@ export function toast(message) {
 }
 export function modal(html) { $('#modal-root').innerHTML = `<div class="modal-backdrop"><section class="modal">${html}</section></div>`; }
 export function closeModal() { $('#modal-root').innerHTML = ''; }
+// Paint #app only when the HTML actually changed. The Firebase listeners (cars/ratings/config/auth…)
+// resolve over ~1–2s and each used to fully rebuild the DOM — the "whole site flashes 5 times" on load.
+// paintApp() diffs the new HTML against what's on screen and touches the DOM only when it differs.
+// Returns true if it painted (caller should (re)bind), false if nothing changed (keep DOM + handlers).
+let _paintedHTML = null;
+export function paintApp(html) {
+  const el = $('#app');
+  if (el && _paintedHTML === html && el.innerHTML) return false;
+  _paintedHTML = html;
+  if (el) el.innerHTML = html;
+  return true;
+}
+// Views that write #app directly (dashboard/chats/auth/loaders/maintenance) call this so the memo can't
+// later skip a repaint when we return to a memoized page.
+export function resetPaint() { _paintedHTML = null; }
 export function formData(form) { return Object.fromEntries(new FormData(form).entries()); }
 export function statusLabel(status) {
   return ({pending:'ממתינה', approved:'אושרה', active:'פעילה', done:'הסתיימה', rejected:'נדחתה', cancelled:'בוטלה'}[status] || (typeof status === 'string' && status) || '—');

@@ -1,5 +1,5 @@
 import {store, list, myRole, myBookings, myCars, carRating, userRating} from './store.js';
-import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail} from './core.js';
+import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail, paintApp, resetPaint} from './core.js';
 import {register, login, logout, sendVerify, refreshEmailStatus, sendPasswordReset, createOwnProfile} from './auth.js';
 import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, setBookingStatus, registerDocument, approveVerification, sendMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction, setMaintenance, setCarStatus, setCarFeatured, checkIsAdmin} from './db.js';
 import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './media.js';
@@ -221,7 +221,7 @@ export function home() {
   const all = list(store.cars);
   const available = all.filter(car => car.status === 'available');
   const rented = all.filter(car => car.status === 'rented');
-  app().innerHTML = `
+  const html = `
   <section class="hero">
     <div class="aur aur-1" aria-hidden="true"></div><div class="aur aur-2" aria-hidden="true"></div><div class="aur aur-3" aria-hidden="true"></div>
     ${blueprintSvg}
@@ -249,7 +249,7 @@ export function home() {
     <span class="it"><span class="dot soon"></span><b>${Math.max(all.length - available.length - rented.length, 0)}</b> מתפנים בקרוב</span>
   </div></div>
   <section class="owner-cta-rich reveal"><div class="owner-cta-glow" aria-hidden="true"></div><div class="owner-cta-main"><p class="eyebrow">לבעלי רכבים</p><h2>יש לך רכב פנוי?</h2><p>פרסם רכב, קבע תנאים, גיל מינימלי, זמינות ואפשרות מסירה — והכל מנוהל באזור אישי אחד.</p><button class="btn gold" id="cta-add-car">הוסף רכב</button></div><div class="owner-cta-features"><div class="feature-chip">אימות שוכרים</div><div class="feature-chip">ניהול הזמנות</div><div class="feature-chip">תיעוד מסירה והחזרה</div><div class="feature-chip">דירוגים וביקורות</div></div></section>
-  <section class="info-section fleet-zone reveal"><div class="sec-head"><p class="eyebrow">הצי שלנו</p><h2>רכבים זמינים</h2><p class="sec-sub">כל רכב עם תיעוד, דירוגים ובעלים מאומתים.</p></div>${carGrid(featuredFirst(available).slice(0, 8))}<div class="see-all"><button class="btn primary" data-route="cars">לכל הרכבים באתר ←</button></div></section>
+  <section class="info-section fleet-zone reveal"><div class="sec-head"><p class="eyebrow">הצי שלנו</p><h2>רכבים זמינים</h2><p class="sec-sub">כל רכב עם תיעוד, דירוגים ובעלים מאומתים.</p></div>${carGrid(featuredFirst(available).slice(0, 9))}<div class="see-all"><button class="btn primary see-all-btn" data-route="cars">כל הרכבים באתר ←</button></div></section>
   <section class="info-section reveal" id="how"><div class="sec-head"><p class="eyebrow">איך זה עובד</p><h2>שלושה צעדים ברורים</h2><p class="sec-sub">בלי תהליך מסובך.</p></div><div class="steps-grid">
     <div class="step-card"><span class="step-num">1</span><div class="step-icon">${STEP_ICONS.search}</div><h3>בוחרים רכב</h3><p>מחפשים לפי זמן ותנאים שמתאימים לכם.</p></div>
     <div class="step-card"><span class="step-num">2</span><div class="step-icon">${STEP_ICONS.approve}</div><h3>מקבלים אישור</h3><p>משלימים אימות קצר ובעל הרכב מאשר את הבקשה.</p></div>
@@ -263,6 +263,7 @@ export function home() {
   </div></section>
   <section class="info-section reveal" id="contact"><div class="foot-cta"><p class="kicker">צור קשר</p><h2>צריכים עזרה? אנחנו כאן</h2><p>צ׳אט ישיר עם שירות הלקוחות — מענה מהיר לכל שאלה.</p><button class="btn gold" id="contact-support">פתיחת צ׳אט עם התמיכה</button></div></section>
   <footer class="site-foot"><span>© Crown Drive · קראון הייטס</span><button type="button" class="admin-entry" id="admin-entry">כניסת מנהל</button></footer>`;
+  if (!paintApp(html)) return;  // nothing changed → keep DOM + handlers (no flicker on repeated data events)
   bindCarButtons();
   bindDateFields();
   document.querySelector('#cta-add-car')?.addEventListener('click', () => {
@@ -430,7 +431,7 @@ export function cars() {
   const startTime = searchPeriod.startAt ? searchPeriod.startAt.slice(11, 16) : '10:00';
   const endTime = searchPeriod.endAt ? searchPeriod.endAt.slice(11, 16) : '10:00';
   const periodNote = period ? `<div class="period-active"><span>מחירים מחושבים לפי הטווח שבחרתם (<b>${BUCKET_HE[period.bucket]}</b>). רכבים המושכרים בתנאים אחרים מוצגים בסוף עם הבהרה.</span><button type="button" class="link-btn" id="period-clear">ניקוי תאריכים</button></div>` : '';
-  app().innerHTML = `<div class="cars-page fleet-zone"><div class="section-head"><h1>כל הרכבים באתר</h1><span class="mut">${rows.length} רכבים</span></div>
+  const html = `<div class="cars-page fleet-zone"><div class="section-head"><h1>כל הרכבים באתר</h1><span class="mut">${rows.length} רכבים</span></div>
     <div class="period-search" id="period-search">
       ${dateField('carsStart', 'תאריך איסוף', startDate)}
       <label class="hour-field"><span>שעת איסוף</span><select id="cars-start-hour">${hourOptions(startTime)}</select></label>
@@ -449,6 +450,7 @@ export function cars() {
       <div class="type-chips">${['סדאן', 'SUV', 'פיקאפ', 'מיניוואן'].map(t => `<button class="type-chip ${carFilters.category === t ? 'on' : ''}" data-type-chip="${t}">${t}</button>`).join('')}</div>
     </div>
     ${carGrid(rows, false, period)}</div>`;
+  if (!paintApp(html)) return;  // unchanged → keep DOM + handlers (avoids flicker + preserves open date-pickers)
   bindCarButtons();
   bindDateFields();
   const rerender = () => cars();
@@ -568,6 +570,7 @@ function openCar(id) {
 }
 
 export function authView() {
+  resetPaint();
   app().innerHTML = `<section class="card auth-shell"><div id="auth-content"></div></section>`;
   const content = () => document.querySelector('#auth-content');
 
@@ -687,6 +690,7 @@ function bindDashboardTabs(renderer) {
   if (headAvatar) headAvatar.onclick = () => renderer('profile');
 }
 export function dashboard() {
+  resetPaint();
   if (!store.user) {
     if (!store.authSettled) { app().innerHTML = '<div class="app-loader"><div class="spinner"></div><p>טוען…</p></div>'; return; }
     location.hash = 'auth'; return;
@@ -953,7 +957,7 @@ function adminUserBookingsModal(uid) {
 }
 function adminCarsTable(cars) {
   if (!cars.length) return '<div class="empty">אין רכבים</div>';
-  return `<div class="table-wrap"><table class="data"><thead><tr><th>רכב</th><th>בעל הרכב</th><th>מחיר/יום</th><th>סטטוס (לחצו)</th><th>ניהול</th></tr></thead><tbody>${featuredFirst(cars).map(car => `<tr><td class="t-main">${car.featured ? '★ ' : ''}${esc(car.make || '')} ${esc(car.model || '')} ${esc(car.year || '')}</td><td>${esc(car.ownerName || '—')}</td><td>${money(car.dailyPrice || 0)}</td><td><button type="button" class="pill-btn" data-car-avail="${esc(car.id)}" data-next="${car.status === 'rented' ? 'available' : 'rented'}" title="לחצו לשינוי תפוס / פנוי">${carStatusPill(car.status)}</button></td><td><div class="t-actions"><button class="icon-btn feat-btn ${car.featured ? 'feat-on' : ''}" title="${car.featured ? 'ביטול קידום לראש הרשימה' : 'קידום לראש הרשימה'}" data-car-feature="${esc(car.id)}" data-on="${car.featured ? '' : '1'}">★</button><button class="icon-btn" title="עריכת רכב" data-car-edit="${esc(car.id)}">${ICON.edit}</button><button class="icon-btn" title="${car.status === 'hidden' ? 'הצגת הרכב' : 'הסתרת הרכב'}" data-car-toggle="${esc(car.id)}">${ICON.eye}</button><button class="icon-btn" title="החלפת בעלים" data-car-owner="${esc(car.id)}">${ICON.key}</button><button class="icon-btn danger" title="מחיקה" data-car-delete="${esc(car.id)}">${ICON.trash}</button></div></td></tr>`).join('')}</tbody></table></div>`;
+  return `<div class="table-wrap"><table class="data"><thead><tr><th>רכב</th><th>בעל הרכב</th><th>מחיר/יום</th><th>סטטוס (לחצו)</th><th>ניהול</th></tr></thead><tbody>${featuredFirst(cars).map(car => `<tr><td class="t-main">${car.featured ? '★ ' : ''}${esc(car.make || '')} ${esc(car.model || '')} ${esc(car.year || '')}</td><td>${esc(car.ownerName || '—')}</td><td>${money(car.dailyPrice || 0)}</td><td><button type="button" class="pill-btn" data-car-avail="${esc(car.id)}" data-next="${car.status === 'rented' ? 'available' : 'rented'}" title="לחצו לשינוי תפוס / פנוי">${carStatusPill(car.status)}</button></td><td><div class="t-actions"><button class="icon-btn feat-btn ${car.featured ? 'feat-on' : ''}" title="${car.featured ? 'ביטול קידום לראש הרשימה' : 'קידום לראש הרשימה'}" data-car-feature="${esc(car.id)}" data-on="${car.featured ? '' : '1'}">★</button><button class="icon-btn" title="עריכת רכב" data-car-edit="${esc(car.id)}">${ICON.edit}</button><button class="icon-btn" title="${car.status === 'hidden' ? 'הצגת הרכב' : 'הסתרת הרכב'}" data-car-toggle="${esc(car.id)}">${ICON.eye}</button><button class="icon-btn danger" title="מחיקה" data-car-delete="${esc(car.id)}">${ICON.trash}</button></div></td></tr>`).join('')}</tbody></table></div>`;
 }
 
 function bookingList(bookings, role) {
@@ -1151,19 +1155,21 @@ const evidenceState = (booking, bookingId) => {
 };
 
 export function chatsPage() {
+  resetPaint();
   if (!store.user) {
     if (!store.authSettled) { app().innerHTML = '<div class="app-loader"><div class="spinner"></div><p>טוען…</p></div>'; return; }
     location.hash = 'auth'; return;
   }
   app().innerHTML = `<div class="chat-shell" id="chat-shell">
     <aside class="chat-list">
-      <div class="chat-list-head"><h2>צ׳אטים</h2>${store.isAdmin ? '<input id="chat-search" placeholder="חיפוש משתמש…" autocomplete="off">' : ''}</div>
+      <div class="chat-list-head"><button type="button" class="chat-page-back" id="chat-page-back" title="חזרה לאזור האישי" aria-label="חזרה">→</button><h2>צ׳אטים</h2>${store.isAdmin ? '<input id="chat-search" placeholder="חיפוש משתמש…" autocomplete="off">' : ''}</div>
       <div class="chat-items" id="chat-items"></div>
     </aside>
     <section class="chat-pane" id="chat-pane"><div class="chat-empty"><span class="chat-empty-ic">${ICON.chat}</span><p>בחרו שיחה מהרשימה</p></div></section>
   </div>`;
   if (store.isAdmin) ensureAdminChatFeed();
   renderChatItems();
+  document.querySelector('#chat-page-back')?.addEventListener('click', () => { location.hash = store.user ? 'dashboard' : 'home'; });
   document.querySelector('#chat-search')?.addEventListener('input', renderChatItems);
   const wanted = pendingThread || chatState.thread;
   pendingThread = null;
