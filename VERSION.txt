@@ -1,5 +1,16 @@
-CrownDrive — FINAL build (2026-07-12, rev.20)
+CrownDrive — FINAL build (2026-07-13, rev.22)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.22 (2026-07-13) — email validation on registration:
+- Registration now rejects a malformed email before submitting (core.validEmail: name@domain.tld,
+  no spaces, dot in the domain) with a clear Hebrew message. Only js/core.js + js/views.js changed
+  (network-first — no ?v= bump).
+
+rev.21 (2026-07-13) — no more "מחיר לפי בקשה" on the listing:
+- The car card + detail now show the HOURLY price as the headline when no daily price is set
+  (hourly is required, so every car has one). "מחיר לפי בקשה" is gone. carCard builds a price list
+  [daily?, hourly?, weekly?]; first = headline, rest = the small line under it. Only js/views.js
+  changed (network-first — refreshes on its own, no ?v= bump needed).
 
 rev.20 (2026-07-12) — ADMIN CAN DELETE cars + users (was blocked):
 - ROOT CAUSE: 13 Netlify functions still parsed the request with raw JSON.parse(event.body),

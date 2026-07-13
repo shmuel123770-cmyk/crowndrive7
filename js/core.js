@@ -20,5 +20,7 @@ export function verificationLabel(status) {
   return ({missing:'חסר', pending:'ממתין לבדיקה', approved:'מאומת', rejected:'נדחה', needs_resubmission:'נדרש צילום מחדש'}[status] || (typeof status === 'string' && status) || 'חסר');
 }
 export function validPassword(value) { return /[a-z]/.test(value) && /[A-Z]/.test(value) && value.length >= 6; }
+// A real email: something@something.tld, no spaces, a dot in the domain.
+export function validEmail(value) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim()); }
 export function validImageUrl(value) { return typeof value === 'string' && /^https:\/\//.test(value); }
 export function stars(score) { return `${'★'.repeat(Math.round(score || 0))}${'☆'.repeat(5 - Math.round(score || 0))}`; }

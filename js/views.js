@@ -1,5 +1,5 @@
 import {store, list, myRole, myBookings, myCars, carRating, userRating} from './store.js';
-import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars} from './core.js';
+import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail} from './core.js';
 import {register, login, logout, sendVerify, refreshEmailStatus, sendPasswordReset, createOwnProfile} from './auth.js';
 import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, setBookingStatus, registerDocument, approveVerification, sendMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction, setMaintenance, setCarStatus, setCarFeatured} from './db.js';
 import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './media.js';
@@ -245,8 +245,15 @@ function carCard(car, manage = false) {
   const rating = carRating(car.id);
   const type = car.category || 'רכב';
   const rented = car.status === 'rented';
+  // Headline price = daily if set, otherwise hourly (now required), otherwise weekly — never "לפי בקשה".
+  const priceRows = [];
+  if (car.dailyPrice) priceRows.push([money(car.dailyPrice), 'ליום']);
+  if (car.priceHourly) priceRows.push([money(car.priceHourly), 'לשעה']);
+  if (car.priceWeekly) priceRows.push([money(car.priceWeekly), 'לשבוע']);
+  const priceMain = priceRows.length ? `${priceRows[0][0]}<small> ${priceRows[0][1]}</small>` : '';
+  const priceAlt = priceRows.slice(1).map(([value, label]) => `${value} ${label}`).join(' · ');
   const manageRow = manage ? `<div class="car-manage"><button type="button" class="btn ${rented ? 'gold' : 'outline'} block" data-car-status="${esc(car.id)}" data-next="${rented ? 'available' : 'rented'}">${rented ? '↺ סמן כפנוי' : '⛔ סמן כתפוס'}</button></div>` : '';
-  return `<article class="card car${car.featured ? ' is-featured' : ''}"><div class="car-photo"><img src="${esc(carImage(car))}" alt="${esc(`${car.make || ''} ${car.model || ''}`)}" loading="lazy" data-car-image>${availPill(car.status)}${car.featured ? '<span class="feat-badge">★ מומלץ</span>' : ''}${car.videoUrl ? '<span class="has-video">▶ וידאו</span>' : ''}</div><div class="car-body"><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3><div class="car-specs"><span>${esc(car.year || '—')}</span><span>·</span><span>${esc(type)}</span>${car.fuel ? `<span>·</span><span>${esc(car.fuel)}</span>` : ''}${car.gear ? `<span>·</span><span>${esc(car.gear)}</span>` : ''}</div><div class="rating" aria-label="דירוג ${rating.toFixed(1)} מתוך 5">${stars(rating)} <small>${rating ? rating.toFixed(1) : 'חדש'}</small></div><div class="car-foot"><div class="price-stack"><div class="price">${car.dailyPrice ? `${money(car.dailyPrice)}<small> ליום</small>` : '<span class="price-request">מחיר לפי בקשה</span>'}</div>${car.priceHourly || car.priceWeekly ? `<small class="price-alt">${car.priceHourly ? `${money(car.priceHourly)} לשעה` : ''}${car.priceHourly && car.priceWeekly ? ' · ' : ''}${car.priceWeekly ? `${money(car.priceWeekly)} לשבוע` : ''}</small>` : ''}</div>${car.ownerName ? `<span class="owner-tag">בעל הרכב: ${esc(car.ownerName)}</span>` : ''}</div><button class="btn primary block" data-car="${esc(car.id)}">${car.status === 'available' ? 'פרטים והזמנה' : 'צפייה בפרטים'}</button>${manageRow}</div></article>`;
+  return `<article class="card car${car.featured ? ' is-featured' : ''}"><div class="car-photo"><img src="${esc(carImage(car))}" alt="${esc(`${car.make || ''} ${car.model || ''}`)}" loading="lazy" data-car-image>${availPill(car.status)}${car.featured ? '<span class="feat-badge">★ מומלץ</span>' : ''}${car.videoUrl ? '<span class="has-video">▶ וידאו</span>' : ''}</div><div class="car-body"><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3><div class="car-specs"><span>${esc(car.year || '—')}</span><span>·</span><span>${esc(type)}</span>${car.fuel ? `<span>·</span><span>${esc(car.fuel)}</span>` : ''}${car.gear ? `<span>·</span><span>${esc(car.gear)}</span>` : ''}</div><div class="rating" aria-label="דירוג ${rating.toFixed(1)} מתוך 5">${stars(rating)} <small>${rating ? rating.toFixed(1) : 'חדש'}</small></div><div class="car-foot"><div class="price-stack"><div class="price">${priceMain}</div>${priceAlt ? `<small class="price-alt">${priceAlt}</small>` : ''}</div>${car.ownerName ? `<span class="owner-tag">בעל הרכב: ${esc(car.ownerName)}</span>` : ''}</div><button class="btn primary block" data-car="${esc(car.id)}">${car.status === 'available' ? 'פרטים והזמנה' : 'צפייה בפרטים'}</button>${manageRow}</div></article>`;
 }
 // Featured cars (pinned by the admin) always come first, newest-pin first.
 function featuredFirst(cars) {
@@ -325,7 +332,7 @@ function openCar(id) {
       ${car.gear ? `<div class="summary"><span>תיבת הילוכים</span><b>${esc(car.gear)}</b></div>` : ''}
       ${car.seats ? `<div class="summary"><span>מושבים</span><b>${esc(car.seats)}</b></div>` : ''}
       <div class="summary"><span>גיל מינימלי</span><b>${esc(car.minAge || 21)}</b></div>
-      ${car.priceHourly ? `<div class="summary"><span>מחיר לשעה</span><b>${money(car.priceHourly)}</b></div>` : ''}<div class="summary"><span>מחיר יומי</span><b>${car.dailyPrice ? money(car.dailyPrice) : 'לפי בקשה'}</b></div>${car.priceWeekly ? `<div class="summary"><span>מחיר לשבוע</span><b>${money(car.priceWeekly)}</b></div>` : ''}
+      ${car.priceHourly ? `<div class="summary"><span>מחיר לשעה</span><b>${money(car.priceHourly)}</b></div>` : ''}${car.dailyPrice ? `<div class="summary"><span>מחיר יומי</span><b>${money(car.dailyPrice)}</b></div>` : ''}${car.priceWeekly ? `<div class="summary"><span>מחיר לשבוע</span><b>${money(car.priceWeekly)}</b></div>` : ''}
       ${car.deliveryEnabled ? `<div class="summary"><span>מסירה</span><b>${car.deliveryCost ? money(car.deliveryCost) : 'זמינה'}</b></div>` : ''}
       <div class="summary"><span>דירוג</span><b>${stars(carRating(car.id))} ${carRating(car.id) ? carRating(car.id).toFixed(1) : 'חדש'}</b></div>
     </div>
@@ -418,9 +425,12 @@ export function authView() {
     content().querySelector('#register-form').onsubmit = async event => {
       event.preventDefault();
       const button = event.target.querySelector('button[type=submit], .btn.primary');
+      const data = composePhone(formData(event.target));
+      const reset = () => { if (button) { button.disabled = false; button.textContent = `הרשמה כ${label}`; } };
+      if (!validEmail(data.email)) return toast('כתובת המייל אינה תקינה — בדקו שהיא בפורמט name@example.com');
       if (button) { button.disabled = true; button.textContent = 'נרשם…'; }
-      try { await register(composePhone(formData(event.target))); location.hash = 'dashboard'; }
-      catch (error) { toast(error.message); if (button) { button.disabled = false; button.textContent = `הרשמה כ${label}`; } }
+      try { await register(data); location.hash = 'dashboard'; }
+      catch (error) { toast(error.message); reset(); }
     };
   }
 
