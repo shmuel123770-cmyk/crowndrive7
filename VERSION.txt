@@ -1,5 +1,43 @@
-CrownDrive — FINAL build (2026-07-13, rev.25)
+CrownDrive — FINAL build (2026-07-13, rev.28)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.28 (2026-07-13) — universal stability + responsive (per the work-instructions doc):
+STABILITY (the "stuck on certain devices for an hour"):
+- firebase.js: the top-level `await auth.setPersistence(LOCAL)` is now wrapped in try/catch. On
+  browsers that block storage (Safari Private, some in-app browsers) it used to REJECT and crash the
+  whole module → blank/stuck screen. Now it degrades gracefully and the site loads. (LOCAL kept =
+  session persists per-browser, not per-device — your request.)
+- auth.js: the email-verification sync (reload + getIdToken + profile-save) moved OFF the critical
+  path. It sat behind resolveReady(), so a hanging function froze auth "readiness" forever. Now auth
+  is marked ready immediately; the sync runs in the background.
+- app.js: 10s safety net — if Firebase never reports auth state, authSettled is forced so gated
+  screens resolve instead of spinning.
+- api.js: every server fetch is time-boxed to 25s (AbortController) with a clean Hebrew error.
+- sw.js: network-first now has a 6s cap → falls back to cache/app-shell instead of hanging on a
+  stalled network. Cache bumped to v13.
+RESPONSIVE (all breakpoints / iPhone / Android / weak devices):
+- Modals + chat use dvh (with vh fallback) so the mobile keyboard / URL-bar can't clip them.
+- Inputs forced to 16px on phones/tablets → no iOS auto-zoom on focus.
+- Sticky header respects the iPhone notch at every breakpoint (safe-area-inset-top).
+- prefers-reduced-motion drops animations; very small / slow devices drop heavy backdrop-blur.
+- (Already present and kept: overflow-x:hidden, max-width:100%, safe-area bottom bar, dvh chat.)
+Verified in-browser at 375px: no horizontal scroll, inputs 16px, notch padding applies, clean boot,
+no console errors. Assets ?v=24. Only presentation/stability files changed — NO Firebase Rules
+change in this revision, no feature removed, no secrets in the ZIP.
+
+rev.27 (2026-07-13) — security-rule hardening (from the pre-launch audit, items 1.1 + 1.2):
+- cars/$carId validate now enforces: only an admin can change `featured` (owner writes must keep it
+  unchanged), and `createdAt` is immutable after creation (ownerUid was already immutable). Legit
+  client writes (create/update/status/feature) all preserve these fields, so nothing legitimate
+  breaks; a hand-crafted owner write can no longer self-promote a car or forge createdAt. Rules-only
+  change — MUST re-publish the rules.
+
+rev.26 (2026-07-13) — admins may enter ONLY via the "כניסת מנהל" button:
+- The regular personal-area login now rejects admin accounts: after sign-in it checks
+  db.checkIsAdmin(uid); if the account is an admin it immediately logs back out and shows
+  "זהו חשבון מנהל — יש להיכנס דרך כפתור 'כניסת מנהל' בתחתית דף הבית". The dedicated admin-login
+  screen (from the home-page button) is unchanged and still lets the admin in. Only js/views.js +
+  js/db.js changed (network-first).
 
 rev.25 (2026-07-13) — personal area can no longer hang on "טוען את האזור האישי…":
 - ROOT CAUSE: in store.startPrivate the admin-flag read `admins/<uid>.once()` ran BEFORE the profile

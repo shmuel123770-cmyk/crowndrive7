@@ -1,7 +1,7 @@
 import {store, list, myRole, myBookings, myCars, carRating, userRating} from './store.js';
 import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail} from './core.js';
 import {register, login, logout, sendVerify, refreshEmailStatus, sendPasswordReset, createOwnProfile} from './auth.js';
-import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, setBookingStatus, registerDocument, approveVerification, sendMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction, setMaintenance, setCarStatus, setCarFeatured} from './db.js';
+import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, setBookingStatus, registerDocument, approveVerification, sendMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction, setMaintenance, setCarStatus, setCarFeatured, checkIsAdmin} from './db.js';
 import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './media.js';
 import {legacyStatus, migrateLegacy} from './migrate.js';
 import {api} from './api.js';
@@ -404,7 +404,12 @@ export function authView() {
     content().querySelector('#login-form').onsubmit = async event => {
       event.preventDefault();
       const data = formData(event.target);
-      try { await login(data.email, data.password); location.hash = 'dashboard'; }
+      try {
+        const user = await login(data.email, data.password);
+        // Admins may enter ONLY through the "כניסת מנהל" button at the bottom of the home page.
+        if (await checkIsAdmin(user.uid)) { await logout(); return toast('זהו חשבון מנהל — יש להיכנס דרך כפתור "כניסת מנהל" בתחתית דף הבית'); }
+        location.hash = 'dashboard';
+      }
       catch (error) { toast(error.message); }
     };
     content().querySelector('#forgot-pw').onclick = async () => {

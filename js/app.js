@@ -7,6 +7,9 @@ import {toast, closeModal} from './core.js';
 // The home page renders instantly; auth-gated views wait via store.authSettled.
 startPublic();
 authReady.then(() => { store.authSettled = true; scheduleRender(); });
+// Safety net: if Firebase Auth never reports back (blocked storage, dead network), don't spin
+// forever — after 10s treat auth as "settled" so gated screens resolve (login prompt / content).
+setTimeout(() => { if (!store.authSettled) { store.authSettled = true; scheduleRender(); } }, 10000);
 
 const routes = {home, cars, auth: authView, dashboard, chats: chatsPage};
 

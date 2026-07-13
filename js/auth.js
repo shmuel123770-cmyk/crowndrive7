@@ -46,21 +46,26 @@ let initialResolved = false;
 // The only Firebase Auth observer in the project.
 auth.onAuthStateChanged(async user => {
   try {
-    if (user) {
-      await startPrivate(user);
-      try { await user.reload(); await user.getIdToken(true); await api('profile-save', {action: 'sync-email'}); } catch (error) { console.warn('email verification sync skipped', error.message); }
-    }
+    if (user) await startPrivate(user);
     else stopPrivate();
   } catch (error) {
     console.error('auth bootstrap failed', error);
     stopPrivate();
   } finally {
+    // Mark auth "ready" as soon as the essential state is set — BEFORE any slow/optional network
+    // call — so a hanging function can never leave the app stuck on a loading screen.
     if (!initialResolved) {
       initialResolved = true;
       resolveReady();
     }
     window.dispatchEvent(new Event('authchange'));
   }
+  // Background, non-blocking: refresh the email-verification flag. Never delays app readiness, and a
+  // slow/broken function here has zero effect on the UI.
+  if (user) (async () => {
+    try { await user.reload(); await user.getIdToken(true); await api('profile-save', {action: 'sync-email'}); }
+    catch (error) { console.warn('email verification sync skipped', error?.message); }
+  })();
 });
 
 // Translate Firebase Auth error codes into clear Hebrew messages.

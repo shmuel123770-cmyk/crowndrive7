@@ -8,7 +8,15 @@ export const db = firebase.database();
 // (auth + database still work) and let uploads fail gracefully instead of white-screening.
 export const storage = typeof firebase.storage === 'function' ? firebase.storage() : null;
 
-await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+// Keep the session in THIS browser (localStorage — survives restarts, is per-browser not per-device).
+// Some environments block storage (Safari Private, certain in-app browsers) and would make
+// setPersistence REJECT — which, as a top-level await, used to crash the whole module and leave the
+// site stuck on a blank/loading screen. Never let that happen: fall back gracefully and load anyway.
+try {
+  await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+} catch (error) {
+  console.warn('LOCAL auth persistence unavailable — continuing with the default', error);
+}
 
 export const refs = {
   admins: db.ref('admins'),

@@ -7,7 +7,7 @@
      Safe because a new deploy changes ?v=, which is a new cache key -> auto-refetch.
    - Cross-origin (Firebase SDK, fonts, storage) -> not intercepted at all.
    install does NOT pre-cache (a single 404 there would break the whole worker). */
-const CACHE = 'crowndrive-2026-07-13-v12';
+const CACHE = 'crowndrive-2026-07-13-v13';
 
 self.addEventListener('install', () => self.skipWaiting());
 
@@ -32,9 +32,19 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Everything else (HTML + non-versioned JS/CSS): network-first, cache as offline fallback.
-  event.respondWith(fetch(req).then(res => {
-    if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
-    return res;
-  }).catch(() => caches.match(req).then(m => m || caches.match('/index.html'))));
+  // Everything else (HTML + non-versioned JS/CSS): network-first with a 6s cap. Without the cap a
+  // stalled network could hang navigation on a blank screen; with it we fall back to cache / shell.
+  event.respondWith((async () => {
+    try {
+      const res = await Promise.race([
+        fetch(req),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('slow-network')), 6000)),
+      ]);
+      if (res && res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
+      return res;
+    } catch (error) {
+      const cached = await caches.match(req);
+      return cached || (await caches.match('/index.html')) || fetch(req);
+    }
+  })());
 });
