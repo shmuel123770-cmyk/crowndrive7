@@ -1,7 +1,7 @@
 import {store, list, myRole, myBookings, myCars, carRating, userRating} from './store.js';
 import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars} from './core.js';
 import {register, login, logout, sendVerify, refreshEmailStatus, sendPasswordReset, createOwnProfile} from './auth.js';
-import {saveUser, createCar, updateCar, deleteCar, createBooking, setBookingStatus, registerDocument, approveVerification, sendMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction, setMaintenance} from './db.js';
+import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, setBookingStatus, registerDocument, approveVerification, sendMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction, setMaintenance, setCarStatus, setCarFeatured} from './db.js';
 import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './media.js';
 import {legacyStatus, migrateLegacy} from './migrate.js';
 import {api} from './api.js';
@@ -213,7 +213,7 @@ export function home() {
     <span class="it"><span class="dot soon"></span><b>${Math.max(all.length - available.length - rented.length, 0)}</b> מתפנים בקרוב</span>
   </div></div>
   <section class="owner-cta-rich reveal"><div class="owner-cta-glow" aria-hidden="true"></div><div class="owner-cta-main"><p class="eyebrow">לבעלי רכבים</p><h2>יש לך רכב פנוי?</h2><p>פרסם רכב, קבע תנאים, גיל מינימלי, זמינות ואפשרות מסירה — והכל מנוהל באזור אישי אחד.</p><button class="btn gold" id="cta-add-car">הוסף רכב</button></div><div class="owner-cta-features"><div class="feature-chip">אימות שוכרים</div><div class="feature-chip">ניהול הזמנות</div><div class="feature-chip">תיעוד מסירה והחזרה</div><div class="feature-chip">דירוגים וביקורות</div></div></section>
-  <section class="info-section fleet-zone reveal"><div class="sec-head"><p class="eyebrow">הצי שלנו</p><h2>רכבים זמינים</h2><p class="sec-sub">כל רכב עם תיעוד, דירוגים ובעלים מאומתים.</p></div>${carGrid(available.slice(0, 8))}<div class="see-all"><button class="btn primary" data-route="cars">לכל הרכבים באתר ←</button></div></section>
+  <section class="info-section fleet-zone reveal"><div class="sec-head"><p class="eyebrow">הצי שלנו</p><h2>רכבים זמינים</h2><p class="sec-sub">כל רכב עם תיעוד, דירוגים ובעלים מאומתים.</p></div>${carGrid(featuredFirst(available).slice(0, 8))}<div class="see-all"><button class="btn primary" data-route="cars">לכל הרכבים באתר ←</button></div></section>
   <section class="info-section reveal" id="how"><div class="sec-head"><p class="eyebrow">איך זה עובד</p><h2>שלושה צעדים ברורים</h2><p class="sec-sub">בלי תהליך מסובך.</p></div><div class="steps-grid">
     <div class="step-card"><span class="step-num">1</span><div class="step-icon">${STEP_ICONS.search}</div><h3>בוחרים רכב</h3><p>מחפשים לפי זמן ותנאים שמתאימים לכם.</p></div>
     <div class="step-card"><span class="step-num">2</span><div class="step-icon">${STEP_ICONS.approve}</div><h3>מקבלים אישור</h3><p>משלימים אימות קצר ובעל הרכב מאשר את הבקשה.</p></div>
@@ -241,18 +241,29 @@ export function home() {
   document.querySelector('#admin-entry')?.addEventListener('click', () => openAdminLogin());
 }
 
-function carCard(car) {
+function carCard(car, manage = false) {
   const rating = carRating(car.id);
   const type = car.category || 'רכב';
-  return `<article class="card car"><div class="car-photo"><img src="${esc(carImage(car))}" alt="${esc(`${car.make || ''} ${car.model || ''}`)}" loading="lazy" data-car-image>${availPill(car.status)}${car.videoUrl ? '<span class="has-video">▶ וידאו</span>' : ''}</div><div class="car-body"><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3><div class="car-specs"><span>${esc(car.year || '—')}</span><span>·</span><span>${esc(type)}</span>${car.fuel ? `<span>·</span><span>${esc(car.fuel)}</span>` : ''}${car.gear ? `<span>·</span><span>${esc(car.gear)}</span>` : ''}</div><div class="rating" aria-label="דירוג ${rating.toFixed(1)} מתוך 5">${stars(rating)} <small>${rating ? rating.toFixed(1) : 'חדש'}</small></div><div class="car-foot"><div class="price-stack"><div class="price">${car.dailyPrice ? `${money(car.dailyPrice)}<small> ליום</small>` : '<span class="price-request">מחיר לפי בקשה</span>'}</div>${car.priceHourly || car.priceWeekly ? `<small class="price-alt">${car.priceHourly ? `${money(car.priceHourly)} לשעה` : ''}${car.priceHourly && car.priceWeekly ? ' · ' : ''}${car.priceWeekly ? `${money(car.priceWeekly)} לשבוע` : ''}</small>` : ''}</div>${car.ownerName ? `<span class="owner-tag">בעל הרכב: ${esc(car.ownerName)}</span>` : ''}</div><button class="btn primary block" data-car="${esc(car.id)}">${car.status === 'available' ? 'פרטים והזמנה' : 'צפייה בפרטים'}</button></div></article>`;
+  const rented = car.status === 'rented';
+  const manageRow = manage ? `<div class="car-manage"><button type="button" class="btn ${rented ? 'gold' : 'outline'} block" data-car-status="${esc(car.id)}" data-next="${rented ? 'available' : 'rented'}">${rented ? '↺ סמן כפנוי' : '⛔ סמן כתפוס'}</button></div>` : '';
+  return `<article class="card car${car.featured ? ' is-featured' : ''}"><div class="car-photo"><img src="${esc(carImage(car))}" alt="${esc(`${car.make || ''} ${car.model || ''}`)}" loading="lazy" data-car-image>${availPill(car.status)}${car.featured ? '<span class="feat-badge">★ מומלץ</span>' : ''}${car.videoUrl ? '<span class="has-video">▶ וידאו</span>' : ''}</div><div class="car-body"><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3><div class="car-specs"><span>${esc(car.year || '—')}</span><span>·</span><span>${esc(type)}</span>${car.fuel ? `<span>·</span><span>${esc(car.fuel)}</span>` : ''}${car.gear ? `<span>·</span><span>${esc(car.gear)}</span>` : ''}</div><div class="rating" aria-label="דירוג ${rating.toFixed(1)} מתוך 5">${stars(rating)} <small>${rating ? rating.toFixed(1) : 'חדש'}</small></div><div class="car-foot"><div class="price-stack"><div class="price">${car.dailyPrice ? `${money(car.dailyPrice)}<small> ליום</small>` : '<span class="price-request">מחיר לפי בקשה</span>'}</div>${car.priceHourly || car.priceWeekly ? `<small class="price-alt">${car.priceHourly ? `${money(car.priceHourly)} לשעה` : ''}${car.priceHourly && car.priceWeekly ? ' · ' : ''}${car.priceWeekly ? `${money(car.priceWeekly)} לשבוע` : ''}</small>` : ''}</div>${car.ownerName ? `<span class="owner-tag">בעל הרכב: ${esc(car.ownerName)}</span>` : ''}</div><button class="btn primary block" data-car="${esc(car.id)}">${car.status === 'available' ? 'פרטים והזמנה' : 'צפייה בפרטים'}</button>${manageRow}</div></article>`;
 }
-function carGrid(cars) {
-  return `<div class="grid">${cars.length ? cars.map(carCard).join('') : '<div class="card empty">אין כרגע רכבים זמינים</div>'}</div>`;
+// Featured cars (pinned by the admin) always come first, newest-pin first.
+function featuredFirst(cars) {
+  return cars.slice().sort((a, b) => (Number(b.featured || 0) - Number(a.featured || 0)));
+}
+function carGrid(cars, manage = false) {
+  return `<div class="grid">${cars.length ? featuredFirst(cars).map(c => carCard(c, manage)).join('') : '<div class="card empty">אין כרגע רכבים זמינים</div>'}</div>`;
 }
 
 function bindCarButtons() {
   app().querySelectorAll('[data-car]').forEach(button => button.onclick = () => openCar(button.dataset.car));
   app().querySelectorAll('[data-car-image]').forEach(image => image.addEventListener('error', () => { image.src = fallbackImage; }, {once:true}));
+  app().querySelectorAll('[data-car-status]').forEach(button => button.onclick = async () => {
+    button.disabled = true;
+    try { await setCarStatus(button.dataset.carStatus, button.dataset.next); toast(button.dataset.next === 'rented' ? 'הרכב סומן כתפוס' : 'הרכב סומן כפנוי'); }
+    catch (error) { toast(error.message); button.disabled = false; }
+  });
 }
 
 const carFilters = {make: '', model: '', year: '', category: '', availability: 'available', sort: 'new'};
@@ -439,7 +450,7 @@ export function authView() {
   else roleChoice();
 }
 
-function dashboardLayout(title, tabs, active, content, actions = '') {
+function dashboardLayout(title, tabs, active, content, actions = '', navFooter = '') {
   const firstName = String(store.profile?.name || '').trim().split(/\s+/)[0];
   const eyebrow = firstName ? `שלום, ${esc(firstName)}` : 'האזור האישי';
   return `<div class="dashboard-shell"><header class="dashboard-head">
@@ -448,7 +459,7 @@ function dashboardLayout(title, tabs, active, content, actions = '') {
         <div class="dash-head-controls"><button type="button" class="avatar-btn" data-goto-profile title="לפרופיל שלי">${avatarHtml(store.profile, 60)}</button><button type="button" class="dash-close" data-route="home" aria-label="סגירת האזור האישי">✕</button></div>
       </div>
       ${actions ? `<div class="dash-head-actions">${actions}</div>` : ''}
-    </header><nav class="dashboard-tabs" aria-label="תפריט אזור אישי">${tabs.map(([key, label]) => `<button class="tab ${key === active ? 'active' : ''}" data-dashboard-tab="${key}"><i class="tab-ic">${(TAB_ICONS[key] || (() => ''))()}</i><span>${label}</span></button>`).join('')}</nav><section class="card panel dashboard-panel">${content}</section></div>`;
+    </header><nav class="dashboard-tabs" aria-label="תפריט אזור אישי">${tabs.map(([key, label]) => `<button class="tab ${key === active ? 'active' : ''}" data-dashboard-tab="${key}"><i class="tab-ic">${(TAB_ICONS[key] || (() => ''))()}</i><span>${label}</span></button>`).join('')}${navFooter ? `<div class="nav-footer">${navFooter}</div>` : ''}</nav><section class="card panel dashboard-panel">${content}</section></div>`;
 }
 function bindDashboardTabs(renderer) {
   document.querySelectorAll('[data-dashboard-tab]').forEach(button => button.onclick = () => {
@@ -523,7 +534,7 @@ function ownerDashboard(tab = 'overview') {
   const contents = {
     overview: `<div class="kpis">${kpi('car', cars.length, 'רכבים')}${kpi('check', cars.filter(c => c.status === 'available').length, 'זמינים')}${kpi('calendar', bookings.filter(b => b.status === 'pending').length, 'ממתינות לאישור')}${kpi('money', money(total), 'תשלומים מדווחים')}</div><h2>הזמנות פעילות</h2>${bookingList(bookings.filter(b => ['pending','approved','active'].includes(b.status)), 'owner')}`,
     bookings: `<h2>הזמנות</h2>${bookingList(bookings, 'owner')}`,
-    cars: `<div class="section-head"><h2>הרכבים שלי</h2><button class="btn gold" id="add-car">הוספת רכב</button></div>${carGrid(cars)}`,
+    cars: `<div class="section-head"><h2>הרכבים שלי</h2><button class="btn gold" id="add-car">הוספת רכב</button></div>${carGrid(cars, true)}`,
     profile: ownerProfileView(),
   };
   app().innerHTML = dashboardLayout('לוח בעל רכב', [['overview','סקירה'],['bookings','הזמנות'],['cars','רכבים'],['chats','צ׳אטים'],['profile','פרופיל']], tab, contents[tab] || contents.overview, '<button class="btn gold" id="add-car-head">+ הוספת רכב</button>');
@@ -554,13 +565,14 @@ function adminDashboard(tab = 'overview') {
     profile: ownerProfileView(),
   };
   const unread = adminUnreadCount();
-  app().innerHTML = dashboardLayout('לוח ניהול מנהל', [['overview','סקירה'],['chats','צ׳אטים'],['users','משתמשים'],['cars','רכבים'],['bookings','הזמנות'],['notifications', `התראות${unread ? ` (${unread})` : ''}`]], tab, contents[tab] || contents.overview, '<button class="btn gold" id="admin-add-car">+ הוספת רכב</button><button class="btn dark-out" id="admin-refresh" title="רענון נתונים">רענון</button><button class="btn dark-out" id="admin-logout">יציאה</button>');
+  app().innerHTML = dashboardLayout('לוח ניהול מנהל', [['overview','סקירה'],['chats','צ׳אטים'],['users','משתמשים'],['cars','רכבים'],['bookings','הזמנות'],['notifications', `התראות${unread ? ` (${unread})` : ''}`]], tab, contents[tab] || contents.overview, '<button class="btn gold" id="admin-add-car">+ הוספת רכב</button>', '<button class="btn dark-out block" id="admin-refresh" title="רענון נתונים">רענון</button><button class="btn dark-out block" id="admin-logout">יציאה</button>');
   document.querySelector('#admin-add-car')?.addEventListener('click', () => carForm());
   document.querySelector('#admin-refresh')?.addEventListener('click', () => window.location.reload());
   document.querySelector('#admin-logout')?.addEventListener('click', async () => { try { await logout(); location.hash = 'home'; } catch (error) { toast(error.message); } });
   bindDashboardTabs(adminDashboard); bindActions(); bindCarButtons(); bindProfileActions();
   document.querySelectorAll('[data-admin-user]').forEach(button => button.onclick = () => adminUserModal(button.dataset.adminUser));
   document.querySelectorAll('[data-admin-rentals]').forEach(button => button.onclick = () => adminUserBookingsModal(button.dataset.adminRentals));
+  document.querySelectorAll('[data-user-message]').forEach(button => button.onclick = () => openChatThread(`a:${button.dataset.userMessage}`));
   document.querySelectorAll('[data-user-edit]').forEach(button => button.onclick = async () => {
     const uid = button.dataset.userEdit;
     const user = store.users[uid] || {};
@@ -618,7 +630,7 @@ function adminUsersTable(users) {
   const rentalCount = uid => myBookings().filter(b => b.renterUid === uid || b.ownerUid === uid).length;
   return `<div class="table-wrap"><table class="data"><thead><tr><th>שם</th><th>מייל</th><th>טלפון</th><th>תפקיד</th><th>אימות</th><th>רישיון וסלפי</th><th>השכרות</th><th>ניהול</th></tr></thead><tbody>${users.map(user => {
     const count = rentalCount(user.id);
-    return `<tr class="${user.blocked ? 'row-blocked' : ''}"><td class="t-main">${esc(user.name || '—')}${user.blocked ? ' <span class="pill warn">חסום</span>' : ''}</td><td>${esc(user.email || '—')}</td><td>${esc(user.phone || '—')}</td><td>${esc(roleName(user.role))}</td><td><span class="pill ${user.verification?.status === 'approved' ? 'ok' : 'warn'}">${esc(verificationLabel(user.verification?.status))}</span></td><td><button class="btn outline" data-admin-user="${esc(user.id)}">צפייה במסמכים</button></td><td><button class="btn outline" data-admin-rentals="${esc(user.id)}">${count} השכרות</button></td><td><div class="t-actions"><button class="icon-btn" title="עריכה" data-user-edit="${esc(user.id)}">${ICON.edit}</button><button class="icon-btn ${user.blocked ? '' : 'danger'}" title="${user.blocked ? 'שחרור חסימה' : 'חסימה'}" data-user-block="${esc(user.id)}">${user.blocked ? ICON.check : ICON.block}</button><button class="icon-btn danger" title="מחיקה" data-user-delete="${esc(user.id)}">${ICON.trash}</button></div></td></tr>`;
+    return `<tr class="${user.blocked ? 'row-blocked' : ''}"><td class="t-main">${esc(user.name || '—')}${user.blocked ? ' <span class="pill warn">חסום</span>' : ''}</td><td>${esc(user.email || '—')}</td><td>${esc(user.phone || '—')}</td><td>${esc(roleName(user.role))}</td><td><span class="pill ${user.verification?.status === 'approved' ? 'ok' : 'warn'}">${esc(verificationLabel(user.verification?.status))}</span></td><td><button class="btn outline" data-admin-user="${esc(user.id)}">צפייה במסמכים</button></td><td><button class="btn outline" data-admin-rentals="${esc(user.id)}">${count} השכרות</button></td><td><div class="t-actions"><button class="icon-btn" title="שליחת הודעה" data-user-message="${esc(user.id)}">${ICON.chat}</button><button class="icon-btn" title="עריכה" data-user-edit="${esc(user.id)}">${ICON.edit}</button><button class="icon-btn ${user.blocked ? '' : 'danger'}" title="${user.blocked ? 'שחרור חסימה' : 'חסימה'}" data-user-block="${esc(user.id)}">${user.blocked ? ICON.check : ICON.block}</button><button class="icon-btn danger" title="מחיקה" data-user-delete="${esc(user.id)}">${ICON.trash}</button></div></td></tr>`;
   }).join('')}</tbody></table></div>`;
 }
 
@@ -665,7 +677,15 @@ function bindAdminCarActions() {
   document.querySelectorAll('[data-car-toggle]').forEach(button => button.onclick = async () => {
     const id = button.dataset.carToggle;
     const next = (store.cars[id]?.status === 'hidden') ? 'available' : 'hidden';
-    try { await api('car-action', {action: 'status', id, status: next}); toast(next === 'hidden' ? 'הרכב הוסתר' : 'הרכב זמין'); }
+    try { await setCarStatus(id, next); toast(next === 'hidden' ? 'הרכב הוסתר' : 'הרכב חזר לתצוגה'); }
+    catch (error) { toast(error.message); }
+  });
+  document.querySelectorAll('[data-car-avail]').forEach(button => button.onclick = async () => {
+    try { await setCarStatus(button.dataset.carAvail, button.dataset.next); toast(button.dataset.next === 'rented' ? 'הרכב סומן כתפוס' : 'הרכב סומן כפנוי'); }
+    catch (error) { toast(error.message); }
+  });
+  document.querySelectorAll('[data-car-feature]').forEach(button => button.onclick = async () => {
+    try { await setCarFeatured(button.dataset.carFeature, button.dataset.on === '1'); toast(button.dataset.on === '1' ? 'הרכב קודם לראש הרשימה' : 'הקידום בוטל'); }
     catch (error) { toast(error.message); }
   });
   document.querySelectorAll('[data-car-owner]').forEach(button => button.onclick = async () => {
@@ -717,7 +737,7 @@ function adminUserBookingsModal(uid) {
 }
 function adminCarsTable(cars) {
   if (!cars.length) return '<div class="empty">אין רכבים</div>';
-  return `<div class="table-wrap"><table class="data"><thead><tr><th>רכב</th><th>בעל הרכב</th><th>מחיר/יום</th><th>סטטוס</th><th>ניהול</th></tr></thead><tbody>${cars.map(car => `<tr><td class="t-main">${esc(car.make || '')} ${esc(car.model || '')} ${esc(car.year || '')}</td><td>${esc(car.ownerName || '—')}</td><td>${money(car.dailyPrice || 0)}</td><td>${carStatusPill(car.status)}</td><td><div class="t-actions"><button class="icon-btn" title="עריכת רכב" data-car-edit="${esc(car.id)}">${ICON.edit}</button><button class="icon-btn" title="${car.status === 'hidden' ? 'הצגת הרכב' : 'הסתרת הרכב'}" data-car-toggle="${esc(car.id)}">${ICON.eye}</button><button class="icon-btn" title="החלפת בעלים" data-car-owner="${esc(car.id)}">${ICON.key}</button><button class="icon-btn danger" title="מחיקה" data-car-delete="${esc(car.id)}">${ICON.trash}</button></div></td></tr>`).join('')}</tbody></table></div>`;
+  return `<div class="table-wrap"><table class="data"><thead><tr><th>רכב</th><th>בעל הרכב</th><th>מחיר/יום</th><th>סטטוס (לחצו)</th><th>ניהול</th></tr></thead><tbody>${featuredFirst(cars).map(car => `<tr><td class="t-main">${car.featured ? '★ ' : ''}${esc(car.make || '')} ${esc(car.model || '')} ${esc(car.year || '')}</td><td>${esc(car.ownerName || '—')}</td><td>${money(car.dailyPrice || 0)}</td><td><button type="button" class="pill-btn" data-car-avail="${esc(car.id)}" data-next="${car.status === 'rented' ? 'available' : 'rented'}" title="לחצו לשינוי תפוס / פנוי">${carStatusPill(car.status)}</button></td><td><div class="t-actions"><button class="icon-btn feat-btn ${car.featured ? 'feat-on' : ''}" title="${car.featured ? 'ביטול קידום לראש הרשימה' : 'קידום לראש הרשימה'}" data-car-feature="${esc(car.id)}" data-on="${car.featured ? '' : '1'}">★</button><button class="icon-btn" title="עריכת רכב" data-car-edit="${esc(car.id)}">${ICON.edit}</button><button class="icon-btn" title="${car.status === 'hidden' ? 'הצגת הרכב' : 'הסתרת הרכב'}" data-car-toggle="${esc(car.id)}">${ICON.eye}</button><button class="icon-btn" title="החלפת בעלים" data-car-owner="${esc(car.id)}">${ICON.key}</button><button class="icon-btn danger" title="מחיקה" data-car-delete="${esc(car.id)}">${ICON.trash}</button></div></td></tr>`).join('')}</tbody></table></div>`;
 }
 
 function bookingList(bookings, role) {
@@ -838,7 +858,7 @@ function avatarCropper(file) {
         canvas.getContext('2d').drawImage(source, x * k, y * k, iw * s * k, ih * s * k);
         const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
         const publicUrl = await uploadPublicMedia(new File([blob], 'avatar.jpg', {type: 'image/jpeg'}), 'avatar');
-        await saveUser({photoURL: publicUrl});
+        await setOwnPhoto(publicUrl);
         URL.revokeObjectURL(objectUrl);
         closeModal(); toast('תמונת הפרופיל עודכנה ✓');
       } catch (error) { toast(error.message); button.disabled = false; button.textContent = 'שמירת תמונת פרופיל'; }
@@ -1023,7 +1043,7 @@ function selectThread(key) {
         <button type="button" class="ev-chip ${ev.payment ? 'ok' : ''}" id="ev-payment">תשלום</button>
       </div>` : '';
   const composer = live
-    ? `${evidenceRow}<form class="chat-composer" id="chat-composer" autocomplete="off"><input name="text" maxlength="2000" placeholder="כתבו הודעה…" value="${esc(chatState.draft)}"><button class="btn primary">שליחה</button></form>`
+    ? `${evidenceRow}<form class="chat-composer" id="chat-composer" autocomplete="off"><label class="chat-attach" title="שליחת תמונה">${ICON.image}<input hidden type="file" accept="image/*" id="chat-photo"></label><input name="text" maxlength="2000" placeholder="כתבו הודעה…" value="${esc(chatState.draft)}"><button class="btn primary">שליחה</button></form>`
     : `<div class="chat-closed">ההשכרה הסתיימה — הצ׳אט פתוח רק מאישור ההזמנה ועד סיום ההשכרה</div>`;
 
   pane.innerHTML = `<header class="chat-head">
@@ -1046,6 +1066,18 @@ function selectThread(key) {
       catch (error) { toast(error.message); form.text.value = text; chatState.draft = text; }
     };
   }
+  pane.querySelector('#chat-photo')?.addEventListener('change', async event => {
+    const file = event.target.files[0];
+    event.target.value = '';
+    if (!file) return;
+    try {
+      toast('מעלה תמונה…');
+      const dataUrl = await uploadPublicMedia(file, 'chat-photo', id);
+      const attachment = {path: dataUrl, type: 'photo'};
+      await sendMessage(isSupport ? {thread: 'admin', ...(store.isAdmin ? {userUid: id} : {}), text: '', attachment} : {bookingId: id, text: '', attachment});
+      toast('התמונה נשלחה');
+    } catch (error) { toast(error.message); }
+  });
   pane.querySelectorAll('[data-ev]').forEach(input => input.onchange = async () => {
     const file = input.files[0];
     if (!file) return;
@@ -1098,7 +1130,14 @@ function selectThread(key) {
 function renderChatMessage(message) {
   const mine = message.senderUid === store.user?.uid;
   const attLabels = {'evidence-video': 'סרטון הרכב מבחוץ', 'evidence-fuel': 'תמונת דלק', 'evidence-odometer': 'תמונת קילומטראז׳', photo: 'קובץ מצורף'};
-  const attachment = message.attachment ? `<button class="msg-att" data-att-path="${esc(message.attachment.path)}">${attLabels[message.attachment.type] || 'קובץ'} · צפייה</button>` : '';
+  const att = message.attachment;
+  // Inline images are already the picture (data URL) — show them directly. Videos / legacy
+  // storage paths keep the click-to-open button (fetched through signedRead).
+  const attachment = att
+    ? (/^data:image\//i.test(String(att.path || ''))
+        ? `<img class="msg-img" src="${esc(att.path)}" alt="${esc(attLabels[att.type] || 'תמונה')}" loading="lazy" data-att-img="${esc(att.path)}">`
+        : `<button class="msg-att" data-att-path="${esc(att.path)}">${attLabels[att.type] || 'קובץ'} · צפייה</button>`)
+    : '';
   return `<div class="message ${mine ? 'mine' : ''}">${message.text ? `<p>${esc(message.text)}</p>` : ''}${attachment}<small>${fmtDate(message.createdAt)}</small></div>`;
 }
 
@@ -1176,7 +1215,8 @@ async function adminUserModal(uid) {
     for (const payment of userPayments) {
       try { paymentLinks.push({payment, url: await signedRead(payment.mediaPath)}); } catch {}
     }
-    modal(`<div class="modal-head"><h2 class="with-avatar">${avatarHtml(data.profile, 38)} ${esc(data.profile.name || data.profile.email || 'משתמש')}</h2><button class="close" data-close-modal>×</button></div><div class="summary"><span>מייל</span><b>${esc(data.profile.email || '—')}</b></div><div class="summary"><span>טלפון</span><b>${esc(data.profile.phone || '—')}</b></div><div class="summary"><span>תפקיד</span><b>${esc(roleName(data.profile.role))}</b></div><div class="summary"><span>סך תשלומים מדווחים</span><b>${money(paymentTotal)}</b></div><div class="summary"><span>סטטוס</span><b>${esc(verificationLabel(data.profile.verification?.status))}</b></div><div class="list">${Object.entries(data.documents || {}).map(([key, url]) => `<a class="btn outline" href="${esc(url)}" target="_blank" rel="noopener">${esc(key)}</a>`).join('') || '<div class="empty">אין מסמכים</div>'}</div>${paymentLinks.length ? `<h3>הוכחות תשלום</h3><div class="list">${paymentLinks.map(({payment,url}) => `<a class="btn outline" href="${esc(url)}" target="_blank" rel="noopener">${money(payment.amount)} · ${fmtDate(payment.createdAt)}</a>`).join('')}</div>` : ''}<div class="summary"><span>סיסמה</span><b>מוצפנת · לא ניתנת לצפייה</b></div><div class="chips"><button class="btn primary" data-review="approved">אישור אימות</button><button class="btn danger" data-review="rejected">דחייה</button><button class="btn outline" data-review="needs_resubmission">בקשת צילום מחדש</button><button class="btn outline" data-role-toggle="${data.profile.role === 'owner' ? 'renter' : 'owner'}">${data.profile.role === 'owner' ? 'הפיכה לשוכר' : 'הפיכה לבעל רכב'}</button><button class="btn outline" data-reset-pw="${esc(data.profile.email || '')}">שליחת קישור לאיפוס סיסמה</button></div>`);
+    modal(`<div class="modal-head"><h2 class="with-avatar">${avatarHtml(data.profile, 38)} ${esc(data.profile.name || data.profile.email || 'משתמש')}</h2><button class="close" data-close-modal>×</button></div><div class="summary"><span>מייל</span><b>${esc(data.profile.email || '—')}</b></div><div class="summary"><span>טלפון</span><b>${esc(data.profile.phone || '—')}</b></div><div class="summary"><span>תפקיד</span><b>${esc(roleName(data.profile.role))}</b></div><div class="summary"><span>סך תשלומים מדווחים</span><b>${money(paymentTotal)}</b></div><div class="summary"><span>סטטוס</span><b>${esc(verificationLabel(data.profile.verification?.status))}</b></div><div class="list">${Object.entries(data.documents || {}).map(([key, url]) => `<a class="btn outline" href="${esc(url)}" target="_blank" rel="noopener">${esc(key)}</a>`).join('') || '<div class="empty">אין מסמכים</div>'}</div>${paymentLinks.length ? `<h3>הוכחות תשלום</h3><div class="list">${paymentLinks.map(({payment,url}) => `<a class="btn outline" href="${esc(url)}" target="_blank" rel="noopener">${money(payment.amount)} · ${fmtDate(payment.createdAt)}</a>`).join('')}</div>` : ''}<div class="summary"><span>סיסמה</span><b>מוצפנת · לא ניתנת לצפייה</b></div><button class="btn gold block" data-message-user="${esc(uid)}">💬 שליחת הודעה למשתמש</button><div class="chips"><button class="btn primary" data-review="approved">אישור אימות</button><button class="btn danger" data-review="rejected">דחייה</button><button class="btn outline" data-review="needs_resubmission">בקשת צילום מחדש</button><button class="btn outline" data-role-toggle="${data.profile.role === 'owner' ? 'renter' : 'owner'}">${data.profile.role === 'owner' ? 'הפיכה לשוכר' : 'הפיכה לבעל רכב'}</button><button class="btn outline" data-reset-pw="${esc(data.profile.email || '')}">שליחת קישור לאיפוס סיסמה</button></div>`);
+    document.querySelector('[data-message-user]')?.addEventListener('click', () => { closeModal(); openChatThread(`a:${uid}`); });
     document.querySelectorAll('[data-review]').forEach(button => button.onclick = async () => {
       const note = button.dataset.review === 'approved' ? '' : prompt('הערה למשתמש:') || '';
       try { await approveVerification(uid, button.dataset.review, note); closeModal(); toast('סטטוס האימות עודכן'); }
@@ -1215,38 +1255,35 @@ function carForm(car = null) {
   modal(`<div class="modal-head"><h2>${editing ? 'עריכת רכב' : 'הוספת רכב'}</h2><button class="close" data-close-modal>×</button></div><form id="car-form">
     <p class="form-section-title">פרטי הרכב</p>
     <div class="form-grid">
-      <div class="field"><label>יצרן</label><select name="makeSelect" id="make-select">${selectOptions(CAR_MAKES, knownMake ? car.make : '')}<option value="__other" ${editing && !knownMake ? 'selected' : ''}>אחר…</option></select><input name="make" id="make-input" value="${esc(car?.make || '')}" placeholder="שם היצרן" style="${knownMake || !editing ? 'display:none' : ''};margin-top:6px"></div>
-      <div class="field"><label>דגם</label><select name="modelSelect" id="model-select"></select><input name="model" id="model-input" value="${esc(car?.model || '')}" placeholder="שם הדגם" style="display:none;margin-top:6px"></div>
+      <div class="field"><label>יצרן <span class="req">*</span></label><select name="makeSelect" id="make-select">${selectOptions(CAR_MAKES, knownMake ? car.make : '')}<option value="__other" ${editing && !knownMake ? 'selected' : ''}>אחר…</option></select><input name="make" id="make-input" value="${esc(car?.make || '')}" placeholder="שם היצרן" style="${knownMake || !editing ? 'display:none' : ''};margin-top:6px"></div>
+      <div class="field"><label>דגם <span class="req">*</span></label><select name="modelSelect" id="model-select"></select><input name="model" id="model-input" value="${esc(car?.model || '')}" placeholder="שם הדגם" style="display:none;margin-top:6px"></div>
       <div class="field"><label>תת דגם <span class="mut">(רשות)</span></label><input name="trim" value="${esc(car?.trim || '')}" placeholder="לדוגמה Sport, Limited"></div>
       <div class="field"><label>שנה</label><select name="year">${selectOptions(carYears(), String(car?.year || new Date().getFullYear()))}</select></div>
-      <div class="field"><label>סוג רכב</label><select name="category" required>${selectOptions(CAR_TYPES, car?.category)}</select></div>
+      <div class="field"><label>סוג רכב <span class="req">*</span></label><select name="category" required>${selectOptions(CAR_TYPES, car?.category)}</select></div>
       <div class="field"><label>סוג דלק</label><select name="fuel">${selectOptions(['בנזין','דיזל','היברידי','PHEV','חשמלי'], car?.fuel)}</select></div>
       <div class="field"><label>תיבת הילוכים</label><select name="gear">${selectOptions(['אוטומט','ידני'], car?.gear)}</select></div>
       <div class="field"><label>מספר מושבים</label><input name="seats" type="number" min="1" max="20" value="${esc(car?.seats || 5)}"></div>
-      <div class="field"><label>מחיר לשעה <span class="mut">(רשות)</span></label><input name="priceHourly" type="number" min="0" value="${esc(car?.priceHourly || '')}"></div>
+      <div class="field"><label>מחיר לשעה <span class="req">*</span></label><input name="priceHourly" type="number" min="1" required value="${esc(car?.priceHourly || '')}"></div>
       <div class="field"><label>מחיר יומי <span class="mut">(רשות)</span></label><input name="dailyPrice" type="number" min="0" value="${esc(car?.dailyPrice || '')}"></div>
       <div class="field"><label>מחיר לשבוע <span class="mut">(רשות)</span></label><input name="priceWeekly" type="number" min="0" value="${esc(car?.priceWeekly || '')}"></div>
       <div class="field"><label>גיל מינימלי</label><input name="minAge" type="number" min="18" max="99" value="${esc(car?.minAge || 21)}"></div>
     </div>
 
-    <p class="form-section-title">תמונות הרכב <span class="mut">(2–6, בחרו תמונה ראשית)</span></p>
+    <p class="form-section-title">תמונות הרכב <span class="req">*</span> <span class="mut">(עד 6, בחרו תמונה ראשית)</span></p>
     <div id="photo-grid" class="photo-grid"></div>
     <div class="chips photo-actions">
       <label class="btn outline">העלאת תמונות<input hidden type="file" id="photo-files" accept="image/*" multiple></label>
       <button type="button" class="btn outline" id="auto-car-image">תמונה מהיצרן</button>
-      <button type="button" class="btn outline" id="add-url">הוספת קישור</button>
     </div>
     <div id="photo-suggest"></div>
-    <small id="car-image-note" class="mut">כל סוג תמונה ובכל גודל — התמונה מותאמת אוטומטית לאיכות גבוהה וטעינה מהירה. אפשר גם למשוך תמונה רשמית לפי היצרן/דגם או להדביק קישור. עד 6 תמונות (מספיקה תמונה אחת).</small>
+    <small id="car-image-note" class="mut">כל סוג תמונה ובכל גודל — התמונה מותאמת אוטומטית לאיכות גבוהה וטעינה מהירה. אפשר גם למשוך תמונה רשמית לפי היצרן/הדגם. עד 6 תמונות (מספיקה תמונה אחת).</small>
 
     <p class="form-section-title">סרטון קצר <span class="mut">(רשות)</span></p>
     <div class="chips"><label class="btn outline">העלאת סרטון<input hidden type="file" id="video-file" accept="video/*"></label><span id="video-status" class="mut">${videoUrl ? 'סרטון קיים' : 'לא הועלה סרטון'}</span></div>
 
-    <p class="form-section-title">מיקום ומסירה</p>
+    <p class="form-section-title">מיקום</p>
     <div class="field"><label>אזור ציבורי</label><input name="area" value="${esc(car?.area || 'Crown Heights')}"></div>
     <div class="field"><label>כתובת מלאה — תיחשף לשוכר רק לאחר אישור</label><input name="fullAddress"></div>
-    <div class="field"><label>עלות מסירה</label><input name="deliveryCost" type="number" min="0" value="${esc(car?.deliveryCost || 0)}"></div>
-    <label class="check"><input name="deliveryEnabled" type="checkbox" ${car?.deliveryEnabled ? 'checked' : ''}> מסירה זמינה</label>
     <button class="btn primary block" id="car-submit">${editing ? 'שמירת שינויים' : 'פרסום הרכב'}</button>
   </form>`);
 
@@ -1329,7 +1366,6 @@ function carForm(car = null) {
       note.textContent = `${result.title || 'תמונה'} ${result.license ? '· ' + result.license : ''}`;
     } catch (error) { toast(error.message); note.textContent = error.message; }
   };
-  document.querySelector('#add-url').onclick = () => { const url = prompt('הדביקו קישור תמונה (HTTPS):'); if (url) addPhoto(url.trim()); };
   document.querySelector('#video-file').onchange = async event => {
     const file = event.target.files[0];
     if (!file) return;
@@ -1345,11 +1381,11 @@ function carForm(car = null) {
     const model = modelSelect.value === '__other' ? modelInput.value.trim() : modelSelect.value;
     if (!make || !model) return toast('יש לבחור יצרן ודגם');
     const data = formData(event.target);
+    if (!(Number(data.priceHourly) > 0)) return toast('יש להזין מחיר לשעה');
     data.make = make; data.model = model;
     data.photos = photos;
     data.photoUrl = mainUrl || photos[0];
     data.videoUrl = videoUrl;
-    data.deliveryEnabled = event.target.deliveryEnabled.checked;
     delete data.makeSelect; delete data.modelSelect;
     const submit = document.querySelector('#car-submit');
     submit.disabled = true; submit.textContent = 'שומר…';

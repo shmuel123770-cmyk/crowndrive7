@@ -1,9 +1,11 @@
-import {getAdmin, verify, json, isAdmin, canAccessBooking, canReadUserDocs} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, isAdmin, canAccessBooking, canReadUserDocs, parseBody} from './_firebase-admin.mjs';
 export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const user = await verify(event);
-    const {path} = JSON.parse(event.body || '{}');
+    const body = parseBody(event);
+    if (!body) return json(400, {error: 'בקשה לא תקינה — נסו שוב'});
+    const {path} = body;
     if (!path || String(path).includes('..')) return json(400, {error: 'נתיב לא תקין'});
     const parts = String(path).split('/');
     let allowed = false;

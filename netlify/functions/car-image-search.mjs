@@ -1,4 +1,4 @@
-import {json, cleanText} from './_firebase-admin.mjs';
+import {json, cleanText, parseBody} from './_firebase-admin.mjs';
 
 // Junk that is not a clean, current exterior studio/press shot of the whole car.
 const BAD = /logo|badge|emblem|icon|\bmap\b|wheel|rim|tyre|tire|interior|dashboard|cockpit|engine|seat|gauge|detail|headlamp|taillight|tail.?light|grille|mirror|\bdoor\b|assembly|gearbox|boot|trunk|sticker|wash|dirty|dirt|mud|snow|rust|rusty|damaged|crash|accident|wreck|abandoned|junk|scrap|police|taxi|toy|model.?car|diecast/i;
@@ -62,7 +62,9 @@ async function fromCommons(mk, md, yr, trim) {
 export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
-    const {make, model, year, trim} = JSON.parse(event.body || '{}');
+    const body = parseBody(event);
+    if (!body) return json(400, {error: 'בקשה לא תקינה — נסו שוב'});
+    const {make, model, year, trim} = body;
     const mk = cleanText(make, 50), md = cleanText(model, 50), yr = cleanText(year, 4);
     if (!mk || !md) return json(400, {error: 'יש לבחור יצרן ודגם'});
 

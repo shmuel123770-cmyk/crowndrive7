@@ -1,10 +1,12 @@
-import {getAdmin, verify, json, isAdmin, cleanText, audit} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, isAdmin, cleanText, audit, parseBody} from './_firebase-admin.mjs';
 export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const token = await verify(event);
     if (!await isAdmin(token.uid)) return json(403, {error: 'מנהל בלבד'});
-    const {uid, status, note} = JSON.parse(event.body || '{}');
+    const body = parseBody(event);
+    if (!body) return json(400, {error: 'בקשה לא תקינה — נסו שוב'});
+    const {uid, status, note} = body;
     if (!uid || !['approved', 'rejected', 'needs_resubmission', 'pending'].includes(status)) return json(400, {error: 'נתונים לא תקינים'});
     const db = getAdmin().database();
     await db.ref().update({

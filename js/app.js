@@ -6,7 +6,7 @@ import {toast, closeModal} from './core.js';
 // Start data + auth in the background — do NOT block first paint on them.
 // The home page renders instantly; auth-gated views wait via store.authSettled.
 startPublic();
-authReady.then(() => { store.authSettled = true; render(); });
+authReady.then(() => { store.authSettled = true; scheduleRender(); });
 
 const routes = {home, cars, auth: authView, dashboard, chats: chatsPage};
 
@@ -18,6 +18,16 @@ const revealObserver = 'IntersectionObserver' in window
   : null;
 function watchReveals() {
   document.querySelectorAll('.reveal:not(.in)').forEach(el => revealObserver ? revealObserver.observe(el) : el.classList.add('in'));
+}
+
+// Coalesce bursts of data events (the Firebase listeners for cars/ratings/config/bookings/… all
+// resolve within the first moment) into ONE paint on the next animation frame. Without this each
+// listener triggered its own full re-render, so the page visibly "jumped" several times on open.
+let renderQueued = false;
+function scheduleRender() {
+  if (renderQueued) return;
+  renderQueued = true;
+  requestAnimationFrame(() => { renderQueued = false; render(); });
 }
 
 let rendering = false;
@@ -65,9 +75,9 @@ document.addEventListener('click', event => {
 window.addEventListener('hashchange', render);
 window.addEventListener('storechange', event => {
   const key = String(event.detail || '');
-  if (['cars','ratings','profile','verification-status','bookings','payments','users','admin-notifications','config','private-ready','private-stopped'].includes(key)) render();
+  if (['cars','ratings','profile','verification-status','bookings','payments','users','admin-notifications','config','private-ready','private-stopped'].includes(key)) scheduleRender();
 });
-window.addEventListener('authchange', render);
+window.addEventListener('authchange', scheduleRender);
 window.addEventListener('unhandledrejection', event => {
   console.error('unhandled rejection', event.reason);
   // Never surface raw/technical text to the user. We only toast our OWN messages, which are

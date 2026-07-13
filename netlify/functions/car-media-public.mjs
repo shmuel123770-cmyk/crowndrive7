@@ -1,4 +1,4 @@
-import {getAdmin, verify, json, isAdmin, profile, cleanText} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, isAdmin, profile, cleanText, parseBody} from './_firebase-admin.mjs';
 
 // Car listing media (gallery photos / demo video) is public by design — the
 // cars node itself is world-readable. Owners upload to their own cars/<uid>/
@@ -8,7 +8,8 @@ export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const token = await verify(event);
-    const body = JSON.parse(event.body || '{}');
+    const body = parseBody(event);
+    if (!body) return json(400, {error: 'בקשה לא תקינה — נסו שוב'});
     const path = cleanText(body.path, 500);
     const admin = await isAdmin(token.uid);
     const ownAvatar = path.startsWith(`avatars/${token.uid}/`);

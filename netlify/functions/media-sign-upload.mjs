@@ -1,4 +1,4 @@
-import {getAdmin, verify, json, canAccessBooking, isAdmin, profile, cleanText} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, canAccessBooking, isAdmin, profile, cleanText, parseBody} from './_firebase-admin.mjs';
 const max = {image: 12 * 1024 * 1024, video: 180 * 1024 * 1024};
 const imageTypes = new Set(['image/jpeg','image/png','image/webp','image/heic','image/heif']);
 const videoTypes = new Set(['video/mp4','video/quicktime','video/webm']);
@@ -7,7 +7,9 @@ export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const user = await verify(event);
-    const {name, type, size, kind, entityId} = JSON.parse(event.body || '{}');
+    const body = parseBody(event);
+    if (!body) return json(400, {error: 'בקשה לא תקינה — נסו שוב'});
+    const {name, type, size, kind, entityId} = body;
     const group = String(type || '').startsWith('video/') ? 'video' : 'image';
     if (!imageTypes.has(String(type || '')) && !videoTypes.has(String(type || ''))) return json(400, {error: 'סוג קובץ לא נתמך'});
     if (!Number.isFinite(Number(size)) || Number(size) <= 0 || Number(size) > max[group]) return json(400, {error: 'גודל הקובץ אינו תקין'});

@@ -1,9 +1,11 @@
-import {getAdmin, verify, json, canReadUserDocs} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, canReadUserDocs, parseBody} from './_firebase-admin.mjs';
 export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const viewer = await verify(event);
-    const {uid} = JSON.parse(event.body || '{}');
+    const body = parseBody(event);
+    if (!body) return json(400, {error: 'בקשה לא תקינה — נסו שוב'});
+    const {uid} = body;
     if (!uid || !await canReadUserDocs(viewer.uid, uid)) return json(403, {error: 'אין הרשאה לפרטי השוכר'});
     const db = getAdmin().database();
     const [profileSnap, docsSnap, statusSnap] = await Promise.all([

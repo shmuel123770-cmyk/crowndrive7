@@ -1,4 +1,4 @@
-import {getAdmin, verify, json, isAdmin, booking, audit, cleanText, notifyAdmin} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, isAdmin, booking, audit, cleanText, notifyAdmin, parseBody} from './_firebase-admin.mjs';
 const transitions = {
   pending: ['approved', 'rejected', 'cancelled'],
   approved: ['active', 'cancelled'],
@@ -11,7 +11,8 @@ export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const token = await verify(event);
-    const body = JSON.parse(event.body || '{}');
+    const body = parseBody(event);
+    if (!body) return json(400, {error: 'בקשה לא תקינה — נסו שוב'});
     const db = getAdmin().database();
     const current = await booking(body.bookingId);
     if (!current) return json(404, {error: 'הזמנה לא נמצאה'});

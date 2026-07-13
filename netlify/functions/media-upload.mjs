@@ -1,5 +1,5 @@
 import {randomUUID} from 'node:crypto';
-import {getAdmin, verify, json, canAccessBooking, isAdmin, profile, cleanText} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, canAccessBooking, isAdmin, profile, cleanText, parseBody} from './_firebase-admin.mjs';
 
 // Direct server-side image upload: the client POSTs base64 bytes to THIS same-origin function
 // and the Admin SDK writes them to Storage. This works inside in-app browsers (Telegram/IG
@@ -16,7 +16,9 @@ export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const user = await verify(event);
-    const {name, type, kind, entityId, data} = JSON.parse(event.body || '{}');
+    const reqBody = parseBody(event);
+    if (!reqBody) return json(400, {error: 'בקשה לא תקינה — נסו שוב'});
+    const {name, type, kind, entityId, data} = reqBody;
     if (!String(type || '').startsWith('image/')) return json(400, {error: 'יש להעלות קובץ תמונה'});
     const base64 = String(data || '').replace(/^data:[^,]*,/, '');
     if (!base64) return json(400, {error: 'לא התקבל קובץ'});

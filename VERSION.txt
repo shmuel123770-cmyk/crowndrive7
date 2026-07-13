@@ -1,5 +1,57 @@
-CrownDrive — FINAL build (2026-07-12, rev.16)
+CrownDrive — FINAL build (2026-07-12, rev.20)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.20 (2026-07-12) — ADMIN CAN DELETE cars + users (was blocked):
+- ROOT CAUSE: 13 Netlify functions still parsed the request with raw JSON.parse(event.body),
+  which chokes when Netlify delivers the body base64-encoded (the same failure that broke
+  publishing). This made admin-action (user-delete/block/update/car-owner) and others fail.
+  FIX: every function now uses the base64-safe parseBody(event) + a clean 400 on a bad body.
+- CAR DELETE is now a CLIENT-WRITE (like publishing) — deleteCar() writes cars/<id> +
+  privateCarDetails/<id> to null directly, so it works even if the function misbehaves. New DB
+  rules let the car's owner OR an admin delete a car (and its private details); admins can delete
+  ANY car. Owners are still blocked from deleting a car with an open booking (admin bypasses).
+- USER DELETE now goes through the fixed admin-action (functions are live + admin is recognised;
+  the base64 parse was the blocker). MUST publish the updated DB rules + deploy the functions.
+  Assets ?v=22.
+
+rev.19 (2026-07-12) — ADMIN → any user, one-tap message:
+- The admin can now message ANY user at any moment directly from the Users tab: a chat icon in
+  every user row + a prominent "שליחת הודעה למשתמש" button in the user detail modal both open the
+  admin support thread with that user (openChatThread('a:'+uid)) — no need to hunt in the chat list.
+  Works even for users who never wrote first (support thread is always live). Assets ?v=21.
+
+rev.18 (2026-07-12) — RELIABLE PHOTOS EVERYWHERE + form cleanup + startup flicker fix:
+- PROFILE PICTURE now works like car publishing: written DIRECTLY to users/<uid>/photoURL from the
+  client (db.setOwnPhoto, client-write:own-profile) instead of POSTing the image through the
+  profile-save function (which mangled the large body). New DB rule: users/$uid/photoURL is
+  self-writable (string, <=1.4MB). MUST publish the updated rules.
+- CHAT PHOTOS: a photo button was added to the chat composer; images send as an inline data-URL
+  attachment (type 'photo') and render inline (.msg-img). The admin support thread now accepts
+  image attachments too (message-send.mjs).
+- ADD-CAR FORM: removed "הוספת קישור", "עלות מסירה", "מסירה זמינה". Hourly price is now REQUIRED
+  (red asterisk + validation); daily/weekly stay optional. Every required field (יצרן, דגם,
+  סוג רכב, מחיר לשעה, תמונות) shows a small red asterisk (.req). Photos label is now "עד 6".
+- Admin dashboard: רענון + יציאה moved OUT of the top header to a footer BELOW "התראות" in the
+  side menu (desktop); hidden on the mobile bottom-bar (logout stays reachable via profile).
+- Back/close (✕) on the personal area is now FIXED in the top-right corner (position:fixed) so it
+  no longer scrolls away on long pages.
+- STARTUP FLICKER: the several Firebase listeners that resolve on open each used to trigger their
+  own full re-render (the "jumps 3 times" on load). Renders are now coalesced into ONE paint per
+  animation frame (scheduleRender) — one smooth load instead of several jumps. Assets ?v=20.
+
+rev.17 (2026-07-12) — TAKEN/AVAILABLE toggle + admin PIN-TO-FIRST:
+- Owner AND admin can flip a car between פנוי (available) and תפוס (rented) with one tap.
+  Owner: a toggle button on each of their car cards (owner dashboard "הרכבים שלי").
+  Admin: the status cell in the cars table is now a clickable פנוי/תפוס pill.
+  Both call db.setCarStatus(id,status) — a tiny direct DB update (client-write:own-car),
+  guarded so only the car's owner or an admin can change it.
+- Admin-ONLY: a ★ button in the cars table pins a car to the top of every listing
+  (home, cars page, owner + admin lists). db.setCarFeatured(id,on) sets cars/<id>.featured
+  = timestamp (or null to unpin); featuredFirst() sorts featured desc first everywhere.
+  setCarFeatured rejects non-admins ("מנהל בלבד"). No new DB rules needed — the existing
+  cars/$carId owner-or-admin write rule (already published for car publishing) authorizes both.
+- Verified: static-check + all tests pass; real db.js guard logic exercised (non-admin cannot
+  pin, stranger cannot change status, invalid status rejected, owner/admin allowed). Assets ?v=19.
 
 rev.16 (2026-07-12) — DEFINITIVE car-publish fix: createCar/updateCar now write the car DIRECTLY
 to the database (client SDK), like registration, instead of POSTing the big data-URL photos through

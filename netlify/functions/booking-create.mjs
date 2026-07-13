@@ -1,4 +1,4 @@
-import {getAdmin, verify, json, profile, cleanText, audit, notifyAdmin} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, profile, cleanText, audit, notifyAdmin, parseBody} from './_firebase-admin.mjs';
 
 function ageFromBirthDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) return null;
@@ -17,7 +17,8 @@ export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const token = await verify(event);
-    const body = JSON.parse(event.body || '{}');
+    const body = parseBody(event);
+    if (!body) return json(400, {error: 'בקשה לא תקינה — נסו שוב'});
     const db = getAdmin().database();
     const userProfile = await profile(token.uid);
     if (userProfile?.role !== 'renter') return json(403, {error: 'רק שוכר יכול לבצע הזמנה'});

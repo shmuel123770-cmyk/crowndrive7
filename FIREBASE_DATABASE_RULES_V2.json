@@ -12,7 +12,11 @@
       "$uid": {
         ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
         ".write": "auth != null && auth.uid === $uid && !data.exists() && root.child('admins').child(auth.uid).val() !== true",
-        ".validate": "newData.hasChildren(['name','email','role']) && newData.child('role').val().matches(/^(renter|owner)$/) && newData.child('email').val() === auth.token.email && !newData.hasChild('blocked')"
+        ".validate": "newData.hasChildren(['name','email','role']) && newData.child('role').val().matches(/^(renter|owner)$/) && newData.child('email').val() === auth.token.email && !newData.hasChild('blocked')",
+        "photoURL": {
+          ".write": "auth != null && auth.uid === $uid",
+          ".validate": "newData.isString() && newData.val().length <= 1400000"
+        }
       }
     },
     "verificationStatus": {
@@ -25,7 +29,7 @@
       ".read": true,
       ".indexOn": ["ownerUid", "status"],
       "$carId": {
-        ".write": "auth != null && newData.exists() && ((!data.exists() && newData.child('ownerUid').val() === auth.uid && root.child('users').child(auth.uid).child('role').val() === 'owner') || (data.exists() && data.child('ownerUid').val() === auth.uid) || root.child('admins').child(auth.uid).val() === true)",
+        ".write": "auth != null && ((newData.exists() && ((!data.exists() && newData.child('ownerUid').val() === auth.uid && root.child('users').child(auth.uid).child('role').val() === 'owner') || (data.exists() && data.child('ownerUid').val() === auth.uid) || root.child('admins').child(auth.uid).val() === true)) || (!newData.exists() && data.exists() && (data.child('ownerUid').val() === auth.uid || root.child('admins').child(auth.uid).val() === true)))",
         ".validate": "newData.hasChildren(['make','model','ownerUid']) && newData.child('make').isString() && newData.child('make').val().length <= 80 && newData.child('model').val().length <= 80 && (!data.exists() || newData.child('ownerUid').val() === data.child('ownerUid').val())"
       }
     },
@@ -62,7 +66,7 @@
     "privateCarDetails": {
       "$carId": {
         ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || data.child('ownerUid').val() === auth.uid)",
-        ".write": "auth != null && ((newData.exists() && newData.child('ownerUid').val() === auth.uid) || root.child('admins').child(auth.uid).val() === true)"
+        ".write": "auth != null && ((newData.exists() && newData.child('ownerUid').val() === auth.uid) || (!newData.exists() && (!data.exists() || data.child('ownerUid').val() === auth.uid)) || root.child('admins').child(auth.uid).val() === true)"
       }
     },
     "ratings": {

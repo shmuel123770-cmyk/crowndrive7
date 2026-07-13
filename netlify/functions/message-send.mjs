@@ -23,9 +23,15 @@ export async function handler(event) {
     if (body.thread === 'admin') {
       const userUid = cleanText(body.userUid || token.uid, 128);
       if (!admin && userUid !== token.uid) return json(403, {error: 'אין הרשאה'});
-      if (attachment) return json(400, {error: 'צירוף קבצים זמין רק בצ׳אט של הזמנה'});
+      // Support chat accepts inline image attachments (stored as a data URL, like everywhere else).
+      let stored = null;
+      if (attachment) {
+        const raw = String(attachment.path || '');
+        if (!/^data:image\//i.test(raw)) return json(400, {error: 'ניתן לצרף תמונה בלבד'});
+        stored = {type: 'photo', path: raw.slice(0, 1000000)};
+      }
       const ref = db.ref(`messages/admin/${userUid}`).push();
-      await ref.set({senderUid: token.uid, fromAdmin: admin, text, createdAt: Date.now()});
+      await ref.set({senderUid: token.uid, fromAdmin: admin, text, ...(stored ? {attachment: stored} : {}), createdAt: Date.now()});
       await audit(token.uid, 'admin_message', 'user', userUid);
       if (!admin) await notifyAdmin('chat', `הודעה חדשה בצ׳אט התמיכה`, {userUid});
       return json(200, {ok: true, id: ref.key});
