@@ -1,6 +1,25 @@
-CrownDrive — FINAL build (2026-07-13, rev.40)
+CrownDrive — FINAL build (2026-07-13, rev.41)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
+rev.41 (2026-07-13) — the ACTUAL messaging bug + weekend rental pricing + overflow verified:
+- *** "can't message users" — the real root cause, finally. *** In the chat composer the target user
+  was attached only `...(store.isAdmin ? {userUid: id} : {})`. If store.isAdmin was momentarily false,
+  the admin's message went out WITHOUT a target and fell back to the admin's OWN thread — the user
+  never got it. The thread key `a:<userId>` already holds the correct target, so userUid is now passed
+  UNCONDITIONALLY (harmlessly ignored for non-admins). Combined with rev.40's reliable fromAdmin, admin
+  messaging is now correct regardless of any render timing. (js/views.js, both send paths.)
+- WEEKEND RENTAL for hourly cars: when publishing, the owner can tick "זמין גם לסופ״ש (כולל שבת)" and set
+  a FIXED weekend price. It never shows in the listing — but when a renter picks a short range (≤4 days)
+  that covers a Saturday, the car becomes bookable and the price shown is that fixed weekend price. So an
+  hourly-only car can still be rented for a Fri–Sun weekend at the owner's weekend rate. (car.weekendEnabled
+  + car.weekendPrice; js/db.js + js/views.js: rangeIncludesSaturday/isWeekendStay/carServesPeriod +
+  estimatePrice + the form. Unit-tested 7/7; form show/hide verified.) Offered for hourly/hourly-daily
+  modes only. No Firebase rules change.
+- MOBILE OVERFLOW (339px audit): verified in-browser there is NO horizontal scroll (documentScrollWidth
+  === viewport). The aurora blobs/SVGs are geometrically wide but clipped by .hero{overflow:hidden} +
+  html/body overflow-x:hidden — the audit's scroll finding was on an older deploy. Added focusable="false"
+  to the decorative SVGs (they already had aria-hidden) to finish the accessibility recommendation.
+- No CSS/rules change (network-first JS refreshes on its own). Assets ?v=31.
 rev.40 (2026-07-13) — the 5x flicker fixed for real + admin-messaging fix + several UI fixes:
 - *** THE "site flashes 5 times on load" — REAL FIX (verified in-browser). *** Every Firebase listener
   (cars/ratings/config/bookings/users…) resolves seconds apart and each used to FULLY rebuild #app —

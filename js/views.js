@@ -127,8 +127,8 @@ const availPill = status => status === 'available'
   : `<span class="avail-badge busy">● ${status === 'rented' ? 'מושכר' : 'לא זמין'}</span>`;
 
 // Road-scene assets, taken 1:1 from the original CrownDrive design.
-const carSil = cls => `<svg class="sil ${cls}" viewBox="0 0 200 70" aria-hidden="true"><path d="M14 52 q2 -12 16 -15 l18 -3 q10 -14 30 -16 l36 -1 q20 1 32 13 l10 9 q22 3 26 12 q2 7 -4 9 l-9 1 q-2 -11 -14 -11 t-14 11 l-70 0 q-2 -11 -14 -11 t-14 11 l-17 -1 q-9 -2 -8 -8 z"/><circle cx="57" cy="57" r="11"/><circle cx="155" cy="57" r="11"/></svg>`;
-const blueprintSvg = `<svg class="blueprint" viewBox="0 0 640 300" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M60 210 q4 -30 36 -36 l52 -8 q28 -40 84 -46 l96 -3 q56 2 92 34 l26 24 q56 6 66 30 q6 16 -6 20 l-24 3"/><path d="M60 210 q-4 12 10 16 l40 2"/><path d="M174 228 l180 0"/><path d="M478 228 l36 -2"/><path d="M172 166 q26 -36 78 -42 l92 -3 q50 3 84 32"/><path d="M258 124 l6 42 M356 121 l10 44"/><path d="M262 166 l-6 60 M362 165 l-2 62"/><path d="M286 184 l30 0 M388 183 l30 0"/><path d="M64 196 l34 -6 M528 208 l24 -4"/><circle cx="204" cy="226" r="34"/><circle cx="204" cy="226" r="21"/><circle cx="204" cy="226" r="3"/><circle cx="452" cy="226" r="34"/><circle cx="452" cy="226" r="21"/><circle cx="452" cy="226" r="3"/><path d="M204 205 v42 M183 226 h42 M452 205 v42 M431 226 h42" opacity=".55"/><circle cx="204" cy="226" r="48" stroke-dasharray="4 7" opacity=".5"/><circle cx="452" cy="226" r="48" stroke-dasharray="4 7" opacity=".5"/><path d="M60 272 l520 0" stroke-dasharray="4 7" opacity=".5"/><path d="M60 265 l0 14 M580 265 l0 14" opacity=".6"/><path d="M110 96 l-18 0 0 18 M540 96 l18 0 0 18" opacity=".5"/></g></svg>`;
+const carSil = cls => `<svg class="sil ${cls}" viewBox="0 0 200 70" aria-hidden="true" focusable="false"><path d="M14 52 q2 -12 16 -15 l18 -3 q10 -14 30 -16 l36 -1 q20 1 32 13 l10 9 q22 3 26 12 q2 7 -4 9 l-9 1 q-2 -11 -14 -11 t-14 11 l-70 0 q-2 -11 -14 -11 t-14 11 l-17 -1 q-9 -2 -8 -8 z"/><circle cx="57" cy="57" r="11"/><circle cx="155" cy="57" r="11"/></svg>`;
+const blueprintSvg = `<svg class="blueprint" viewBox="0 0 640 300" aria-hidden="true" focusable="false"><g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M60 210 q4 -30 36 -36 l52 -8 q28 -40 84 -46 l96 -3 q56 2 92 34 l26 24 q56 6 66 30 q6 16 -6 20 l-24 3"/><path d="M60 210 q-4 12 10 16 l40 2"/><path d="M174 228 l180 0"/><path d="M478 228 l36 -2"/><path d="M172 166 q26 -36 78 -42 l92 -3 q50 3 84 32"/><path d="M258 124 l6 42 M356 121 l10 44"/><path d="M262 166 l-6 60 M362 165 l-2 62"/><path d="M286 184 l30 0 M388 183 l30 0"/><path d="M64 196 l34 -6 M528 208 l24 -4"/><circle cx="204" cy="226" r="34"/><circle cx="204" cy="226" r="21"/><circle cx="204" cy="226" r="3"/><circle cx="452" cy="226" r="34"/><circle cx="452" cy="226" r="21"/><circle cx="452" cy="226" r="3"/><path d="M204 205 v42 M183 226 h42 M452 205 v42 M431 226 h42" opacity=".55"/><circle cx="204" cy="226" r="48" stroke-dasharray="4 7" opacity=".5"/><circle cx="452" cy="226" r="48" stroke-dasharray="4 7" opacity=".5"/><path d="M60 272 l520 0" stroke-dasharray="4 7" opacity=".5"/><path d="M60 265 l0 14 M580 265 l0 14" opacity=".6"/><path d="M110 96 l-18 0 0 18 M540 96 l18 0 0 18" opacity=".5"/></g></svg>`;
 const STEP_ICONS = {
   search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
   approve: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
@@ -317,9 +317,31 @@ function periodBucket(ms) {
   if (ms < 7 * 86400000) return 'days';
   return 'weeks';
 }
-// Estimate a booking's price by its length: hours→hourly, a few days→daily, a week+→weekly. Falls
-// back to the nearest available rate so a partial price setup still produces a sensible number.
+// Does the chosen range cover a Saturday (Shabbat)? Weekend availability keys off this.
+function rangeIncludesSaturday(startMs, endMs) {
+  const day = 86400000;
+  for (let t = new Date(startMs).setHours(0, 0, 0, 0); t <= endMs; t += day) {
+    if (new Date(t).getDay() === 6) return true;
+  }
+  return false;
+}
+// A "weekend stay": the owner enabled weekend rental (with a fixed weekend price), the range covers a
+// Saturday, and it's short (≤4 days) — a long-weekend, not a full week. Lets an HOURLY car be booked
+// for a weekend at the owner's fixed weekend rate. The weekend price is never shown in the listing.
+function isWeekendStay(car, startMs, endMs) {
+  return !!car.weekendEnabled && Number(car.weekendPrice) > 0
+    && (endMs - startMs) <= 4 * 86400000 && (endMs - startMs) >= 20 * 3600000
+    && rangeIncludesSaturday(startMs, endMs);
+}
+// Whether a car can actually serve the chosen range: its rental buckets match, OR it's a weekend stay.
+function carServesPeriod(car, startMs, endMs) {
+  if (carBuckets(car).includes(periodBucket(endMs - startMs))) return true;
+  return isWeekendStay(car, startMs, endMs);
+}
+// Estimate a booking's price by its length. A qualifying weekend uses the owner's fixed weekend price;
+// otherwise hours→hourly, a few days→daily, a week+→weekly, falling back to the nearest available rate.
 function estimatePrice(car, startMs, endMs) {
+  if (isWeekendStay(car, startMs, endMs)) return {total: Number(car.weekendPrice), label: 'מחיר קבוע לסופ״ש (כולל שבת)'};
   const ms = Math.max(0, endMs - startMs);
   const hours = Math.max(1, Math.ceil(ms / 3600000));
   const days = Math.max(1, Math.ceil(ms / 86400000));
@@ -364,7 +386,7 @@ function carCard(car, manage = false, period = null) {
   if (period && car.status === 'available') {
     if (onRequest) {
       periodHtml = '<div class="period-note contact">שלחו הודעה לבעל הרכב לקבלת מחיר — פתחו את המודעה</div>';
-    } else if (carBuckets(car).includes(period.bucket)) {
+    } else if (carServesPeriod(car, period.startMs, period.endMs)) {
       const est = estimatePrice(car, period.startMs, period.endMs);
       if (est) periodHtml = `<div class="period-est"><span>מחיר משוער לטווח שבחרתם</span><b>${money(est.total)}</b><small>${est.label}</small></div>`;
     } else {
@@ -386,7 +408,7 @@ function carGrid(cars, manage = false, period = null) {
   if (period) {
     // Matching cars (and any rented ones) first; available cars whose rental mode doesn't fit the
     // chosen range are pushed to the end — shown, not hidden, with an "available only for X" note.
-    const fits = c => c.status !== 'available' || carBuckets(c).includes(period.bucket);
+    const fits = c => c.status !== 'available' || carServesPeriod(c, period.startMs, period.endMs);
     ordered = [...ordered.filter(fits), ...ordered.filter(c => !fits(c))];
   }
   return `<div class="grid">${ordered.map(c => carCard(c, manage, period)).join('')}</div>`;
@@ -538,7 +560,7 @@ function openCar(id) {
       const s = new Date(`${sd}T${sh}`).getTime(), e = new Date(`${ed}T${eh}`).getTime();
       if (!(e > s)) { estBox.innerHTML = '<div class="period-note">תאריך ההחזרה חייב להיות אחרי האיסוף</div>'; return; }
       if (onRequest) { estBox.innerHTML = '<div class="period-note contact">שלחו הודעה לבעל הרכב לקבלת מחיר לטווח שבחרתם</div>'; return; }
-      if (!carBuckets(car).includes(periodBucket(e - s))) {
+      if (!carServesPeriod(car, s, e)) {
         const only = mode ? mode.short : carBuckets(car).map(b => BUCKET_HE[b]).join(' / ');
         estBox.innerHTML = `<div class="period-note">רכב זה זמין להשכרה ${only} בלבד — לא מתאים לטווח שבחרתם</div>`;
         return;
@@ -1284,7 +1306,11 @@ function selectThread(key) {
       const text = form.text.value.trim();
       if (!text) return;
       form.text.value = ''; chatState.draft = '';
-      try { await sendMessage(isSupport ? {thread: 'admin', ...(store.isAdmin ? {userUid: id} : {}), text} : {bookingId: id, text}); }
+      // ALWAYS pass userUid = the thread's user id. For the admin it's the person they're messaging;
+      // for a regular user it's their own uid (harmlessly ignored server-side). Previously this was
+      // gated on store.isAdmin — if that flag was momentarily false the message lost its target and
+      // went to the admin's OWN thread instead of the user's. THAT was the "can't message users" bug.
+      try { await sendMessage(isSupport ? {thread: 'admin', userUid: id, text} : {bookingId: id, text}); }
       catch (error) { toast(error.message); form.text.value = text; chatState.draft = text; }
     };
   }
@@ -1296,7 +1322,7 @@ function selectThread(key) {
       toast('מעלה תמונה…');
       const dataUrl = await uploadPublicMedia(file, 'chat-photo', id);
       const attachment = {path: dataUrl, type: 'photo'};
-      await sendMessage(isSupport ? {thread: 'admin', ...(store.isAdmin ? {userUid: id} : {}), text: '', attachment} : {bookingId: id, text: '', attachment});
+      await sendMessage(isSupport ? {thread: 'admin', userUid: id, text: '', attachment} : {bookingId: id, text: '', attachment});
       toast('התמונה נשלחה');
     } catch (error) { toast(error.message); }
   });
@@ -1500,6 +1526,8 @@ function carForm(car = null) {
       <div class="field" data-price="daily"><label>מחיר יומי <span class="req">*</span></label><input name="dailyPrice" type="number" min="0" value="${esc(car?.dailyPrice || '')}"></div>
       <div class="field" data-price="weekly"><label>מחיר לשבוע <span class="req">*</span></label><input name="priceWeekly" type="number" min="0" value="${esc(car?.priceWeekly || '')}"></div>
     </div>
+    <label class="price-request-toggle" id="weekend-toggle-row"><input type="checkbox" name="weekendEnabled" id="weekend-enabled" ${car?.weekendEnabled ? 'checked' : ''}> <span><b>זמין גם לסופ״ש (כולל שבת)</b> — גם רכב שמושכר לפי שעות יוכל להיות מושכר לסופ״ש במחיר קבוע. המחיר לא יופיע במודעה — הוא יוצג רק כשהשוכר בוחר תאריכים שכוללים שבת.</span></label>
+    <div class="form-grid" id="weekend-price-grid"><div class="field"><label>מחיר קבוע לסופ״ש <span class="req">*</span></label><input name="weekendPrice" type="number" min="0" value="${esc(car?.weekendPrice || '')}"></div></div>
 
     <p class="form-section-title">תמונות הרכב <span class="req">*</span> <span class="mut">(עד 6, בחרו תמונה ראשית)</span></p>
     <div id="photo-grid" class="photo-grid"></div>
@@ -1558,7 +1586,15 @@ function carForm(car = null) {
   const MODE_PRICES = {hourly: {hourly: 1}, hourly_daily: {hourly: 1, daily: 1}, long_term: {weekly: 1}};
   const priceGrid = form.querySelector('#price-grid');
   const priceOnReq = form.querySelector('#price-on-request');
+  const weekendRow = form.querySelector('#weekend-toggle-row');
+  const weekendCheck = form.querySelector('#weekend-enabled');
+  const weekendPriceGrid = form.querySelector('#weekend-price-grid');
+  const weekendAllowed = () => ['hourly', 'hourly_daily'].includes(form.querySelector('input[name="rentalMode"]:checked')?.value || 'hourly_daily') && !priceOnReq?.checked;
   function updatePriceFields() {
+    // Weekend option is offered only for hourly / hourly-daily cars (not long-term, not price-on-request).
+    const wkAllowed = weekendAllowed();
+    if (weekendRow) weekendRow.style.display = wkAllowed ? '' : 'none';
+    if (weekendPriceGrid) weekendPriceGrid.style.display = wkAllowed && weekendCheck?.checked ? '' : 'none';
     // "שלחו הודעה לקבלת מחיר" hides all price fields; otherwise show the ones the rental mode needs.
     if (priceOnReq?.checked) { priceGrid.style.display = 'none'; return; }
     priceGrid.style.display = '';
@@ -1568,6 +1604,7 @@ function carForm(car = null) {
   }
   form.querySelectorAll('input[name="rentalMode"]').forEach(radio => radio.addEventListener('change', updatePriceFields));
   priceOnReq?.addEventListener('change', updatePriceFields);
+  weekendCheck?.addEventListener('change', updatePriceFields);
   updatePriceFields();
 
   // The site "chats" a photo suggestion the moment the owner picks the spec.
@@ -1640,6 +1677,12 @@ function carForm(car = null) {
         if (!(Number(data[priceName[key]]) > 0)) return toast('יש להזין את כל המחירים הנדרשים לאופן ההשכרה שנבחר');
       }
     }
+    // Weekend rental: only kept for hourly / hourly-daily cars (not long-term / price-on-request), and
+    // a weekend price is then required.
+    const weekendOn = weekendAllowed() && !!weekendCheck?.checked;
+    data.weekendEnabled = weekendOn;
+    if (weekendOn && !(Number(data.weekendPrice) > 0)) return toast('יש להזין מחיר קבוע לסופ״ש, או לבטל את האפשרות');
+    if (!weekendOn) data.weekendPrice = 0;
     data.make = make; data.model = model;
     data.photos = photos;
     data.photoUrl = mainUrl || photos[0];
