@@ -122,6 +122,13 @@ export async function login(email, password) {
   catch (error) { throw authError(error); }
 }
 
+// Guest / unregistered visitor: a temporary anonymous identity so they can chat with support and see
+// replies, without signing up. Requires "Anonymous" sign-in to be ENABLED in the Firebase console.
+export async function signInGuest() {
+  try { return (await auth.signInAnonymously()).user; }
+  catch (error) { throw authError(error); }
+}
+
 export async function logout() {
   await auth.signOut();
 }

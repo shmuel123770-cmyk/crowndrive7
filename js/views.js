@@ -1,6 +1,6 @@
 import {store, list, myRole, myBookings, myCars, carRating, userRating} from './store.js';
 import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail, paintApp, resetPaint} from './core.js';
-import {register, login, logout, sendVerify, refreshEmailStatus, sendPasswordReset, createOwnProfile} from './auth.js';
+import {register, login, logout, sendVerify, refreshEmailStatus, sendPasswordReset, createOwnProfile, signInGuest} from './auth.js';
 import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, setBookingStatus, registerDocument, approveVerification, sendMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction, setMaintenance, setCarStatus, setCarFeatured, checkIsAdmin} from './db.js';
 import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './media.js';
 import {legacyStatus, migrateLegacy} from './migrate.js';
@@ -191,7 +191,7 @@ export function nav() {
   const isOwner = role === 'owner' || role === 'admin';
   const links = [['home', 'בית'], ['cars', 'הרכבים'], ['how', 'איך זה עובד'], ['about', 'אודות'], ['contact', 'צור קשר']];
   node.innerHTML = `<div class="nav-links">${links.map(([key, label]) => `<button class="nav-link ${key === route ? 'active' : ''}" data-nav="${key}">${label}</button>`).join('')}</div>
-    <div class="nav-actions">${store.user ? '<button class="dark-pill" data-route="dashboard">האזור שלי</button>' : '<button class="dark-pill" data-route="auth">התחבר</button>'}${isOwner ? '<button class="gold-pill" id="nav-add-car">+ הוסף רכב</button>' : ''}</div>`;
+    <div class="nav-actions">${store.user && !store.user.isAnonymous ? '<button class="dark-pill" data-route="dashboard">האזור שלי</button>' : '<button class="dark-pill" data-route="auth">התחבר</button>'}${isOwner ? '<button class="gold-pill" id="nav-add-car">+ הוסף רכב</button>' : ''}</div>`;
   const scrollToSection = id => {
     const go = () => document.getElementById(id)?.scrollIntoView({behavior: 'smooth'});
     if ((location.hash.slice(1) || 'home') !== 'home') { location.hash = 'home'; setTimeout(go, 400); } else go();
@@ -199,8 +199,7 @@ export function nav() {
   node.querySelectorAll('[data-nav]').forEach(button => button.onclick = () => {
     const key = button.dataset.nav;
     if (key === 'contact') {
-      if (store.user) openChatThread(`a:${store.user.uid}`);
-      else { toast('התחברו כדי לפתוח צ׳אט עם שירות הלקוחות'); location.hash = 'auth'; }
+      openSupportChat();
       return;
     }
     if (key === 'home' || key === 'cars') {
@@ -271,10 +270,7 @@ export function home() {
     if (role === 'owner' || role === 'admin') carForm();
     else openAuthAs('owner', 'register');
   });
-  document.querySelector('#contact-support')?.addEventListener('click', () => {
-    if (!store.user) { toast('נדרשת התחברות קצרה כדי לפתוח צ׳אט'); location.hash = 'auth'; return; }
-    openChatThread(`a:${store.user.uid}`);
-  });
+  document.querySelector('#contact-support')?.addEventListener('click', () => openSupportChat());
   document.querySelector('#admin-entry')?.addEventListener('click', () => openAdminLogin());
   // "חפש רכב": carry the chosen dates into the cars page so it can price + filter by the rental mode.
   document.querySelector('#home-search')?.addEventListener('click', () => {
@@ -572,11 +568,7 @@ function openCar(id) {
     recalc();
   }
   // "שלחו הודעה לקבלת מחיר" → open the support chat so the renter can ask the price (no public price).
-  document.querySelector('#price-contact')?.addEventListener('click', () => {
-    if (!store.user) { closeModal(); toast('נדרשת התחברות קצרה כדי לשלוח הודעה'); location.hash = 'auth'; return; }
-    closeModal();
-    openChatThread(`a:${store.user.uid}`);
-  });
+  document.querySelector('#price-contact')?.addEventListener('click', () => openSupportChat());
   if (bookingForm) bookingForm.onsubmit = async event => {
     event.preventDefault();
     try {
@@ -716,6 +708,8 @@ function bindDashboardTabs(renderer) {
 }
 export function dashboard() {
   resetPaint();
+  // A guest (anonymous) has no personal area — send them to register instead of a dead-end profile screen.
+  if (store.user?.isAnonymous) { toast('הירשמו כדי לפתוח אזור אישי'); location.hash = 'auth'; return; }
   if (!store.user) {
     if (!store.authSettled) { app().innerHTML = '<div class="app-loader"><div class="spinner"></div><p>טוען…</p></div>'; return; }
     location.hash = 'auth'; return;
@@ -1180,6 +1174,21 @@ export function openChatThread(threadKey) {
   else location.hash = 'chats';
 }
 
+// Open the support chat for ANYONE — a registered user uses their account; an unregistered visitor is
+// signed in as a guest (anonymous) so they can message support and see replies without signing up.
+export async function openSupportChat() {
+  try {
+    let user = store.user;
+    if (!user) user = await signInGuest();
+    closeModal();
+    openChatThread(`a:${user.uid}`);
+  } catch (error) {
+    closeModal();
+    toast('פתיחת הצ׳אט נכשלה — אפשר להתחבר ולנסות שוב');
+    location.hash = 'auth';
+  }
+}
+
 const EV_LABELS = {video: 'סרטון הרכב מבחוץ', fuel: 'תמונת דלק', odometer: 'תמונת קילומטראז׳'};
 const evidenceState = (booking, bookingId) => {
   const ev = booking?.evidence || {};
@@ -1201,7 +1210,7 @@ export function chatsPage() {
   </div>`;
   if (store.isAdmin) ensureAdminChatFeed();
   renderChatItems();
-  document.querySelector('#chat-page-back')?.addEventListener('click', () => { location.hash = store.user ? 'dashboard' : 'home'; });
+  document.querySelector('#chat-page-back')?.addEventListener('click', () => { location.hash = (store.user && !store.user.isAnonymous) ? 'dashboard' : 'home'; });
   document.querySelector('#chat-search')?.addEventListener('input', renderChatItems);
   const wanted = pendingThread || chatState.thread;
   pendingThread = null;
@@ -1238,10 +1247,18 @@ function chatItems() {
   if (store.isAdmin) {
     if (adminChatActivity === null) adminChatActivity = {};
     const query = (document.querySelector('#chat-search')?.value || '').trim().toLowerCase();
-    return list(store.users)
-      .filter(user => !query || `${user.name || ''} ${user.email || ''}`.toLowerCase().includes(query))
+    const registered = list(store.users);
+    const registeredIds = new Set(registered.map(u => u.id));
+    // Guest (unregistered/anonymous) support threads: a support thread whose uid has no user profile.
+    const guests = Object.keys(adminChatActivity)
+      .filter(uid => !registeredIds.has(uid))
+      .map(uid => ({id: uid, guest: true, name: `אורח · ${uid.slice(-5)}`}));
+    return [...registered, ...guests]
+      .filter(u => !query || `${u.name || ''} ${u.email || ''}`.toLowerCase().includes(query) || (u.guest && 'אורח'.includes(query)))
       .sort((a, b) => (adminChatActivity[b.id] || 0) - (adminChatActivity[a.id] || 0) || String(a.name || a.email || '').localeCompare(String(b.name || b.email || ''), 'he'))
-      .map(user => ({key: `a:${user.id}`, avatar: avatarHtml(user, 42), title: user.name || user.email || 'משתמש', subtitle: `${roleName(user.role)}${adminChatActivity[user.id] ? ' · ' + fmtDate(adminChatActivity[user.id]) : ''}`, live: true}));
+      .map(u => u.guest
+        ? {key: `a:${u.id}`, emoji: ICON.chat, title: u.name, subtitle: `לקוח לא רשום${adminChatActivity[u.id] ? ' · ' + fmtDate(adminChatActivity[u.id]) : ''}`, live: true}
+        : {key: `a:${u.id}`, avatar: avatarHtml(u, 42), title: u.name || u.email || 'משתמש', subtitle: `${roleName(u.role)}${adminChatActivity[u.id] ? ' · ' + fmtDate(adminChatActivity[u.id]) : ''}`, live: true});
   }
   const role = myRole();
   const bookingItems = myBookings()
@@ -1276,7 +1293,7 @@ function selectThread(key) {
   const booking = isSupport ? null : store.bookings[id];
   if (!isSupport && !booking) { pane.innerHTML = '<div class="chat-empty"><p>השיחה לא נמצאה</p></div>'; return; }
   const car = booking ? store.cars[booking.carId] || {} : {};
-  const title = isSupport ? (store.isAdmin ? (store.users[id]?.name || store.users[id]?.email || 'משתמש') : 'שירות לקוחות') : `${car.make || 'רכב'} ${car.model || ''}`.trim();
+  const title = isSupport ? (store.isAdmin ? (store.users[id]?.name || store.users[id]?.email || `אורח · ${id.slice(-5)}`) : 'שירות לקוחות') : `${car.make || 'רכב'} ${car.model || ''}`.trim();
   const live = isSupport || ['approved', 'active'].includes(booking.status);
   const isOwner = booking && booking.ownerUid === store.user.uid;
   const isRenter = booking && booking.renterUid === store.user.uid;

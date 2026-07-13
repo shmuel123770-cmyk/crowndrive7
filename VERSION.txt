@@ -1,6 +1,19 @@
-CrownDrive — FINAL build (2026-07-13, rev.46)
+CrownDrive — FINAL build (2026-07-13, rev.47)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
+rev.47 (2026-07-13) — unregistered visitors can message support (guest chat via anonymous auth):
+- Clicking "פתיחת צ׳אט עם התמיכה" (or "שלחו הודעה לקבלת מחיר") when NOT logged in now signs the visitor in
+  as a GUEST (Firebase anonymous auth) and opens the support chat — they can message support and see the
+  admin's replies without signing up, and the session persists per-browser. (js/auth.js signInGuest +
+  js/views.js openSupportChat wired into all support entry points.)
+- The ADMIN's chat list now shows guest threads ("אורח · <id>", "לקוח לא רשום") alongside registered
+  users, sorted by activity, so the admin sees and can reply to guests. (chatItems)
+- Guest UX: the nav shows "התחבר" (not "האזור שלי") for a guest, and the dashboard/chat-back send guests
+  to register/home instead of a dead-end profile screen. No DB rule change (anon writes to its OWN
+  support thread, which the existing rules already allow; blocked/fromAdmin checks still hold).
+- *** ACTION REQUIRED: enable Anonymous sign-in *** — Firebase Console → Authentication → Sign-in method
+  → Anonymous → Enable. Until then the button falls back gracefully to the login screen (verified:
+  auth/admin-restricted-operation → toast + redirect to login). No ?v bump (network-first JS only).
 rev.46 (2026-07-13) — home page: show all cars (with availability marker) + smaller cards:
 - The home fleet section now shows ALL cars (available AND rented, hidden excluded), available ones
   first, each with its פנוי/מושכר badge so it's obvious what's free and what's taken. (js/views.js)
