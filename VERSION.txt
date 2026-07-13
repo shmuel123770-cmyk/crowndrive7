@@ -1,5 +1,79 @@
-CrownDrive — FINAL build (2026-07-13, rev.33)
+CrownDrive — FINAL build (2026-07-13, rev.37)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.37 (2026-07-13) — back/close buttons polished + "שלחו הודעה לקבלת מחיר" wording:
+- BACK BUTTON ("→ חזרה") no longer floats over the page title. It was position:fixed and overlapped
+  "כל הרכבים באתר"; now it's an in-flow pill that sits cleanly ABOVE the title. It also stopped
+  appearing on the login and chat screens (which have their own back/close) — only the cars listing
+  shows it now. (js/app.js + css/app.css.)
+- CLOSE BUTTON (× on modals) enlarged 34px→42px with a bigger, higher-contrast glyph and press
+  feedback — a proper tap target that's easy to see and hit. (css/app.css.)
+- WORDING: the "price on request" option now shows exactly "שלחו הודעה לקבלת מחיר" everywhere (the
+  card price slot, the car detail, the booking estimate line, and the owner's form checkbox) instead
+  of "לפי פנייה". The detail's button reads "שליחת הודעה לקבלת מחיר" and opens the support chat.
+  (js/views.js.) No Firebase rules change. Assets ?v=30.
+rev.36 (2026-07-13) — owner edits + "price on request" + whole-card click + the CSP inline-script fix:
+- OWNER EDITS A PUBLISHED CAR: every car in "הרכבים שלי" now has a "✎ עריכת פרטים" button beside the
+  פנוי/תפוס toggle — it opens the same form pre-filled, so the owner can change any detail after
+  publishing. (js/views.js: manage card + bindCarButtons.)
+- "מחיר לפי פנייה": a checkbox in the add-car form. When on, NO price is shown — the card/detail show
+  "לפי פנייה", the price fields are hidden and not required, and the car detail gets a clear
+  "שליחת הודעה לבירור מחיר" button that opens the support chat. (car.priceOnRequest; js/views.js +
+  js/db.js. In date-search these cars show "מחיר בתיאום — שלחו הודעה" instead of an estimate.)
+- WHOLE MODEAH IS CLICKABLE: a click ANYWHERE on a car card (photo, title, specs — not just the bottom
+  button) opens the car detail. Inner controls (the owner's toggle/edit buttons) still act on their own.
+- CSP FIX (from the Lighthouse review): the service-worker registration was an INLINE <script> in
+  index.html, which the CSP (script-src 'self') BLOCKED — so the auto-reload-on-deploy that frees
+  stale devices wasn't even running. Moved it to an external js/sw-register.js (satisfies 'self'),
+  which also makes the "a friend added a car and I didn't see it" auto-recovery actually work. No
+  broad unsafe-inline added. (index.html + js/sw-register.js.) Assets ?v=29.
+- Lighthouse triage (from the attached package): most console errors are a browser EXTENSION (Capital
+  One Shopping / GTM / Tealium / Adobe / BlueKai) + harmless .js.map fetches — NOT CrownDrive; the real
+  profile-save 500 was fixed in rev.35; api.js already checks response.ok before parsing JSON; fonts
+  already load with display=swap + preconnect. No Firebase rules change in this revision.
+
+rev.35 (2026-07-13) — rental modes + date-search pricing + the profile-save 500 fixed:
+- OWNER CHOOSES THE RENTAL MODE (in the add-car form, "אופן ההשכרה"): 1) לפי שעות, 2) לפי שעות
+  וימים, 3) לתקופות ארוכות. The chosen mode is shown on the listing (a badge on the card + a line
+  under the specs, and prominently in the car detail). The price fields adapt to the mode — hourly:
+  מחיר לשעה; hourly+daily: מחיר לשעה + יומי; long-term: מחיר לשבוע — and only the relevant price(s)
+  are required. (car.rentalMode; js/views.js + js/db.js. No new car rule needed — it's just another
+  field on the car the owner already owns.)
+- DATE SEARCH → SMART PRICING: the home "חפש רכב" now carries the chosen dates to the cars page, and
+  the cars page has its own date row. When dates are picked, each matching car shows an ESTIMATED TOTAL
+  computed by the length of the rental — hours→hourly, a few days→the DAILY price, a week+→the WEEKLY
+  price (exactly as requested). The car detail's booking form prefills those dates and shows the same
+  live estimate. Verified in-browser: 8h × $15 = $120; a 3-day range switches to "לפי ימים".
+- CARS THAT DON'T FIT THE RANGE ARE STILL SHOWN — moved to the end of the results with a clear note
+  ("רכב זה זמין להשכרה … בלבד — לא מתאים לטווח שבחרתם"), so nothing disappears; the visitor just sees
+  which cars rent by hours / days / long-term. A "ניקוי תאריכים" button clears the date search.
+- FIXED the console 500 users saw (POST /api/profile-save → "JSON at position 6"): the background
+  email-verification sync no longer calls that unreliable function — it writes users/<uid>/verification/
+  email DIRECTLY (client-write:own-profile), like the profile photo/name. New DB rule for that field.
+  *** MUST re-publish the Firebase rules. *** (js/auth.js + rules.)
+- NOTE on "a friend added a car and I didn't see it": the car list is a LIVE listener, so a new car
+  appears by itself once the device runs current code. The device that didn't update was on old cached
+  code — rev.30+ made the service worker cache-free and auto-reloads stale devices, which resolves it
+  after this deploy. Most of the many console errors in the screenshots are from a browser EXTENSION
+  (GTM/Tealium/Adobe/BlueKai/OneTrust + chrome-extension://invalid) and harmless .js.map fetches —
+  not CrownDrive. Assets ?v=28.
+
+rev.34 (2026-07-13) — owner name off the cards + mobile Users list + save-name fix:
+- CAR CARDS: the owner's name ("בעל הרכב: …") is REMOVED from the main listing cards (home + cars
+  page). It still appears inside the car's detail (when you open the listing itself). Only js/views.js
+  changed (network-first).
+- ADMIN → USERS list is now MOBILE-FRIENDLY: on phones the wide 8-column table (which used to force a
+  cramped sideways scroll) reflows into a clean stacked CARD per user — each field labeled (שם, מייל,
+  טלפון, תפקיד, אימות, מסמכים, השכרות, ניהול) with its value beside it, and the manage icons on their
+  own row. On tablets/desktop it stays the normal wide table. Verified in-browser at 375px (cards, no
+  horizontal scroll) and at 1100px (full table). js/views.js adds data-labels; css/app.css adds the
+  card layout. Assets ?v=27.
+- "שמירת שם פרטי לא נשמרת": editing your first name / phone / birth date in the personal area used to
+  POST through the unreliable server function, so it "didn't save". These now write DIRECTLY
+  (client-write:own-profile: users/<uid>/name·phone·birthDate), the same reliable path as the profile
+  photo, with the server kept only as a fallback. New DB rules: a user may self-write their own
+  name (1–100 chars) / phone (≤40) / birthDate (≤20), all validated as strings. js/db.js (saveUser) +
+  FIREBASE_DATABASE_RULES_V2.json. *** MUST re-publish the Firebase rules. ***
 
 rev.33 (2026-07-13) — THE stuck root cause (CSP) + auto-cache-recovery + full make/model list:
 - *** THE REAL "loads for an hour" *** — found in the user's DevTools: dozens of

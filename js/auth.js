@@ -69,10 +69,11 @@ auth.onAuthStateChanged(async user => {
     }
     window.dispatchEvent(new Event('authchange'));
   }
-  // Background, non-blocking: refresh the email-verification flag. Never delays app readiness, and a
-  // slow/broken function here has zero effect on the UI.
+  // Background, non-blocking: refresh the email-verification flag. Written DIRECTLY (the profile-save
+  // function was unreliable and returned a 500 here — the console error users saw). Never delays app
+  // readiness, and a failure here has zero effect on the UI.
   if (user) (async () => {
-    try { await user.reload(); await user.getIdToken(true); await api('profile-save', {action: 'sync-email'}); }
+    try { await user.reload(); await db.ref(`users/${user.uid}/verification/email`).set(!!user.emailVerified); } // client-write:own-profile
     catch (error) { console.warn('email verification sync skipped', error?.message); }
   })();
 });

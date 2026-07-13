@@ -20,6 +20,24 @@
         "role": {
           ".write": "auth != null && auth.uid === $uid && !data.exists()",
           ".validate": "newData.val() === 'renter' || newData.val() === 'owner'"
+        },
+        "name": {
+          ".write": "auth != null && auth.uid === $uid",
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+        },
+        "phone": {
+          ".write": "auth != null && auth.uid === $uid",
+          ".validate": "newData.isString() && newData.val().length <= 40"
+        },
+        "birthDate": {
+          ".write": "auth != null && auth.uid === $uid",
+          ".validate": "newData.isString() && newData.val().length <= 20"
+        },
+        "verification": {
+          "email": {
+            ".write": "auth != null && auth.uid === $uid",
+            ".validate": "newData.isBoolean()"
+          }
         }
       }
     },

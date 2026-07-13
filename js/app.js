@@ -60,9 +60,9 @@ function render() {
       return;
     }
     (routes[route] || home)();
-    // The personal area has its own close button + bottom tab bar, so skip the floating
-    // back button there (it used to overlap the header). Other inner pages keep it.
-    if (!['home', 'dashboard'].includes(route)) {
+    // Only the cars listing gets the in-flow "→ חזרה" button. home/dashboard/auth/chats each have
+    // their own navigation (bottom tab bar, in-form back link, chat back/close), so they don't need it.
+    if (!['home', 'dashboard', 'auth', 'chats'].includes(route)) {
       document.querySelector('#app').insertAdjacentHTML('afterbegin', '<button type="button" class="page-back" id="page-back">→ חזרה</button>');
       document.querySelector('#page-back').onclick = () => { if (history.length > 1) history.back(); else location.hash = 'home'; };
     }
