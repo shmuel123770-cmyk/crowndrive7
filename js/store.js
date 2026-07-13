@@ -38,7 +38,18 @@ export async function startPublic() {
 export async function startPrivate(user) {
   stopPrivate();
   store.user = user;
-  store.isAdmin = (await refs.admins.child(user.uid).once('value')).val() === true;
+  // Resilient admin-flag read: a denied OR slow read must never crash / stall the rest of
+  // startPrivate — that used to strand the whole personal area on an endless "loading" spinner
+  // (the profile listener below never got attached, so profileLoaded stayed false forever).
+  try {
+    store.isAdmin = await Promise.race([
+      refs.admins.child(user.uid).once('value').then(snap => snap.val() === true),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('admin-check-timeout')), 6000)),
+    ]);
+  } catch (error) {
+    console.error('admin check failed — continuing as non-admin', error);
+    store.isAdmin = false;
+  }
 
   // FIX (owner-first-session): the bookings/payments query field depends on the role,
   // but on registration the profile does not exist yet when startPrivate runs, so the
@@ -58,12 +69,24 @@ export async function startPrivate(user) {
     store.privateUnsubs.push(...ownFeedUnsubs);
   }
 
-  store.privateUnsubs.push(listen(refs.users.child(user.uid), v => {
-    const oldStatus = store.profile?.verification?.status || 'missing';
-    store.profile = {...(v || {}), verification: {...(v?.verification || {}), status: oldStatus}};
-    store.profileLoaded = true;  // the real profile row (or its absence) has now arrived
-    if (!store.isAdmin) subscribeOwnFeeds(store.profile.role);
-  }, 'profile'));
+  // Own-profile listener. profileLoaded MUST end up true whatever happens — data, an empty row, a
+  // permission error, or a stalled read — otherwise dashboard() spins forever.
+  {
+    const profileRef = refs.users.child(user.uid);
+    const onProfile = snap => {
+      const v = snap.val();
+      const oldStatus = store.profile?.verification?.status || 'missing';
+      store.profile = {...(v || {}), verification: {...(v?.verification || {}), status: oldStatus}};
+      store.profileLoaded = true;  // the real profile row (or its absence) has now arrived
+      if (!store.isAdmin) subscribeOwnFeeds(store.profile.role);
+      emit('profile');
+    };
+    const onProfileError = error => { console.error('firebase listener profile', error); store.profileLoaded = true; emit('profile'); };
+    profileRef.on('value', onProfile, onProfileError);
+    store.privateUnsubs.push(() => profileRef.off('value', onProfile));
+  }
+  // Last-resort safety net: never let the personal area spin for more than a few seconds.
+  setTimeout(() => { if (!store.profileLoaded) { store.profileLoaded = true; emit('profile'); } }, 8000);
   store.privateUnsubs.push(listen(refs.verificationStatus.child(user.uid), status => {
     store.profile = store.profile || {};
     // The listen() helper coerces empty snapshots to {} — keep status a string.
@@ -77,11 +100,13 @@ export async function startPrivate(user) {
     store.privateUnsubs.push(listen(refs.payments, v => { store.payments = v; }, 'payments'));
     store.privateUnsubs.push(listen(refs.adminNotifications.limitToLast(200), v => { store.adminNotifications = v; }, 'admin-notifications'));
   } else {
-    const profile = (await refs.users.child(user.uid).once('value')).val() || {};
-    // FIX (verification status race): merge instead of overwriting so the status already
-    // delivered by the verificationStatus listener is not clobbered back to undefined.
-    store.profile = {...profile, verification: {...(profile.verification || {}), status: store.profile?.verification?.status || 'missing'}};
-    subscribeOwnFeeds(profile.role);
+    try {
+      const profile = (await refs.users.child(user.uid).once('value')).val() || {};
+      // FIX (verification status race): merge instead of overwriting so the status already
+      // delivered by the verificationStatus listener is not clobbered back to undefined.
+      store.profile = {...profile, verification: {...(profile.verification || {}), status: store.profile?.verification?.status || 'missing'}};
+      subscribeOwnFeeds(profile.role);
+    } catch (error) { console.error('initial profile read failed — listener will cover it', error); }
   }
   emit('private-ready');
 }

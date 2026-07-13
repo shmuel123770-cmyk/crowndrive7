@@ -1,5 +1,14 @@
-CrownDrive — FINAL build (2026-07-13, rev.24)
+CrownDrive — FINAL build (2026-07-13, rev.25)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.25 (2026-07-13) — personal area can no longer hang on "טוען את האזור האישי…":
+- ROOT CAUSE: in store.startPrivate the admin-flag read `admins/<uid>.once()` ran BEFORE the profile
+  listener was attached. If that read threw (denied / expired token) or stalled, startPrivate crashed
+  after setting store.user but before the profile listener — so store.profileLoaded stayed false and
+  dashboard() spun forever. Fixes: (1) the admin read is wrapped in try/catch + a 6s timeout → never
+  crashes/stalls the flow; (2) the profile listener sets profileLoaded=true even on error; (3) an 8s
+  safety net flips profileLoaded so the UI always falls through (to the correct dashboard or the
+  complete-profile screen) instead of an endless spinner. Only js/store.js changed (network-first).
 
 rev.24 (2026-07-13) — ADMIN CHAT works via CLIENT-WRITE (bypasses the broken function):
 - The message-send function on the live site was throwing the old JSON.parse error (stale Netlify
