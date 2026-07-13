@@ -1,5 +1,28 @@
-CrownDrive — FINAL build (2026-07-13, rev.29)
+CrownDrive — FINAL build (2026-07-13, rev.31)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.31 (2026-07-13) — admin login no longer asks "renter or owner":
+- RACE: right after the admin signs in, dashboard() rendered BEFORE startPrivate finished reading
+  admins/<uid>, so store.isAdmin was still false, role() was null, and the screen fell through to
+  the complete-profile ("שוכר או בעל רכב") prompt. Fix: a new store.adminChecked flag is set true
+  only after the admin read resolves; dashboard() shows the loading spinner until it's known and
+  never drops to the role prompt while the admin status is still pending. So the admin goes straight
+  to the admin dashboard (brief spinner at most). A genuine new non-admin with no role still gets
+  the role prompt as intended. Changed: js/store.js + js/views.js (network-first). Assets ?v=25.
+
+rev.30 (2026-07-13) — THE real "loads for an hour" fix + cache-free service worker:
+- ROOT CAUSE (found by inspection, verified in-browser): firebase.js had a TOP-LEVEL `await` on
+  auth.setPersistence(). A top-level await blocks the ENTIRE module graph — so if that call HANGS
+  (slow/locked/blocked IndexedDB on some devices), no module ever finishes loading and the app is
+  stuck on the loading screen indefinitely. Earlier fixes only caught it *throwing*, not *hanging*.
+  Now setPersistence is fired WITHOUT await (Firebase's default is already LOCAL, so the login still
+  persists per-browser). There is now NO top-level await anywhere in the module graph → init can
+  never block. Verified: fresh load renders HOME, 0 caches.
+- SERVICE WORKER IS NOW CACHE-FREE (per "keep only the login in cache"): it stores NOTHING — no
+  HTML/JS/CSS — and wipes every old cache on activate. Every request goes straight to the network,
+  so the site can never be stuck on an old version. The login is kept by Firebase in IndexedDB (not
+  the SW), so users stay signed in in the same browser. index.html still auto-reloads once when a
+  new worker takes over, so anyone stuck on an old cached bundle is freed automatically. Assets ?v=25.
 
 rev.29 (2026-07-13) — service worker is now NETWORK-FIRST for everything (no stale app code):
 - DIAGNOSIS (verified against the live DB, not guessed): login persistence WORKS (the admin session

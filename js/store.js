@@ -5,6 +5,7 @@ export const store = {
   profile: null,
   profileLoaded: false,
   isAdmin: false,
+  adminChecked: false,
   authSettled: false,
   cars: {},
   bookings: {},
@@ -50,6 +51,7 @@ export async function startPrivate(user) {
     console.error('admin check failed — continuing as non-admin', error);
     store.isAdmin = false;
   }
+  store.adminChecked = true;  // admin status is now known — safe to decide renter/owner vs admin
 
   // FIX (owner-first-session): the bookings/payments query field depends on the role,
   // but on registration the profile does not exist yet when startPrivate runs, so the
@@ -117,6 +119,7 @@ export function stopPrivate() {
   store.profile = null;
   store.profileLoaded = false;
   store.isAdmin = false;
+  store.adminChecked = false;
   store.bookings = {};
   store.payments = {};
   store.users = {};

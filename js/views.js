@@ -494,7 +494,7 @@ export function dashboard() {
   if (role === 'admin') adminDashboard();
   else if (role === 'owner') ownerDashboard();
   else if (role === 'renter') renterDashboard();
-  else if (!store.isAdmin && !store.profileLoaded) app().innerHTML = '<div class="app-loader"><div class="spinner"></div><p>טוען את האזור האישי…</p></div>';
+  else if (!store.adminChecked || !store.profileLoaded) app().innerHTML = '<div class="app-loader"><div class="spinner"></div><p>טוען את האזור האישי…</p></div>';
   else completeProfile();
 }
 
