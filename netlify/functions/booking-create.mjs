@@ -1,4 +1,6 @@
 import {getAdmin, verify, json, profile, cleanText, audit, notifyAdmin, parseBody} from './_firebase-admin.mjs';
+import {smsUser, smsAdmin} from './_sms.mjs';
+import {rateLimit, tooMany} from './_ratelimit.mjs';
 
 function ageFromBirthDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) return null;
@@ -17,6 +19,7 @@ export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const token = await verify(event);
+    if (!(await rateLimit(token.uid, 'booking-create', 10, 60 * 60 * 1000))) throw tooMany('נסו שוב בעוד זמן מה');
     const body = parseBody(event);
     if (!body) return json(400, {error: 'בקשה לא תקינה — נסו שוב'});
     const db = getAdmin().database();
@@ -56,6 +59,9 @@ export async function handler(event) {
     });
     await audit(token.uid, 'booking_create', 'booking', id, {carId});
     await notifyAdmin('booking', `הזמנה חדשה לרכב ${car.make} ${car.model}`, {bookingId: id, carId, renterUid: token.uid});
+    // SMS: the owner gets told a booking came in (+ the admin). Best-effort — never blocks the response.
+    await smsUser(car.ownerUid, `CrownDrive: התקבלה בקשת הזמנה חדשה לרכב ${car.make || ''} ${car.model || ''}. היכנסו לאזור האישי לאישור.`);
+    await smsAdmin(`CrownDrive: הזמנה חדשה לרכב ${car.make || ''} ${car.model || ''}.`);
     return json(200, {ok: true, id});
   } catch (error) {
     console.error(error);

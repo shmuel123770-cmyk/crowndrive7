@@ -1,4 +1,5 @@
 import {getAdmin, verify, json, isAdmin, cleanText, audit, notifyAdmin, parseBody} from './_firebase-admin.mjs';
+import {rateLimit, tooMany} from './_ratelimit.mjs';
 
 // One endpoint for all privileged admin controls. Every action is audited.
 export async function handler(event) {
@@ -6,6 +7,7 @@ export async function handler(event) {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const token = await verify(event);
     if (!await isAdmin(token.uid)) return json(403, {error: 'מנהל בלבד'});
+    if (!(await rateLimit(token.uid, 'admin-action', 80, 60 * 1000))) throw tooMany();
     const body = parseBody(event);
     if (!body) return json(400, {error: 'בקשה לא תקינה — נסו שוב'});
     const db = getAdmin().database();

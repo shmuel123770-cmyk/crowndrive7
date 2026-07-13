@@ -1,4 +1,7 @@
 import {getAdmin, verify, json, booking, isAdmin, cleanText, audit, notifyAdmin, parseBody} from './_firebase-admin.mjs';
+import {smsUser, smsAdmin, onceGuard} from './_sms.mjs';
+import {rateLimit, tooMany} from './_ratelimit.mjs';
+import {validateImageDataUrl} from './_media.mjs';
 
 // Chat is open only while the rental is live: from owner approval (pre-pickup
 // coordination + evidence) until the rental is marked done. Admin support
@@ -11,6 +14,7 @@ export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const token = await verify(event);
+    if (!(await rateLimit(token.uid, 'message', 20, 60 * 1000))) throw tooMany();
     const body = parseBody(event);
     if (!body) return json(400, {error: 'הבקשה גדולה או פגומה — נסו תמונה קטנה יותר'});
     const db = getAdmin().database();
@@ -28,12 +32,17 @@ export async function handler(event) {
       if (attachment) {
         const raw = String(attachment.path || '');
         if (!/^data:image\//i.test(raw)) return json(400, {error: 'ניתן לצרף תמונה בלבד'});
-        stored = {type: 'photo', path: raw.slice(0, 1000000)};
+        stored = {type: 'photo', path: validateImageDataUrl(raw)};  // verify real image bytes
       }
       const ref = db.ref(`messages/admin/${userUid}`).push();
       await ref.set({senderUid: token.uid, fromAdmin: admin, text, ...(stored ? {attachment: stored} : {}), createdAt: Date.now()});
       await audit(token.uid, 'admin_message', 'user', userUid);
       if (!admin) await notifyAdmin('chat', `הודעה חדשה בצ׳אט התמיכה`, {userUid});
+      // SMS: user→admin texts the admin; admin→user texts that user (debounced 2 min per thread).
+      if (await onceGuard(`thread/${userUid}`, 2 * 60 * 1000)) {
+        if (admin) await smsUser(userUid, 'CrownDrive: קיבלת הודעה חדשה מצוות האתר. היכנסו לצ׳אט כדי לקרוא ולהשיב.');
+        else await smsAdmin('CrownDrive: הודעה חדשה בצ׳אט התמיכה מאת משתמש.');
+      }
       return json(200, {ok: true, id: ref.key});
     }
 
@@ -49,7 +58,7 @@ export async function handler(event) {
       // Evidence photos are stored inline as a data URL; a video keeps a storage path.
       const raw = String(attachment.path || '');
       const isImage = /^data:image\//i.test(raw);
-      const path = isImage ? raw.slice(0, 1000000) : cleanText(attachment.path, 500);
+      const path = isImage ? validateImageDataUrl(raw) : cleanText(attachment.path, 500);  // verify real image bytes
       if (!ATTACHMENT_TYPES.has(type)) return json(400, {error: 'סוג צירוף לא תקין'});
       if (!isImage && !path.startsWith(`bookings/${bookingId}/media/${token.uid}/`)) return json(400, {error: 'נתיב קובץ לא תקין'});
       if (EVIDENCE_KEYS[type]) {
@@ -65,6 +74,12 @@ export async function handler(event) {
       await db.ref(`bookings/${bookingId}/evidence/${EVIDENCE_KEYS[stored.type]}`).set({path: stored.path, by: token.uid, at: Date.now()});
     }
     await audit(token.uid, 'message_send', 'booking', bookingId, stored ? {attachment: stored.type} : {});
+    // SMS the OTHER side of the booking (admin → both), debounced 2 min per booking so a burst of
+    // messages doesn't fire a burst of texts.
+    if (await onceGuard(`bmsg/${bookingId}`, 2 * 60 * 1000)) {
+      const recipients = admin ? [value.ownerUid, value.renterUid] : [value.ownerUid, value.renterUid].filter(uid => uid !== token.uid);
+      for (const uid of recipients) await smsUser(uid, 'CrownDrive: קיבלת הודעה חדשה בצ׳אט ההזמנה. היכנסו לאתר כדי לקרוא ולהשיב.');
+    }
     return json(200, {ok: true, id: ref.key});
   } catch (error) {
     console.error(error);

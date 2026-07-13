@@ -1,8 +1,11 @@
 import {getAdmin, verify, json, booking, cleanText, audit, notifyAdmin, parseBody} from './_firebase-admin.mjs';
+import {rateLimit, tooMany} from './_ratelimit.mjs';
+import {validateImageDataUrl} from './_media.mjs';
 export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const token = await verify(event);
+    if (!(await rateLimit(token.uid, 'payment', 12, 10 * 60 * 1000))) throw tooMany();
     const body = parseBody(event);
     if (!body) return json(400, {error: 'הבקשה גדולה או פגומה — נסו תמונה קטנה יותר'});
     const value = await booking(body.bookingId);
@@ -21,7 +24,7 @@ export async function handler(event) {
       renterUid: value.renterUid,
       ownerUid: value.ownerUid,
       amount,
-      mediaPath: isImage ? media.slice(0, 1000000) : cleanText(body.mediaPath, 500),
+      mediaPath: isImage ? validateImageDataUrl(media) : cleanText(body.mediaPath, 500),
       createdAt: Date.now(),
     });
     await audit(token.uid, 'payment_submit', 'booking', body.bookingId, {amount});

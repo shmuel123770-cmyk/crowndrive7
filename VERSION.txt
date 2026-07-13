@@ -1,6 +1,45 @@
-CrownDrive — FINAL build (2026-07-13, rev.37)
+CrownDrive — FINAL build (2026-07-13, rev.39)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
+rev.39 (2026-07-13) — REPAIR_PLAN #1: rate limiting + real file validation (security):
+- RATE LIMITING on every sensitive server function — a per-user, per-action sliding window backed by
+  the Realtime DB (admin-only node, default-deny), enforced with a transaction so concurrent requests
+  can't slip past. FAILS OPEN (a limiter bug can never lock users out). Returns a clean Hebrew 429.
+  Caps: booking-create 10/hr, booking-action 40/hr, message-send 20/min, notify 30/min,
+  document 15/10min, payment 12/10min, media-upload 25/10min, rating 12/hr, admin-action & verification
+  80/min. (Login is already rate-limited by Firebase Auth itself.) New file: _ratelimit.mjs.
+- REAL FILE VALIDATION for uploaded images: instead of trusting the declared MIME/extension, the server
+  now DECODES the base64 and checks the actual magic bytes (JPEG/PNG/GIF/WebP), rejecting non-images and
+  files disguised as images — notably SVG, which can carry scripts — plus a byte-size cap. Applied to
+  license/selfie (document-register), payment proof (payment-submit) and chat attachments (message-send).
+  New file: _media.mjs (unit-tested: real JPEG/PNG pass; SVG, script-bytes, non-image, oversized reject).
+  EXIF note: the client already re-encodes every upload through <canvas>, which strips EXIF/GPS.
+- DEFENSE-IN-DEPTH on the CLIENT-WRITE photo paths (car photos + profile photo bypass the server): the
+  DB rules now require an image data-URL or https prefix on users/<uid>/photoURL and cars/<id>/photoUrl
+  + photos[]. *** MUST re-publish the Firebase rules. ***
+- No client-code change and no ?v bump (server + rules only). 23 functions (incl. 2 new helpers).
+- Next in the REPAIR_PLAN queue: #2 pagination (users/cars/messages/bookings).
+rev.38 (2026-07-13) — SMS NOTIFICATIONS (Twilio) + legacy cars show a rental mode:
+- SMS alerts on every important event (via Twilio's REST API — no SDK to bundle):
+    • רכב חדש נוסף → SMS to the admin.        • משתמש חדש נרשם → SMS to the admin.
+    • הודעה בצ׳אט → the other side gets an SMS (support + booking chats; debounced 2 min/thread).
+    • שוכר ביצע הזמנה → SMS to the owner (+ admin).   • הזמנה אושרה/נדחתה → SMS to the renter.
+    • ההשכרה הסתיימה → SMS to BOTH sides.
+  How it's wired: booking events run through server functions (booking-create / booking-action /
+  message-send) so their SMS is server-side + secure. Car-publish, new-user and admin-chat are
+  CLIENT-WRITES, so the client calls a new, best-effort `notify` function that RE-VERIFIES the event
+  against the database (a forged call can't send bogus texts) and de-dups with a once-guard.
+- *** SETUP REQUIRED — see SMS_SETUP_HE.md. *** Add 4 Netlify env vars: TWILIO_ACCOUNT_SID,
+  TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER, ADMIN_PHONE. WITHOUT them the site behaves exactly as before
+  (every SMS call NO-OPS quietly) — nothing breaks, just no texts. Secrets live ONLY in Netlify env,
+  never in the code/ZIP.
+- New files: netlify/functions/_sms.mjs (Twilio sender + phone normaliser + once-guard),
+  netlify/functions/notify.mjs (client-triggered, re-verified alerts), SMS_SETUP_HE.md. Changed:
+  booking-create.mjs, booking-action.mjs, message-send.mjs, js/db.js, js/auth.js.
+- LEGACY CARS now show a rental mode: cars published before rev.35 had no "אופן השכרה", so they showed
+  none — now the mode is INFERRED from the prices they already have (daily→"שעות וימים",
+  only-weekly→"טווח ארוך", else→"לפי שעות"). Search still prices them by their real prices. (js/views.js)
+- No Firebase rules change and no ?v bump (network-first modules refresh on their own). 21 functions.
 rev.37 (2026-07-13) — back/close buttons polished + "שלחו הודעה לקבלת מחיר" wording:
 - BACK BUTTON ("→ חזרה") no longer floats over the page title. It was position:fixed and overlapped
   "כל הרכבים באתר"; now it's an in-flow pill that sits cleanly ABOVE the title. It also stopped

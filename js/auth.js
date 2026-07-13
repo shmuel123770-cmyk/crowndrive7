@@ -46,6 +46,7 @@ export async function createOwnProfile({name, phone, role}) {
     }
     throw error;
   }
+  api('notify', {type: 'new-user'}).catch(() => {});  // best-effort SMS to the admin about the new signup (non-blocking)
 }
 
 let resolveReady;

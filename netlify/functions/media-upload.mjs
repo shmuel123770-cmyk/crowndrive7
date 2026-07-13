@@ -1,5 +1,6 @@
 import {randomUUID} from 'node:crypto';
 import {getAdmin, verify, json, canAccessBooking, isAdmin, profile, cleanText, parseBody} from './_firebase-admin.mjs';
+import {rateLimit, tooMany} from './_ratelimit.mjs';
 
 // Direct server-side image upload: the client POSTs base64 bytes to THIS same-origin function
 // and the Admin SDK writes them to Storage. This works inside in-app browsers (Telegram/IG
@@ -16,6 +17,7 @@ export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const user = await verify(event);
+    if (!(await rateLimit(user.uid, 'media-upload', 25, 10 * 60 * 1000))) throw tooMany();
     const reqBody = parseBody(event);
     if (!reqBody) return json(400, {error: 'בקשה לא תקינה — נסו שוב'});
     const {name, type, kind, entityId, data} = reqBody;

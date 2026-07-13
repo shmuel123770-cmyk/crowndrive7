@@ -1,9 +1,11 @@
 import {getAdmin, verify, json, isAdmin, cleanText, audit, parseBody} from './_firebase-admin.mjs';
+import {rateLimit, tooMany} from './_ratelimit.mjs';
 export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const token = await verify(event);
     if (!await isAdmin(token.uid)) return json(403, {error: 'מנהל בלבד'});
+    if (!(await rateLimit(token.uid, 'verification', 80, 60 * 1000))) throw tooMany();
     const body = parseBody(event);
     if (!body) return json(400, {error: 'בקשה לא תקינה — נסו שוב'});
     const {uid, status, note} = body;

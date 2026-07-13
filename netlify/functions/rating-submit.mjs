@@ -1,8 +1,10 @@
 import {getAdmin, verify, json, booking, cleanText, audit, parseBody} from './_firebase-admin.mjs';
+import {rateLimit, tooMany} from './_ratelimit.mjs';
 export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const token = await verify(event);
+    if (!(await rateLimit(token.uid, 'rating', 12, 60 * 60 * 1000))) throw tooMany();
     const body = parseBody(event);
     if (!body) return json(400, {error: 'בקשה לא תקינה — נסו שוב'});
     const value = await booking(body.bookingId);

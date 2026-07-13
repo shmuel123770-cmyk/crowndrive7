@@ -292,7 +292,12 @@ const RENTAL_MODES = [
   {value: 'hourly_daily', label: 'השכרה לפי שעות וימים', short: 'שעות · ימים', hint: 'גמיש — שעה, יום או כמה ימים'},
   {value: 'long_term', label: 'השכרה לתקופות ארוכות', short: 'טווח ארוך', hint: 'שבוע ומעלה, במחיר משתלם'},
 ];
-const rentalModeOf = car => RENTAL_MODES.find(m => m.value === car.rentalMode) || null;
+// The car's rental mode. Legacy cars (published before modes existed) have none, so we infer a sensible
+// one from the prices they set — daily → "שעות וימים", only weekly → "טווח ארוך", otherwise "לפי שעות".
+function rentalModeOf(car) {
+  const value = car.rentalMode || (car.dailyPrice ? 'hourly_daily' : (car.priceWeekly && !car.priceHourly ? 'long_term' : 'hourly'));
+  return RENTAL_MODES.find(m => m.value === value) || null;
+}
 const MODE_BUCKETS = {hourly: ['hours'], hourly_daily: ['hours', 'days'], long_term: ['weeks']};
 const BUCKET_HE = {hours: 'שעתית', days: 'לפי ימים', weeks: 'לטווח ארוך'};
 // Which rental "buckets" (hours / days / weeks) a car serves. Uses the owner's explicit mode; legacy

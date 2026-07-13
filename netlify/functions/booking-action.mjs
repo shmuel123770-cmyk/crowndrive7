@@ -1,4 +1,6 @@
 import {getAdmin, verify, json, isAdmin, booking, audit, cleanText, notifyAdmin, parseBody} from './_firebase-admin.mjs';
+import {smsUser} from './_sms.mjs';
+import {rateLimit, tooMany} from './_ratelimit.mjs';
 const transitions = {
   pending: ['approved', 'rejected', 'cancelled'],
   approved: ['active', 'cancelled'],
@@ -11,6 +13,7 @@ export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const token = await verify(event);
+    if (!(await rateLimit(token.uid, 'booking-action', 40, 60 * 60 * 1000))) throw tooMany();
     const body = parseBody(event);
     if (!body) return json(400, {error: 'בקשה לא תקינה — נסו שוב'});
     const db = getAdmin().database();
@@ -53,6 +56,14 @@ export async function handler(event) {
       await audit(token.uid, 'booking_status', 'booking', body.bookingId, {from: present, to: next});
       const statusText = {approved: 'בעל הרכב אישר הזמנה', rejected: 'בעל הרכב דחה הזמנה', active: 'השכרה התחילה', done: 'השכרה הסתיימה', cancelled: 'הזמנה בוטלה'}[next];
       if (statusText) await notifyAdmin('status', `${statusText} (${body.bookingId.slice(-7)})`, {bookingId: body.bookingId, to: next, by: token.uid});
+      // SMS: renter on approve/reject; BOTH sides when the rental ends. Best-effort.
+      const ref7 = body.bookingId.slice(-7);
+      if (next === 'approved') await smsUser(current.renterUid, `CrownDrive: ההזמנה שלך אושרה (${ref7})! היכנסו לצ׳אט להשלמת התיעוד ותחילת ההשכרה.`);
+      else if (next === 'rejected') await smsUser(current.renterUid, `CrownDrive: לצערנו ההזמנה שלך (${ref7}) לא אושרה על ידי בעל הרכב.`);
+      else if (next === 'done') {
+        await smsUser(current.renterUid, `CrownDrive: ההשכרה (${ref7}) הסתיימה. תודה שנסעתם איתנו — נשמח לדירוג!`);
+        await smsUser(current.ownerUid, `CrownDrive: ההשכרה (${ref7}) של הרכב שלך הסתיימה.`);
+      }
       return json(200, {ok: true});
     }
     if (body.action === 'handover') {

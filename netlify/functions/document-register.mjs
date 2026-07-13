@@ -1,9 +1,12 @@
 import {getAdmin, verify, json, cleanText, audit, parseBody} from './_firebase-admin.mjs';
+import {rateLimit, tooMany} from './_ratelimit.mjs';
+import {validateImageDataUrl} from './_media.mjs';
 const allowed = new Set(['licenseFront', 'licenseBack', 'selfie']);
 export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const token = await verify(event);
+    if (!(await rateLimit(token.uid, 'document', 15, 10 * 60 * 1000))) throw tooMany();
     const parsed = parseBody(event);
     if (!parsed) return json(400, {error: 'הבקשה גדולה או פגומה — נסו תמונה קטנה יותר'});
     const {documentType, path} = parsed;
@@ -13,7 +16,7 @@ export async function handler(event) {
     const isImage = /^data:image\//i.test(value);
     const expected = `users/${token.uid}/documents/`;
     if (!isImage && (!value.startsWith(expected) || value.includes('..'))) return json(400, {error: 'נתיב קובץ לא תקין'});
-    const stored = isImage ? value.slice(0, 1000000) : cleanText(path, 500);
+    const stored = isImage ? validateImageDataUrl(value) : cleanText(path, 500);  // real image bytes, not just the prefix
     const db = getAdmin().database();
     // Once all three documents were submitted the verification is locked —
     // re-upload is possible only if the admin asked for a redo (or rejected).
