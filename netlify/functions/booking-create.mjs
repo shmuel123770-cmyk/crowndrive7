@@ -32,26 +32,32 @@ export async function handler(event) {
     }
     const carId = cleanText(body.carId, 100);
     const car = (await db.ref(`cars/${carId}`).once('value')).val();
-    if (!car || car.status === 'hidden') return json(404, {error: 'הרכב אינו זמין'});
+    if (!car || car.status !== 'available') return json(409, {error: 'הרכב אינו זמין להזמנה כרגע'});  // audit #12: was only blocking 'hidden'
     if (car.ownerUid === token.uid) return json(400, {error: 'אי אפשר להזמין את הרכב של עצמך'});
     const age = ageFromBirthDate(userProfile.birthDate);
     if (age === null) return json(400, {error: 'יש להזין תאריך לידה בפרופיל לפני הזמנה'});
     if (age < Number(car.minAge || 21)) return json(403, {error: `ההשכרה לרכב זה היא מגיל ${car.minAge || 21}`});
-    const startAt = new Date(body.startAt).getTime();
-    const endAt = new Date(body.endAt).getTime();
+    // Booking times are LOCAL (Crown Heights). We keep the naive strings the client sent and store them
+    // as-is, so every device shows exactly the time that was picked (audit #9 — no more UTC shift). The
+    // parsed millis are used only for range validation + overlap, consistently on one clock.
+    const startRaw = cleanText(body.startAt, 40);
+    const endRaw = cleanText(body.endAt, 40);
+    const startAt = new Date(startRaw).getTime();
+    const endAt = new Date(endRaw).getTime();
     if (!Number.isFinite(startAt) || !Number.isFinite(endAt) || endAt <= startAt) return json(400, {error: 'טווח התאריכים אינו תקין'});
-    if (startAt < Date.now() - 5 * 60 * 1000) return json(400, {error: 'זמן האיסוף כבר עבר'});
+    if (startAt < Date.now() - 18 * 60 * 60 * 1000) return json(400, {error: 'זמן האיסוף כבר עבר'});  // wide grace so timezone offsets never reject a valid same-day booking
+    const fulfillment = body.fulfillment === 'delivery' && car.deliveryEnabled ? 'delivery' : 'pickup';
+    if (fulfillment === 'delivery' && !cleanText(body.deliveryAddress, 500)) return json(400, {error: 'יש להזין כתובת למסירה'});
     const existingSnap = await db.ref('bookings').orderByChild('carId').equalTo(carId).once('value');
     const hasOverlap = Object.values(existingSnap.val() || {}).some(b => ['approved', 'active'].includes(b.status) && overlaps(startAt, endAt, new Date(b.startAt).getTime(), new Date(b.endAt).getTime()));
     if (hasOverlap) return json(409, {error: 'הרכב תפוס בטווח שבחרת'});
-    const fulfillment = body.fulfillment === 'delivery' && car.deliveryEnabled ? 'delivery' : 'pickup';
     const id = db.ref('bookings').push().key;
     await db.ref(`bookings/${id}`).set({
       carId,
       ownerUid: car.ownerUid,
       renterUid: token.uid,
-      startAt: new Date(startAt).toISOString(),
-      endAt: new Date(endAt).toISOString(),
+      startAt: startRaw,
+      endAt: endRaw,
       fulfillment,
       deliveryAddress: fulfillment === 'delivery' ? cleanText(body.deliveryAddress, 500) : '',
       status: 'pending',

@@ -10,5 +10,13 @@ if ('serviceWorker' in navigator) {
     swRefreshing = true;
     location.reload();
   });
-  addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); });
+  addEventListener('load', function () {
+    // updateViaCache:'none' → the browser NEVER serves sw.js from its HTTP cache, so a new worker is
+    // always detected. Then force an immediate update check so a device on old code heals right away
+    // (and re-check every time the tab regains focus).
+    navigator.serviceWorker.register('/sw.js', {updateViaCache: 'none'}).then(function (reg) {
+      reg.update().catch(function () {});
+      document.addEventListener('visibilitychange', function () { if (!document.hidden) reg.update().catch(function () {}); });
+    }).catch(function () {});
+  });
 }

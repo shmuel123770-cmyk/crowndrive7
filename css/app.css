@@ -1054,3 +1054,16 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 .chat-list-head #chat-search{flex-basis:100%;margin-top:2px}
 .chat-page-back{background:rgba(255,255,255,.12);border:none;color:#fff;font-size:1.25rem;cursor:pointer;width:36px;height:36px;border-radius:9px;flex:none;display:grid;place-items:center;transition:background .18s}
 .chat-page-back:hover{background:rgba(255,255,255,.22)}
+
+/* More compact car cards on phones — comfortable, less scrolling (the whole site is mobile-first) */
+@media (max-width:600px){
+  .car-photo{aspect-ratio:16/9}
+  .car-body{padding:14px 16px;gap:9px}
+  .car-body h3{font-size:1.06rem}
+  .car-specs{font-size:.76rem;gap:5px}
+  .rating{font-size:.85rem}
+  .mode-line{font-size:.76rem;margin:1px 0}
+  .price{font-size:1.15rem}
+  .car .btn{padding:11px}
+  .grid{gap:16px}
+}

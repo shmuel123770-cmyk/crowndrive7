@@ -3,3 +3,17 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(self), microphone=(), geolocation=()
   Content-Security-Policy: default-src 'self'; script-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app; connect-src 'self' https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebasestorage.googleapis.com https://storage.googleapis.com https://commons.wikimedia.org https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+
+# Keep every device on the exact same, current version (with the cache-free service worker). The HTML
+# shell and the service worker are never stored (no-store); the JS/CSS modules revalidate on every load
+# (no-cache → 304 when unchanged, fresh the instant they change). This is the audit #1 fix.
+/
+  Cache-Control: no-store
+/index.html
+  Cache-Control: no-store
+/sw.js
+  Cache-Control: no-store
+/js/*
+  Cache-Control: no-cache, must-revalidate
+/css/*
+  Cache-Control: no-cache, must-revalidate

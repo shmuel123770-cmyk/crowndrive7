@@ -63,6 +63,9 @@ export async function canReadUserDocs(viewer, target) {
 export function cleanText(value, max = 500) {
   return String(value ?? '').trim().replace(/[\u0000-\u001f\u007f]/g, '').slice(0, max);
 }
+// Audit logging is best-effort — it must NEVER turn a successful business action into a 500 for the
+// user (audit #11). A failed audit write is swallowed + logged, so `await audit(...)` never rejects.
 export function audit(actorUid, action, entityType, entityId, details = {}) {
-  return getAdmin().database().ref('auditLogs').push({actorUid, action, entityType, entityId, details, createdAt: Date.now()});
+  return getAdmin().database().ref('auditLogs').push({actorUid, action, entityType, entityId, details, createdAt: Date.now()})
+    .catch(error => { console.warn('audit write failed', error?.message); });
 }

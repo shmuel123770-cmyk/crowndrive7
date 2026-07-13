@@ -74,7 +74,9 @@ auth.onAuthStateChanged(async user => {
   // function was unreliable and returned a 500 here — the console error users saw). Never delays app
   // readiness, and a failure here has zero effect on the UI.
   if (user) (async () => {
-    try { await user.reload(); await db.ref(`users/${user.uid}/verification/email`).set(!!user.emailVerified); } // client-write:own-profile
+    // reload + force-refresh the ID token so its email_verified claim matches user.emailVerified — the
+    // DB rule now validates verification/email against auth.token.email_verified (it can't be forged).
+    try { await user.reload(); await user.getIdToken(true); await db.ref(`users/${user.uid}/verification/email`).set(!!user.emailVerified); } // client-write:own-profile
     catch (error) { console.warn('email verification sync skipped', error?.message); }
   })();
 });

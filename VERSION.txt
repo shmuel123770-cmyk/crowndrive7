@@ -1,6 +1,49 @@
-CrownDrive — FINAL build (2026-07-13, rev.41)
+CrownDrive — FINAL build (2026-07-13, rev.43)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
+rev.43 (2026-07-13) — external audit remediation, batch 1 (critical security + correctness):
+Fixes keyed to the audit findings. *** MUST re-publish BOTH the Realtime DB rules AND the Storage rules. ***
+- #2 Private booking media leak CLOSED: Storage rule for bookings/* read was `auth != null` (any signed-in
+  user could read payment proofs / handover videos). Now direct read is the UPLOADER only; the other party
+  + admins read via the signed-URL function (which verifies participation). (FIREBASE_STORAGE_RULES_V2.txt)
+- #4 privateCarDetails overwrite CLOSED: the write rule trusted the client-supplied ownerUid. Now it checks
+  the REAL owner at cars/<id>/ownerUid (or a brand-new car), so nobody can overwrite/erase another car's
+  pickup address. + ownerUid on the record must equal the writer (admins excepted).
+- #5 Blocked users can no longer write: added a `blocked !== true` guard to the cars, messages/admin and
+  privateCarDetails write rules (admins bypass). A blocked account can’t publish/edit/delete cars or chat.
+- #6 Email verification can’t be forged: verification/email now must equal auth.token.email_verified; the
+  client sync force-refreshes the token first so it stays in sync. (rules + js/auth.js)
+- #8 Editing a car no longer ERASES its pickup address: the edit form loads the address blank, so an empty
+  value now means “unchanged” instead of wiping it on every price/photo edit. (js/db.js updateCar)
+- #9 Booking time UTC shift FIXED: the naive local time the user picks is stored as-is (not toISOString),
+  so every device shows exactly the picked time. Range/overlap use one consistent clock. (booking-create)
+- #11 A succeeded action can no longer return 500: audit() is now best-effort (never rejects). (_firebase-admin)
+- #12 A car marked ‘rented’/‘hidden’ can no longer be booked via the API (now requires status==='available').
+- #16(partial) delivery now REQUIRES a delivery address. #23 booking status is whitelisted for admins too.
+- #1 cache headers refined: no-store for HTML + sw.js, no-cache/must-revalidate for /js + /css.
+STILL OPEN (next batches): #3 ratings expose UIDs, #7 needs-resubmission, #10 atomic double-booking,
+#13–22 (availability/rentalMode server-enforce, price snapshot, payment history, cancel, deletion,
+ownership transfer, maintenance server-enforce, owner verification), #24–27 build/lockfile/publish-dir,
+#28 pending-doc exposure, #37 pagination, #43 docs. No ?v bump (rules + server + network-first JS only).
+rev.42 (2026-07-13) — the "loads twice" flash + the real cache/stale-device fix + compact mobile cards:
+- FIRST-LOAD "double load" GONE: even after rev.40 killed redundant repaints, the very first load still
+  painted TWICE — an empty page (0 cars) and then the full one when the cars snapshot arrived. Now the
+  loader is held until the first cars snapshot is in (store.publicReady), so the page appears ONCE, fully.
+  5s timeout fallback so a dead network never strands the loader. (js/store.js + js/app.js)
+- *** THE STALE-DEVICE / "works differently on devices that visited before" ROOT CAUSE + FIX. *** The
+  service worker is cache-free, but nothing told the BROWSER not to cache the JS modules — app.js is
+  cache-busted with ?v=, but its imports (views.js/db.js/…) load WITHOUT a version, so a browser could
+  keep serving old module code after a deploy. FIX: _headers now sends `Cache-Control: no-cache` for
+  index.html, sw.js, /js/*, /css/* → the browser revalidates every load (304 when unchanged, fresh the
+  instant it changes) so NO device is ever stuck on old code. Plus sw-register.js registers with
+  updateViaCache:'none' and forces reg.update() on load + on tab focus, so a stale worker heals fast.
+  This is what makes every device / browser / country run the exact same current version. (data was
+  already identical everywhere — it's real-time from Firebase; the difference was cached CODE.)
+- COMPACT car cards on phones (shorter 16:9 photo, tighter padding/text) — more comfortable, less
+  scrolling. (css/app.css) Assets ?v=32.
+- SMS: unchanged from rev.38 — the full Twilio integration + all triggers are built and in the ZIP; it
+  only needs YOUR Twilio account + 4 Netlify env vars to start sending (see SMS_SETUP_HE.md). Until then
+  the site runs exactly as now, just without texts. No Firebase rules change in this rev.
 rev.41 (2026-07-13) — the ACTUAL messaging bug + weekend rental pricing + overflow verified:
 - *** "can't message users" — the real root cause, finally. *** In the chat composer the target user
   was attached only `...(store.isAdmin ? {userUid: id} : {})`. If store.isAdmin was momentarily false,

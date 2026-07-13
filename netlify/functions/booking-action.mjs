@@ -27,6 +27,9 @@ export async function handler(event) {
     if (body.action === 'status') {
       const next = body.status;
       const present = current.status || 'pending';
+      // Whitelist the status for EVERYONE (audit #23) — an admin (or a buggy client) can no longer store
+      // an arbitrary string and corrupt the record.
+      if (!['pending', 'approved', 'rejected', 'active', 'done', 'cancelled'].includes(next)) return json(400, {error: 'סטטוס לא תקין'});
       if (!admin) {
         if (['approved', 'rejected', 'active', 'done'].includes(next) && !owner) return json(403, {error: 'פעולה לבעל הרכב בלבד'});
         if (next === 'cancelled' && !owner && !renter) return json(403, {error: 'אין הרשאה'});

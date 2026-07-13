@@ -7,6 +7,7 @@ export const store = {
   isAdmin: false,
   adminChecked: false,
   authSettled: false,
+  publicReady: false,
   cars: {},
   bookings: {},
   payments: {},
@@ -31,7 +32,7 @@ function listen(ref, setter, key) {
 
 export async function startPublic() {
   if (store.publicUnsubs.length) return;
-  store.publicUnsubs.push(listen(refs.cars, v => { store.cars = v; }, 'cars'));
+  store.publicUnsubs.push(listen(refs.cars, v => { store.cars = v; store.publicReady = true; }, 'cars'));
   store.publicUnsubs.push(listen(refs.ratings, v => { store.ratings = v; }, 'ratings'));
   store.publicUnsubs.push(listen(refs.config, v => { store.config = v; }, 'config'));
 }
