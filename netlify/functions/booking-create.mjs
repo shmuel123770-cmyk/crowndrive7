@@ -15,6 +15,31 @@ function ageFromBirthDate(value) {
 function overlaps(aStart, aEnd, bStart, bEnd) {
   return aStart < bEnd && aEnd > bStart;
 }
+// Server-side mirror of the client's rental-mode matching (audit #14) — a malicious client can no longer
+// book a range the owner never offered. Kept in sync with js/views.js (carBuckets/periodBucket/weekend).
+const DAY = 86400000;
+const MODE_BUCKETS = {hourly: ['hours'], hourly_daily: ['hours', 'days'], long_term: ['weeks']};
+function periodBucket(ms) { return ms < 24 * 3600000 ? 'hours' : ms < 7 * DAY ? 'days' : 'weeks'; }
+function carBuckets(car) {
+  if (car.rentalMode && MODE_BUCKETS[car.rentalMode]) return MODE_BUCKETS[car.rentalMode];
+  const b = [];
+  if (car.priceHourly) b.push('hours');
+  if (car.dailyPrice) b.push('days');
+  if (car.priceWeekly) b.push('weeks');
+  return b.length ? b : ['hours'];
+}
+function rangeIncludesSaturday(startRaw, endRaw) {
+  // Work on the calendar dates at noon UTC so day-of-week is unambiguous regardless of timezone.
+  let d = new Date(String(startRaw).slice(0, 10) + 'T12:00:00Z');
+  const end = new Date(String(endRaw).slice(0, 10) + 'T12:00:00Z');
+  if (Number.isNaN(d.getTime()) || Number.isNaN(end.getTime())) return false;
+  while (d <= end) { if (d.getUTCDay() === 6) return true; d = new Date(d.getTime() + DAY); }
+  return false;
+}
+function carServesPeriod(car, startRaw, endRaw, startMs, endMs) {
+  if (carBuckets(car).includes(periodBucket(endMs - startMs))) return true;
+  return !!car.weekendEnabled && Number(car.weekendPrice) > 0 && (endMs - startMs) <= 4 * DAY && (endMs - startMs) >= 20 * 3600000 && rangeIncludesSaturday(startRaw, endRaw);
+}
 export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
@@ -46,6 +71,9 @@ export async function handler(event) {
     const endAt = new Date(endRaw).getTime();
     if (!Number.isFinite(startAt) || !Number.isFinite(endAt) || endAt <= startAt) return json(400, {error: 'טווח התאריכים אינו תקין'});
     if (startAt < Date.now() - 18 * 60 * 60 * 1000) return json(400, {error: 'זמן האיסוף כבר עבר'});  // wide grace so timezone offsets never reject a valid same-day booking
+    if (!carServesPeriod(car, startRaw, endRaw, startAt, endAt)) return json(409, {error: 'הרכב אינו מושכר לטווח שנבחר'});  // #14: enforce rental mode server-side
+    if ((endAt - startAt) > 90 * DAY) return json(400, {error: 'משך ההשכרה ארוך מדי (עד 90 ימים)'});  // #40
+    if (startAt > Date.now() + 365 * DAY) return json(400, {error: 'לא ניתן להזמין יותר משנה מראש'});  // #40
     const fulfillment = body.fulfillment === 'delivery' && car.deliveryEnabled ? 'delivery' : 'pickup';
     if (fulfillment === 'delivery' && !cleanText(body.deliveryAddress, 500)) return json(400, {error: 'יש להזין כתובת למסירה'});
     const existingSnap = await db.ref('bookings').orderByChild('carId').equalTo(carId).once('value');

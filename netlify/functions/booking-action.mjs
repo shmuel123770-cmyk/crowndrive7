@@ -48,14 +48,30 @@ export async function handler(event) {
         if (missing.length) return json(409, {error: `אי אפשר להתחיל את ההשכרה, חסר: ${missing.join(', ')}`});
       }
       if (next === 'approved') {
-        const other = await db.ref('bookings').orderByChild('carId').equalTo(current.carId).once('value');
         const start = new Date(current.startAt).getTime();
         const end = new Date(current.endAt).getTime();
+        // First line: check against the actual bookings (covers any approved/active booking not yet in
+        // the reservations index, e.g. from before this feature).
+        const other = await db.ref('bookings').orderByChild('carId').equalTo(current.carId).once('value');
         const conflict = Object.entries(other.val() || {}).some(([id, b]) => id !== body.bookingId && ['approved', 'active'].includes(b.status) && overlaps(start, end, new Date(b.startAt).getTime(), new Date(b.endAt).getTime()));
         if (conflict) return json(409, {error: 'קיימת הזמנה חופפת לרכב'});
+        // Atomic guard (audit #10): a transaction on reservations/<carId> closes the race where two
+        // concurrent approvals both pass the read-check above and both get written.
+        const result = await db.ref(`reservations/${current.carId}`).transaction(map => {
+          const reservations = map || {};
+          for (const [bid, r] of Object.entries(reservations)) {
+            if (bid === body.bookingId) continue;
+            if (overlaps(start, end, new Date(r.startAt).getTime(), new Date(r.endAt).getTime())) return;  // abort → conflict
+          }
+          reservations[body.bookingId] = {startAt: current.startAt, endAt: current.endAt};
+          return reservations;
+        });
+        if (!result.committed) return json(409, {error: 'קיימת הזמנה חופפת לרכב'});
       }
       const stamps = next === 'active' ? {startedAt: Date.now()} : next === 'done' ? {endedAt: Date.now()} : {};
       await ref.update({status: next, done: next === 'done', updatedAt: Date.now(), ...stamps});
+      // Free the slot the moment the booking leaves the reserved set, so the car opens up again.
+      if (['done', 'rejected', 'cancelled'].includes(next)) await db.ref(`reservations/${current.carId}/${body.bookingId}`).remove().catch(() => {});
       await audit(token.uid, 'booking_status', 'booking', body.bookingId, {from: present, to: next});
       const statusText = {approved: 'בעל הרכב אישר הזמנה', rejected: 'בעל הרכב דחה הזמנה', active: 'השכרה התחילה', done: 'השכרה הסתיימה', cancelled: 'הזמנה בוטלה'}[next];
       if (statusText) await notifyAdmin('status', `${statusText} (${body.bookingId.slice(-7)})`, {bookingId: body.bookingId, to: next, by: token.uid});

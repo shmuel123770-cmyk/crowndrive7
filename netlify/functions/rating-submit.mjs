@@ -22,17 +22,16 @@ export async function handler(event) {
       if (targetUid === token.uid) return json(400, {error: 'אי אפשר לדרג את עצמך'});
     } else return json(400, {error: 'סוג דירוג לא תקין'});
     const id = `${body.bookingId}_${type}_${token.uid}`;
-    const ref = getAdmin().database().ref(`ratings/${id}`);
+    const db = getAdmin().database();
+    const ref = db.ref(`ratings/${id}`);
     if ((await ref.once('value')).exists()) return json(409, {error: 'כבר דירגת הזמנה זו'});
-    await ref.set({
-      bookingId: body.bookingId,
-      type,
-      authorUid: token.uid,
-      targetUid,
-      carId,
-      score,
-      review: cleanText(body.review, 1000),
-      createdAt: Date.now(),
+    const review = cleanText(body.review, 1000);
+    const createdAt = Date.now();
+    // Two records: the FULL private one (with authorUid + bookingId, admin-only) and a SANITIZED public
+    // projection with no bookingId / authorUid, so public reads can't enumerate bookings (audit #3).
+    await db.ref().update({
+      [`ratings/${id}`]: {bookingId: body.bookingId, type, authorUid: token.uid, targetUid, carId, score, review, createdAt},
+      [`publicRatings/${id}`]: {type, targetUid, carId, score, review, createdAt},
     });
     await audit(token.uid, 'rating_submit', type, type === 'car' ? carId : targetUid, {score});
     return json(200, {ok: true});

@@ -11,12 +11,20 @@ export async function handler(event) {
     const {uid, status, note} = body;
     if (!uid || !['approved', 'rejected', 'needs_resubmission', 'pending'].includes(status)) return json(400, {error: 'נתונים לא תקינים'});
     const db = getAdmin().database();
-    await db.ref().update({
+    const updates = {
       [`verificationStatus/${uid}`]: status,
       [`users/${uid}/verification/reviewNote`]: cleanText(note, 500),
       [`users/${uid}/verification/reviewedAt`]: Date.now(),
       [`users/${uid}/verification/reviewedBy`]: token.uid,
-    });
+    };
+    // audit #7: when the admin asks for a redo, RESET the document flags so the user's wizard shows the
+    // upload steps again (document-register also allows re-upload only in these two states).
+    if (status === 'needs_resubmission' || status === 'rejected') {
+      updates[`users/${uid}/verification/licenseFront`] = false;
+      updates[`users/${uid}/verification/licenseBack`] = false;
+      updates[`users/${uid}/verification/selfie`] = false;
+    }
+    await db.ref().update(updates);
     await audit(token.uid, 'verification_review', 'user', uid, {status});
     return json(200, {ok: true});
   } catch (error) {

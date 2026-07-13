@@ -23,6 +23,7 @@ export const refs = {
   bookings: db.ref('bookings'),
   messages: db.ref('messages'),
   ratings: db.ref('ratings'),
+  publicRatings: db.ref('publicRatings'),
   payments: db.ref('payments'),
   privateUserDocuments: db.ref('privateUserDocuments'),
   privateCarDetails: db.ref('privateCarDetails'),

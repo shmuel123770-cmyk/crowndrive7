@@ -1,6 +1,39 @@
-CrownDrive — FINAL build (2026-07-13, rev.43)
+CrownDrive — FINAL build (2026-07-13, rev.45)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
+rev.45 (2026-07-13) — audit remediation batch 3 (Phase 3–4 pure-code, no infra decisions):
+- #14 Rental mode ENFORCED server-side: booking-create now rejects a range the car's mode doesn't cover
+  (hours/days/weeks + weekend), mirroring the client's carServesPeriod — a hand-crafted request can no
+  longer book a period the owner never offered. The client also guards the submit for instant feedback.
+- #40 Booking limits: max 90-day duration and no booking more than a year in advance. (booking-create)
+- #7 "Needs resubmission" now WORKS: when the admin asks for a redo (needs_resubmission/rejected) the
+  server resets the three document flags, so the renter's wizard shows the upload steps again; and
+  uploadDocument now RETHROWS on failure, so the wizard never advances on a failed upload.
+  (verification-review.mjs + js/views.js)
+- #19 Renter & owner can CANCEL a pending/approved booking themselves (with confirmation) — was
+  admin-only. (js/views.js; server already supported the transition.)
+- #29 Homepage no longer claims "verified owners" (there's no owner verification) — reworded to
+  "תיעוד מלא ודירוגים אמיתיים". Renter verification claim (which is real) kept. (js/views.js)
+- No rules/CSS change, no ?v bump (server + network-first JS). Verified: app boots, wording updated.
+Cumulative audit status — CLOSED: #1,2,3,4,5,6,7,8,9,10,11,12,14,16,19,23,29,40. Remaining are mostly
+Medium/Low or infrastructure: #13,15,17,18,20,21,22,24–28,30–39,41–43 (several need your call: staging
+project, CI/Playwright, dist build, owner-messaging architecture, reversing client-writes).
+rev.44 (2026-07-13) — audit remediation batch 2 (the last two CRITICAL findings). *** RE-PUBLISH THE DB RULES. ***
+- #3 Ratings no longer leak identifiers: the full `ratings` node (with authorUid + bookingId) is now
+  ADMIN-ONLY read. A new sanitized `publicRatings` node (type/carId/targetUid/score/review/date — no
+  bookingId, no authorUid) is the public projection the site reads for stars + reviews. rating-submit
+  writes BOTH atomically; the client reads publicRatings. (rules + firebase.js + store.js + rating-submit)
+  NOTE: this needs the rules published to load — until then the site just shows every car as "חדש"
+  (graceful, no crash). Existing pre-rev.44 ratings show once re-submitted (new site has ~none).
+- #10 Double-booking is now ATOMIC: approval runs a transaction on reservations/<carId> so two
+  concurrent approvals can't both grab an overlapping slot (the old read-check-write had a race). A
+  first-line read-check still covers any booking not yet in the index; the slot is released on
+  done/rejected/cancelled. (booking-action.mjs; reservations/* is a server-only node.)
+- With rev.43, this closes ALL findings the audit marked "do not publish without" (#1,2,4,5,6,8,9,10,11,12).
+  Remaining are High/Medium (Phases 3–8): #7 resubmission, #13–22 booking/payment/handover/cancel/
+  deletion/ownership/maintenance-enforce/owner-verify, #24–27 build+CI, #28 pending-doc, #37 pagination,
+  #43 docs — several of which are infrastructure/architecture decisions (staging project, CI/Playwright,
+  dist build, whether to reverse client-writes) that need your call. No ?v bump (rules + server + network-first JS).
 rev.43 (2026-07-13) — external audit remediation, batch 1 (critical security + correctness):
 Fixes keyed to the audit findings. *** MUST re-publish BOTH the Realtime DB rules AND the Storage rules. ***
 - #2 Private booking media leak CLOSED: Storage rule for bookings/* read was `auth != null` (any signed-in
