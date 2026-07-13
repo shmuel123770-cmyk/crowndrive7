@@ -16,18 +16,24 @@ const revealObserver = 'IntersectionObserver' in window
       for (const entry of entries) if (entry.isIntersecting) { entry.target.classList.add('in'); revealObserver.unobserve(entry.target); }
     }, {threshold: .12})
   : null;
+let firstPaintDone = false;
 function watchReveals() {
-  document.querySelectorAll('.reveal:not(.in)').forEach(el => revealObserver ? revealObserver.observe(el) : el.classList.add('in'));
+  document.querySelectorAll('.reveal:not(.in)').forEach(el => {
+    // Only animate on the very first paint. On later re-renders (data/auth updates) show content
+    // instantly — re-running the fade each time is what looked like the page "flashing".
+    if (firstPaintDone || !revealObserver) el.classList.add('in');
+    else revealObserver.observe(el);
+  });
 }
 
-// Coalesce bursts of data events (the Firebase listeners for cars/ratings/config/bookings/… all
-// resolve within the first moment) into ONE paint on the next animation frame. Without this each
-// listener triggered its own full re-render, so the page visibly "jumped" several times on open.
-let renderQueued = false;
+// Coalesce bursts of data events into ONE paint. The Firebase listeners (cars/ratings/config/
+// bookings/users/…) resolve over the first ~200ms, spread across several animation frames — so a
+// per-frame guard still let ~5 renders through (the "jumping / refreshing 5 times" on open). A
+// short TRAILING debounce collapses the whole burst into a single render once it goes quiet.
+let renderTimer = null;
 function scheduleRender() {
-  if (renderQueued) return;
-  renderQueued = true;
-  requestAnimationFrame(() => { renderQueued = false; render(); });
+  clearTimeout(renderTimer);
+  renderTimer = setTimeout(() => { renderTimer = null; render(); }, 110);
 }
 
 let rendering = false;
@@ -54,6 +60,7 @@ function render() {
       document.querySelector('#page-back').onclick = () => { if (history.length > 1) history.back(); else location.hash = 'home'; };
     }
     watchReveals();
+    firstPaintDone = true;
     document.querySelector('#app')?.focus({preventScroll: true});
   } catch (error) {
     console.error('render failed', error);

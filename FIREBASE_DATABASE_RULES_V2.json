@@ -44,7 +44,11 @@
       "admin": {
         ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
         "$uid": {
-          ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)"
+          ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
+          ".write": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
+          "$msgId": {
+            ".validate": "newData.hasChildren(['senderUid','createdAt']) && newData.child('senderUid').val() === auth.uid && newData.child('createdAt').isNumber() && (!newData.hasChild('text') || (newData.child('text').isString() && newData.child('text').val().length <= 2000)) && (!newData.child('fromAdmin').exists() || newData.child('fromAdmin').val() === (root.child('admins').child(auth.uid).val() === true)) && (!newData.child('attachment').exists() || newData.child('attachment/path').val().length <= 1400000)"
+          }
         }
       },
       "$bookingId": {

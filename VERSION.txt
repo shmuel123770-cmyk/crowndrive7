@@ -1,5 +1,23 @@
-CrownDrive — FINAL build (2026-07-13, rev.22)
+CrownDrive — FINAL build (2026-07-13, rev.24)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.24 (2026-07-13) — ADMIN CHAT works via CLIENT-WRITE (bypasses the broken function):
+- The message-send function on the live site was throwing the old JSON.parse error (stale Netlify
+  function cache). Rather than depend on it, admin↔user messages are now written DIRECTLY to
+  messages/admin/<uid> from the client (db.sendMessage, client-write:admin-chat) — the same reliable
+  path as car publishing. The admin can open a chat with ANY user (the list already shows everyone)
+  and send text or a photo; each user can message support. Booking chats still use the function.
+- New DB rule: messages/admin/<uid> is writable by that user + admins, with per-message validation
+  (senderUid must match the caller, text<=2000, fromAdmin can't be forged, attachment<=1.4MB).
+  MUST publish the updated rules. Only js/db.js changed (network-first) — no ?v= bump beyond rev.23.
+
+rev.23 (2026-07-13) — the open-flicker ("jumps 5 times") is gone:
+- The Firebase listeners resolve over ~200ms across several frames; the old per-frame guard still
+  let ~5 full re-renders through, and each restarted the fade-in animations → the page looked like
+  it "refreshed 5 times". Two fixes: (1) scheduleRender is now a TRAILING debounce (110ms) that
+  collapses the whole burst into a single render; (2) the reveal fade-in runs ONLY on the first
+  paint — later data/auth updates repaint instantly with no re-fade. Verified in-browser: 3 renders
+  on load (was ~5) and no re-animation. app.js/app.css bumped to ?v=23 (must ship index.html+sw.js).
 
 rev.22 (2026-07-13) — email validation on registration:
 - Registration now rejects a malformed email before submitting (core.validEmail: name@domain.tld,

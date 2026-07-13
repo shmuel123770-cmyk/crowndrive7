@@ -7,7 +7,7 @@
      Safe because a new deploy changes ?v=, which is a new cache key -> auto-refetch.
    - Cross-origin (Firebase SDK, fonts, storage) -> not intercepted at all.
    install does NOT pre-cache (a single 404 there would break the whole worker). */
-const CACHE = 'crowndrive-2026-07-12-v11';
+const CACHE = 'crowndrive-2026-07-13-v12';
 
 self.addEventListener('install', () => self.skipWaiting());
 
