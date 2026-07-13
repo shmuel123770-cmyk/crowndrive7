@@ -1,5 +1,20 @@
-CrownDrive — FINAL build (2026-07-13, rev.28)
+CrownDrive — FINAL build (2026-07-13, rev.29)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.29 (2026-07-13) — service worker is now NETWORK-FIRST for everything (no stale app code):
+- DIAGNOSIS (verified against the live DB, not guessed): login persistence WORKS (the admin session
+  persisted across reloads) and the dashboard loads. The "entrance broke" was because
+  config/maintenance = {on:true} — maintenance mode blocks every NON-admin user. That is a config
+  toggle, not a code bug. Fix: admin overview → the maintenance button → turn it off.
+- Per the request "cache only the login": the SW no longer serves any app asset cache-first. It is
+  network-first for EVERYTHING, so a deploy is always picked up fresh (kills the recurring "stuck on
+  an old version"). The login is NOT in this cache — Firebase stores it in IndexedDB — so users stay
+  signed in in the same browser regardless. Cache bumped to v14.
+- AUTO-RECOVER: index.html now reloads the page ONCE when a new service worker takes control, so
+  users stuck on an old cached bundle jump to the fresh code by themselves (guarded — never loops,
+  never reloads on first install). This is what finally frees users whose browser held old code that
+  (a) got stuck and (b) predated the maintenance screen, so they never saw "האתר בתחזוקה".
+  Changed: sw.js + index.html. (Reproduced + verified: logged-out home loads clean, no reload loop.)
 
 rev.28 (2026-07-13) — universal stability + responsive (per the work-instructions doc):
 STABILITY (the "stuck on certain devices for an hour"):

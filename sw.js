@@ -1,19 +1,16 @@
-/* CrownDrive service worker — fast AND update-proof.
-   Strategy:
-   - HTML + non-versioned JS modules  -> network-first (always fresh; offline fallback).
-     The always-current index.html decides which asset versions to load, so a deploy
-     can never leave a user on a stale/mismatched bundle.
-   - Versioned assets (…?v=N: app.css / app.js) -> cache-first (instant on repeat visits).
-     Safe because a new deploy changes ?v=, which is a new cache key -> auto-refetch.
-   - Cross-origin (Firebase SDK, fonts, storage) -> not intercepted at all.
-   install does NOT pre-cache (a single 404 there would break the whole worker). */
-const CACHE = 'crowndrive-2026-07-13-v13';
+/* CrownDrive service worker — anti-staleness edition.
+   The site kept getting "stuck on an old version" because versioned assets (app.js/app.css) were
+   served cache-first. Now EVERYTHING is NETWORK-FIRST: the browser always gets the freshest code on
+   every load, and this cache is used ONLY as an offline fallback. It never stores anything that would
+   make a user re-enter their email/password — the login lives in Firebase's own IndexedDB, separate
+   from this cache — so users stay signed in in the same browser regardless of what happens here. */
+const CACHE = 'crowndrive-2026-07-13-v14';
 
 self.addEventListener('install', () => self.skipWaiting());
 
 self.addEventListener('activate', event => event.waitUntil((async () => {
   const keys = await caches.keys();
-  await Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)));
+  await Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)));  // purge old caches
   await self.clients.claim();
 })()));
 
@@ -21,19 +18,11 @@ self.addEventListener('fetch', event => {
   const req = event.request;
   if (req.method !== 'GET') return;                       // never touch API writes (POST)
   const url = new URL(req.url);
-  if (url.origin !== location.origin) return;             // Firebase/fonts go straight to network
+  if (url.origin !== location.origin) return;             // Firebase / fonts go straight to network
 
-  // Versioned assets: cache-first (instant), refetched automatically when ?v= changes.
-  if (url.search.includes('v=')) {
-    event.respondWith(caches.match(req).then(cached => cached || fetch(req).then(res => {
-      if (res.ok) { const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
-      return res;
-    })));
-    return;
-  }
-
-  // Everything else (HTML + non-versioned JS/CSS): network-first with a 6s cap. Without the cap a
-  // stalled network could hang navigation on a blank screen; with it we fall back to cache / shell.
+  // Network-first for EVERYTHING, capped at 6s. A fresh deploy is therefore picked up immediately
+  // (no more "stuck on the old version"); the cache/app-shell is used only when the network is
+  // slow or the device is offline.
   event.respondWith((async () => {
     try {
       const res = await Promise.race([
