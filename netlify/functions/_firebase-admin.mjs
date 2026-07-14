@@ -2,10 +2,18 @@ import admin from 'firebase-admin';
 let app;
 export function getAdmin() {
   if (app) return app;
-  const raw = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
-  if (!raw) throw new Error('FIREBASE_SERVICE_ACCOUNT_JSON missing');
+  const raw = (process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '').trim();
+  if (!raw) throw new Error('חסר מפתח שירות: הגדירו FIREBASE_SERVICE_ACCOUNT_JSON ב-Netlify (Environment variables).');
+  // A malformed service-account key makes JSON.parse throw a cryptic "…at position N", which every
+  // function then returns as a 500 — so NO server action works (messaging, SMS, uploads). Turn it into a
+  // clear, actionable message instead of leaking the raw parser error.
+  let credentials;
+  try { credentials = JSON.parse(raw); }
+  catch (error) {
+    throw new Error(`מפתח השירות (FIREBASE_SERVICE_ACCOUNT_JSON) פגום ואינו JSON תקין (${error.message}). ב-Netlify → Site configuration → Environment variables, הדביקו מחדש את כל תוכן קובץ המפתח מ-Firebase (Project settings → Service accounts → Generate new private key), בלי מרכאות עוטפות ובלי עריכה.`);
+  }
   app = admin.initializeApp({
-    credential: admin.credential.cert(JSON.parse(raw)),
+    credential: admin.credential.cert(credentials),
     databaseURL: process.env.FIREBASE_DATABASE_URL,
     storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
   }, 'crowndrive-netlify');

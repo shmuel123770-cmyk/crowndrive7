@@ -642,7 +642,7 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
 @media(max-width:820px){
   main{width:100%;margin:0 auto 64px;padding:0 12px}
   .hero,.strip{margin-inline:-12px;width:calc(100% + 24px)}
-  .grid{gap:12px}
+  .grid{grid-template-columns:1fr}
   .kpis{grid-template-columns:repeat(2,1fr);gap:10px}
   .steps-grid{grid-template-columns:1fr}
   .trust-grid{grid-template-columns:1fr 1fr}
@@ -703,34 +703,15 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
   .strip-in{gap:20px;padding:13px 16px}
 }
 
-/* Mobile scale: the whole phone layout shrinks together (root-relative) so it adapts to the device;
-   desktop (>600px) is unchanged. On phones the car catalog is a compact 3-per-row grid. */
+/* Mobile scale (Option A — balanced): the whole phone layout shrinks together (root-relative) so it
+   adapts to the device; desktop (>600px) is unchanged. Chosen with the user from side-by-side previews. */
 @media(max-width:600px){
-  :root{font-size:14px}
-  .hero-in{padding:42px 16px 120px}
-  .hero .kicker{margin-bottom:12px}
-  .hero h1{font-size:clamp(1.45rem,6.6vw,1.95rem);max-width:20ch}
-  .hero-copy{font-size:.95rem;margin:9px auto 16px}
-  .hero-stats{margin-top:24px}
-  /* Cars: 3 compact cards per row (was one full-width card). */
-  .grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-  .car-photo{aspect-ratio:4/3}
-  .car-body{padding:8px 8px 10px}
-  .car-body h3{font-size:.82rem;line-height:1.14;margin:0}
-  .car-specs{font-size:.58rem;gap:3px;margin-top:3px}
-  .car .rating{font-size:.62rem;margin:4px 0}
-  .car .rating small{font-size:.62rem}
-  .mode-line{font-size:.6rem;margin:1px 0}
-  .car-foot{margin-top:6px}
-  .price-stack .price{font-size:.98rem}
-  .price-stack .price-alt{font-size:.58rem}
-  .car .btn.block{padding:8px 4px;font-size:.66rem;margin-top:6px}
-  .avail-badge{font-size:.54rem;padding:2px 8px}
-  .avail-badge.busy{font-size:.58rem;padding:3px 9px}
-  .new-badge{font-size:.5rem;padding:2px 7px}
-  .mode-badge{display:none}          /* redundant on the compact card — the "השכרה לפי…" line shows it */
-  .has-video,.feat-badge{font-size:.55rem;padding:3px 8px}
-  .car-badges{top:8px;inset-inline-start:8px;gap:4px}
+  :root{font-size:15px}
+  .hero-in{padding:46px 18px 128px}
+  .hero .kicker{margin-bottom:14px}
+  .hero h1{font-size:clamp(1.55rem,7vw,2.05rem);max-width:20ch}
+  .hero-copy{font-size:.95rem;margin:10px auto 18px}
+  .hero-stats{margin-top:26px}
 }
 
 /* iOS safe areas */
@@ -1091,3 +1072,14 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 .chat-page-back:hover{background:rgba(255,255,255,.22)}
 
 /* More compact car cards on phones — comfortable, less scrolling (the whole site is mobile-first) */
+@media (max-width:600px){
+  .car-photo{aspect-ratio:2/1}
+  .car-body{padding:12px 14px;gap:7px}
+  .car-body h3{font-size:1.02rem}
+  .car-specs{font-size:.74rem;gap:5px}
+  .rating{font-size:.82rem}
+  .mode-line{font-size:.74rem;margin:1px 0}
+  .price{font-size:1.1rem}
+  .car .btn{padding:10px}
+  .grid{gap:14px}
+}

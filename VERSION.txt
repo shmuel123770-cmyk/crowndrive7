@@ -1,6 +1,30 @@
-CrownDrive — FINAL build (2026-07-13, rev.54)
+CrownDrive — FINAL build (2026-07-13, rev.56)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
+rev.56 (2026-07-13) — ROOT CAUSE of "can't send messages" FOUND: it's a malformed Netlify env var, not code.
+- Diagnosed on the LIVE site with a REAL (guest) token: POST /api/message-send returns 500 "Unexpected
+  non-whitespace character after JSON at position 6". parseBody() safely returns null on bad JSON, so that
+  500 can only come from getAdmin() → JSON.parse(FIREBASE_SERVICE_ACCOUNT_JSON). EVERY server function calls
+  getAdmin() first (via verify()), so ALL of them 500 → nobody (admin OR users) can send messages, no SMS, no
+  server uploads. Client features (cars, login) still work because they use the browser Firebase SDK.
+- THE FIX IS A USER ACTION (a secret I can't set): re-paste FIREBASE_SERVICE_ACCOUNT_JSON in Netlify → Site
+  configuration → Environment variables with the ENTIRE service-account key file from Firebase (Project
+  settings → Service accounts → Generate new private key), no surrounding quotes, no edits, then redeploy.
+- CODE HELP: getAdmin() now trims the value and, on a parse failure, throws a CLEAR Hebrew error naming the
+  env var + how to fix it (instead of the cryptic "position 6"). So if it recurs the message is obvious.
+- Reverted the experimental 2-per-row mobile (user rejected it) → back to the clean 1-per-row (== rev.51/55).
+  Home sort newest→oldest + invisible-featured (rev.54) unchanged. ?v→56.
+rev.55 (2026-07-13) — REVERTED the mobile car grid (the rev.53 3-per-row looked bad / cramped).
+- The user (with a phone screenshot) said the 3-per-row mobile looked terrible: tiny images, text wrapping
+  awkwardly ("השכרה לפי שעות" on two lines), badges spilling over the card corner, tall narrow columns.
+  Reverted css/app.css to the rev.51 state EXACTLY (verified byte-identical) — i.e. the "Option A" the user
+  had approved: clean ONE-per-row full-width cards, root 15px, 2/1 photo. Confirmed in-browser: grid is a
+  single column, .car-photo 2/1, root 15px. Desktop unchanged.
+- KEPT rev.54's logic (js/views.js unchanged): home cars still sort newest→oldest, "featured" still has no
+  public badge/ring. Only css/app.css + index.html(?v) changed here.
+- ?v=54 → 55 so the reverted CSS reaches any device that cached the bad 3-per-row build.
+- NOTE for future mobile work: don't blindly shrink / cram. If a denser mobile layout is wanted, design it
+  properly (readable) and preview it with the user first.
 rev.54 (2026-07-13) — home cars newest→oldest + "featured" is now INVISIBLE to visitors.
 - HOME SORT: the home car grid is now featured-pinned first, then NEWEST → OLDEST (by createdAt). Was
   available-first. featuredFirst() gained a createdAt secondary sort; home() pins featured + newest then
