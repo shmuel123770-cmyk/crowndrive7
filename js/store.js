@@ -69,6 +69,9 @@ export async function startPrivate(user) {
   let ownFeedUnsubs = [];
   let subscribedField = null;
   function subscribeOwnFeeds(role) {
+    // Anonymous guests (signInGuest, used only to open support chat) have no bookings/payments/inquiries,
+    // and the DB rules deny them these reads — subscribing just spams permission_denied in the console. Skip.
+    if (user.isAnonymous) return;
     const field = role === 'owner' ? 'ownerUid' : 'renterUid';
     if (subscribedField === field) return;
     subscribedField = field;

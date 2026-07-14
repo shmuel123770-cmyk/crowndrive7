@@ -1,4 +1,4 @@
-CrownDrive — FINAL build (2026-07-14, rev.90)
+CrownDrive — FINAL build (2026-07-14, rev.91)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
 rev.82 (2026-07-14) — personal-area bar SOLID+FIXED + home shows 4 cars on phones. Cumulative.
@@ -1111,3 +1111,12 @@ See התחל_כאן_גרסה_סופית.md to deploy. Remember to publish the up
 - Verified desktop (89px banner) + mobile (centered stack).
 - KNOWN pre-existing (NOT from this change): the store /inquiries listener logs permission_denied for ANONYMOUS
   guest sessions (guests who open support chat get a signInGuest anonymous user, which the inquiries rules deny).
+
+=== rev.91 (2026-07-14) — fix anonymous-guest permission noise (console spam) ===
+- store.js subscribeOwnFeeds() now returns early for anonymous users. signInGuest guests (created ONLY to open
+  support chat) have no bookings/payments/inquiries and the DB rules deny those reads — subscribing just spammed
+  "permission_denied at /inquiries" (and would for bookings/payments). Registered users are unaffected.
+- auth.js: the background email-verification sync (writes /users/<uid>/verification/email) now skips anonymous
+  users (they have no email + no /users profile, so the write was denied → "email verification sync skipped").
+- VERIFIED in-browser with a persisted anonymous session: ZERO inquiries errors + ZERO email-sync warnings
+  generated after a fresh load (proven via console-marker window). Both were continuous before.

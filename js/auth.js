@@ -73,9 +73,10 @@ auth.onAuthStateChanged(async user => {
   // Background, non-blocking: refresh the email-verification flag. Written DIRECTLY (the profile-save
   // function was unreliable and returned a 500 here — the console error users saw). Never delays app
   // readiness, and a failure here has zero effect on the UI.
-  if (user) (async () => {
+  if (user && !user.isAnonymous) (async () => {
     // reload + force-refresh the ID token so its email_verified claim matches user.emailVerified — the
     // DB rule now validates verification/email against auth.token.email_verified (it can't be forged).
+    // (Anonymous guests have no email and no /users profile — writing there is denied, so skip them.)
     try { await user.reload(); await user.getIdToken(true); await db.ref(`users/${user.uid}/verification/email`).set(!!user.emailVerified); } // client-write:own-profile
     catch (error) { console.warn('email verification sync skipped', error?.message); }
   })();
