@@ -21,6 +21,15 @@ html{scroll-behavior:smooth;overflow-x:hidden;width:100%;-webkit-text-size-adjus
 html,body{margin:0;min-height:100%;max-width:100%;color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,'Heebo','Noto Sans Hebrew',Arial,sans-serif;font-weight:400;line-height:1.7}
 body{direction:rtl;overflow-x:hidden;background:var(--bg)}
+/* ---------- App-like polish: tap feedback, momentum scroll, route transition ---------- */
+html{-webkit-text-size-adjust:100%}
+.car,.role-card,.chat-item,.btn,.dark-pill,.gold-pill,.tab-item,.rental-row{-webkit-tap-highlight-color:transparent}
+.role-card,.chat-item,.rental-row{transition:transform .18s var(--ease),background .15s,box-shadow .2s}
+.car:active,.role-card:active,.chat-item:active,.rental-row:active{transform:scale(.985)}
+.chat-msgs,.filter-bar,.table-wrap,.gallery-thumbs{-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+@keyframes routeEnter{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+#app.app-enter{animation:routeEnter .26s var(--ease)}
+@media(prefers-reduced-motion:reduce){#app.app-enter{animation:none}}
 /* Fixed atmospheric backdrop as a layer (background-attachment:fixed is broken on iOS Safari). */
 body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:
   radial-gradient(900px 520px at 50% 65%, rgba(255,255,255,.78), transparent 68%),

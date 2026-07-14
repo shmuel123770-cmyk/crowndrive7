@@ -1,5 +1,16 @@
-CrownDrive — FINAL build (2026-07-14, rev.73)
+CrownDrive — FINAL build (2026-07-14, rev.74)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.74 (2026-07-14) — APP-FEEL polish, installment 1 of the 4 improvement areas the user picked. Cumulative.
+- Subtle ROUTE TRANSITION: #app fades+slides in (routeEnter .26s) only on a REAL route change (app.js tracks
+  lastRoute) — data-driven re-renders (incoming chat, store updates) do NOT re-animate, so no flicker. Honors
+  prefers-reduced-motion.
+- CARD TAP FEEDBACK: .car/.role-card/.chat-item/.rental-row scale to .985 on :active (buttons already had it).
+- MOMENTUM SCROLL: -webkit-overflow-scrolling:touch + overscroll-behavior:contain on the scroll containers
+  (chat, filter bar, tables, gallery thumbs); removed tap-highlight; -webkit-text-size-adjust:100%.
+- Verified: transition fires on home↔cars, NOT on same-route re-render, no console errors. ?v→74, 122 tests.
+- NEXT installments (user picked all 4): booking/payment reliability (explicit approval + auto-expire, native),
+  conversion/trust (availability calendar, reviews, verification badges), speed/images (lazy/blur-up).
 
 rev.73 (2026-07-14) — bottom tab bar → 4 tabs + no duplicate/clashing menus (per user). Cumulative.
 - Added "הזמנות" (calendar icon) → 4 tabs: בית · רכבים · הזמנות · אזור אישי. הזמנות/אזור אישי open the dashboard

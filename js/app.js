@@ -49,6 +49,7 @@ function scheduleRender() {
 }
 
 let rendering = false;
+let lastRoute = null;  // for the subtle enter-transition, fired only on a real route change (not re-renders)
 function render() {
   if (rendering) return;
   rendering = true;
@@ -75,6 +76,13 @@ function render() {
       return;
     }
     (routes[route] || home)();
+    // Subtle app-like enter transition — only when the route actually changed, so data-driven re-renders
+    // (incoming messages, store updates) don't re-animate and flicker.
+    if (route !== lastRoute) {
+      lastRoute = route;
+      const appEl = document.querySelector('#app');
+      if (appEl) { appEl.classList.remove('app-enter'); void appEl.offsetWidth; appEl.classList.add('app-enter'); }
+    }
     // Only the cars listing gets the in-flow "→ חזרה" button. home/dashboard/auth/chats each have
     // their own navigation (bottom tab bar, in-form back link, chat back/close), so they don't need it.
     // Insert exactly one in-flow "→ חזרה" (only on the cars listing). Guarded so a memoized re-render
