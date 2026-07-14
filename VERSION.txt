@@ -1,6 +1,16 @@
-CrownDrive — FINAL build (2026-07-13, rev.53)
+CrownDrive — FINAL build (2026-07-13, rev.54)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
+rev.54 (2026-07-13) — home cars newest→oldest + "featured" is now INVISIBLE to visitors.
+- HOME SORT: the home car grid is now featured-pinned first, then NEWEST → OLDEST (by createdAt). Was
+  available-first. featuredFirst() gained a createdAt secondary sort; home() pins featured + newest then
+  slices 9 (so an admin-pinned car always appears even if it's old). Verified in-browser: 9 cars render
+  strictly newest→oldest. (js/views.js)
+- FEATURED IS SILENT: when the admin stars a car to pin it to the top, the public card no longer shows ANY
+  sign — removed both the "★ מומלץ" badge AND the gold highlight ring (.is-featured). Visitors can't tell a
+  car was promoted. The admin STILL sees + toggles featured in the admin cars table (its ★ prefix + star
+  button are unchanged). Verified: 0 feat badges / 0 highlight rings in the public DOM. (js/views.js)
+- ?v=53 → 54 so the change reaches cached devices. No rules/function change.
 rev.53 (2026-07-13) — mobile denser (3 cars/row) + CACHE-BUST so the messaging fix actually reaches devices.
 - MESSAGING DIAGNOSIS (read-only live probe): rev.51 IS deployed (live VERSION + db.js confirm the server
   routing), the message-send function is healthy, and Firebase Admin works (image uploads succeed). So the
