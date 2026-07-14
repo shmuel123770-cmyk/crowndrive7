@@ -74,7 +74,7 @@ const S = r => r.statusCode;
 const B = r => JSON.parse(r.body);
 
 const fn = {};
-for (const f of ['profile-save', 'car-action', 'booking-create', 'booking-action', 'message-send', 'payment-submit', 'rating-submit', 'document-register', 'verification-review', 'private-car-details', 'user-private-profile', 'media-sign-upload', 'media-upload', 'media-migrate', 'media-sign-read', 'car-media-public', 'admin-action', 'migrate-legacy', 'car-image-search'])
+for (const f of ['profile-save', 'car-action', 'booking-create', 'booking-action', 'message-send', 'payment-submit', 'rating-submit', 'document-register', 'verification-review', 'private-car-details', 'user-private-profile', 'media-sign-upload', 'media-upload', 'media-migrate', 'media-sign-read', 'car-media-public', 'admin-action', 'migrate-legacy', 'car-image-search', 'inquiry-start'])
   fn[f] = (await import(`../netlify/functions/${f}.mjs`)).handler;
 
 // ---------- seed ----------
@@ -339,6 +339,41 @@ r = await call(fn['message-send'], 'r1', {bookingId: bId3, text: 'עוד'});
 check('אחרי סיום שיחה — שוכר חסום (403)', S(r) === 403);
 r = await call(fn['message-send'], 'o1', {bookingId: bId3, text: 'בעל רכב עדיין יכול'});
 check('אחרי סיום שיחה — בעל רכב עדיין שולח', S(r) === 200);
+
+console.log('\nתרחיש Q: פנייה מקדימה שוכר↔בעל רכב (inquiry-start + message-send)');
+r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'Inq', model: 'Car', dailyPrice: 90, photos: ['https://a/1.jpg', 'https://b/2.jpg']}});
+const carInq = B(r).id;
+// A guest (anonymous) must sign up before contacting an owner.
+r = await call(fn['inquiry-start'], 'guest2', {carId: carInq});
+check('אורח לא יכול לפתוח פנייה (403)', S(r) === 403);
+// An owner cannot open an inquiry about their own car.
+r = await call(fn['inquiry-start'], 'o1', {carId: carInq});
+check('בעל הרכב לא יכול לפנות לעצמו (400)', S(r) === 400);
+// Non-existent car.
+r = await call(fn['inquiry-start'], 'r1', {carId: 'no-such-car'});
+check('פנייה על רכב לא קיים (404)', S(r) === 404);
+// A renter opens the inquiry → a thread is created pointing at the car's owner.
+r = await call(fn['inquiry-start'], 'r1', {carId: carInq});
+const inqId = B(r).inquiryId;
+check('שוכר פותח פנייה לבעל הרכב', S(r) === 200 && get(`inquiries/${inqId}/ownerUid`) === 'o1' && get(`inquiries/${inqId}/renterUid`) === 'r1');
+// Idempotent — re-contacting the same car returns the SAME thread.
+r = await call(fn['inquiry-start'], 'r1', {carId: carInq});
+check('פנייה חוזרת מחזירה את אותה שיחה (idempotent)', S(r) === 200 && B(r).inquiryId === inqId);
+// Renter posts in the inquiry.
+r = await call(fn['message-send'], 'r1', {inquiryId: inqId, text: 'שלום, הרכב זמין לסופ״ש?'});
+check('שוכר שולח הודעה בפנייה', S(r) === 200 && get(`inquiries/${inqId}/lastSender`) === 'r1');
+// Owner replies.
+r = await call(fn['message-send'], 'o1', {inquiryId: inqId, text: 'כן, זמין!'});
+check('בעל הרכב משיב בפנייה', S(r) === 200 && get(`inquiries/${inqId}/lastSender`) === 'o1' && Object.keys(get(`messages/inquiry/${inqId}`) || {}).length === 2);
+// A stranger (not renter/owner/admin) cannot post into the inquiry.
+r = await call(fn['message-send'], 'stranger9', {inquiryId: inqId, text: 'התחזות'});
+check('זר לא יכול לכתוב בפנייה (403)', S(r) === 403);
+// A message to a non-existent inquiry.
+r = await call(fn['message-send'], 'r1', {inquiryId: 'nope__x', text: 'x'});
+check('הודעה לפנייה לא קיימת (404)', S(r) === 404);
+// The admin may post into any inquiry.
+r = await call(fn['message-send'], 'a1', {inquiryId: inqId, text: 'הודעת מנהל'});
+check('מנהל יכול לכתוב בפנייה', S(r) === 200);
 
 console.log(`\n========== ${passed} עברו · ${failed} נכשלו ==========`);
 process.exit(failed ? 1 : 0);

@@ -10,6 +10,7 @@ export const store = {
   publicReady: false,
   cars: {},
   bookings: {},
+  inquiries: {},
   payments: {},
   ratings: {},
   users: {},
@@ -74,6 +75,9 @@ export async function startPrivate(user) {
     ownFeedUnsubs = [
       listen(refs.bookings.orderByChild(field).equalTo(user.uid), v => { store.bookings = v; }, 'bookings'),
       listen(refs.payments.orderByChild(field).equalTo(user.uid), v => { store.payments = v; }, 'payments'),
+      // Pre-booking inquiries (renter↔owner about a car, no booking): a renter sees ones they started
+      // (renterUid), an owner sees ones about their cars (ownerUid) — same role-field split as bookings.
+      listen(refs.inquiries.orderByChild(field).equalTo(user.uid), v => { store.inquiries = v; }, 'inquiries'),
     ];
     store.privateUnsubs.push(...ownFeedUnsubs);
   }
@@ -106,6 +110,7 @@ export async function startPrivate(user) {
     store.privateUnsubs.push(listen(refs.users, v => { store.users = v; }, 'users'));
     store.privateUnsubs.push(listen(refs.verificationStatus, v => { store.verificationStatuses = v; }, 'verification-statuses'));
     store.privateUnsubs.push(listen(refs.bookings, v => { store.bookings = v; }, 'bookings'));
+    store.privateUnsubs.push(listen(refs.inquiries, v => { store.inquiries = v; }, 'inquiries'));
     store.privateUnsubs.push(listen(refs.payments, v => { store.payments = v; }, 'payments'));
     store.privateUnsubs.push(listen(refs.adminNotifications.limitToLast(200), v => { store.adminNotifications = v; }, 'admin-notifications'));
   } else {
@@ -128,6 +133,7 @@ export function stopPrivate() {
   store.isAdmin = false;
   store.adminChecked = false;
   store.bookings = {};
+  store.inquiries = {};
   store.payments = {};
   store.users = {};
   store.verificationStatuses = {};

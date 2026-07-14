@@ -1,5 +1,47 @@
-CrownDrive — FINAL build (2026-07-14, rev.66)
+CrownDrive — FINAL build (2026-07-14, rev.69)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.69 (2026-07-14) — make the admin reply box BULLETPROOF on desktop (2 more causes of "no text box"). Cumulative.
+- The rev.66 min-height:0 fix (content overflow) is LIVE and works in every case I can test. Since the admin
+  STILL reports "no reply box on desktop", fixed the two remaining ways the box can hide, which I could not
+  reproduce here but are the only consistent explanations:
+  (1) `.chat-shell{min-height:470px}` forced the shell TALLER than a short / non-maximized desktop window
+      (composer went below the fold when window content height < ~546px). Now min-height is CAPPED:
+      `min-height:min(470px, calc(100dvh - 120px))` — the shell can never exceed the viewport, so the
+      composer is always on-screen regardless of window height.
+  (2) `.chat-composer` used `background:rgba(255,255,255,.72) + backdrop-filter:blur` — backdrop-filter can
+      render BLANK/invisible on some GPUs/drivers. Now SOLID white + a clear top border + upward shadow, so
+      the reply bar is unmistakable and never depends on backdrop-filter.
+  Honest status: could NOT reproduce the admin's exact case (box renders in all my desktop+mobile tests); if
+  it still fails after rev.69, NEXT step is a screenshot of the FULL browser window on the chat page.
+- ?v→69. css/app.css only. Everything else identical to rev.68 (2-per-row mobile grid, owner-inquiry chat).
+
+rev.68 (2026-07-14) — REAL 2-CARS-PER-ROW on phones (the "mobile design looks the same" fix). Cumulative.
+- ROOT CAUSE of "no difference on mobile": the public car grid `.grid` was `grid-template-columns:1fr` (ONE
+  per row) at ≤820px — the 2-per-row the user asked for had only ever landed on the ADMIN cards, never the
+  car listing. Now `.grid` = repeat(2,minmax(0,1fr)) at ≤820px, and the ≤600px block was retuned for a real
+  2-up card: aspect-ratio 4/3 photo, name line-clamped to 2 lines, specs .66rem, compact price + full-width
+  dark button, smaller badges — two ~160px cards sit side-by-side without crowding. Verified at 375px.
+  Below 360px it falls back to 1 comfortable column. (css/app.css only — no JS/rules change.)
+- ?v→68. Everything else identical to rev.67 (owner-inquiry chat, still needs the DB rules published).
+
+rev.67 (2026-07-14) — RENTER↔OWNER pre-booking chat ("צור קשר עם בעל הרכב"). Cumulative — includes all of rev.66.
+- A renter (any registered visitor) can now message a car's OWNER DIRECTLY from the car page, BEFORE any
+  booking — a "צור קשר עם בעל הרכב" button (and the price-on-request "שלחו הודעה לקבלת מחיר" button, which used
+  to go to admin support) opens a private renter↔owner thread about that car. One thread per (car, renter);
+  re-contacting continues it. Both parties (and admin) can write; the thread appears in each side's personal
+  "צ׳אטים" list ("שיחה עם בעל הרכב (טרם הזמנה)" / "פנייה משוכר (טרם הזמנה)").
+- Data model: `inquiries/<carId>__<renterUid>` = {carId, renterUid, ownerUid, createdAt, updatedAt, lastText,
+  lastSender}; messages at `messages/inquiry/<id>`. NEW server fn inquiry-start.mjs (creates/reuses the thread,
+  rejects guests/anonymous + owner-inquiring-own-car). message-send.mjs gained an `inquiryId` branch (both
+  parties may write, SMS the other side debounced). Client: store.inquiries subscribed by role field
+  (renter→renterUid, owner→ownerUid; admin→whole node) exactly like bookings; selectThread handles the `i:`
+  prefix; openOwnerInquiry seeds the thread locally so it opens instantly (beats the listener race).
+- ⚠️ REQUIRES PUBLISHING the updated Firebase DB rules (FIREBASE_DATABASE_RULES_V2.json) — added `inquiries`
+  (indexOn ownerUid/renterUid/carId + role-query read) and `messages/inquiry/<id>` read (owner/renter/admin).
+  Writes are server-only (Admin SDK). The rev.66 fixes work WITHOUT the rules; only "contact owner" needs them.
+- Admin add-participant / transfer-conversation = NEXT rev (user chose to build it separately).
+- ?v→67. 122 tests pass (110 scenarios incl. +10 inquiry, + 12 fuzz/unit). 27 server functions.
 
 rev.66 (2026-07-14) — FIXED "admin can't reply" + green unread light + clickable chat notifications.
 - ROOT CAUSE of "אני יכול להיכנס לצ׳אט אבל אין לי אפשרות להגיב" (admin opens a chat but has no reply box):

@@ -68,6 +68,31 @@ export async function handler(event) {
       return json(200, {ok: true, id: ref.key});
     }
 
+    // Pre-booking inquiry: a direct renter↔owner conversation about a car, before any booking exists.
+    // Both parties (and the admin) may write; messages live at messages/inquiry/<id>.
+    if (body.inquiryId) {
+      const inquiryId = cleanText(body.inquiryId, 200);
+      const inq = (await db.ref(`inquiries/${inquiryId}`).once('value')).val();
+      if (!inq) return json(404, {error: 'השיחה לא נמצאה'});
+      if (!admin && ![inq.renterUid, inq.ownerUid].includes(token.uid)) return json(403, {error: 'אין הרשאה'});
+      let stored = null;
+      if (attachment) {
+        const raw = String(attachment.path || '');
+        if (!/^data:image\//i.test(raw)) return json(400, {error: 'ניתן לצרף תמונה בלבד'});
+        stored = {type: 'photo', path: validateImageDataUrl(raw)};  // verify real image bytes
+      }
+      const ref = db.ref(`messages/inquiry/${inquiryId}`).push();
+      await ref.set({senderUid: token.uid, text, ...(stored ? {attachment: stored} : {}), createdAt: Date.now()});
+      await db.ref(`inquiries/${inquiryId}`).update({updatedAt: Date.now(), lastText: (text || '📷 תמונה').slice(0, 90), lastSender: token.uid});
+      await audit(token.uid, 'inquiry_message', 'inquiry', inquiryId, stored ? {attachment: stored.type} : {});
+      // SMS the OTHER party (debounced 2 min per inquiry, so a burst of messages ≠ a burst of texts).
+      if (await onceGuard(`imsg/${inquiryId}`, 2 * 60 * 1000)) {
+        const other = token.uid === inq.renterUid ? inq.ownerUid : inq.renterUid;
+        await smsUser(other, 'CrownDrive: קיבלתם הודעה חדשה בפנייה על רכב. היכנסו לאתר כדי לקרוא ולהשיב.');
+      }
+      return json(200, {ok: true, id: ref.key});
+    }
+
     const bookingId = cleanText(body.bookingId, 100);
     const value = await booking(bookingId);
     if (!value) return json(404, {error: 'הזמנה לא נמצאה'});

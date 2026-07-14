@@ -1,7 +1,7 @@
 import {store, list, myRole, myBookings, myCars, carRating, userRating} from './store.js';
 import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail, paintApp, resetPaint} from './core.js';
 import {register, login, logout, sendVerify, refreshEmailStatus, sendPasswordReset, createOwnProfile, signInGuest} from './auth.js';
-import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, setBookingStatus, registerDocument, approveVerification, sendMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction, setMaintenance, setCarStatus, setCarFeatured, checkIsAdmin} from './db.js';
+import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, startInquiry, setBookingStatus, registerDocument, approveVerification, sendMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction, setMaintenance, setCarStatus, setCarFeatured, checkIsAdmin} from './db.js';
 import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './media.js';
 import {legacyStatus, migrateLegacy} from './migrate.js';
 import {api} from './api.js';
@@ -529,6 +529,9 @@ function openCar(id) {
   const rented = car.status !== 'available';
   const mode = rentalModeOf(car);
   const onRequest = !!car.priceOnRequest;
+  // "Contact owner" is offered to everyone except the admin and the car's own owner (the handler asks a
+  // guest / logged-out visitor to sign in). It opens a DIRECT renter↔owner thread — no booking needed.
+  const canInquire = !store.isAdmin && (!store.user || car.ownerUid !== store.user.uid);
   const bStart = searchPeriod.startAt ? searchPeriod.startAt.slice(0, 10) : '';
   const bEnd = searchPeriod.endAt ? searchPeriod.endAt.slice(0, 10) : '';
   const bStartH = searchPeriod.startAt ? searchPeriod.startAt.slice(11, 16) : '10:00';
@@ -547,7 +550,8 @@ function openCar(id) {
       ${car.deliveryEnabled ? `<div class="summary"><span>מסירה</span><b>${car.deliveryCost ? money(car.deliveryCost) : 'זמינה'}</b></div>` : ''}
       <div class="summary"><span>דירוג</span><b>${stars(carRating(car.id))} ${carRating(car.id) ? carRating(car.id).toFixed(1) : 'חדש'}</b></div>
     </div>
-    ${onRequest ? '<div class="price-contact-cta"><div><b>שלחו הודעה לקבלת מחיר</b><small>המחיר נקבע מול בעל הרכב — שלחו הודעה כדי לקבל אותו.</small></div><button type="button" class="btn gold" id="price-contact">שליחת הודעה לקבלת מחיר</button></div>' : ''}
+    ${onRequest && canInquire ? '<div class="price-contact-cta"><div><b>שלחו הודעה לקבלת מחיר</b><small>המחיר נקבע מול בעל הרכב — שלחו הודעה כדי לקבל אותו.</small></div><button type="button" class="btn gold" id="price-contact">שליחת הודעה לקבלת מחיר</button></div>' : ''}
+    ${canInquire && !onRequest ? `<div class="owner-contact-cta"><div><b>יש לכם שאלה על הרכב?</b><small>דברו ישירות עם בעל הרכב עוד לפני שליחת הבקשה.</small></div><button type="button" class="btn dark-out" id="contact-owner">${ICON.chat} צור קשר עם בעל הרכב</button></div>` : ''}
     ${reviewsHtml}
     ${rented ? '<div class="chat-closed">הרכב אינו זמין להזמנה כרגע</div>' : `<form id="booking-form"><h3>הזמנת הרכב</h3><div class="form-grid">${dateField('startDate', 'תאריך איסוף', bStart)}<div class="field"><label>שעת איסוף</label><select name="startHour">${hourOptions(bStartH)}</select></div>${dateField('endDate', 'תאריך החזרה', bEnd)}<div class="field"><label>שעת החזרה</label><select name="endHour">${hourOptions(bEndH)}</select></div></div><div class="booking-est" id="booking-est"></div><div class="field"><label>אופן קבלה</label><select name="fulfillment"><option value="pickup">איסוף עצמי</option>${car.deliveryEnabled ? '<option value="delivery">מסירה</option>' : ''}</select></div><div class="field"><label>כתובת מסירה, אם נבחרה</label><input name="deliveryAddress"></div><button class="btn primary block">שליחת בקשה</button></form>`}`);
   const galleryImg = document.querySelector('#gallery-img');
@@ -590,7 +594,8 @@ function openCar(id) {
     recalc();
   }
   // "שלחו הודעה לקבלת מחיר" → open the support chat so the renter can ask the price (no public price).
-  document.querySelector('#price-contact')?.addEventListener('click', () => openSupportChat());
+  document.querySelector('#price-contact')?.addEventListener('click', () => openOwnerInquiry(car.id));
+  document.querySelector('#contact-owner')?.addEventListener('click', () => openOwnerInquiry(car.id));
   if (bookingForm) bookingForm.onsubmit = async event => {
     event.preventDefault();
     try {
@@ -1253,6 +1258,28 @@ export async function openSupportChat() {
   }
 }
 
+// Open (or reuse) a DIRECT renter↔owner conversation about a car. A guest / logged-out visitor is asked to
+// sign in first (inquiries are between real accounts and owners — the server rejects anonymous users).
+async function openOwnerInquiry(carId) {
+  if (!store.user || store.user.isAnonymous) {
+    closeModal();
+    toast('התחברו עם חשבון כדי לפנות לבעל הרכב');
+    location.hash = 'auth';
+    return;
+  }
+  try {
+    const inquiryId = await startInquiry(carId);
+    // Seed the thread locally so it opens INSTANTLY — the real-time `inquiries` listener fires a moment
+    // later and refreshes it. Without this, selectThread would race the listener and show "not found".
+    if (!store.inquiries[inquiryId]) {
+      const car = store.cars[carId] || {};
+      store.inquiries = {...store.inquiries, [inquiryId]: {carId, renterUid: store.user.uid, ownerUid: car.ownerUid, createdAt: Date.now(), updatedAt: Date.now()}};
+    }
+    closeModal();
+    openChatThread(`i:${inquiryId}`);
+  } catch (error) { toast(error.message); }
+}
+
 const EV_LABELS = {video: 'סרטון הרכב מבחוץ', fuel: 'תמונת דלק', odometer: 'תמונת קילומטראז׳'};
 const evidenceState = (booking, bookingId) => {
   const ev = booking?.evidence || {};
@@ -1340,7 +1367,15 @@ function chatItems() {
       const car = store.cars[b.carId] || {};
       return {key: `b:${b.id}`, emoji: ICON.car, title: `${car.make || 'רכב'} ${car.model || ''}`.trim(), subtitle: role === 'owner' ? 'שיחה עם השוכר' : 'שיחה עם בעל הרכב', status: b.status, live: ['pending', 'approved', 'active'].includes(b.status)};
     });
-  return [{key: `a:${store.user.uid}`, emoji: ICON.chat, title: 'שירות לקוחות', subtitle: 'תמיכה טכנית · מענה מהיר', live: true}, ...bookingItems];
+  // Pre-booking inquiry threads (store.inquiries is already role-filtered: a renter sees ones they opened,
+  // an owner sees ones about their cars).
+  const inquiryItems = list(store.inquiries)
+    .sort((a, b) => Number(b.updatedAt || b.createdAt || 0) - Number(a.updatedAt || a.createdAt || 0))
+    .map(inq => {
+      const car = store.cars[inq.carId] || {};
+      return {key: `i:${inq.id}`, emoji: ICON.chat, title: `${car.make || 'רכב'} ${car.model || ''}`.trim(), subtitle: role === 'owner' ? 'פנייה משוכר (טרם הזמנה)' : 'שיחה עם בעל הרכב (טרם הזמנה)', live: true};
+    });
+  return [{key: `a:${store.user.uid}`, emoji: ICON.chat, title: 'שירות לקוחות', subtitle: 'תמיכה טכנית · מענה מהיר', live: true}, ...bookingItems, ...inquiryItems];
 }
 
 function renderChatItems() {
@@ -1361,17 +1396,20 @@ function selectThread(key) {
   const pane = document.querySelector('#chat-pane');
   if (!pane) return;
   const isSupport = key.startsWith('a:');
+  const isInquiry = key.startsWith('i:');   // pre-booking renter↔owner thread about a car
   const id = key.slice(2);
   // The admin opened this thread → it's now read; drop the green unread light for it.
   if (isSupport && store.isAdmin) { adminReadAt[id] = Date.now(); if (adminUnread[id]) { adminUnread[id] = false; renderChatItems(); } }
-  const booking = isSupport ? null : store.bookings[id];
-  if (!isSupport && !booking) { pane.innerHTML = '<div class="chat-empty"><p>השיחה לא נמצאה</p></div>'; return; }
-  const car = booking ? store.cars[booking.carId] || {} : {};
+  const inquiry = isInquiry ? store.inquiries[id] : null;
+  const booking = (isSupport || isInquiry) ? null : store.bookings[id];
+  if (isInquiry && !inquiry) { pane.innerHTML = '<div class="chat-empty"><p>השיחה לא נמצאה</p></div>'; return; }
+  if (!isSupport && !isInquiry && !booking) { pane.innerHTML = '<div class="chat-empty"><p>השיחה לא נמצאה</p></div>'; return; }
+  const car = booking ? store.cars[booking.carId] || {} : (inquiry ? store.cars[inquiry.carId] || {} : {});
   const title = isSupport ? (store.isAdmin ? (store.users[id]?.name || store.users[id]?.email || `אורח · ${id.slice(-5)}`) : 'שירות לקוחות') : `${car.make || 'רכב'} ${car.model || ''}`.trim();
   const isOwner = booking && booking.ownerUid === store.user.uid;
   const isRenter = booking && booking.renterUid === store.user.uid;
   const convEnded = booking ? booking.chatEnded === true : false;   // owner/admin pressed "סיום שיחה"
-  const live = (isSupport || ['pending', 'approved', 'active'].includes(booking.status)) && !(convEnded && isRenter);
+  const live = (isSupport || isInquiry || ['pending', 'approved', 'active'].includes(booking?.status)) && !(convEnded && isRenter);
   const ev = booking ? evidenceState(booking, id) : null;
   const evReady = ev && ev.video && ev.fuel && ev.odometer && ev.payment;
 
@@ -1394,7 +1432,7 @@ function selectThread(key) {
 
   pane.innerHTML = `<header class="chat-head">
       <button class="chat-back" id="chat-back" aria-label="חזרה לרשימה">→</button><button class="chat-x" id="chat-close" aria-label="סגירת הצ׳אט">×</button>
-      <div class="chat-head-main"><h3>${esc(title)}</h3>${booking ? `<span class="status-badge ${esc(booking.status)}">${statusLabel(booking.status)}</span>` : '<span class="pill ok">שירות לקוחות</span>'}</div>
+      <div class="chat-head-main"><h3>${esc(title)}</h3>${booking ? `<span class="status-badge ${esc(booking.status)}">${statusLabel(booking.status)}</span>` : isInquiry ? '<span class="pill ok">פנייה על רכב · טרם הזמנה</span>' : '<span class="pill ok">שירות לקוחות</span>'}</div>
       <div class="chips">${headActions}</div>
     </header>${checklist}<div class="chat-msgs" id="chat-msgs"><div class="empty">טוען הודעות…</div></div>${composer}`;
 
@@ -1412,7 +1450,7 @@ function selectThread(key) {
       // for a regular user it's their own uid (harmlessly ignored server-side). Previously this was
       // gated on store.isAdmin — if that flag was momentarily false the message lost its target and
       // went to the admin's OWN thread instead of the user's. THAT was the "can't message users" bug.
-      try { await sendMessage(isSupport ? {thread: 'admin', userUid: id, text} : {bookingId: id, text}); }
+      try { await sendMessage(isSupport ? {thread: 'admin', userUid: id, text} : isInquiry ? {inquiryId: id, text} : {bookingId: id, text}); }
       catch (error) { toast(error.message); form.text.value = text; chatState.draft = text; }
     };
   }
@@ -1424,7 +1462,7 @@ function selectThread(key) {
       toast('מעלה תמונה…');
       const dataUrl = await uploadPublicMedia(file, 'chat-photo', id);
       const attachment = {path: dataUrl, type: 'photo'};
-      await sendMessage(isSupport ? {thread: 'admin', userUid: id, text: '', attachment} : {bookingId: id, text: '', attachment});
+      await sendMessage(isSupport ? {thread: 'admin', userUid: id, text: '', attachment} : isInquiry ? {inquiryId: id, text: '', attachment} : {bookingId: id, text: '', attachment});
       toast('התמונה נשלחה');
     } catch (error) { toast(error.message); }
   });
@@ -1461,7 +1499,7 @@ function selectThread(key) {
     catch (error) { toast(error.message); }
   });
 
-  const ref = firebase.database().ref(isSupport ? `messages/admin/${id}` : `messages/${id}`).limitToLast(100);
+  const ref = firebase.database().ref(isSupport ? `messages/admin/${id}` : isInquiry ? `messages/inquiry/${id}` : `messages/${id}`).limitToLast(100);
   const handler = snap => {
     const box = document.querySelector('#chat-msgs');
     if (!box || store.route !== 'chats' || chatState.thread !== key) { ref.off('value', handler); return; }

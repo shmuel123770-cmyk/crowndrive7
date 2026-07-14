@@ -21,6 +21,7 @@ export const refs = {
   verificationStatus: db.ref('verificationStatus'),
   cars: db.ref('cars'),
   bookings: db.ref('bookings'),
+  inquiries: db.ref('inquiries'),
   messages: db.ref('messages'),
   ratings: db.ref('ratings'),
   publicRatings: db.ref('publicRatings'),
