@@ -1,5 +1,16 @@
-CrownDrive — FINAL build (2026-07-14, rev.81)
+CrownDrive — FINAL build (2026-07-14, rev.84)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.82 (2026-07-14) — personal-area bar SOLID+FIXED + home shows 4 cars on phones. Cumulative.
+- BOTTOM BAR (admin `.dashboard-tabs`, mobile) was `rgba(24,29,38,.82) + backdrop-filter:blur` — that made it
+  SEE-THROUGH ("שקופה") and made iOS Safari JITTER it during momentum scroll ("זזה כל הזמן"). Now a SOLID
+  #181D26 background, no backdrop-filter, position:fixed + a top shadow → opaque and rock-steady. (The
+  renter/owner light `.bottom-nav` was already solid.)
+- HOME preview now `.slice(0,6)` and, on ≤820px, `.fleet-zone .grid > .car:nth-child(n+5){display:none}` → a
+  clean 2×2 (4 cars) on phones, 6 on desktop; the full /#cars list is untouched. See-all button unchanged.
+- ?v→82. 132 tests pass. (Could not get a true mobile render from tooling — CSS verified in the build.)
+- OPEN: user also asked to "redesign the ad/card (המודעה) to fit" — that's subjective, so asking for the
+  specific direction before touching the shared car card (used on home + /#cars).
 
 rev.81 (2026-07-14) — FRIENDLY EMPTY STATES (skipped the badges/calendar per user → next polish). Cumulative. Frontend-only.
 - New `emptyState(icon, title, subtitle, cta)` helper + `.empty-state` CSS (icon in a rounded card, title,
@@ -1023,3 +1034,21 @@ build, CSP fonts). New server function: car-media-public (makes owner car media 
 All static/security checks and unit tests pass; 17 Netlify functions. Firebase project: amar-75684.
 See התחל_כאן_גרסה_סופית.md to deploy. Remember to publish the updated Realtime DB rules
 (messages/admin branch) and Storage rules (car videos) in the Firebase console.
+
+=== rev.83 (2026-07-14) — car card redesign (clean/premium, Turo-Airbnb style) ===
+- carCard rebuilt: photo hero; name + compact rating (★ 4.8 <b> + muted count) on ONE row (.car-title-row);
+  single muted spec line (year · type · fuel); price prominent; heavy dark button REMOVED — the whole card
+  is the link (.car-clean role=button tabindex=0 + Enter/Space keydown for a11y) with a subtle "פרטים ←"
+  affordance (.car-go, hidden on mobile — card is fully tappable). No-reviews cars show NO rating pill
+  (was double "חדש" with the recency corner badge); removed the now-unused .mode-line from the card.
+- CSS: .car-title-row/.car-rate/.car-go added; .car-foot margin-top:auto pins price row to the bottom.
+- Folds in rev.82 (admin tabs bar solid+fixed; home 4 cars on mobile / 6 desktop).
+
+=== rev.84 (2026-07-14) — site-wide consistency pass ("tidy the whole site like the cars") ===
+- RADIUS UNIFIED: every outer card/panel now shares the car card's 18px radius (was a 14/16/20/22/26px mix).
+  Fixed: .hero-stats 16→18, .trust-card 20→18, .foot-cta 20→18, .auth-shell 20→18, .kpi 16→18,
+  .table-wrap 16→18, .booking-card 16→18, .modal 20→18 (+mobile 16→18), .chat-shell 20→18,
+  desktop .card override 20→18 (car cards were 20 on ≥1000px, now 18 everywhere), .dashboard-head 22→18,
+  .dashboard-panel 20→18; .owner-cta-rich 26→20 (one notch for the big hero panel). 27 panels now = 18px.
+- RIGHT-SIZED sprawl: .step-card padding 34/26→28/24; .foot-cta 56/40→44/32.
+- All global classes, so dashboards/detail/booking/modals inherit it. Verified home (full page) + cars list.

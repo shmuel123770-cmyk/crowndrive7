@@ -320,7 +320,7 @@ export function home() {
     <span class="it"><span class="dot soon"></span><b>${ready ? Math.max(all.length - available.length - rented.length, 0) : '·'}</b> מתפנים בקרוב</span>
   </div></div>
   <section class="owner-cta-rich reveal"><div class="owner-cta-glow" aria-hidden="true"></div><div class="owner-cta-main"><p class="eyebrow">לבעלי רכבים</p><h2>יש לך רכב פנוי?</h2><p>פרסם רכב, קבע תנאים, גיל מינימלי, זמינות ואפשרות מסירה — והכל מנוהל באזור אישי אחד.</p><button class="btn gold" id="cta-add-car">הוסף רכב</button></div><div class="owner-cta-features"><div class="feature-chip">אימות שוכרים</div><div class="feature-chip">ניהול הזמנות</div><div class="feature-chip">תיעוד מסירה והחזרה</div><div class="feature-chip">דירוגים וביקורות</div></div></section>
-  <section class="info-section fleet-zone reveal"><div class="sec-head"><p class="eyebrow">הצי שלנו</p><h2>הרכבים באתר</h2><p class="sec-sub">כל רכב עם תיעוד מלא ודירוגים אמיתיים. הסימון על כל כרטיס מראה מה פנוי ומה מושכר.</p></div>${carGrid(featuredFirst(all.filter(c => c.status !== 'hidden')).slice(0, 9))}<div class="see-all"><button class="btn primary see-all-btn" data-route="cars">כל הרכבים באתר ←</button></div></section>
+  <section class="info-section fleet-zone reveal"><div class="sec-head"><p class="eyebrow">הצי שלנו</p><h2>הרכבים באתר</h2><p class="sec-sub">כל רכב עם תיעוד מלא ודירוגים אמיתיים. הסימון על כל כרטיס מראה מה פנוי ומה מושכר.</p></div>${carGrid(featuredFirst(all.filter(c => c.status !== 'hidden')).slice(0, 6))}<div class="see-all"><button class="btn primary see-all-btn" data-route="cars">כל הרכבים באתר ←</button></div></section>
   <section class="info-section reveal" id="how"><div class="sec-head"><p class="eyebrow">איך זה עובד</p><h2>שלושה צעדים ברורים</h2><p class="sec-sub">בלי תהליך מסובך.</p></div><div class="steps-grid">
     <div class="step-card"><span class="step-num">1</span><div class="step-icon">${STEP_ICONS.search}</div><h3>בוחרים רכב</h3><p>מחפשים לפי זמן ותנאים שמתאימים לכם.</p></div>
     <div class="step-card"><span class="step-num">2</span><div class="step-icon">${STEP_ICONS.approve}</div><h3>מקבלים אישור</h3><p>משלימים אימות קצר ובעל הרכב מאשר את הבקשה.</p></div>
@@ -449,7 +449,6 @@ function carCard(car, manage = false, period = null, index = 99) {
   const priceMain = onRequest ? 'שלחו הודעה<small> לקבלת מחיר</small>' : (priceRows.length ? `${priceRows[0][0]}<small> ${priceRows[0][1]}</small>` : '');
   const priceAlt = onRequest ? '' : priceRows.slice(1).map(([value, label]) => `${value} ${label}`).join(' · ');
   const modeBadge = mode ? `<span class="mode-badge">${mode.short}</span>` : '';
-  const modeLine = mode ? `<div class="mode-line">${mode.label}</div>` : '';
   // Period-aware: when the visitor searched dates, matching cars show an estimated total and cars whose
   // rental mode doesn't fit the chosen range still appear — with a clear "available only for X" note.
   let periodHtml = '';
@@ -470,7 +469,11 @@ function carCard(car, manage = false, period = null, index = 99) {
   // NOTE: a "featured" car is pinned to the top of the list by the admin, but it carries NO visible mark
   // on the public card (no badge, no highlight ring) — visitors must not be able to tell the admin
   // promoted it. The admin still sees/toggles featured in the admin cars table.
-  return `<article class="card car${notFit ? ' car-nofit' : ''}" data-car-open="${esc(car.id)}"><div class="car-photo"><img src="${esc(carImage(car))}" alt="${esc(`${car.make || ''} ${car.model || ''}`)}" loading="${eager ? 'eager' : 'lazy'}"${eager ? ' fetchpriority="high"' : ''} decoding="async" data-car-image><div class="car-badges">${availPill(car.status)}${newBadge(car)}</div>${modeBadge}${car.videoUrl ? '<span class="has-video">▶ וידאו</span>' : ''}</div><div class="car-body"><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3><div class="car-specs"><span>${esc(car.year || '—')}</span><span>·</span><span>${esc(type)}</span>${car.fuel ? `<span>·</span><span>${esc(car.fuel)}</span>` : ''}${car.gear ? `<span>·</span><span>${esc(car.gear)}</span>` : ''}</div>${modeLine}<div class="rating" aria-label="דירוג ${rating.toFixed(1)} מתוך 5, ${reviewCount} ביקורות">${stars(rating)} <small>${rating ? `${rating.toFixed(1)}${reviewCount ? ` · ${reviewCount} ${reviewCount === 1 ? 'ביקורת' : 'ביקורות'}` : ''}` : 'חדש'}</small></div>${periodHtml}<div class="car-foot"><div class="price-stack"><div class="price">${priceMain}</div>${priceAlt ? `<small class="price-alt">${priceAlt}</small>` : ''}</div></div><button class="btn primary block" data-car="${esc(car.id)}">${car.status === 'available' ? 'פרטים והזמנה' : 'צפייה בפרטים'}</button>${manageRow}</div></article>`;
+  // Clean, premium (Turo/Airbnb-style) card: photo hero, name + compact rating on one line, a single spec
+  // line, price + a subtle "פרטים ←" affordance — the whole card is the link (no heavy button). Public cards
+  // get role=button + keyboard support; owner "manage" cards keep their own action buttons instead.
+  const cardRole = manage ? '' : ' role="button" tabindex="0"';
+  return `<article class="card car car-clean${notFit ? ' car-nofit' : ''}" data-car-open="${esc(car.id)}"${cardRole} aria-label="${esc(`${car.make || ''} ${car.model || ''} — פתיחת פרטים`)}"><div class="car-photo"><img src="${esc(carImage(car))}" alt="${esc(`${car.make || ''} ${car.model || ''}`)}" loading="${eager ? 'eager' : 'lazy'}"${eager ? ' fetchpriority="high"' : ''} decoding="async" data-car-image><div class="car-badges">${availPill(car.status)}${newBadge(car)}</div>${modeBadge}${car.videoUrl ? '<span class="has-video">▶ וידאו</span>' : ''}</div><div class="car-body"><div class="car-title-row"><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3>${rating ? `<span class="car-rate">★ <b>${rating.toFixed(1)}</b>${reviewCount ? ` <small>(${reviewCount})</small>` : ''}</span>` : ''}</div><div class="car-specs"><span>${esc(car.year || '—')}</span><span>·</span><span>${esc(type)}</span>${car.fuel ? `<span>·</span><span>${esc(car.fuel)}</span>` : ''}</div>${periodHtml}<div class="car-foot"><div class="price-stack"><div class="price">${priceMain}</div>${priceAlt ? `<small class="price-alt">${priceAlt}</small>` : ''}</div><span class="car-go">${car.status === 'available' ? 'פרטים והזמנה' : 'צפייה'} ←</span></div>${manageRow}</div></article>`;
 }
 // Featured cars (pinned by the admin) always come first, newest-pin first.
 function featuredFirst(cars) {
@@ -500,10 +503,19 @@ function carGrid(cars, manage = false, period = null) {
 function bindCarButtons() {
   app().querySelectorAll('[data-car]').forEach(button => button.onclick = () => openCar(button.dataset.car));
   // The WHOLE card opens the detail — a click anywhere that isn't an inner control (buttons/links) counts.
-  app().querySelectorAll('[data-car-open]').forEach(article => article.addEventListener('click', event => {
-    if (event.target.closest('button, a, select, input, label')) return;
-    openCar(article.dataset.carOpen);
-  }));
+  app().querySelectorAll('[data-car-open]').forEach(article => {
+    article.addEventListener('click', event => {
+      if (event.target.closest('button, a, select, input, label')) return;
+      openCar(article.dataset.carOpen);
+    });
+    // Public cards are role=button (no inner button any more) — make them keyboard-openable too.
+    if (article.getAttribute('role') === 'button') article.addEventListener('keydown', event => {
+      if ((event.key === 'Enter' || event.key === ' ') && !event.target.closest('button, a, select, input, label')) {
+        event.preventDefault();
+        openCar(article.dataset.carOpen);
+      }
+    });
+  });
   app().querySelectorAll('[data-car-image]').forEach(image => {
     // Fade the photo in when it decodes (no more "pop"). If it's already cached, show it instantly — never
     // leave it stuck at opacity:0.
