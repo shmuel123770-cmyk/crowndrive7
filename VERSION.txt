@@ -1,5 +1,16 @@
-CrownDrive — FINAL build (2026-07-14, rev.72)
+CrownDrive — FINAL build (2026-07-14, rev.73)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.73 (2026-07-14) — bottom tab bar → 4 tabs + no duplicate/clashing menus (per user). Cumulative.
+- Added "הזמנות" (calendar icon) → 4 tabs: בית · רכבים · הזמנות · אזור אישי. הזמנות/אזור אישי open the dashboard
+  on the right sub-tab (dashTab='bookings'/'overview') when signed in, else the login screen.
+- The bar is now ALSO hidden on the DASHBOARD (it already has its own tab menu — the user: "don't put two
+  menus in the personal area, don't make a mess").
+- Moved the top "האזור שלי"/"התחבר" pill OFF mobile (`.nav-actions .dark-pill{display:none}` at ≤820px, the
+  same breakpoint the bar appears) — access is via the bottom bar now; the top bar on phones is just the logo.
+  Tablets 820–900px keep the top pill (bar not shown there). Verified live at 375px: 4 tabs, top pill hidden,
+  הזמנות(logged-out)→auth, bar hidden on auth/dashboard.
+- ?v→73. 122 tests pass.
 
 rev.72 (2026-07-14) — LEGAL PAGES (privacy + terms) + footer links. Cumulative (incl. rev.71 bottom bar + watchdog).
 - Ported the Codex privacy.html + terms.html + css/legal.css (self-contained, no scripts) — Hebrew policy for a

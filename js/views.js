@@ -239,19 +239,23 @@ export function bottomNav() {
   const route = store.route || 'home';
   const blocked = store.profile?.blocked === true && !store.isAdmin;
   const maintenance = store.config?.maintenance?.on && !store.isAdmin && route !== 'auth';
-  if (blocked || maintenance || ['chats', 'auth'].includes(route)) { node.classList.add('hide'); node.innerHTML = ''; return; }
+  // Also hidden on the DASHBOARD: the personal area already has its own tab menu, and two menus would clash.
+  if (blocked || maintenance || ['chats', 'auth', 'dashboard'].includes(route)) { node.classList.add('hide'); node.innerHTML = ''; return; }
   node.classList.remove('hide');
-  const loggedIn = store.user && !store.user.isAnonymous;
+  const area = (store.user && !store.user.isAnonymous) ? 'dashboard' : 'auth';
+  // הזמנות + אזור אישי both open the dashboard (on the right sub-tab) when signed in, else the login screen.
   const items = [
-    ['home', 'בית', ICON.home, route === 'home'],
-    ['cars', 'רכבים', ICON.car, route === 'cars'],
-    [loggedIn ? 'dashboard' : 'auth', 'אזור אישי', ICON.selfie, route === 'dashboard' || route === 'auth'],
+    {route: 'home', label: 'בית', icon: ICON.home, active: route === 'home'},
+    {route: 'cars', label: 'רכבים', icon: ICON.car, active: route === 'cars'},
+    {route: area, dash: 'bookings', label: 'הזמנות', icon: ICON.calendar},
+    {route: area, dash: 'overview', label: 'אזור אישי', icon: ICON.selfie},
   ];
-  node.innerHTML = items.map(([key, label, icon, active]) =>
-    `<button class="tab-item ${active ? 'active' : ''}" data-route="${key}" aria-label="${esc(label)}"${active ? ' aria-current="page"' : ''}>${icon}<span>${esc(label)}</span></button>`).join('');
+  node.innerHTML = items.map(it =>
+    `<button class="tab-item ${it.active ? 'active' : ''}" data-route="${it.route}"${it.dash ? ` data-dash="${it.dash}"` : ''} aria-label="${esc(it.label)}"${it.active ? ' aria-current="page"' : ''}>${it.icon}<span>${esc(it.label)}</span></button>`).join('');
   node.querySelectorAll('[data-route]').forEach(button => button.onclick = event => {
     event.stopPropagation();
     const target = button.dataset.route;
+    if (button.dataset.dash) dashTab = button.dataset.dash;  // preselect which dashboard tab opens (הזמנות → bookings)
     if ((location.hash.slice(1) || 'home') === target) { window.scrollTo({top: 0, behavior: 'smooth'}); window.dispatchEvent(new HashChangeEvent('hashchange')); }
     else location.hash = target;
   });

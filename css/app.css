@@ -680,6 +680,8 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
   .tab-item.active{color:var(--brand-d)}
   .tab-item.active::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:32px;height:3px;border-radius:0 0 4px 4px;background:var(--brand)}
   .tab-item:active{transform:scale(.93)}
+  /* The אזור אישי / התחבר access moved to the bottom bar — drop the duplicate top pill on phones. */
+  .nav-actions .dark-pill{display:none}
 }
 @media(max-width:820px){
   main{width:100%;margin:0 auto 64px;padding:0 12px}
