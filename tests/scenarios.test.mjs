@@ -156,13 +156,26 @@ for (const [type, name] of [['evidence-video', 'v.mp4'], ['evidence-fuel', 'f.jp
   await call(fn['message-send'], 'r1', {bookingId: bId, text: 't', attachment: {type, path: `bookings/${bId}/media/r1/${name}`}});
 check('3 ראיות נרשמו', get(`bookings/${bId}/evidence/video`) && get(`bookings/${bId}/evidence/fuel`) && get(`bookings/${bId}/evidence/odometer`));
 r = await call(fn['payment-submit'], 'r1', {bookingId: bId, amount: 600, mediaPath: `bookings/${bId}/payments/r1/p.jpg`});
-check('הוכחת תשלום', S(r) === 200 && get(`payments/${bId}/amount`) === 600);
+check('הוכחת תשלום נשלחה (ממתינה לאישור)', S(r) === 200 && get(`payments/${bId}/amount`) === 600 && get(`payments/${bId}/status`) === 'pending');
 r = await call(fn['payment-submit'], 'r1', {bookingId: bId, amount: -5, mediaPath: `bookings/${bId}/payments/r1/p.jpg`});
 check('סכום שלילי נדחה (400)', S(r) === 400);
 r = await call(fn['payment-submit'], 'r1', {bookingId: bId, amount: 5, mediaPath: 'bookings/OTHER/payments/r1/p.jpg'});
 check('נתיב תשלום מזויף נדחה (400)', S(r) === 400);
+// Explicit payment approval: pending/rejected proof can't start the rental.
 r = await call(fn['booking-action'], 'o1', {action: 'status', bookingId: bId, status: 'active'});
-check('התחלת השכרה אחרי כל הראיות', S(r) === 200);
+check('אי אפשר להתחיל בלי אישור תשלום (409)', S(r) === 409);
+r = await call(fn['booking-action'], 'r1', {action: 'payment-review', bookingId: bId, decision: 'approved'});
+check('שוכר לא מאשר תשלום לעצמו (403)', S(r) === 403);
+r = await call(fn['booking-action'], 'o1', {action: 'payment-review', bookingId: bId, decision: 'rejected'});
+check('בעל הרכב דוחה תשלום', S(r) === 200 && get(`payments/${bId}/status`) === 'rejected');
+r = await call(fn['booking-action'], 'o1', {action: 'status', bookingId: bId, status: 'active'});
+check('תשלום שנדחה חוסם התחלה (409)', S(r) === 409);
+r = await call(fn['payment-submit'], 'r1', {bookingId: bId, amount: 600, mediaPath: `bookings/${bId}/payments/r1/p.jpg`});
+check('שוכר שולח הוכחה מחדש (ממתינה)', S(r) === 200 && get(`payments/${bId}/status`) === 'pending');
+r = await call(fn['booking-action'], 'o1', {action: 'payment-review', bookingId: bId, decision: 'approved'});
+check('בעל הרכב מאשר תשלום', S(r) === 200 && get(`payments/${bId}/status`) === 'approved');
+r = await call(fn['booking-action'], 'o1', {action: 'status', bookingId: bId, status: 'active'});
+check('התחלת השכרה אחרי אישור התשלום', S(r) === 200);
 
 console.log('\nתרחיש F: פרטים פרטיים + מדיה');
 r = await call(fn['private-car-details'], 'r1', {bookingId: bId});
@@ -374,6 +387,19 @@ check('הודעה לפנייה לא קיימת (404)', S(r) === 404);
 // The admin may post into any inquiry.
 r = await call(fn['message-send'], 'a1', {inquiryId: inqId, text: 'הודעת מנהל'});
 check('מנהל יכול לכתוב בפנייה', S(r) === 200);
+
+console.log('\nתרחיש R: תפוגת הזמנות ממתינות (booking-expire-scheduled)');
+const {expireStalePending} = await import('../netlify/functions/booking-expire-scheduled.mjs');
+const nowR = Date.now();
+set('bookings/expStale', {carId: 'cX', ownerUid: 'o1', renterUid: 'r1', status: 'pending', pendingExpiresAt: nowR - 1000});   // past → expire
+set('bookings/expFuture', {carId: 'cX', ownerUid: 'o1', renterUid: 'r1', status: 'pending', pendingExpiresAt: nowR + 100000}); // future → keep
+set('bookings/expLegacy', {carId: 'cX', ownerUid: 'o1', renterUid: 'r1', status: 'pending'});                                  // no expiry → keep
+set('bookings/expApproved', {carId: 'cX', ownerUid: 'o1', renterUid: 'r1', status: 'approved', pendingExpiresAt: nowR - 1000}); // not pending → keep
+r = await expireStalePending({ref}, nowR);
+check('פג תוקף רק לבקשה שעברה את החלון', r.expired === 1 && get('bookings/expStale/status') === 'expired');
+check('בקשה עתידית נשארת ממתינה', get('bookings/expFuture/status') === 'pending');
+check('בקשה ישנה בלי תוקף לא פגה (grandfathered)', get('bookings/expLegacy/status') === 'pending');
+check('הזמנה מאושרת לא מושפעת', get('bookings/expApproved/status') === 'approved');
 
 console.log(`\n========== ${passed} עברו · ${failed} נכשלו ==========`);
 process.exit(failed ? 1 : 0);

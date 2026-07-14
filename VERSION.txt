@@ -1,5 +1,89 @@
-CrownDrive — FINAL build (2026-07-14, rev.74)
+CrownDrive — FINAL build (2026-07-14, rev.81)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.81 (2026-07-14) — FRIENDLY EMPTY STATES (skipped the badges/calendar per user → next polish). Cumulative. Frontend-only.
+- New `emptyState(icon, title, subtitle, cta)` helper + `.empty-state` CSS (icon in a rounded card, title,
+  subtitle, optional action) — replaces bare "אין נתונים" dead-ends.
+- A renter with NO bookings now sees "אין לך הזמנות עדיין" + a "חיפוש רכב" button (data-route=cars) → guides
+  them to browse (conversion). Owner sees a neutral "אין הזמנות עדיין". Cars-page empty got the car-icon
+  version. `.grid > .empty-state{grid-column:1/-1}` so it spans the grid.
+- Verified in a repro; 132 tests pass. ?v→81.
+- DEFERRED (user said skip): owner verification badges + per-car availability calendar (both need a backend
+  public projection + Firebase rules + a privacy decision on what to expose).
+
+rev.80 (2026-07-14) — REVIEWS PROMINENCE (conversion & trust, area #4, part 1). Cumulative. Frontend-only.
+- Car CARD now shows the review COUNT next to the rating ("4.8 · 12 ביקורות"); a car with none shows "חדש".
+  New store.js `carRatingCount(carId)` (uses the PUBLIC store.ratings, no data/rules change).
+- Car DETAIL reviews section got a prominent summary header: big average (2.1rem brand-blue) + stars +
+  "N ביקורות", above the individual reviews. New .reviews-summary/.reviews-avg/.reviews-total CSS.
+- Verified in a repro: cards show count / "חדש"; detail shows the 4.8 ★★★★★ · 12 summary. 132 tests pass.
+- ?v→80. STILL in area #4 (need backend/rules, so deliberately deferred): owner VERIFICATION BADGES and a
+  per-car AVAILABILITY CALENDAR both require exposing currently-PRIVATE data (owner verification status /
+  others' booked dates) via a public projection + rules — a careful backend change, not frontend-only.
+
+rev.79 (2026-07-14) — AUTO-EXPIRE stale pending bookings (booking/payment reliability, area #3, part 2 — DONE). Cumulative.
+- booking-create now stamps `pendingExpiresAt = now + 48h`. NEW scheduled fn `booking-expire-scheduled.mjs`
+  (netlify.toml `schedule = "0 * * * *"`, hourly) flips status 'pending'→'expired' for bookings past their
+  window, and SMSes the renter. It ONLY touches status:'pending' rows WITH a past pendingExpiresAt — legacy
+  pending bookings (no stamp) are left alone; no other status is ever changed. Core `expireStalePending(db,now)`
+  exported + scenario-tested.
+- 'expired' status wired: statusLabel→'פג תוקף', `.status-badge.expired` muted-gray badge. Terminal (no chat
+  thread, no actions) — the renter just re-requests. No availability change (pending never reserved the car).
+- 28 server functions now (static-check updated). +4 scenario checks → 120 scenarios + 12 fuzz = 132 tests pass.
+- Deploy note: uses a NETLIFY SCHEDULED FUNCTION (runs hourly automatically after deploy). No Firebase rules
+  change (Admin SDK scans bookings server-side). ?v→79. Area #3 (booking/payment reliability) COMPLETE.
+- NEXT/last area: conversion & trust (availability calendar, reviews prominence, verification badges).
+
+rev.78 (2026-07-14) — EXPLICIT PAYMENT APPROVAL (booking/payment reliability, area #3, part 1). Cumulative.
+- A payment proof is now a REPORT that the owner (or admin) must CONFIRM — the rental can't start on an
+  unconfirmed payment. payment-submit sets status:'pending'; NEW booking-action `payment-review`
+  (decision approved|rejected, owner/admin only, SMS + notify the renter); rental-start (→active) now blocks
+  on a pending/rejected payment. LEGACY proofs (no status field, saved before this) are GRANDFATHERED as OK
+  so in-progress rentals don't break.
+- UI: owner/admin booking card shows a status pill (ממתין לאישור / תשלום אושר / תשלום נדחה) + "אישור תשלום" /
+  "דחייה" buttons when pending; "התחלת השכרה" is disabled until approved; the renter sees a note (✓ אושר /
+  ✗ נדחה — שלחו מחדש / ⏳ ממתין). paymentApproved() helper; evidenceState payment ✓ only when approved.
+- 128 tests pass (scenario E rewritten to the full cycle: pending→409, self-approve→403, reject→409,
+  re-submit→approve→start 200; +6 checks → 116 scenarios + 12 fuzz). Verified the card UI in a repro.
+- ?v→78. STILL in area #3: AUTO-EXPIRE stale pending bookings (needs a scheduled Netlify fn — next).
+
+rev.77 (2026-07-14) — SPEED & IMAGES (improvement area #2). Cumulative.
+- EAGER above-the-fold: the first 4 car cards load `loading="eager" fetchpriority="high"` (lazy was DELAYING
+  visible images and hurting LCP); the rest stay lazy. carCard got an `index` param, carGrid passes it.
+- FADE-IN on load: `.car-photo img{opacity:0}` → `.loaded{opacity:1}` (.5s), added by a load listener in
+  bindCarButtons; a `complete && naturalWidth` check shows CACHED images instantly (no re-fade flash on
+  re-render) and the error→fallback path also marks them loaded — so an image is NEVER left invisible.
+  (bindCarButtons runs after all 3 carGrid renders — home/cars/owner — verified, so the opacity:0 default
+  is always resolved.)
+- Verified in the BUILT dist/ (source dev-load caches views.js since source ESM imports carry no ?v — only
+  the build stamps them; a real deploy always busts it): first 4 eager+high, rest lazy, 4 loaded+faded, first
+  img opacity 1, 0 stuck-invisible.
+- ?v→77. 122 tests pass. NEXT areas: booking/payment reliability (native), conversion/trust.
+
+rev.76 (2026-07-14) — CONTEXT-AWARE (dynamic) bottom bar per the user's request. Cumulative.
+- The bottom bar now changes its buttons by WHERE you are:
+  • Main site (home/cars): בית · רכבים · הזמנות · אזור אישי (unchanged).
+  • Renter/owner PERSONAL AREA: becomes a DYNAMIC toolbar of that role's own sections — renter: סקירה/הזמנות/
+    צ׳אטים/פרופיל; owner: +רכבים. A tap switches the section IN PLACE (sets dashTab + re-renders), except צ׳אטים
+    which opens the full-screen chat. The built-in dark .dashboard-tabs bar is hidden for them (the dynamic
+    light bar replaces it) via body[data-dash-role=renter|owner] set by bottomNav().
+  • ADMIN: keeps its current dark frosted 6-tab .dashboard-tabs bar (site bar hidden there), now tidied with a
+    clean gold active-indicator line on top of the active tab + position:relative.
+- Verified in repro: renter bar shows 4 sections + hides the dark bar; admin bar shows 6 tabs + indicator +
+  hides the site bar; main-site bar still בית/רכבים/הזמנות/אזור אישי with active tracking; 0 console errors.
+- ?v→76. 122 tests pass.
+
+rev.75 (2026-07-14) — DECLUTTERED the admin dashboard ("מלא בלאגן שם"). Cumulative.
+- ADMIN OVERVIEW: was 5 buttons crammed at the top (הודעות/תחזוקה/ייצוא JSON/העברת נתונים/האצת טעינה) in an
+  uneven grid. Now: ONE primary control (מצב תחזוקה) up top; the 3 rarely-used data-ops moved into a collapsible
+  `<details class="admin-tools">כלים מתקדמים</details>` at the bottom of the overview; dropped the redundant
+  "הודעות למשתמשים" (the צ׳אטים tab already covers it). Handlers unchanged (querySelector still finds them inside
+  <details>). New .admin-tools/.admin-tools-grid CSS. Verified: overview shows 1 button, details opens with all 3.
+- DASHBOARD HEADER on phones slimmed: avatar 60→46px (CSS !important over the inline size), h1 25px, head padding
+  20/18 — title + avatar now breathe (measured: 16px gap, no overlap; the "overlap" was an optical illusion).
+  Applies to all roles' dashboards. NOT the two-bottom-bars issue — that was already fixed (rev.73 hides the main
+  bottom nav on the dashboard; the dashboard keeps its own frosted fixed bottom tab bar, which is intended).
+- ?v→75. 122 tests pass. (App-feel area 1 continues; areas 2-4 still queued.)
 
 rev.74 (2026-07-14) — APP-FEEL polish, installment 1 of the 4 improvement areas the user picked. Cumulative.
 - Subtle ROUTE TRANSITION: #app fades+slides in (routeEnter .26s) only on a REAL route change (app.js tracks

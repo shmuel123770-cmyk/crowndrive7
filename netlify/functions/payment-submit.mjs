@@ -26,10 +26,13 @@ export async function handler(event) {
       ownerUid: value.ownerUid,
       amount,
       mediaPath: isImage ? validateImageDataUrl(media) : cleanText(body.mediaPath, 500),
+      // Proof is only a REPORT until the owner (or admin) confirms it — the rental can't start on a
+      // 'pending' or 'rejected' payment. Re-submitting (this .set overwrites) resets it to pending.
+      status: 'pending',
       createdAt: Date.now(),
     });
     await audit(token.uid, 'payment_submit', 'booking', body.bookingId, {amount});
-    await notifyAdmin('payment', `שוכר שלח אישור תשלום על $${amount}`, {bookingId: body.bookingId, amount});
+    await notifyAdmin('payment', `שוכר שלח הוכחת תשלום על $${amount} — ממתין לאישור`, {bookingId: body.bookingId, amount});
     return json(200, {ok: true});
   } catch (error) {
     console.error(error);

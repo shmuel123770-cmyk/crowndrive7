@@ -1,4 +1,4 @@
-import {store, list, myRole, myBookings, myCars, carRating, userRating} from './store.js';
+import {store, list, myRole, myBookings, myCars, carRating, carRatingCount, userRating} from './store.js';
 import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail, paintApp, resetPaint} from './core.js';
 import {register, login, logout, sendVerify, refreshEmailStatus, sendPasswordReset, createOwnProfile, signInGuest} from './auth.js';
 import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, startInquiry, setBookingStatus, registerDocument, approveVerification, sendMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction, setMaintenance, setCarStatus, setCarFeatured, checkIsAdmin} from './db.js';
@@ -52,6 +52,8 @@ const ICON = {
 
 const TAB_ICONS = {overview: () => ICON.grid, bookings: () => ICON.calendar, cars: () => ICON.car, profile: () => ICON.selfie, messages: () => ICON.chat, chats: () => ICON.chat, users: () => ICON.users, notifications: () => ICON.bell};
 const kpi = (icon, value, label) => `<div class="kpi"><div class="kpi-head"><span class="kpi-label">${label}</span><i class="kpi-icon">${ICON[icon] || ''}</i></div><b>${value}</b></div>`;
+// Friendly empty state — an icon, a line, and (optionally) an action button — instead of a dead-end.
+const emptyState = (icon, title, subtitle = '', cta = '') => `<div class="empty-state"><span class="empty-ic">${icon || ''}</span><b>${esc(title)}</b>${subtitle ? `<p>${esc(subtitle)}</p>` : ''}${cta}</div>`;
 const carStatusPill = status => `<span class="pill ${status === 'available' ? 'ok' : 'mut'}">${status === 'available' ? 'זמין' : status === 'rented' ? 'מושכר' : 'מוסתר'}</span>`;
 const DIAL_CODES = [
   ['+1', '🇺🇸 ארה״ב / קנדה'], ['+972', '🇮🇱 ישראל'], ['+44', '🇬🇧 בריטניה'], ['+33', '🇫🇷 צרפת'],
@@ -237,13 +239,37 @@ export function bottomNav() {
   const node = document.querySelector('#bottom-nav');
   if (!node) return;
   const route = store.route || 'home';
+  const role = myRole();
+  // Tag the body with the dashboard role so CSS can hide the built-in .dashboard-tabs bar for renter/owner
+  // (the dynamic bar below replaces it) while KEEPING it for the admin.
+  document.body.dataset.dashRole = route === 'dashboard' ? (role || '') : '';
   const blocked = store.profile?.blocked === true && !store.isAdmin;
   const maintenance = store.config?.maintenance?.on && !store.isAdmin && route !== 'auth';
-  // Also hidden on the DASHBOARD: the personal area already has its own tab menu, and two menus would clash.
-  if (blocked || maintenance || ['chats', 'auth', 'dashboard'].includes(route)) { node.classList.add('hide'); node.innerHTML = ''; return; }
+  // Hidden on full-screen/edge routes, and on the ADMIN dashboard (the admin keeps its own fixed tab bar).
+  if (blocked || maintenance || ['chats', 'auth'].includes(route) || (route === 'dashboard' && role === 'admin')) {
+    node.classList.add('hide'); node.innerHTML = ''; return;
+  }
   node.classList.remove('hide');
+
+  // DYNAMIC personal-area toolbar (renter/owner): the bar becomes the role's own dashboard sections, and a tap
+  // switches the section in place instead of leaving the area.
+  if (route === 'dashboard') {
+    const tabs = role === 'owner'
+      ? [['overview', 'סקירה'], ['bookings', 'הזמנות'], ['cars', 'רכבים'], ['chats', 'צ׳אטים'], ['profile', 'פרופיל']]
+      : [['overview', 'סקירה'], ['bookings', 'הזמנות'], ['chats', 'צ׳אטים'], ['profile', 'פרופיל']];
+    node.innerHTML = tabs.map(([key, label]) =>
+      `<button class="tab-item ${key === dashTab ? 'active' : ''}" data-dash-tab="${key}" aria-label="${esc(label)}"${key === dashTab ? ' aria-current="page"' : ''}>${(TAB_ICONS[key] || (() => ''))()}<span>${esc(label)}</span></button>`).join('');
+    node.querySelectorAll('[data-dash-tab]').forEach(button => button.onclick = event => {
+      event.stopPropagation();
+      const tab = button.dataset.dashTab;
+      if (tab === 'chats') { location.hash = 'chats'; return; }  // full-screen messaging page
+      dashTab = tab; dashboard(); bottomNav();  // re-render the section in place, then refresh the bar's active state
+    });
+    return;
+  }
+
+  // Main-site bar (home / cars / …). הזמנות + אזור אישי open the dashboard on the right sub-tab when signed in.
   const area = (store.user && !store.user.isAnonymous) ? 'dashboard' : 'auth';
-  // הזמנות + אזור אישי both open the dashboard (on the right sub-tab) when signed in, else the login screen.
   const items = [
     {route: 'home', label: 'בית', icon: ICON.home, active: route === 'home'},
     {route: 'cars', label: 'רכבים', icon: ICON.car, active: route === 'cars'},
@@ -406,9 +432,12 @@ function searchRange() {
   return {startMs: s, endMs: e, bucket: periodBucket(e - s)};
 }
 
-function carCard(car, manage = false, period = null) {
+function carCard(car, manage = false, period = null, index = 99) {
   const rating = carRating(car.id);
+  const reviewCount = carRatingCount(car.id);
   const type = car.category || 'רכב';
+  // The first few cards are above the fold — load them eagerly (lazy would DELAY visible images and hurt LCP).
+  const eager = index < 4;
   const rented = car.status === 'rented';
   const mode = rentalModeOf(car);
   const onRequest = !!car.priceOnRequest;  // owner chose "price on request" → show "send a message" instead of a price
@@ -441,7 +470,7 @@ function carCard(car, manage = false, period = null) {
   // NOTE: a "featured" car is pinned to the top of the list by the admin, but it carries NO visible mark
   // on the public card (no badge, no highlight ring) — visitors must not be able to tell the admin
   // promoted it. The admin still sees/toggles featured in the admin cars table.
-  return `<article class="card car${notFit ? ' car-nofit' : ''}" data-car-open="${esc(car.id)}"><div class="car-photo"><img src="${esc(carImage(car))}" alt="${esc(`${car.make || ''} ${car.model || ''}`)}" loading="lazy" decoding="async" data-car-image><div class="car-badges">${availPill(car.status)}${newBadge(car)}</div>${modeBadge}${car.videoUrl ? '<span class="has-video">▶ וידאו</span>' : ''}</div><div class="car-body"><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3><div class="car-specs"><span>${esc(car.year || '—')}</span><span>·</span><span>${esc(type)}</span>${car.fuel ? `<span>·</span><span>${esc(car.fuel)}</span>` : ''}${car.gear ? `<span>·</span><span>${esc(car.gear)}</span>` : ''}</div>${modeLine}<div class="rating" aria-label="דירוג ${rating.toFixed(1)} מתוך 5">${stars(rating)} <small>${rating ? rating.toFixed(1) : 'חדש'}</small></div>${periodHtml}<div class="car-foot"><div class="price-stack"><div class="price">${priceMain}</div>${priceAlt ? `<small class="price-alt">${priceAlt}</small>` : ''}</div></div><button class="btn primary block" data-car="${esc(car.id)}">${car.status === 'available' ? 'פרטים והזמנה' : 'צפייה בפרטים'}</button>${manageRow}</div></article>`;
+  return `<article class="card car${notFit ? ' car-nofit' : ''}" data-car-open="${esc(car.id)}"><div class="car-photo"><img src="${esc(carImage(car))}" alt="${esc(`${car.make || ''} ${car.model || ''}`)}" loading="${eager ? 'eager' : 'lazy'}"${eager ? ' fetchpriority="high"' : ''} decoding="async" data-car-image><div class="car-badges">${availPill(car.status)}${newBadge(car)}</div>${modeBadge}${car.videoUrl ? '<span class="has-video">▶ וידאו</span>' : ''}</div><div class="car-body"><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3><div class="car-specs"><span>${esc(car.year || '—')}</span><span>·</span><span>${esc(type)}</span>${car.fuel ? `<span>·</span><span>${esc(car.fuel)}</span>` : ''}${car.gear ? `<span>·</span><span>${esc(car.gear)}</span>` : ''}</div>${modeLine}<div class="rating" aria-label="דירוג ${rating.toFixed(1)} מתוך 5, ${reviewCount} ביקורות">${stars(rating)} <small>${rating ? `${rating.toFixed(1)}${reviewCount ? ` · ${reviewCount} ${reviewCount === 1 ? 'ביקורת' : 'ביקורות'}` : ''}` : 'חדש'}</small></div>${periodHtml}<div class="car-foot"><div class="price-stack"><div class="price">${priceMain}</div>${priceAlt ? `<small class="price-alt">${priceAlt}</small>` : ''}</div></div><button class="btn primary block" data-car="${esc(car.id)}">${car.status === 'available' ? 'פרטים והזמנה' : 'צפייה בפרטים'}</button>${manageRow}</div></article>`;
 }
 // Featured cars (pinned by the admin) always come first, newest-pin first.
 function featuredFirst(cars) {
@@ -456,7 +485,7 @@ const carSkeletons = (n = 6) => Array.from({length: n}, () => '<article class="c
 function carGrid(cars, manage = false, period = null) {
   if (!cars.length) {
     if (!store.publicReady) return `<div class="grid">${carSkeletons(6)}</div>`;  // still loading — not "no cars"
-    return '<div class="grid"><div class="card empty">אין כרגע רכבים זמינים</div></div>';
+    return `<div class="grid">${emptyState(ICON.car, 'אין כרגע רכבים זמינים', 'נסו שוב בקרוב — אנחנו מוסיפים רכבים כל הזמן.')}</div>`;
   }
   let ordered = featuredFirst(cars);
   if (period) {
@@ -465,7 +494,7 @@ function carGrid(cars, manage = false, period = null) {
     const fits = c => c.status !== 'available' || carServesPeriod(c, period.startMs, period.endMs);
     ordered = [...ordered.filter(fits), ...ordered.filter(c => !fits(c))];
   }
-  return `<div class="grid">${ordered.map(c => carCard(c, manage, period)).join('')}</div>`;
+  return `<div class="grid">${ordered.map((c, i) => carCard(c, manage, period, i)).join('')}</div>`;
 }
 
 function bindCarButtons() {
@@ -475,7 +504,14 @@ function bindCarButtons() {
     if (event.target.closest('button, a, select, input, label')) return;
     openCar(article.dataset.carOpen);
   }));
-  app().querySelectorAll('[data-car-image]').forEach(image => image.addEventListener('error', () => { image.src = fallbackImage; }, {once:true}));
+  app().querySelectorAll('[data-car-image]').forEach(image => {
+    // Fade the photo in when it decodes (no more "pop"). If it's already cached, show it instantly — never
+    // leave it stuck at opacity:0.
+    const show = () => image.classList.add('loaded');
+    if (image.complete && image.naturalWidth) show();
+    else image.addEventListener('load', show, {once: true});
+    image.addEventListener('error', () => { image.src = fallbackImage; show(); }, {once: true});
+  });
   app().querySelectorAll('[data-car-status]').forEach(button => button.onclick = async () => {
     button.disabled = true;
     try { await setCarStatus(button.dataset.carStatus, button.dataset.next); toast(button.dataset.next === 'rented' ? 'הרכב סומן כתפוס' : 'הרכב סומן כפנוי'); }
@@ -561,7 +597,8 @@ function openCar(id) {
   const reviews = carReviews(car.id);
   const canRate = store.user && myBookings().some(b => b.carId === car.id && b.renterUid === store.user.uid && b.status === 'done');
   const rateNote = store.user && !canRate ? '<p class="rate-note">רק משתמש ששכר את הרכב בפועל יכול לדרג אותו — הדירוג נפתח מההזמנה לאחר סיום ההשכרה.</p>' : '';
-  const reviewsHtml = `${reviews.length ? `<div class="reviews"><h3>ביקורות (${reviews.length})</h3>${reviews.slice(0, 8).map(r => `<div class="review"><div class="review-head"><span class="review-stars">${stars(r.score)}</span><small>${fmtDate(r.createdAt)}</small></div>${r.review ? `<p>${esc(r.review)}</p>` : ''}</div>`).join('')}</div>` : ''}${rateNote}`;
+  const reviewsAvg = carRating(car.id);
+  const reviewsHtml = `${reviews.length ? `<div class="reviews"><div class="reviews-summary"><div class="reviews-avg"><b>${reviewsAvg.toFixed(1)}</b><span class="reviews-stars">${stars(reviewsAvg)}</span></div><span class="reviews-total">${reviews.length} ${reviews.length === 1 ? 'ביקורת' : 'ביקורות'}</span></div>${reviews.slice(0, 8).map(r => `<div class="review"><div class="review-head"><span class="review-stars">${stars(r.score)}</span><small>${fmtDate(r.createdAt)}</small></div>${r.review ? `<p>${esc(r.review)}</p>` : ''}</div>`).join('')}</div>` : ''}${rateNote}`;
   const rented = car.status !== 'available';
   const mode = rentalModeOf(car);
   const onRequest = !!car.priceOnRequest;
@@ -856,13 +893,14 @@ function adminDashboard(tab = 'overview') {
   const recentCars = cars.slice().sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0)).slice(0, 5);
   const recentBookings = bookings.slice().sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0)).slice(0, 5);
   const contents = {
-    overview: `<div class="panel-head-actions"><h2>סקירה</h2><div class="chips"><button class="btn primary" data-route="chats">הודעות למשתמשים</button><button class="btn ${store.config?.maintenance?.on ? 'danger' : 'outline'}" id="maintenance-toggle">${store.config?.maintenance?.on ? 'האתר בתחזוקה — לחצו לפתיחה' : 'מצב תחזוקה'}</button><button class="btn outline" id="export-json">ייצוא JSON</button><button class="btn outline" id="legacy-migrate">העברת נתונים ישנים</button><button class="btn outline" id="media-migrate" title="מעביר תמונות רכב ישנות מהמסד לאחסון CDN — מאיץ את טעינת האתר">⚡ האצת טעינה (תמונות)</button></div></div>
-      <div class="field admin-search-wrap"><input id="admin-search" placeholder="🔎 חיפוש מנהל: שם, מייל, טלפון, רכב, בעל רכב, סטטוס הזמנה…" autocomplete="off"></div><div id="admin-search-results"></div>
+    overview: `<div class="panel-head-actions"><h2>סקירה</h2><div class="chips"><button class="btn ${store.config?.maintenance?.on ? 'danger' : 'outline'}" id="maintenance-toggle">${store.config?.maintenance?.on ? 'האתר בתחזוקה — לחצו לפתיחה' : 'מצב תחזוקה'}</button></div></div>
+      <div class="field admin-search-wrap"><input id="admin-search" placeholder="🔎 חיפוש: שם, מייל, טלפון, רכב, בעל רכב, סטטוס…" autocomplete="off"></div><div id="admin-search-results"></div>
       <div class="kpis">${kpi('money', money(total), 'תשלומים מדווחים')}${kpi('calendar', bookings.length, 'הזמנות')}${kpi('car', cars.length, 'רכבים')}${kpi('users', users.length, 'משתמשים')}</div>
       <div class="overview-grid">
         <div class="mini-panel"><div class="mini-panel-head"><h3>רכבים חדשים</h3><span>${recentCars.length} אחרונים</span></div>${recentCars.length ? recentCars.map(c => `<div class="mini-row"><b>${esc(c.make || '')} ${esc(c.model || '')}</b><span class="mut">${money(c.dailyPrice || 0)}/יום</span></div>`).join('') : '<div class="mini-row"><span class="mut">אין רכבים</span></div>'}</div>
         <div class="mini-panel"><div class="mini-panel-head"><h3>הזמנות אחרונות</h3><span>${recentBookings.length} אחרונות</span></div>${recentBookings.length ? recentBookings.map(b => { const c = store.cars[b.carId] || {}; return `<div class="mini-row"><b>${esc(c.make || 'רכב')} ${esc(c.model || '')}</b><span class="mut">${statusLabel(b.status)}</span></div>`; }).join('') : '<div class="mini-row"><span class="mut">אין הזמנות</span></div>'}</div>
-      </div>`,
+      </div>
+      <details class="admin-tools"><summary>כלים מתקדמים</summary><div class="admin-tools-grid"><button class="btn outline" id="export-json">ייצוא JSON</button><button class="btn outline" id="legacy-migrate">העברת נתונים ישנים</button><button class="btn outline" id="media-migrate" title="מעביר תמונות רכב ישנות מהמסד לאחסון CDN — מאיץ את טעינת האתר">⚡ האצת טעינה (תמונות)</button></div></details>`,
     users: `<h2 style="margin-bottom:16px">משתמשים ואימותים</h2>${adminUsersTable(users)}`,
     cars: `<h2 style="margin-bottom:16px">רכבים</h2>${adminCarsTable(cars)}`,
     bookings: `<h2 style="margin-bottom:16px">הזמנות</h2>${bookingList(bookings, 'admin')}`,
@@ -1083,9 +1121,14 @@ function bookingList(bookings, role) {
     const car = store.cars[booking.carId] || {};
     const ratingButtons = booking.status === 'done' ? (role === 'renter' ? `<button class="btn outline" data-rate="${booking.id}" data-rate-type="car">דרג רכב</button><button class="btn outline" data-rate="${booking.id}" data-rate-type="user">דרג בעל רכב</button>` : role === 'owner' ? `<button class="btn outline" data-rate="${booking.id}" data-rate-type="user">דרג שוכר</button>` : '') : '';
     const evidence = booking.evidence || {};
-    const evidenceDone = evidence.video && evidence.fuel && evidence.odometer && store.payments[booking.id];
-    return `<article class="booking-card"><div class="booking-main"><div><small>הזמנה ${esc(booking.id.slice(-7))}</small><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3><p>${fmtDate(booking.startAt)} — ${fmtDate(booking.endAt)}</p></div><span class="status-badge ${esc(booking.status)}">${statusLabel(booking.status)}</span></div><div class="chips">${role === 'owner' && booking.status === 'pending' ? `<button class="btn primary" data-status="approved" data-booking="${booking.id}">אישור</button><button class="btn danger" data-status="rejected" data-booking="${booking.id}">דחייה</button>` : ''}${role === 'owner' && booking.status === 'approved' ? `<button class="btn gold ${evidenceDone ? '' : 'soft-disabled'}" data-status="active" data-booking="${booking.id}">התחלת השכרה</button>` : ''}${role === 'owner' && booking.status === 'active' ? `<button class="btn gold" data-status="done" data-booking="${booking.id}">סיום השכרה</button>` : ''}${role === 'owner' && ['pending','approved','active'].includes(booking.status) ? `<button class="btn outline" data-renter="${booking.renterUid}">פרטי שוכר</button>` : ''}${['approved','active'].includes(booking.status) ? `<button class="btn outline" data-address="${booking.id}">כתובת איסוף</button>` : ''}${['pending','approved','active'].includes(booking.status) ? `<button class="btn outline" data-chat="${booking.id}">צ׳אט</button>` : ''}${role === 'renter' && booking.status === 'active' ? `<button class="btn outline" data-handover="${booking.id}" data-stage="return">תיעוד החזרה</button>` : ''}${['owner','admin'].includes(role) && store.payments[booking.id] ? `<button class="btn outline" data-view-payment="${booking.id}">הוכחת תשלום</button>` : ''}${['owner','admin'].includes(role) && booking.handover ? `<button class="btn outline" data-view-handover="${booking.id}">צפייה בתיעוד</button>` : ''}${role === 'admin' ? `<select class="admin-status-select" data-admin-status="${booking.id}"><option value="">שינוי סטטוס…</option><option value="approved">אישור</option><option value="rejected">דחייה</option><option value="active">התחלת השכרה</option><option value="done">סיום</option><option value="cancelled">ביטול</option></select><button class="btn outline" data-admin-note="${booking.id}">הערת מנהל</button>` : ''}${['renter', 'owner'].includes(role) && ['pending', 'approved'].includes(booking.status) ? `<button class="btn outline" data-cancel-booking="${booking.id}">ביטול הזמנה</button>` : ''}${ratingButtons}</div>${booking.adminNote || booking.adminAmount !== undefined ? `<p class="ev-note">הערת מנהל: ${esc(booking.adminNote || '')}${booking.adminAmount !== undefined ? ` · סכום מתוקן: ${money(booking.adminAmount)}` : ''}</p>` : ''}${role === 'renter' && booking.status === 'approved' ? `<p class="ev-note">לפני תחילת ההשכרה שלחו בצ׳אט: סרטון חוץ, תמונת דלק, קילומטראז׳ והוכחת תשלום.</p>` : ''}</article>`;
-  }).join('') : '<div class="empty">אין נתונים</div>'}</div>`;
+    const pmt = store.payments[booking.id];
+    const evidenceDone = evidence.video && evidence.fuel && evidence.odometer && paymentApproved(pmt);
+    const paymentSection = ['owner', 'admin'].includes(role) && pmt
+      ? `${pmt.status === 'approved' ? '<span class="pill ok">תשלום אושר</span>' : pmt.status === 'rejected' ? '<span class="pill warn">תשלום נדחה</span>' : pmt.status === 'pending' ? '<span class="pill warn">ממתין לאישור</span>' : ''}<button class="btn outline" data-view-payment="${booking.id}">הוכחת תשלום</button>${pmt.status === 'pending' ? `<button class="btn primary" data-pay-approve="${booking.id}">אישור תשלום</button><button class="btn danger" data-pay-reject="${booking.id}">דחייה</button>` : ''}`
+      : '';
+    const renterPaymentNote = role === 'renter' && pmt ? `<p class="ev-note">${pmt.status === 'approved' ? '✓ התשלום שלך אושר על ידי בעל הרכב.' : pmt.status === 'rejected' ? '✗ התשלום נדחה — שלחו הוכחה מעודכנת בצ׳אט.' : '⏳ הוכחת התשלום ממתינה לאישור בעל הרכב.'}</p>` : '';
+    return `<article class="booking-card"><div class="booking-main"><div><small>הזמנה ${esc(booking.id.slice(-7))}</small><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3><p>${fmtDate(booking.startAt)} — ${fmtDate(booking.endAt)}</p></div><span class="status-badge ${esc(booking.status)}">${statusLabel(booking.status)}</span></div><div class="chips">${role === 'owner' && booking.status === 'pending' ? `<button class="btn primary" data-status="approved" data-booking="${booking.id}">אישור</button><button class="btn danger" data-status="rejected" data-booking="${booking.id}">דחייה</button>` : ''}${role === 'owner' && booking.status === 'approved' ? `<button class="btn gold ${evidenceDone ? '' : 'soft-disabled'}" data-status="active" data-booking="${booking.id}">התחלת השכרה</button>` : ''}${role === 'owner' && booking.status === 'active' ? `<button class="btn gold" data-status="done" data-booking="${booking.id}">סיום השכרה</button>` : ''}${role === 'owner' && ['pending','approved','active'].includes(booking.status) ? `<button class="btn outline" data-renter="${booking.renterUid}">פרטי שוכר</button>` : ''}${['approved','active'].includes(booking.status) ? `<button class="btn outline" data-address="${booking.id}">כתובת איסוף</button>` : ''}${['pending','approved','active'].includes(booking.status) ? `<button class="btn outline" data-chat="${booking.id}">צ׳אט</button>` : ''}${role === 'renter' && booking.status === 'active' ? `<button class="btn outline" data-handover="${booking.id}" data-stage="return">תיעוד החזרה</button>` : ''}${paymentSection}${['owner','admin'].includes(role) && booking.handover ? `<button class="btn outline" data-view-handover="${booking.id}">צפייה בתיעוד</button>` : ''}${role === 'admin' ? `<select class="admin-status-select" data-admin-status="${booking.id}"><option value="">שינוי סטטוס…</option><option value="approved">אישור</option><option value="rejected">דחייה</option><option value="active">התחלת השכרה</option><option value="done">סיום</option><option value="cancelled">ביטול</option></select><button class="btn outline" data-admin-note="${booking.id}">הערת מנהל</button>` : ''}${['renter', 'owner'].includes(role) && ['pending', 'approved'].includes(booking.status) ? `<button class="btn outline" data-cancel-booking="${booking.id}">ביטול הזמנה</button>` : ''}${ratingButtons}</div>${booking.adminNote || booking.adminAmount !== undefined ? `<p class="ev-note">הערת מנהל: ${esc(booking.adminNote || '')}${booking.adminAmount !== undefined ? ` · סכום מתוקן: ${money(booking.adminAmount)}` : ''}</p>` : ''}${renterPaymentNote}${role === 'renter' && booking.status === 'approved' ? `<p class="ev-note">לפני תחילת ההשכרה שלחו בצ׳אט: סרטון חוץ, תמונת דלק, קילומטראז׳ והוכחת תשלום.</p>` : ''}</article>`;
+  }).join('') : emptyState(ICON.calendar, role === 'renter' ? 'אין לך הזמנות עדיין' : 'אין הזמנות עדיין', role === 'renter' ? 'מצאו רכב מהצי שלנו והזמינו — זה מהיר ופשוט.' : 'כשתתקבל בקשת הזמנה היא תופיע כאן.', role === 'renter' ? '<button class="btn primary" data-route="cars">חיפוש רכב</button>' : '')}</div>`;
 }
 
 function bindActions() {
@@ -1105,6 +1148,16 @@ function bindActions() {
   document.querySelectorAll('[data-renter]').forEach(button => button.onclick = () => ownerRenterModal(button.dataset.renter));
   document.querySelectorAll('[data-handover]').forEach(button => button.onclick = () => handoverModal(button.dataset.handover, button.dataset.stage));
   document.querySelectorAll('[data-view-payment]').forEach(button => button.onclick = () => viewPaymentModal(button.dataset.viewPayment));
+  document.querySelectorAll('[data-pay-approve]').forEach(button => button.onclick = async () => {
+    if (!confirm('לאשר את הוכחת התשלום? לאחר האישור אפשר יהיה להתחיל את ההשכרה.')) return;
+    try { await api('booking-action', {action: 'payment-review', bookingId: button.dataset.payApprove, decision: 'approved'}); toast('התשלום אושר'); }
+    catch (error) { toast(error.message); }
+  });
+  document.querySelectorAll('[data-pay-reject]').forEach(button => button.onclick = async () => {
+    if (!confirm('לדחות את הוכחת התשלום? השוכר יתבקש לשלוח הוכחה מעודכנת.')) return;
+    try { await api('booking-action', {action: 'payment-review', bookingId: button.dataset.payReject, decision: 'rejected'}); toast('התשלום נדחה'); }
+    catch (error) { toast(error.message); }
+  });
   document.querySelectorAll('[data-view-handover]').forEach(button => button.onclick = () => viewHandoverModal(button.dataset.viewHandover));
   document.querySelectorAll('[data-address]').forEach(button => button.onclick = () => addressModal(button.dataset.address));
   document.querySelectorAll('[data-rate]').forEach(button => button.onclick = () => ratingModal(button.dataset.rate, button.dataset.rateType));
@@ -1317,9 +1370,12 @@ async function openOwnerInquiry(carId) {
 }
 
 const EV_LABELS = {video: 'סרטון הרכב מבחוץ', fuel: 'תמונת דלק', odometer: 'תמונת קילומטראז׳'};
+// A payment counts for starting a rental only once the owner CONFIRMED it. Legacy proofs (no status field,
+// saved before approval existed) are treated as approved so older bookings keep working.
+const paymentApproved = payment => !!payment && payment.status !== 'pending' && payment.status !== 'rejected';
 const evidenceState = (booking, bookingId) => {
   const ev = booking?.evidence || {};
-  return {video: Boolean(ev.video), fuel: Boolean(ev.fuel), odometer: Boolean(ev.odometer), payment: Boolean(store.payments[bookingId])};
+  return {video: Boolean(ev.video), fuel: Boolean(ev.fuel), odometer: Boolean(ev.odometer), payment: paymentApproved(store.payments[bookingId])};
 };
 
 export function chatsPage() {

@@ -151,6 +151,9 @@ export function carRating(carId) {
   const rows = list(store.ratings).filter(r => r.type === 'car' && r.carId === carId);
   return rows.length ? rows.reduce((n, r) => n + Number(r.score || 0), 0) / rows.length : 0;
 }
+export function carRatingCount(carId) {
+  return list(store.ratings).filter(r => r.type === 'car' && r.carId === carId).length;
+}
 export function userRating(userId) {
   const rows = list(store.ratings).filter(r => r.type === 'user' && r.targetUid === userId);
   return rows.length ? rows.reduce((n, r) => n + Number(r.score || 0), 0) / rows.length : 0;

@@ -90,6 +90,9 @@ export async function handler(event) {
       fulfillment,
       deliveryAddress: fulfillment === 'delivery' ? cleanText(body.deliveryAddress, 500) : '',
       status: 'pending',
+      // The request auto-expires if the owner doesn't respond within 48h (a scheduled fn flips it to
+      // 'expired'), so a car isn't left with a stale pending request forever.
+      pendingExpiresAt: Date.now() + 48 * 60 * 60 * 1000,
       createdAt: Date.now(),
     });
     await audit(token.uid, 'booking_create', 'booking', id, {carId});

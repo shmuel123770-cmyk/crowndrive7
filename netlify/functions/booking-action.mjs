@@ -25,6 +25,24 @@ export async function handler(event) {
     const renter = current.renterUid === token.uid;
     if (!admin && !owner && !renter) return json(403, {error: 'אין הרשאה'});
     const ref = db.ref(`bookings/${body.bookingId}`);
+    // Owner (or admin) explicitly confirms/rejects the renter's payment proof. Until 'approved' the rental
+    // cannot start; a 'rejected' proof asks the renter to re-send.
+    if (body.action === 'payment-review') {
+      if (!owner && !admin) return json(403, {error: 'רק בעל הרכב או המנהל יכול לאשר תשלום'});
+      const decision = body.decision === 'approved' ? 'approved' : body.decision === 'rejected' ? 'rejected' : null;
+      if (!decision) return json(400, {error: 'החלטה לא תקינה'});
+      const pref = db.ref(`payments/${body.bookingId}`);
+      const payment = (await pref.once('value')).val();
+      if (!payment) return json(404, {error: 'לא נמצאה הוכחת תשלום'});
+      await pref.update({status: decision, reviewedBy: token.uid, reviewedAt: Date.now()});
+      await audit(token.uid, 'payment_review', 'booking', body.bookingId, {decision});
+      const ref7 = String(body.bookingId).slice(-7);
+      await smsUser(current.renterUid, decision === 'approved'
+        ? `CrownDrive: התשלום שלך על ההזמנה (${ref7}) אושר על ידי בעל הרכב.`
+        : `CrownDrive: התשלום שלך על ההזמנה (${ref7}) נדחה — פנו לבעל הרכב ושלחו הוכחה מעודכנת.`);
+      await notifyAdmin('payment', decision === 'approved' ? `תשלום אושר (${ref7})` : `תשלום נדחה (${ref7})`, {bookingId: body.bookingId, decision, by: token.uid});
+      return json(200, {ok: true, status: decision});
+    }
     if (body.action === 'status') {
       const next = body.status;
       const present = current.status || 'pending';
@@ -45,7 +63,11 @@ export async function handler(event) {
         if (!evidence.video) missing.push('סרטון הרכב מבחוץ');
         if (!evidence.fuel) missing.push('תמונת דלק');
         if (!evidence.odometer) missing.push('תמונת קילומטראז׳');
+        // Payment must exist AND be confirmed by the owner. Legacy proofs (saved before approval existed, no
+        // status field) are grandfathered as OK so in-progress rentals don't break.
         if (!payment) missing.push('הוכחת תשלום');
+        else if (payment.status === 'pending') missing.push('אישור התשלום (בעל הרכב עדיין לא אישר את ההוכחה)');
+        else if (payment.status === 'rejected') missing.push('הוכחת תשלום תקינה (הקודמת נדחתה)');
         if (missing.length) return json(409, {error: `אי אפשר להתחיל את ההשכרה, חסר: ${missing.join(', ')}`});
       }
       if (next === 'approved') {

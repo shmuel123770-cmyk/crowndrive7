@@ -53,7 +53,7 @@ export function paintApp(html) {
 export function resetPaint() { _paintedHTML = null; }
 export function formData(form) { return Object.fromEntries(new FormData(form).entries()); }
 export function statusLabel(status) {
-  return ({pending:'ממתינה', approved:'אושרה', active:'פעילה', done:'הסתיימה', rejected:'נדחתה', cancelled:'בוטלה'}[status] || (typeof status === 'string' && status) || '—');
+  return ({pending:'ממתינה', approved:'אושרה', active:'פעילה', done:'הסתיימה', rejected:'נדחתה', cancelled:'בוטלה', expired:'פג תוקף'}[status] || (typeof status === 'string' && status) || '—');
 }
 export function verificationLabel(status) {
   return ({missing:'חסר', pending:'ממתין לבדיקה', approved:'מאומת', rejected:'נדחה', needs_resubmission:'נדרש צילום מחדש'}[status] || (typeof status === 'string' && status) || 'חסר');

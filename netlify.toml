@@ -33,6 +33,10 @@
     "farmhash-modern"
   ]
 
+# Hourly cron: flip stale PENDING bookings (past their 48h pendingExpiresAt) to 'expired'.
+[functions."booking-expire-scheduled"]
+  schedule = "0 * * * *"
+
 [[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"

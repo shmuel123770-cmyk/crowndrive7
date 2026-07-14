@@ -202,7 +202,8 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
   transform:translateX(-140%);transition:transform .9s var(--ease)}
 .car:hover::after{transform:translateX(0)}
 .car-photo{position:relative;aspect-ratio:16/9;background:var(--bg3);overflow:hidden}
-.car-photo img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s var(--ease)}
+.car-photo img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .5s var(--ease),transform .6s var(--ease)}
+.car-photo img.loaded{opacity:1}
 .car:hover .car-photo img{transform:scale(1.04)}
 .avail-badge{position:absolute;top:12px;inset-inline-start:12px;font-weight:700;font-size:.78rem;letter-spacing:.02em;padding:6px 15px;border-radius:99px;border:1px solid;backdrop-filter:blur(6px)}
 .avail-badge.free{color:#fff;background:rgba(28,150,90,.85);border-color:rgba(150,220,180,.6)}
@@ -251,6 +252,13 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
 .chip{background:var(--bg2);border-radius:99px;padding:4px 12px;font-size:.72rem;font-weight:500;color:var(--muted)}
 .role-pill{background:rgba(255,255,255,.14);color:#fff;font-weight:600;border-radius:99px;padding:6px 14px;font-size:.8rem}
 .empty{padding:44px 30px;text-align:center;color:var(--muted);background:var(--bg2);border-radius:18px}
+.empty-state{text-align:center;padding:46px 26px;background:var(--bg2);border-radius:18px;display:flex;flex-direction:column;align-items:center;gap:5px}
+.empty-state .empty-ic{width:56px;height:56px;display:grid;place-items:center;border-radius:16px;background:#fff;box-shadow:0 6px 18px rgba(20,28,40,.08);margin-bottom:8px}
+.empty-state .empty-ic svg{width:27px;height:27px;stroke:var(--brand);fill:none}
+.empty-state b{font-size:1.08rem;color:var(--text)}
+.empty-state p{margin:0;color:var(--muted);font-size:.88rem;line-height:1.5;max-width:290px}
+.empty-state .btn{margin-top:14px}
+.grid > .empty-state{grid-column:1 / -1}
 
 /* ---------- owner CTA (gradient split card, like the reference) ---------- */
 .owner-cta-rich{margin-top:34px;display:grid;grid-template-columns:1.2fr .8fr;gap:24px;align-items:center;direction:rtl;text-align:right;
@@ -421,6 +429,15 @@ table.data .t-actions{display:flex;gap:8px;justify-content:flex-start;flex-wrap:
 .mini-row .mut{color:var(--muted);font-size:.82rem}
 .panel-head-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
 .panel-head-actions h2{margin:0}
+.admin-tools{margin-top:22px;border:1px solid var(--hair);border-radius:14px;background:#fff}
+.admin-tools summary{cursor:pointer;padding:13px 16px;font-weight:600;font-size:.88rem;color:var(--muted);list-style:none;display:flex;align-items:center;gap:8px;user-select:none}
+.admin-tools summary::-webkit-details-marker{display:none}
+.admin-tools summary::before{content:"⚙";font-size:1.05rem}
+.admin-tools summary::after{content:"▾";margin-inline-start:auto;transition:transform .2s;font-size:.8rem}
+.admin-tools[open] summary{border-bottom:1px solid var(--hair)}
+.admin-tools[open] summary::after{transform:rotate(180deg)}
+.admin-tools-grid{display:flex;flex-wrap:wrap;gap:10px;padding:14px 16px}
+.admin-tools-grid .btn{flex:1;min-width:150px}
 
 /* ---------- lists / rows / bookings ---------- */
 .list{display:grid;gap:12px}
@@ -432,6 +449,7 @@ table.data .t-actions{display:flex;gap:8px;justify-content:flex-start;flex-wrap:
 .status-badge.approved,.status-badge.active{background:var(--ok-bg);color:var(--ok);border-color:rgba(127,191,158,.4)}
 .status-badge.pending{background:var(--warn-bg);color:var(--warn);border-color:rgba(217,190,128,.4)}
 .status-badge.rejected,.status-badge.cancelled{background:var(--danger-bg);color:var(--danger);border-color:rgba(217,138,128,.4)}
+.status-badge.expired{background:var(--bg2);color:var(--muted);border-color:var(--line)}
 .booking-card{border:1px solid var(--hair);border-radius:16px;padding:18px;background:#fff;box-shadow:0 10px 26px rgba(20,28,40,.04);transition:transform .18s var(--ease),box-shadow .22s}
 .booking-card:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(27,34,43,.08)}
 .booking-main{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:12px}
@@ -502,6 +520,11 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
 .detail-summaries{display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;margin-bottom:14px}
 .reviews{border-top:1px solid var(--hair);padding-top:14px;margin-bottom:14px}
 .reviews h3{margin:0 0 10px;font-size:1.05rem}
+.reviews-summary{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+.reviews-avg{display:flex;align-items:baseline;gap:8px}
+.reviews-avg b{font-size:2.1rem;font-weight:800;color:var(--brand-d);line-height:1}
+.reviews-avg .reviews-stars{font-size:1.05rem}
+.reviews-total{color:var(--muted);font-size:.9rem;font-weight:600}
 .review{background:var(--bg2);border-radius:12px;padding:12px 14px;margin-bottom:8px}
 .review-head{display:flex;justify-content:space-between;align-items:center}
 .review-stars{color:#E9A93D;letter-spacing:1px}
@@ -959,10 +982,19 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
   .dashboard-tabs .tab{flex-direction:column;gap:4px;padding:6px 3px;font-size:.64rem;letter-spacing:0;color:#8E97A3;border-radius:12px;flex:1;min-width:0}
   .dashboard-tabs .tab span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .dashboard-tabs .tab svg{width:22px;height:22px}
+  .dashboard-tabs .tab{position:relative}
   .dashboard-tabs .tab.active{background:transparent;box-shadow:none;color:#fff}
   .dashboard-tabs .tab.active svg{stroke:#E9C46A}
+  .dashboard-tabs .tab.active::before{content:"";position:absolute;top:-10px;left:50%;transform:translateX(-50%);width:26px;height:3px;border-radius:0 0 3px 3px;background:#E9C46A}
   .dashboard-shell{padding-bottom:92px}
   body[data-page="dashboard"] .fab{bottom:96px}
+  /* Slim the admin/owner header on phones so the title + avatar breathe (the avatar is inline-sized to 60). */
+  .dash-head-controls .avatar,.dash-head-controls .avatar-fallback{width:46px!important;height:46px!important;font-size:19px!important}
+  .dashboard-head h1{font-size:25px}
+  .dashboard-head{padding:20px 18px}
+  /* Renter/owner personal area uses the DYNAMIC site bottom bar (#bottom-nav) instead of the built-in tab bar;
+     the admin keeps its own fixed .dashboard-tabs bar. */
+  body[data-dash-role="renter"] .dashboard-tabs,body[data-dash-role="owner"] .dashboard-tabs{display:none}
 }
 .wizard-btn svg{width:30px;height:30px;stroke:var(--brand-d)}
 
