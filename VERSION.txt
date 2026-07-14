@@ -1,6 +1,62 @@
-CrownDrive — FINAL build (2026-07-13, rev.47)
+CrownDrive — FINAL build (2026-07-13, rev.51)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
+rev.51 (2026-07-13) — admin messaging fixed for good + mobile sizing + "new" badge + user sort. INCLUDES rev.50.
+- ADMIN MESSAGING (the recurring "I still can't send messages from the admin account"): admin support messages
+  were written CLIENT-SIDE to messages/admin/<uid>, so they needed the DB rules PUBLISHED — any rule drift
+  silently rejected the write as "publish the rules". Now js/db.js sendMessage routes the admin thread through
+  the message-send FUNCTION (Admin SDK), which writes regardless of the rules — so it works even on the current
+  live (old) rules. The server derives admin/guest from the verified token, ENFORCES the guest
+  one-message-until-reply limit server-side (429 with a friendly note), sets the gate flags, and notifies/SMSes
+  the other side. The fragile client-write:admin-chat path is removed entirely. Reads already worked (the admin
+  sees the thread list), so admin↔user chat now works WITHOUT republishing rules. (js/db.js + message-send.mjs)
+- MOBILE SIZING (Option A "balanced", picked from side-by-side phone previews): phones (<600px) scale down
+  together — :root font-size 15px + tighter hero, so the title fits one line and the search + stats fit one
+  screen. DESKTOP IS UNCHANGED (>600px stays 16px). Adaptive per device width. (css/app.css)
+- "NEW" BADGE: a gold "חדש" pill shows on a car for 2 DAYS after it was added, then disappears on its own
+  (derived from createdAt at render time — no cleanup, no writes). Stacks under the availability pill on the
+  card + the detail header. Cars created before createdAt existed simply never show it. (js/views.js + css)
+- ADMIN USER LIST sorted newest-first (top = newest) by createdAt. (js/views.js)
+- No DB-rule change required for any of this (admin messaging no longer depends on rules). No ?v bump.
+
+rev.50 (2026-07-13) — PERFORMANCE: car images moved from the database to Storage/CDN (fixes slow loads):
+- ROOT CAUSE (measured): the world-readable /cars payload was ~1.7MB for only 9 cars because every car photo
+  was stored as inline base64 INSIDE the Realtime Database, so ~1.7MB downloaded over the single-region DB
+  socket on EVERY fresh visit — uncached, un-lazy, no CDN. That is the slow load some users experienced.
+- FIX: public image uploads (car photos + avatars) now offload the bytes to Firebase Storage via the
+  media-upload function (server-side write — works inside Telegram/IG in-app browsers) and store only a tiny,
+  permanent, CDN-cached URL (Cache-Control: 1 year immutable). The DB record drops from ~70KB/image to ~200
+  bytes. If Storage isn't set up or the call fails, it FALLS BACK to the old inline data URL, so uploads never
+  break. Car cards already lazy-load, so with real URLs the browser fetches only the images actually seen.
+- MIGRATION: new admin button "⚡ האצת טעינה (תמונות)" (סקירה panel) moves the EXISTING cars' base64 images to
+  the CDN in safe, resumable batches (media-migrate.mjs — admin-only, idempotent, re-runnable).
+- Shared _storage.mjs (bucket-name normalise + GCS multipart write + download-token URL) now backs BOTH
+  media-upload and media-migrate. No DB-rule change (rules already allow https URLs). No ?v bump (JS + funcs).
+- REQUIRES (one-time): Firebase Storage enabled + the service account has Storage write — already true (2 live
+  car images are already Storage URLs). After deploy: admin → סקירה → ⚡ האצת טעינה to migrate existing photos.
+
+rev.49 (2026-07-13) — audit remediation batch 4 (Phase 1.6 + 7.2, pure code, no infra):
+- #41 MODAL ACCESSIBILITY: every modal is now role="dialog" + aria-modal="true", focus moves into the
+  dialog and is trapped (Tab/Shift-Tab cycle), Escape closes it, focus returns to the trigger on close,
+  and icon-only "×" close buttons get aria-label="סגירה". One place (core.js modal/closeModal) fixes
+  them all. Verified in-browser (role/aria-modal/aria-label/focus/Escape all pass).
+- #22 MAINTENANCE ENFORCED SERVER-SIDE: was UI-only. A shared maintenanceBlocked() helper now returns 503
+  for NON-admins on the business mutations while the site is in maintenance — booking-create,
+  booking-action, payment-submit, document-register, rating-submit. Admins bypass; fails open on a config
+  read error. (netlify/functions/_firebase-admin.mjs + the 5 functions.)
+- No Firebase rules change, no ?v bump (server + network-first JS only). Cumulative audit CLOSED now
+  includes #22 and #41. Remaining pure-code: #18 return-docs-before-complete, #35 error sanitization,
+  #33 image-search limits, #17 payment history, #34 image attribution.
+rev.48 (2026-07-13) — guest support: ONE message until the admin replies (anti-spam). *** RE-PUBLISH DB RULES. ***
+- A GUEST (unregistered/anonymous) may send a single message to support; the composer then locks with
+  "we'll get back to you", and re-opens the moment the admin replies — after which the guest can write
+  freely. Enforced in the DB RULE (not just the UI): a message write by an anonymous user is allowed only
+  if supportGuestState/<uid>/firstSent isn't set yet, OR adminReplied is true. Registered users and admins
+  are unaffected (they message freely). New rules node: supportGuestState (guest sets firstSent, admin
+  sets adminReplied). (rules + js/db.js + js/views.js)
+- ROBUST to deploy order: the message is the critical write; the two state flags are best-effort, so
+  admin/guest messaging never breaks even if the rules aren't published yet (until they are, there's just
+  no gate). No ?v bump (rules + network-first JS).
 rev.47 (2026-07-13) — unregistered visitors can message support (guest chat via anonymous auth):
 - Clicking "פתיחת צ׳אט עם התמיכה" (or "שלחו הודעה לקבלת מחיר") when NOT logged in now signs the visitor in
   as a GUEST (Firebase anonymous auth) and opens the support chat — they can message support and see the

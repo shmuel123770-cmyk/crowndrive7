@@ -1,4 +1,4 @@
-import {getAdmin, verify, json, booking, cleanText, audit, notifyAdmin, parseBody} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, booking, cleanText, audit, notifyAdmin, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
 import {rateLimit, tooMany} from './_ratelimit.mjs';
 import {validateImageDataUrl} from './_media.mjs';
 export async function handler(event) {
@@ -6,6 +6,7 @@ export async function handler(event) {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const token = await verify(event);
     if (!(await rateLimit(token.uid, 'payment', 12, 10 * 60 * 1000))) throw tooMany();
+    if (await maintenanceBlocked(token.uid)) return json(503, {error: 'האתר בתחזוקה כרגע — נסו שוב בעוד מספר דקות'});
     const body = parseBody(event);
     if (!body) return json(400, {error: 'הבקשה גדולה או פגומה — נסו תמונה קטנה יותר'});
     const value = await booking(body.bookingId);

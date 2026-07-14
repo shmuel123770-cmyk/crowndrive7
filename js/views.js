@@ -125,6 +125,11 @@ const carReviews = carId => list(store.ratings).filter(r => r.type === 'car' && 
 const availPill = status => status === 'available'
   ? '<span class="avail-badge free">● פנוי</span>'
   : `<span class="avail-badge busy">● ${status === 'rented' ? 'מושכר' : 'לא זמין'}</span>`;
+// A car is "new" for 2 days after it was added, then the badge disappears on its own (no cleanup needed —
+// it's derived from createdAt at render time). Cars created before createdAt existed simply never show it.
+const NEW_CAR_MS = 2 * 24 * 60 * 60 * 1000;
+const isNewCar = car => car.createdAt && (Date.now() - Number(car.createdAt)) < NEW_CAR_MS;
+const newBadge = car => isNewCar(car) ? '<span class="new-badge">חדש</span>' : '';
 
 // Road-scene assets, taken 1:1 from the original CrownDrive design.
 const carSil = cls => `<svg class="sil ${cls}" viewBox="0 0 200 70" aria-hidden="true" focusable="false"><path d="M14 52 q2 -12 16 -15 l18 -3 q10 -14 30 -16 l36 -1 q20 1 32 13 l10 9 q22 3 26 12 q2 7 -4 9 l-9 1 q-2 -11 -14 -11 t-14 11 l-70 0 q-2 -11 -14 -11 t-14 11 l-17 -1 q-9 -2 -8 -8 z"/><circle cx="57" cy="57" r="11"/><circle cx="155" cy="57" r="11"/></svg>`;
@@ -392,7 +397,7 @@ function carCard(car, manage = false, period = null) {
     }
   }
   const manageRow = manage ? `<div class="car-manage"><button type="button" class="btn ${rented ? 'gold' : 'outline'}" data-car-status="${esc(car.id)}" data-next="${rented ? 'available' : 'rented'}">${rented ? '↺ סמן כפנוי' : '⛔ סמן כתפוס'}</button><button type="button" class="btn outline" data-car-edit="${esc(car.id)}">✎ עריכת פרטים</button></div>` : '';
-  return `<article class="card car${car.featured ? ' is-featured' : ''}${notFit ? ' car-nofit' : ''}" data-car-open="${esc(car.id)}"><div class="car-photo"><img src="${esc(carImage(car))}" alt="${esc(`${car.make || ''} ${car.model || ''}`)}" loading="lazy" data-car-image>${availPill(car.status)}${modeBadge}${car.featured ? '<span class="feat-badge">★ מומלץ</span>' : ''}${car.videoUrl ? '<span class="has-video">▶ וידאו</span>' : ''}</div><div class="car-body"><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3><div class="car-specs"><span>${esc(car.year || '—')}</span><span>·</span><span>${esc(type)}</span>${car.fuel ? `<span>·</span><span>${esc(car.fuel)}</span>` : ''}${car.gear ? `<span>·</span><span>${esc(car.gear)}</span>` : ''}</div>${modeLine}<div class="rating" aria-label="דירוג ${rating.toFixed(1)} מתוך 5">${stars(rating)} <small>${rating ? rating.toFixed(1) : 'חדש'}</small></div>${periodHtml}<div class="car-foot"><div class="price-stack"><div class="price">${priceMain}</div>${priceAlt ? `<small class="price-alt">${priceAlt}</small>` : ''}</div></div><button class="btn primary block" data-car="${esc(car.id)}">${car.status === 'available' ? 'פרטים והזמנה' : 'צפייה בפרטים'}</button>${manageRow}</div></article>`;
+  return `<article class="card car${car.featured ? ' is-featured' : ''}${notFit ? ' car-nofit' : ''}" data-car-open="${esc(car.id)}"><div class="car-photo"><img src="${esc(carImage(car))}" alt="${esc(`${car.make || ''} ${car.model || ''}`)}" loading="lazy" decoding="async" data-car-image><div class="car-badges">${availPill(car.status)}${newBadge(car)}</div>${modeBadge}${car.featured ? '<span class="feat-badge">★ מומלץ</span>' : ''}${car.videoUrl ? '<span class="has-video">▶ וידאו</span>' : ''}</div><div class="car-body"><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3><div class="car-specs"><span>${esc(car.year || '—')}</span><span>·</span><span>${esc(type)}</span>${car.fuel ? `<span>·</span><span>${esc(car.fuel)}</span>` : ''}${car.gear ? `<span>·</span><span>${esc(car.gear)}</span>` : ''}</div>${modeLine}<div class="rating" aria-label="דירוג ${rating.toFixed(1)} מתוך 5">${stars(rating)} <small>${rating ? rating.toFixed(1) : 'חדש'}</small></div>${periodHtml}<div class="car-foot"><div class="price-stack"><div class="price">${priceMain}</div>${priceAlt ? `<small class="price-alt">${priceAlt}</small>` : ''}</div></div><button class="btn primary block" data-car="${esc(car.id)}">${car.status === 'available' ? 'פרטים והזמנה' : 'צפייה בפרטים'}</button>${manageRow}</div></article>`;
 }
 // Featured cars (pinned by the admin) always come first, newest-pin first.
 function featuredFirst(cars) {
@@ -513,7 +518,7 @@ function openCar(id) {
   const bEndH = searchPeriod.endAt ? searchPeriod.endAt.slice(11, 16) : '10:00';
   modal(`<div class="modal-head"><h2>${esc(car.make || '')} ${esc(car.model || '')} ${esc(car.trim || '')}</h2><button class="close" data-close-modal>×</button></div>
     ${gallery}
-    <div class="car-detail-head">${availPill(car.status)}${mode ? `<span class="mode-badge lg">${mode.label}</span>` : ''}${car.ownerName ? `<span class="owner-tag">בעל הרכב: ${esc(car.ownerName)}</span>` : ''}</div>
+    <div class="car-detail-head">${availPill(car.status)}${newBadge(car)}${mode ? `<span class="mode-badge lg">${mode.label}</span>` : ''}${car.ownerName ? `<span class="owner-tag">בעל הרכב: ${esc(car.ownerName)}</span>` : ''}</div>
     <div class="detail-summaries">
       <div class="summary"><span>שנה</span><b>${esc(car.year || '—')}</b></div>
       ${car.category ? `<div class="summary"><span>סוג רכב</span><b>${esc(car.category)}</b></div>` : ''}
@@ -783,14 +788,14 @@ function ownerDashboard(tab = 'overview') {
 }
 
 function adminDashboard(tab = 'overview') {
-  const users = list(store.users).map(user => ({...user, verification: {...(user.verification || {}), status: store.verificationStatuses[user.id] || 'missing'}}));
+  const users = list(store.users).map(user => ({...user, verification: {...(user.verification || {}), status: store.verificationStatuses[user.id] || 'missing'}})).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
   const bookings = myBookings();
   const cars = list(store.cars);
   const total = Object.values(store.payments).reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
   const recentCars = cars.slice().sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0)).slice(0, 5);
   const recentBookings = bookings.slice().sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0)).slice(0, 5);
   const contents = {
-    overview: `<div class="panel-head-actions"><h2>סקירה</h2><div class="chips"><button class="btn primary" data-route="chats">הודעות למשתמשים</button><button class="btn ${store.config?.maintenance?.on ? 'danger' : 'outline'}" id="maintenance-toggle">${store.config?.maintenance?.on ? 'האתר בתחזוקה — לחצו לפתיחה' : 'מצב תחזוקה'}</button><button class="btn outline" id="export-json">ייצוא JSON</button><button class="btn outline" id="legacy-migrate">העברת נתונים ישנים</button></div></div>
+    overview: `<div class="panel-head-actions"><h2>סקירה</h2><div class="chips"><button class="btn primary" data-route="chats">הודעות למשתמשים</button><button class="btn ${store.config?.maintenance?.on ? 'danger' : 'outline'}" id="maintenance-toggle">${store.config?.maintenance?.on ? 'האתר בתחזוקה — לחצו לפתיחה' : 'מצב תחזוקה'}</button><button class="btn outline" id="export-json">ייצוא JSON</button><button class="btn outline" id="legacy-migrate">העברת נתונים ישנים</button><button class="btn outline" id="media-migrate" title="מעביר תמונות רכב ישנות מהמסד לאחסון CDN — מאיץ את טעינת האתר">⚡ האצת טעינה (תמונות)</button></div></div>
       <div class="field admin-search-wrap"><input id="admin-search" placeholder="🔎 חיפוש מנהל: שם, מייל, טלפון, רכב, בעל רכב, סטטוס הזמנה…" autocomplete="off"></div><div id="admin-search-results"></div>
       <div class="kpis">${kpi('money', money(total), 'תשלומים מדווחים')}${kpi('calendar', bookings.length, 'הזמנות')}${kpi('car', cars.length, 'רכבים')}${kpi('users', users.length, 'משתמשים')}</div>
       <div class="overview-grid">
@@ -842,6 +847,7 @@ function adminDashboard(tab = 'overview') {
     catch (error) { toast(error.message); }
   });
   document.querySelector('#legacy-migrate')?.addEventListener('click', migratePrompt);
+  document.querySelector('#media-migrate')?.addEventListener('click', migrateMediaPrompt);
   document.querySelector('#maintenance-toggle')?.addEventListener('click', async event => {
     const button = event.currentTarget;
     const on = !store.config?.maintenance?.on;
@@ -1392,6 +1398,16 @@ function selectThread(key) {
       try { window.open(await signedRead(button.dataset.attPath), '_blank', 'noopener'); }
       catch (error) { toast(error.message); }
     });
+    // Guest gate: an unregistered visitor may send ONE message until the admin replies. Once they've
+    // sent and no admin answer exists yet, lock the composer with a friendly "we'll get back to you" note.
+    if (isSupport && store.user?.isAnonymous) {
+      const waiting = messages.some(m => m.senderUid === store.user.uid) && !messages.some(m => m.fromAdmin);
+      const composerForm = document.querySelector('#chat-composer');
+      composerForm?.querySelectorAll('input,button').forEach(el => { el.disabled = waiting; });
+      let note = document.querySelector('#guest-wait-note');
+      if (waiting && !note && composerForm) composerForm.insertAdjacentHTML('beforebegin', '<div class="chat-closed" id="guest-wait-note">שלחתם הודעה לתמיכה — נחזור אליכם בהקדם. תוכלו להמשיך לכתוב ברגע שנענה.</div>');
+      else if (!waiting && note) note.remove();
+    }
   };
   ref.on('value', handler, error => {
     const box = document.querySelector('#chat-msgs');
@@ -1732,6 +1748,25 @@ async function migratePrompt() {
     const count = await migrateLegacy();
     toast(`הועתקו ${count} רשומות`);
   } catch (error) { toast(error.message); }
+}
+// Move existing inline (base64) car images to Storage/CDN so the public catalog loads fast. The
+// server migrates a small batch per call (never times out); we loop until it reports done.
+async function migrateMediaPrompt() {
+  if (!confirm('להעביר את תמונות הרכבים לאחסון CDN? זה מאיץ משמעותית את טעינת האתר. הפעולה בטוחה, חד-פעמית וניתן להריץ אותה שוב.')) return;
+  const button = document.querySelector('#media-migrate');
+  const label = button?.textContent;
+  if (button) button.disabled = true;
+  let total = 0;
+  try {
+    for (let i = 0; i < 60; i++) {
+      const res = await api('media-migrate', {});
+      total += res.migrated || 0;
+      if (button) button.textContent = `מעביר תמונות… (${total})`;
+      if (res.done) break;
+    }
+    toast(total ? `הועברו ${total} תמונות ל-CDN — הטעינה תהיה מהירה יותר` : 'כל התמונות כבר מאוחסנות ב-CDN');
+  } catch (error) { toast(error.message); }
+  finally { if (button) { button.disabled = false; button.textContent = label; } }
 }
 
 window.cdCloseModal = closeModal;

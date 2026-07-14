@@ -1,4 +1,4 @@
-import {getAdmin, verify, json, isAdmin, booking, audit, cleanText, notifyAdmin, parseBody} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, isAdmin, booking, audit, cleanText, notifyAdmin, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
 import {smsUser} from './_sms.mjs';
 import {rateLimit, tooMany} from './_ratelimit.mjs';
 const transitions = {
@@ -14,6 +14,7 @@ export async function handler(event) {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const token = await verify(event);
     if (!(await rateLimit(token.uid, 'booking-action', 40, 60 * 60 * 1000))) throw tooMany();
+    if (await maintenanceBlocked(token.uid)) return json(503, {error: 'האתר בתחזוקה כרגע — נסו שוב בעוד מספר דקות'});
     const body = parseBody(event);
     if (!body) return json(400, {error: 'בקשה לא תקינה — נסו שוב'});
     const db = getAdmin().database();

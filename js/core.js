@@ -10,8 +10,32 @@ export function toast(message) {
   clearTimeout(toast.timer);
   toast.timer = setTimeout(() => node.classList.remove('show'), 3200);
 }
-export function modal(html) { $('#modal-root').innerHTML = `<div class="modal-backdrop"><section class="modal">${html}</section></div>`; }
-export function closeModal() { $('#modal-root').innerHTML = ''; }
+// Accessible modal (audit #41): role="dialog" + aria-modal, focus moves into the dialog and is trapped,
+// Escape closes, focus returns to the trigger, and icon-only close buttons get an aria-label.
+let _modalReturnFocus = null;
+const _focusableSel = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+export function modal(html) {
+  _modalReturnFocus = document.activeElement;
+  $('#modal-root').innerHTML = `<div class="modal-backdrop"><section class="modal" role="dialog" aria-modal="true" tabindex="-1">${html}</section></div>`;
+  const section = $('#modal-root .modal');
+  if (!section) return;
+  section.querySelectorAll('.close, [data-close-modal]').forEach(b => { if (!b.getAttribute('aria-label')) b.setAttribute('aria-label', 'סגירה'); });
+  section.focus({preventScroll: true});
+  section.addEventListener('keydown', event => {
+    if (event.key === 'Escape') { event.preventDefault(); closeModal(); return; }
+    if (event.key !== 'Tab') return;
+    const items = [...section.querySelectorAll(_focusableSel)].filter(el => el.offsetParent !== null);
+    if (!items.length) return;
+    const first = items[0], last = items[items.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  });
+}
+export function closeModal() {
+  $('#modal-root').innerHTML = '';
+  const back = _modalReturnFocus; _modalReturnFocus = null;
+  if (back && back.focus) { try { back.focus({preventScroll: true}); } catch {} }
+}
 // Paint #app only when the HTML actually changed. The Firebase listeners (cars/ratings/config/auth…)
 // resolve over ~1–2s and each used to fully rebuild the DOM — the "whole site flashes 5 times" on load.
 // paintApp() diffs the new HTML against what's on screen and touches the DOM only when it differs.

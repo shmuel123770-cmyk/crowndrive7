@@ -1,5 +1,5 @@
-import {randomUUID} from 'node:crypto';
-import {getAdmin, verify, json, canAccessBooking, isAdmin, profile, cleanText, parseBody} from './_firebase-admin.mjs';
+import {verify, json, canAccessBooking, isAdmin, profile, cleanText, parseBody} from './_firebase-admin.mjs';
+import {putStorageObject} from './_storage.mjs';
 import {rateLimit, tooMany} from './_ratelimit.mjs';
 
 // Direct server-side image upload: the client POSTs base64 bytes to THIS same-origin function
@@ -46,39 +46,9 @@ export async function handler(event) {
       path = `cars/${user.uid}/${Date.now()}-${safe(name)}`;
     } else return json(400, {error: 'סוג העלאה לא תקין'});
 
-    // This project's real bucket is <project>.firebasestorage.app. A FIREBASE_STORAGE_BUCKET
-    // env left on the old <project>.appspot.com form (which 404s) would break the write, so
-    // derive/normalise it from the service-account project id.
-    const projectId = (() => { try { return JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON || '{}').project_id; } catch { return ''; } })();
-    const envBucket = process.env.FIREBASE_STORAGE_BUCKET || '';
-    const bucketName = (!envBucket || envBucket.includes('.appspot.com'))
-      ? `${projectId || 'amar-75684'}.firebasestorage.app`
-      : envBucket;
-    // Write via the Google Cloud Storage JSON API using the Admin credential's OAuth access
-    // token (multipart so we can attach a permanent firebase download token). This uses only
-    // built-in fetch (no @google-cloud/storage module to bundle on Netlify), and the GCS API
-    // reliably accepts a service-account bearer token (checked against IAM).
-    const {access_token} = await getAdmin().options.credential.getAccessToken();
-    if (!access_token) throw new Error('service account token unavailable');
-    const downloadToken = randomUUID();
-    const boundary = `cd${downloadToken}`;
-    const metaJson = JSON.stringify({name: path, contentType: type, metadata: {firebaseStorageDownloadTokens: downloadToken}});
-    const body = Buffer.concat([
-      Buffer.from(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metaJson}\r\n--${boundary}\r\nContent-Type: ${type}\r\n\r\n`, 'utf8'),
-      buffer,
-      Buffer.from(`\r\n--${boundary}--\r\n`, 'utf8'),
-    ]);
-    const uploadRes = await fetch(`https://storage.googleapis.com/upload/storage/v1/b/${encodeURIComponent(bucketName)}/o?uploadType=multipart`, {
-      method: 'POST',
-      headers: {authorization: `Bearer ${access_token}`, 'content-type': `multipart/related; boundary=${boundary}`},
-      body,
-    });
-    if (!uploadRes.ok) {
-      const detail = await uploadRes.text().catch(() => '');
-      throw Object.assign(new Error(detail || `storage ${uploadRes.status}`), {storageStatus: uploadRes.status});
-    }
-    // A token download URL is publicly readable and permanent (no makePublic / no signed-url expiry).
-    const url = `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodeURIComponent(path)}?alt=media&token=${downloadToken}`;
+    // Write the bytes to Storage server-side (Admin credential → GCS JSON API) and get back a
+    // permanent, publicly-readable, CDN-cached token URL. Shared with media-migrate.
+    const url = await putStorageObject(path, buffer, type);
     return json(200, {path, url});
   } catch (error) {
     console.error('media-upload failed', error);

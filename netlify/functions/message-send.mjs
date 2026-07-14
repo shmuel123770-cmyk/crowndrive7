@@ -27,6 +27,15 @@ export async function handler(event) {
     if (body.thread === 'admin') {
       const userUid = cleanText(body.userUid || token.uid, 128);
       if (!admin && userUid !== token.uid) return json(403, {error: 'אין הרשאה'});
+      // Guest (unregistered/anonymous) support: ONE message until an admin replies, then free. Enforced
+      // HERE on the server so it holds even if the DB rules aren't published.
+      const isGuest = token.firebase?.sign_in_provider === 'anonymous';
+      if (!admin && isGuest) {
+        const state = (await db.ref(`supportGuestState/${token.uid}`).once('value')).val() || {};
+        if (state.firstSent && state.adminReplied !== true) {
+          return json(429, {error: 'שלחתם הודעה — נחזור אליכם בקרוב. אפשר להמשיך לכתוב לאחר שנענה.'});
+        }
+      }
       // Support chat accepts inline image attachments (stored as a data URL, like everywhere else).
       let stored = null;
       if (attachment) {
@@ -36,6 +45,9 @@ export async function handler(event) {
       }
       const ref = db.ref(`messages/admin/${userUid}`).push();
       await ref.set({senderUid: token.uid, fromAdmin: admin, text, ...(stored ? {attachment: stored} : {}), createdAt: Date.now()});
+      // Guest gate flags: an admin reply opens the guest to write freely; a guest message marks firstSent.
+      if (admin) await db.ref(`supportGuestState/${userUid}/adminReplied`).set(true).catch(() => {});
+      else if (isGuest) await db.ref(`supportGuestState/${token.uid}/firstSent`).set(true).catch(() => {});
       await audit(token.uid, 'admin_message', 'user', userUid);
       if (!admin) await notifyAdmin('chat', `הודעה חדשה בצ׳אט התמיכה`, {userUid});
       // SMS: user→admin texts the admin; admin→user texts that user (debounced 2 min per thread).

@@ -44,6 +44,15 @@ export function parseBody(event) {
 export async function isAdmin(uid) {
   return (await getAdmin().database().ref(`admins/${uid}`).once('value')).val() === true;
 }
+// Maintenance mode enforced on the SERVER too (audit #22 — the UI check alone can be bypassed). Returns
+// true when the site is in maintenance and the caller is NOT an admin, so the handler should refuse the
+// mutation. Fails OPEN (a config read error never blocks everyone).
+export async function maintenanceBlocked(uid) {
+  try {
+    const on = (await getAdmin().database().ref('config/maintenance/on').once('value')).val() === true;
+    return on && !(await isAdmin(uid));
+  } catch { return false; }
+}
 export async function profile(uid) {
   return (await getAdmin().database().ref(`users/${uid}`).once('value')).val() || null;
 }

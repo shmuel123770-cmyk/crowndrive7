@@ -62,6 +62,23 @@ async function uploadVideoViaSdk(file, kind, entityId) {
   }
 }
 
+// Public images (car photos, avatars) are OFFLOADED to Storage/CDN so the world-readable DB record
+// holds only a tiny URL instead of ~70KB of inline base64 — this is what keeps the public catalog
+// fast to load (the whole cars payload downloads on every fresh visit). The client still downscales
+// first (reliable everywhere), then hands the compact JPEG to the media-upload function, which writes
+// it to Storage server-side — so it works inside in-app browsers that block direct Storage uploads.
+// If Storage isn't set up, or the call fails for ANY reason, we fall back to the inline data URL, so
+// uploads NEVER break. Private kinds (documents, payment proofs, booking media) stay inline: they are
+// admin-only reads, not on the public load path, and moving them would need signed reads.
+const OFFLOAD_KINDS = new Set(['car-image', 'avatar']);
+async function offloadImage(dataUrl, kind, entityId) {
+  if (!OFFLOAD_KINDS.has(kind)) return '';
+  try {
+    const {url} = await api('media-upload', {name: `${kind}.jpg`, type: 'image/jpeg', kind, entityId, data: dataUrl});
+    return /^https?:\/\//.test(url || '') ? url : '';
+  } catch { return ''; }
+}
+
 // Images become an inline data URL stored straight in the record; videos keep the SDK path.
 export async function uploadPrivate(file, kind, entityId = '') {
   if (!file) throw new Error('לא נבחר קובץ');
@@ -69,7 +86,9 @@ export async function uploadPrivate(file, kind, entityId = '') {
 }
 export async function uploadPublicMedia(file, kind, entityId = '') {
   if (!file) throw new Error('לא נבחר קובץ');
-  return isVideo(file) ? (await uploadVideoViaSdk(file, kind, entityId)).url : await toImageDataUrl(file);
+  if (isVideo(file)) return (await uploadVideoViaSdk(file, kind, entityId)).url;
+  const dataUrl = await toImageDataUrl(file);
+  return (await offloadImage(dataUrl, kind, entityId)) || dataUrl;
 }
 
 // A stored image is already an inline data URL — return it as-is. Only true storage paths

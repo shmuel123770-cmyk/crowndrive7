@@ -198,6 +198,11 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
 .avail-badge{position:absolute;top:12px;inset-inline-start:12px;font-weight:700;font-size:.78rem;letter-spacing:.02em;padding:6px 15px;border-radius:99px;border:1px solid;backdrop-filter:blur(6px)}
 .avail-badge.free{color:#fff;background:rgba(28,150,90,.85);border-color:rgba(150,220,180,.6)}
 .avail-badge.busy{color:#fff;background:rgba(183,28,28,.88);border-color:rgba(255,160,150,.6);font-size:.9rem;padding:8px 18px;box-shadow:0 6px 18px rgba(120,20,20,.35)}
+/* Availability pill + the auto-expiring "new" badge stack in the top corner. */
+.car-badges{position:absolute;top:12px;inset-inline-start:12px;display:flex;flex-direction:column;gap:6px;align-items:flex-start;z-index:2}
+.car-badges .avail-badge{position:static}
+.new-badge{background:linear-gradient(135deg,#E9C46A,#C99A2E);color:#2A1F08;font-weight:800;font-size:.7rem;padding:4px 12px;border-radius:99px;letter-spacing:.02em;box-shadow:0 4px 12px rgba(180,140,30,.35)}
+.car-detail-head .new-badge{font-size:.78rem;padding:6px 14px}
 .has-video{position:absolute;bottom:12px;inset-inline-end:12px;background:rgba(0,0,0,.55);color:#fff;font-size:.7rem;font-weight:600;padding:3px 10px;border-radius:99px;letter-spacing:.02em}
 .feat-badge{position:absolute;top:12px;inset-inline-end:12px;background:linear-gradient(135deg,#E9A93D,#B8862B);color:#2A1F08;font-weight:800;font-size:.72rem;padding:6px 13px;border-radius:99px;letter-spacing:.02em;box-shadow:0 6px 16px rgba(150,110,20,.4)}
 .car.is-featured{box-shadow:0 0 0 2px #E9A93D,0 18px 40px rgba(20,26,33,.16)}
@@ -696,6 +701,17 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
   .hero-stats{margin-top:30px}
   .hstat b{font-size:1.35rem}
   .strip-in{gap:20px;padding:13px 16px}
+}
+
+/* Mobile scale (Option A — balanced): the whole phone layout shrinks together (root-relative) so it
+   adapts to the device; desktop (>600px) is unchanged. Chosen with the user from side-by-side previews. */
+@media(max-width:600px){
+  :root{font-size:15px}
+  .hero-in{padding:46px 18px 128px}
+  .hero .kicker{margin-bottom:14px}
+  .hero h1{font-size:clamp(1.55rem,7vw,2.05rem);max-width:20ch}
+  .hero-copy{font-size:.95rem;margin:10px auto 18px}
+  .hero-stats{margin-top:26px}
 }
 
 /* iOS safe areas */

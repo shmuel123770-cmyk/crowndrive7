@@ -1,4 +1,4 @@
-import {getAdmin, verify, json, cleanText, audit, parseBody} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, cleanText, audit, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
 import {rateLimit, tooMany} from './_ratelimit.mjs';
 import {validateImageDataUrl} from './_media.mjs';
 const allowed = new Set(['licenseFront', 'licenseBack', 'selfie']);
@@ -7,6 +7,7 @@ export async function handler(event) {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const token = await verify(event);
     if (!(await rateLimit(token.uid, 'document', 15, 10 * 60 * 1000))) throw tooMany();
+    if (await maintenanceBlocked(token.uid)) return json(503, {error: 'האתר בתחזוקה כרגע — נסו שוב בעוד מספר דקות'});
     const parsed = parseBody(event);
     if (!parsed) return json(400, {error: 'הבקשה גדולה או פגומה — נסו תמונה קטנה יותר'});
     const {documentType, path} = parsed;
