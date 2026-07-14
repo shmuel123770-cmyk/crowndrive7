@@ -18,6 +18,7 @@ export const store = {
   adminNotifications: {},
   config: {},
   route: 'home',
+  dashTab: 'overview',  // which personal-area tab is active (shared: bottomNav in views.js + dashboard in views-app.js)
   publicUnsubs: [],
   privateUnsubs: [],
 };

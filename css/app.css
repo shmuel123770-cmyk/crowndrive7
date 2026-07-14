@@ -269,23 +269,21 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
 .empty-state .btn{margin-top:14px}
 .grid > .empty-state{grid-column:1 / -1}
 
-/* ---------- owner CTA (gradient split card, like the reference) ---------- */
-.owner-cta-rich{margin-top:34px;display:grid;grid-template-columns:1.2fr .8fr;gap:28px;align-items:center;direction:rtl;text-align:right;
-  background:linear-gradient(135deg,#2D2414,#735A22);color:#fff;border-radius:18px;padding:30px 32px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
-.owner-cta-main{grid-column:1}
-.owner-cta-features{grid-column:2}
-.owner-cta-main .kicker,.owner-cta-main .eyebrow,.owner-cta-main h2,.owner-cta-main p{text-align:right}
+/* ---------- owner CTA — slim horizontal GOLD banner (sits at the top, under the hero) ---------- */
+.owner-cta-rich{margin-top:34px;display:flex;align-items:center;justify-content:space-between;gap:14px 26px;flex-wrap:wrap;direction:rtl;text-align:right;
+  background:linear-gradient(135deg,#2D2414,#735A22);color:#fff;border-radius:18px;padding:17px 26px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+.owner-cta-copy{flex:0 1 auto}
+.owner-cta-copy .eyebrow{color:#BFD4E6;margin-bottom:2px}
+.owner-cta-copy h2{margin:0;color:#fff;font-size:clamp(1.25rem,2.4vw,1.6rem);line-height:1.15}
 .owner-cta-glow{position:absolute;inset:0;background:
   radial-gradient(620px 320px at 100% 0%, rgba(255,255,255,.1), transparent 62%),
   radial-gradient(420px 260px at 0% 120%, rgba(16,24,32,.35), transparent 60%)}
 .owner-cta-rich>*{position:relative}
-.owner-cta-main .eyebrow{color:#BFD4E6}
-.owner-cta-main h2{margin:6px 0 10px;color:#fff;font-size:clamp(1.5rem,3vw,1.9rem)}
-.owner-cta-main p{color:rgba(255,255,255,.78);margin:0 0 20px;line-height:1.7;max-width:650px}
-.owner-cta-features{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.feature-chip{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);border-radius:12px;
-  padding:12px;font-weight:600;color:#fff;white-space:nowrap;text-align:center;transition:background .2s,border-color .2s,transform .18s var(--ease)}
-.feature-chip:hover{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.3);transform:translateY(-2px)}
+.owner-cta-features{display:flex;flex-wrap:wrap;gap:8px;flex:1 1 auto;justify-content:center;min-width:0}
+.owner-cta-rich .btn.gold{flex:0 0 auto;white-space:nowrap}
+.feature-chip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:99px;
+  padding:7px 15px;font-weight:600;font-size:.82rem;color:#fff;white-space:nowrap;text-align:center;transition:background .2s,border-color .2s,transform .18s var(--ease)}
+.feature-chip:hover{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.34);transform:translateY(-2px)}
 
 /* ---------- how-it-works / trust ---------- */
 .info-section{margin-top:56px}
@@ -734,8 +732,8 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
   .kpis{grid-template-columns:repeat(2,1fr);gap:10px}
   .steps-grid{grid-template-columns:1fr}
   .trust-grid{grid-template-columns:1fr 1fr}
-  .owner-cta-rich{grid-template-columns:1fr;padding:22px}
-  .owner-cta-features{grid-template-columns:1fr 1fr}
+  .owner-cta-rich{flex-direction:column;align-items:center;text-align:center;gap:12px;padding:18px 20px}
+  .owner-cta-features{flex:0 0 auto;width:100%;justify-content:center}
   .info-section{margin-top:38px}
   .panel-head-actions{flex-direction:column;align-items:stretch;gap:12px}
   .panel-head-actions .chips{width:100%}

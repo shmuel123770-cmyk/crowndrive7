@@ -1,4 +1,4 @@
-CrownDrive — FINAL build (2026-07-14, rev.88)
+CrownDrive — FINAL build (2026-07-14, rev.90)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
 rev.82 (2026-07-14) — personal-area bar SOLID+FIXED + home shows 4 cars on phones. Cumulative.
@@ -1086,3 +1086,28 @@ See התחל_כאן_גרסה_סופית.md to deploy. Remember to publish the up
   was only discovering them AFTER app/views/store parsed, adding a round-trip on high-latency mobile.
 - Already-good (verified, left as-is): media.js downscales uploads client-side (<=900-1024px, q0.6);
   SW immutable-caches versioned assets. Future option (not done, higher risk): code-split views.js (48KB gz).
+
+=== rev.89 (2026-07-14) — CODE-SPLIT views.js (speed: smaller initial JS) ===
+- Split the 177KB (48KB gz) views.js into: views.js = public + shared helpers (now 23KB gz), and NEW
+  views-app.js = the ENTIRE authenticated app (dashboards, chat, forms, all modals — 27KB gz), lazy-loaded
+  via dynamic import(./views-app.js) ONLY when the user opens the personal area/chats or triggers an auth
+  action (add car, support chat, contact owner). Public visitors no longer download the 27KB auth chunk on
+  first load → initial views.js payload HALVED.
+- Shared mutable state dashTab moved to store.dashTab (used by bottomNav in views.js + dashboard in views-app.js).
+- 22 shared helpers exported from views.js (app, carGrid, kpi, ICON, avatarHtml, ...) for views-app.js to import.
+- Lazy stubs: dashboard()/chatsPage() paint a loader then render; carForm/openSupportChat/openOwnerInquiry await
+  the chunk. Cached after first load → dashboard tab switches render synchronously. Logged-out users hit the
+  guard in the stub and redirect to auth WITHOUT downloading the chunk. Build stamps dynamic import (?v=hash).
+- VERIFIED in browser: public home + car-detail modal render; auth chunk ABSENT from initial load, loads on
+  demand on click; owner/admin/renter dashboards + add-car form + chats all render with ZERO errors
+  (console-injection); no console errors. 131 tests pass; static-check = 14 client modules.
+
+=== rev.90 (2026-07-14) — owner-CTA: gold banner back at top, reshaped horizontal ===
+- Moved the gold owner-CTA back to the TOP (after hero/strip, before the fleet) — reverting the rev.85 move.
+- Reshaped from a 2-col card into a SLIM HORIZONTAL banner (~89px tall on desktop): a flex row of
+  [eyebrow+heading] · [4 pill chips] · [הוסף רכב button]. Dropped the paragraph; chips are now inline pills
+  (border-radius:99px). Renamed .owner-cta-main → .owner-cta-copy; padding trimmed to 17px 26px. Gold kept.
+- Mobile (<=820px): stacks as a centered flex-column (heading, chips, button) — cleaned the dead grid overrides.
+- Verified desktop (89px banner) + mobile (centered stack).
+- KNOWN pre-existing (NOT from this change): the store /inquiries listener logs permission_denied for ANONYMOUS
+  guest sessions (guests who open support chat get a signInGuest anonymous user, which the inquiries rules deny).
