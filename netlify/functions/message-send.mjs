@@ -6,7 +6,9 @@ import {validateImageDataUrl} from './_media.mjs';
 // Chat is open only while the rental is live: from owner approval (pre-pickup
 // coordination + evidence) until the rental is marked done. Admin support
 // threads (messages/admin/<uid>) are always open.
-const CHAT_OPEN = new Set(['approved', 'active']);
+// Owner↔renter chat is open from the moment the renter REQUESTS (pending) — so they can coordinate before
+// approval — through the active rental, until it's marked done.
+const CHAT_OPEN = new Set(['pending', 'approved', 'active']);
 const EVIDENCE_KEYS = {'evidence-video': 'video', 'evidence-fuel': 'fuel', 'evidence-odometer': 'odometer'};
 const ATTACHMENT_TYPES = new Set(['evidence-video', 'evidence-fuel', 'evidence-odometer', 'photo']);
 
@@ -30,9 +32,10 @@ export async function handler(event) {
       // Guest (unregistered/anonymous) support: ONE message until an admin replies, then free. Enforced
       // HERE on the server so it holds even if the DB rules aren't published.
       const isGuest = token.firebase?.sign_in_provider === 'anonymous';
+      let guestState = null;
       if (!admin && isGuest) {
-        const state = (await db.ref(`supportGuestState/${token.uid}`).once('value')).val() || {};
-        if (state.firstSent && state.adminReplied !== true) {
+        guestState = (await db.ref(`supportGuestState/${token.uid}`).once('value')).val() || {};
+        if (guestState.firstSent && guestState.adminReplied !== true) {
           return json(429, {error: 'שלחתם הודעה — נחזור אליכם בקרוב. אפשר להמשיך לכתוב לאחר שנענה.'});
         }
       }
@@ -47,7 +50,14 @@ export async function handler(event) {
       await ref.set({senderUid: token.uid, fromAdmin: admin, text, ...(stored ? {attachment: stored} : {}), createdAt: Date.now()});
       // Guest gate flags: an admin reply opens the guest to write freely; a guest message marks firstSent.
       if (admin) await db.ref(`supportGuestState/${userUid}/adminReplied`).set(true).catch(() => {});
-      else if (isGuest) await db.ref(`supportGuestState/${token.uid}/firstSent`).set(true).catch(() => {});
+      else if (isGuest) {
+        await db.ref(`supportGuestState/${token.uid}/firstSent`).set(true).catch(() => {});
+        // Instant auto-acknowledgement on the guest's FIRST message, so they immediately see a reply (a real
+        // agent follows up). It does NOT set adminReplied, so the one-message-until-a-human-replies limit holds.
+        if (!guestState?.firstSent) {
+          await db.ref(`messages/admin/${token.uid}`).push().set({senderUid: 'system', fromAdmin: true, auto: true, text: 'תודה על פנייתכם! 🙏 נציג יחזור אליכם בהקדם.', createdAt: Date.now() + 1}).catch(() => {});
+        }
+      }
       await audit(token.uid, 'admin_message', 'user', userUid);
       if (!admin) await notifyAdmin('chat', `הודעה חדשה בצ׳אט התמיכה`, {userUid});
       // SMS: user→admin texts the admin; admin→user texts that user (debounced 2 min per thread).

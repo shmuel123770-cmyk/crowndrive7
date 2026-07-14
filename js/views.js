@@ -7,6 +7,10 @@ import {legacyStatus, migrateLegacy} from './migrate.js';
 import {api} from './api.js';
 
 const app = () => document.querySelector('#app');
+// The running build number, read from the app.js "?v=" in index.html — a single source of truth that
+// bumps every deploy. Shown at the bottom of the site so anyone can confirm which version they're on
+// after a refresh (that's how we verify a connected browser actually got the new version).
+const APP_VERSION = (document.querySelector('script[src*="app.js"]')?.getAttribute('src')?.match(/[?&]v=(\d+)/) || [])[1] || '';
 const fallbackImage = 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=75';
 const carPhotos = car => [...(Array.isArray(car.photos) ? car.photos : []), car.photoUrl].filter((url, i, arr) => url && arr.indexOf(url) === i);
 const carImage = car => carPhotos(car)[0] || fallbackImage;
@@ -267,7 +271,7 @@ export function home() {
     <div class="trust-card"><div class="trust-icon">${ICON.chat}</div><h3>שירות לקוחות</h3><p>מענה מהיר ואישי לכל שאלה, ישירות בצ׳אט.</p></div>
   </div></section>
   <section class="info-section reveal" id="contact"><div class="foot-cta"><p class="kicker">צור קשר</p><h2>צריכים עזרה? אנחנו כאן</h2><p>צ׳אט ישיר עם שירות הלקוחות — מענה מהיר לכל שאלה.</p><button class="btn gold" id="contact-support">פתיחת צ׳אט עם התמיכה</button></div></section>
-  <footer class="site-foot"><span>© Crown Drive · קראון הייטס</span><button type="button" class="admin-entry" id="admin-entry">כניסת מנהל</button></footer>`;
+  <footer class="site-foot"><span>© Crown Drive · קראון הייטס${APP_VERSION ? ` · גרסה ${esc(APP_VERSION)}` : ''}</span><button type="button" class="admin-entry" id="admin-entry">כניסת מנהל</button></footer>`;
   if (!paintApp(html)) return;  // nothing changed → keep DOM + handlers (no flicker on repeated data events)
   bindCarButtons();
   bindDateFields();
@@ -715,14 +719,17 @@ function dashboardLayout(title, tabs, active, content, actions = '', navFooter =
       ${actions ? `<div class="dash-head-actions">${actions}</div>` : ''}
     </header><nav class="dashboard-tabs" aria-label="תפריט אזור אישי">${tabs.map(([key, label]) => `<button class="tab ${key === active ? 'active' : ''}" data-dashboard-tab="${key}"><i class="tab-ic">${(TAB_ICONS[key] || (() => ''))()}</i><span>${label}</span></button>`).join('')}${navFooter ? `<div class="nav-footer">${navFooter}</div>` : ''}</nav><section class="card panel dashboard-panel">${content}</section></div>`;
 }
+// The dashboard tab the user is currently on. Kept across re-renders so a data event (new message,
+// booking update…) no longer resets the personal area to "overview" and bounces the user to the main page.
+let dashTab = 'overview';
 function bindDashboardTabs(renderer) {
   document.querySelectorAll('[data-dashboard-tab]').forEach(button => button.onclick = () => {
     const tab = button.dataset.dashboardTab;
     if (tab === 'chats') { location.hash = 'chats'; return; }  // full-screen messaging page
-    renderer(tab);
+    dashTab = tab; renderer(tab);
   });
   const headAvatar = document.querySelector('[data-goto-profile]');
-  if (headAvatar) headAvatar.onclick = () => renderer('profile');
+  if (headAvatar) headAvatar.onclick = () => { dashTab = 'profile'; renderer('profile'); };
 }
 export function dashboard() {
   resetPaint();
@@ -733,9 +740,9 @@ export function dashboard() {
     location.hash = 'auth'; return;
   }
   const role = myRole();
-  if (role === 'admin') adminDashboard();
-  else if (role === 'owner') ownerDashboard();
-  else if (role === 'renter') renterDashboard();
+  if (role === 'admin') adminDashboard(dashTab);
+  else if (role === 'owner') ownerDashboard(dashTab);
+  else if (role === 'renter') renterDashboard(dashTab);
   else if (!store.adminChecked || !store.profileLoaded) app().innerHTML = '<div class="app-loader"><div class="spinner"></div><p>טוען את האזור האישי…</p></div>';
   else completeProfile();
 }
@@ -1019,7 +1026,7 @@ function bookingList(bookings, role) {
     const ratingButtons = booking.status === 'done' ? (role === 'renter' ? `<button class="btn outline" data-rate="${booking.id}" data-rate-type="car">דרג רכב</button><button class="btn outline" data-rate="${booking.id}" data-rate-type="user">דרג בעל רכב</button>` : role === 'owner' ? `<button class="btn outline" data-rate="${booking.id}" data-rate-type="user">דרג שוכר</button>` : '') : '';
     const evidence = booking.evidence || {};
     const evidenceDone = evidence.video && evidence.fuel && evidence.odometer && store.payments[booking.id];
-    return `<article class="booking-card"><div class="booking-main"><div><small>הזמנה ${esc(booking.id.slice(-7))}</small><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3><p>${fmtDate(booking.startAt)} — ${fmtDate(booking.endAt)}</p></div><span class="status-badge ${esc(booking.status)}">${statusLabel(booking.status)}</span></div><div class="chips">${role === 'owner' && booking.status === 'pending' ? `<button class="btn primary" data-status="approved" data-booking="${booking.id}">אישור</button><button class="btn danger" data-status="rejected" data-booking="${booking.id}">דחייה</button>` : ''}${role === 'owner' && booking.status === 'approved' ? `<button class="btn gold ${evidenceDone ? '' : 'soft-disabled'}" data-status="active" data-booking="${booking.id}">התחלת השכרה</button>` : ''}${role === 'owner' && booking.status === 'active' ? `<button class="btn gold" data-status="done" data-booking="${booking.id}">סיום השכרה</button>` : ''}${role === 'owner' && ['pending','approved','active'].includes(booking.status) ? `<button class="btn outline" data-renter="${booking.renterUid}">פרטי שוכר</button>` : ''}${['approved','active'].includes(booking.status) ? `<button class="btn outline" data-address="${booking.id}">כתובת איסוף</button><button class="btn outline" data-chat="${booking.id}">צ׳אט</button>` : ''}${role === 'renter' && booking.status === 'active' ? `<button class="btn outline" data-handover="${booking.id}" data-stage="return">תיעוד החזרה</button>` : ''}${['owner','admin'].includes(role) && store.payments[booking.id] ? `<button class="btn outline" data-view-payment="${booking.id}">הוכחת תשלום</button>` : ''}${['owner','admin'].includes(role) && booking.handover ? `<button class="btn outline" data-view-handover="${booking.id}">צפייה בתיעוד</button>` : ''}${role === 'admin' ? `<select class="admin-status-select" data-admin-status="${booking.id}"><option value="">שינוי סטטוס…</option><option value="approved">אישור</option><option value="rejected">דחייה</option><option value="active">התחלת השכרה</option><option value="done">סיום</option><option value="cancelled">ביטול</option></select><button class="btn outline" data-admin-note="${booking.id}">הערת מנהל</button>` : ''}${['renter', 'owner'].includes(role) && ['pending', 'approved'].includes(booking.status) ? `<button class="btn outline" data-cancel-booking="${booking.id}">ביטול הזמנה</button>` : ''}${ratingButtons}</div>${booking.adminNote || booking.adminAmount !== undefined ? `<p class="ev-note">הערת מנהל: ${esc(booking.adminNote || '')}${booking.adminAmount !== undefined ? ` · סכום מתוקן: ${money(booking.adminAmount)}` : ''}</p>` : ''}${role === 'renter' && booking.status === 'approved' ? `<p class="ev-note">לפני תחילת ההשכרה שלחו בצ׳אט: סרטון חוץ, תמונת דלק, קילומטראז׳ והוכחת תשלום.</p>` : ''}</article>`;
+    return `<article class="booking-card"><div class="booking-main"><div><small>הזמנה ${esc(booking.id.slice(-7))}</small><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3><p>${fmtDate(booking.startAt)} — ${fmtDate(booking.endAt)}</p></div><span class="status-badge ${esc(booking.status)}">${statusLabel(booking.status)}</span></div><div class="chips">${role === 'owner' && booking.status === 'pending' ? `<button class="btn primary" data-status="approved" data-booking="${booking.id}">אישור</button><button class="btn danger" data-status="rejected" data-booking="${booking.id}">דחייה</button>` : ''}${role === 'owner' && booking.status === 'approved' ? `<button class="btn gold ${evidenceDone ? '' : 'soft-disabled'}" data-status="active" data-booking="${booking.id}">התחלת השכרה</button>` : ''}${role === 'owner' && booking.status === 'active' ? `<button class="btn gold" data-status="done" data-booking="${booking.id}">סיום השכרה</button>` : ''}${role === 'owner' && ['pending','approved','active'].includes(booking.status) ? `<button class="btn outline" data-renter="${booking.renterUid}">פרטי שוכר</button>` : ''}${['approved','active'].includes(booking.status) ? `<button class="btn outline" data-address="${booking.id}">כתובת איסוף</button>` : ''}${['pending','approved','active'].includes(booking.status) ? `<button class="btn outline" data-chat="${booking.id}">צ׳אט</button>` : ''}${role === 'renter' && booking.status === 'active' ? `<button class="btn outline" data-handover="${booking.id}" data-stage="return">תיעוד החזרה</button>` : ''}${['owner','admin'].includes(role) && store.payments[booking.id] ? `<button class="btn outline" data-view-payment="${booking.id}">הוכחת תשלום</button>` : ''}${['owner','admin'].includes(role) && booking.handover ? `<button class="btn outline" data-view-handover="${booking.id}">צפייה בתיעוד</button>` : ''}${role === 'admin' ? `<select class="admin-status-select" data-admin-status="${booking.id}"><option value="">שינוי סטטוס…</option><option value="approved">אישור</option><option value="rejected">דחייה</option><option value="active">התחלת השכרה</option><option value="done">סיום</option><option value="cancelled">ביטול</option></select><button class="btn outline" data-admin-note="${booking.id}">הערת מנהל</button>` : ''}${['renter', 'owner'].includes(role) && ['pending', 'approved'].includes(booking.status) ? `<button class="btn outline" data-cancel-booking="${booking.id}">ביטול הזמנה</button>` : ''}${ratingButtons}</div>${booking.adminNote || booking.adminAmount !== undefined ? `<p class="ev-note">הערת מנהל: ${esc(booking.adminNote || '')}${booking.adminAmount !== undefined ? ` · סכום מתוקן: ${money(booking.adminAmount)}` : ''}</p>` : ''}${role === 'renter' && booking.status === 'approved' ? `<p class="ev-note">לפני תחילת ההשכרה שלחו בצ׳אט: סרטון חוץ, תמונת דלק, קילומטראז׳ והוכחת תשלום.</p>` : ''}</article>`;
   }).join('') : '<div class="empty">אין נתונים</div>'}</div>`;
 }
 
@@ -1234,6 +1241,10 @@ export function chatsPage() {
     if (!store.authSettled) { app().innerHTML = '<div class="app-loader"><div class="spinner"></div><p>טוען…</p></div>'; return; }
     location.hash = 'auth'; return;
   }
+  // If the chat shell is already up, a re-render (incoming message, any data event) only needs the sidebar
+  // list refreshed — do NOT rebuild the whole shell. Rebuilding wiped the open conversation AND the reply
+  // the admin was typing, which is exactly why "the admin can't reply" happened.
+  if (document.querySelector('#chat-shell')) { renderChatItems(); return; }
   app().innerHTML = `<div class="chat-shell" id="chat-shell">
     <aside class="chat-list">
       <div class="chat-list-head"><button type="button" class="chat-page-back" id="chat-page-back" title="חזרה לאזור האישי" aria-label="חזרה">→</button><h2>צ׳אטים</h2>${store.isAdmin ? '<input id="chat-search" placeholder="חיפוש משתמש…" autocomplete="off">' : ''}</div>
@@ -1254,26 +1265,28 @@ export function chatsPage() {
   }
 }
 
-// Real-time feed of every support thread, so the admin's chat list re-orders and updates
-// the moment any user sends a message — not just on the first load.
-let adminFeedRef = null;
+// The admin support-thread list comes from a lightweight SERVER endpoint (admin-chat-threads) that
+// returns only per-thread summaries — NOT the whole messages/admin tree, which downloaded every message +
+// base64 image into the browser and FROZE the tab once chat usage grew. Refreshed on entering chats and on
+// a gentle timer while the tab is visible; the open conversation itself still updates in real time.
+let adminFeedTimer = null;
 function teardownAdminChatFeed() {
-  if (adminFeedRef) { adminFeedRef.off(); adminFeedRef = null; }
+  if (adminFeedTimer) { clearInterval(adminFeedTimer); adminFeedTimer = null; }
   adminChatActivity = null;
 }
-function ensureAdminChatFeed() {
-  if (adminFeedRef || !store.isAdmin) return;
-  const ref = firebase.database().ref('messages/admin');
-  adminFeedRef = ref;
-  ref.on('value', snap => {
-    if (!store.isAdmin) return teardownAdminChatFeed();  // e.g. after logout
+async function loadAdminThreads() {
+  if (!store.isAdmin) return teardownAdminChatFeed();
+  try {
+    const {threads} = await api('admin-chat-threads');
     adminChatActivity = {};
-    for (const [uid, msgs] of Object.entries(snap.val() || {})) {
-      const times = Object.values(msgs || {}).map(m => Number(m.createdAt || 0));
-      adminChatActivity[uid] = times.length ? Math.max(...times) : 0;
-    }
+    for (const t of threads || []) adminChatActivity[t.uid] = t.lastAt || 0;
     if (store.route === 'chats') renderChatItems();
-  }, () => teardownAdminChatFeed());  // permission change / error → reset so it re-inits on next admin login
+  } catch { /* transient network/permission error — keep the list we already have */ }
+}
+function ensureAdminChatFeed() {
+  if (adminFeedTimer || !store.isAdmin) return;
+  loadAdminThreads();
+  adminFeedTimer = setInterval(() => { if (store.route === 'chats' && !document.hidden) loadAdminThreads(); }, 15000);
 }
 
 function chatItems() {
@@ -1327,7 +1340,7 @@ function selectThread(key) {
   if (!isSupport && !booking) { pane.innerHTML = '<div class="chat-empty"><p>השיחה לא נמצאה</p></div>'; return; }
   const car = booking ? store.cars[booking.carId] || {} : {};
   const title = isSupport ? (store.isAdmin ? (store.users[id]?.name || store.users[id]?.email || `אורח · ${id.slice(-5)}`) : 'שירות לקוחות') : `${car.make || 'רכב'} ${car.model || ''}`.trim();
-  const live = isSupport || ['approved', 'active'].includes(booking.status);
+  const live = isSupport || ['pending', 'approved', 'active'].includes(booking.status);
   const isOwner = booking && booking.ownerUid === store.user.uid;
   const isRenter = booking && booking.renterUid === store.user.uid;
   const ev = booking ? evidenceState(booking, id) : null;
@@ -1414,7 +1427,7 @@ function selectThread(key) {
     catch (error) { toast(error.message); }
   });
 
-  const ref = firebase.database().ref(isSupport ? `messages/admin/${id}` : `messages/${id}`).limitToLast(300);
+  const ref = firebase.database().ref(isSupport ? `messages/admin/${id}` : `messages/${id}`).limitToLast(100);
   const handler = snap => {
     const box = document.querySelector('#chat-msgs');
     if (!box || store.route !== 'chats' || chatState.thread !== key) { ref.off('value', handler); return; }

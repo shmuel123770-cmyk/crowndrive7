@@ -137,6 +137,11 @@ r = await call(fn['booking-create'], 'o1', {carId, startAt: start, endAt: end});
 check('בעל הרכב לא יכול להזמין את עצמו', S(r) !== 200);
 r = await call(fn['booking-create'], 'r1', {carId, startAt: 'bad', endAt: 'bad'});
 check('תאריכים לא תקינים נדחו (400)', S(r) === 400);
+// Owner↔renter chat is open already at PENDING, so they can coordinate before approval.
+r = await call(fn['message-send'], 'r1', {bookingId: bId, text: 'שלום, אפשר לאסוף מוקדם?'});
+check('צ׳אט הזמנה פתוח כבר בסטטוס ממתין (שוכר)', S(r) === 200);
+r = await call(fn['message-send'], 'o1', {bookingId: bId, text: 'בטח, נתאם'});
+check('צ׳אט הזמנה פתוח כבר בסטטוס ממתין (בעל רכב)', S(r) === 200);
 r = await call(fn['booking-action'], 'r1', {action: 'status', bookingId: bId, status: 'approved'});
 check('שוכר לא מאשר לעצמו (403)', S(r) === 403);
 r = await call(fn['booking-action'], 'o1', {action: 'status', bookingId: bId, status: 'approved'});

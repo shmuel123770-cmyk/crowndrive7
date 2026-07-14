@@ -1,6 +1,75 @@
-CrownDrive — FINAL build (2026-07-13, rev.58)
+CrownDrive — FINAL build (2026-07-14, rev.64)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
+rev.64 (2026-07-14) — FIXED the admin chat FREEZE ("I click the chat and everything is stuck").
+- ROOT CAUSE: ensureAdminChatFeed() did firebase.database().ref('messages/admin').on('value') in the BROWSER
+  — downloading the ENTIRE support-messages tree (every thread, every message, INCLUDING base64 image
+  attachments) and re-parsing it on every change. As chat usage grew, that payload got huge → the tab froze.
+- FIX: new admin-only server endpoint admin-chat-threads.mjs reads messages/admin SERVER-side and returns
+  only tiny per-thread summaries {uid, lastAt, lastText, unread}. The admin sidebar now polls that (on
+  entering chats + every 15s while visible) instead of downloading everything — so it can never freeze the
+  browser again. The OPEN conversation still updates in real time; its per-thread message load is capped
+  300→100 (less base64 at once). 94 scenarios green; static-check now requires admin-chat-threads.mjs. ?v→64.
+- NEXT (user's other asks, chat features — next batch): pre-booking owner inquiry (renter→owner about a car
+  before any booking); admin "add another user to a conversation"; admin "transfer a conversation" — the last
+  two turn 1:1 chat into multi-party, so confirming the exact behavior first.
+rev.63 (2026-07-14) — Tawk OFF (user: a separate app is problematic); owner↔renter chat opens earlier.
+- TAWK DISABLED: window.CROWNDRIVE_TAWK back to "" → the widget does NOT load (loader is a no-op). The user
+  wants in-SITE owner↔renter chat, not a separate support app. (The tawk.js/CSP infrastructure stays dormant,
+  can be re-enabled by pasting an id.)
+- OWNER↔RENTER CHAT already exists in the site (the per-booking "צ׳אט" thread, messages/<bookingId>, tested)
+  and rev.61 fixed its reply/display bug. Now it OPENS FROM 'pending' (was approved/active only), so the
+  renter and owner can talk from the moment a booking is REQUESTED — to coordinate before approval — through
+  the active rental until done. CHAT_OPEN = {pending,approved,active}; booking-card shows the צ׳אט button on
+  pending; selectThread 'live' includes pending. Pickup-address button stays approved/active. +2 scenario
+  tests (chat open at pending for both sides) → 94 pass.
+- firebase-config.js now Cache-Control: no-cache (so a config change — like turning Tawk on/off — reaches
+  connected browsers on refresh, not a stale cached copy). Version footer (rev.62) kept. ?v→63.
+- OPEN QUESTION for the user: do they also want a PRE-booking inquiry chat (renter → owner about a car with
+  NO booking yet)? Today "message owner" goes to support; opening from pending covers "after a request".
+rev.62 (2026-07-14) — Tawk.to chat ENABLED + version number shown at the bottom of the site.
+- TAWK.TO LIVE: set window.CROWNDRIVE_TAWK = '6a55b4ee940f101d53238290/1jtfclh2l' in firebase-config.js
+  (the user's property/widget ids). Verified in-browser: the loader injects embed.tawk.to, Tawk_API loads,
+  and the chat bubble renders (bottom-right, Tawk's default). No site styles changed (per the user's ask);
+  position/appearance are tuned inside the Tawk dashboard, not the code.
+- VERSION FOOTER: the site footer now shows "· גרסה N" (APP_VERSION, read from the app.js ?v= in index.html
+  — one source of truth that bumps every deploy). So after a refresh you can SEE which build you're on and
+  confirm a connected browser picked up the new version. Verified: shows "גרסה 62".
+- UPDATE-ON-REFRESH already works and is unchanged: index.html/sw.js are no-store, /js/ + /css/ are
+  no-cache/must-revalidate, ?v bumps each deploy, and the service worker is cache-free — so a refresh always
+  loads the fresh version (the footer number is the visible proof). ?v→62.
+rev.61 (2026-07-14) — 3 fixes: personal-area bounce, admin-can't-reply, guest auto-ack.
+- PERSONAL AREA no longer jumps back to the main page on every change: dashboard() called adminDashboard()
+  with NO tab, so any data event (new message, booking update…) reset it to "overview". Added a persisted
+  `dashTab` (set on tab click, passed by dashboard()) so the current tab survives re-renders. (js/views.js)
+- ADMIN CAN NOW REPLY: chatsPage() did `app().innerHTML = …` on EVERY re-render, so an incoming message
+  rebuilt the whole chat shell — wiping the open conversation AND the reply being typed (that's why replying
+  felt impossible). Now if the shell already exists, a re-render only refreshes the sidebar list and keeps
+  the pane + composer intact. (js/views.js)
+- GUEST AUTO-ACK: a guest's FIRST support message now gets an instant automatic reply
+  "תודה על פנייתכם! 🙏 נציג יחזור אליכם בהקדם." (server-side; does NOT set adminReplied, so the
+  one-message-until-a-human-replies limit still holds). (netlify/functions/message-send.mjs)
+- NOTE: Tawk.to (rev.60) is SUPPORT chat (visitor↔admin), NOT renter↔owner. Renter↔owner messaging is the
+  in-app booking chat (open from owner approval until the rental is done). 92 scenarios green. ?v→61.
+rev.60 (2026-07-13) — external free live-chat widget (Tawk.to) wired in (user's choice).
+- CONTEXT: verified the in-app messaging works end-to-end on live (sent a real guest message → 200
+  {ok,id}, read it back → found it). So the backend is fine; the user chose to add a free external chat
+  anyway. Wired Tawk.to (free, unlimited, Hebrew/RTL, mobile) as an ADDITION (in-app chat still works).
+- js/tawk.js: external loader (satisfies CSP script-src 'self') that loads embed.tawk.to/<id> ONLY when
+  window.CROWNDRIVE_TAWK is set to 'PROPERTY_ID/WIDGET_ID' — otherwise a NO-OP, so the site is unaffected
+  until the chat is configured. firebase-config.js has the placeholder; index.html loads js/tawk.js.
+- _headers CSP now allow-lists https://*.tawk.to (script/style/font/connect/frame) + wss://*.tawk.to.
+- TO TURN ON (user): sign up free at tawk.to → create a property → Administration → Chat Widget → copy the
+  two ids from embed.tawk.to/PROPERTY_ID/WIDGET_ID → set window.CROWNDRIVE_TAWK='PROPERTY_ID/WIDGET_ID' in
+  firebase-config.js (or send me the two ids). ?v→60.
+- STILL OPEN: apply the compact-card mobile design consistently across the rest of the site (cars +
+  bookings admin tables, etc.) — the user asked for a consistent mobile design language per content.
+rev.59 (2026-07-13) — admin user cards: TWO per row on phones (user request), done sensibly.
+- On ≤600px the .admin-cards grid is repeat(2,minmax(0,1fr)) → 2 cards per row (was 1). The minmax(0,…) +
+  min-width:0 stops long emails from overflowing the viewport; the card restacks (avatar+pill on top, name
+  below), the "מייל/טלפון" labels are dropped at half-width (the @ / +1 make them obvious) so the email fits
+  on one line, and the action buttons/icons wrap cleanly. Verified in-browser: 2×2 users visible at 375px,
+  no horizontal overflow, everything readable. Desktop grid unchanged (auto-fill, 2–3 across). ?v→59.
 rev.58 (2026-07-13) — admin USERS list: wide scrolling table → compact responsive CARDS (chosen with user).
 - The admin "משתמשים ואימותים" list was an 8-column table that needed left-right scrolling (worse on mobile).
   Replaced adminUsersTable() with a compact card per user in a responsive grid (.admin-cards / .auc): avatar

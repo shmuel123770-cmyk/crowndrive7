@@ -15,3 +15,8 @@ window.CROWNDRIVE_FIREBASE_CONFIG = {
   messagingSenderId: "754093347550",
   appId: "1:754093347550:web:513f0c7cfcf7a5a40fe84f"
 };
+
+// Tawk.to live chat (free): paste your ids here as 'PROPERTY_ID/WIDGET_ID' to switch the widget ON.
+// Get them from tawk.to → Administration → Chat Widget (the URL embed.tawk.to/PROPERTY_ID/WIDGET_ID).
+// Leave empty to keep the chat off. See js/tawk.js.
+window.CROWNDRIVE_TAWK = "";

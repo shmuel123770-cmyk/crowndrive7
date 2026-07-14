@@ -1037,6 +1037,25 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 .auc-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px solid var(--hair);padding-top:12px}
 .auc-actions .btn.outline{padding:8px 13px;font-size:.82rem}
 .auc-icons{display:flex;gap:6px;margin-inline-start:auto}
+/* Phone: TWO cards per row. The card restacks so it stays readable at ~half-screen width. */
+@media(max-width:600px){
+  .admin-cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}   /* minmax(0,…) lets columns shrink so long emails wrap instead of overflowing */
+  .auc{padding:11px 11px 12px;min-width:0}
+  .auc *{min-width:0}
+  .auc-head{flex-wrap:wrap;gap:7px}
+  .auc-ava{width:36px;height:36px;flex:0 0 36px;font-size:.88rem}
+  .auc-head .pill{font-size:.58rem;padding:3px 7px;margin-inline-start:auto}
+  .auc-id{flex-basis:100%;order:2}                 /* name+role drop to their own row, full width */
+  .auc-name{font-size:.9rem;line-height:1.16}
+  .auc-role{font-size:.7rem}
+  .auc-contact{margin:8px 0 9px;gap:3px}
+  .auc-contact span{font-size:.72rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .auc-contact .lab{display:none}   /* redundant at half-width — the @ / +1 make email vs phone obvious */
+  .auc-actions{gap:6px;padding-top:9px}
+  .auc-actions .btn.outline{padding:7px 6px;font-size:.68rem;flex:1 1 42%}
+  .auc-icons{width:100%;justify-content:space-between;margin:2px 0 0}
+  .auc-icons .icon-btn{width:34px;height:34px}
+}
 
 /* ---------- Rental modes + date-search pricing ---------- */
 .mode-badge{position:absolute;bottom:12px;inset-inline-start:12px;background:rgba(27,34,43,.82);color:#fff;font-weight:700;font-size:.7rem;padding:5px 11px;border-radius:99px;letter-spacing:.02em;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
