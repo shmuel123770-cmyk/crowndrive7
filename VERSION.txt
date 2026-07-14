@@ -1,5 +1,26 @@
-CrownDrive — FINAL build (2026-07-14, rev.69)
+CrownDrive — FINAL build (2026-07-14, rev.70)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.70 (2026-07-14) — CONTENT-HASH BUILD SYSTEM (adapted from the Codex rev51_FIXED, per the user's choice to
+keep rev.69 features + import its build). Cumulative. Deploy method CHANGED — see below.
+- WHY: manual `?v=NN` bumping was error-prone, and `publish="."` served the WHOLE repo publicly
+  (crowndrive770.com/FIREBASE_DATABASE_RULES_V2.json, /package.json, /tests/…, /VERSION.txt were all reachable).
+- NEW `scripts/build.mjs` (Node built-ins only — can't fail on npm/registry) emits a PUBLIC-ONLY `dist/`:
+  • a content-based Build ID (sha256 of all runtime files, 12 hex) stamps every css/js/icon URL AND every
+    internal ESM import (`from './x.js'` → `from './x.js?v=<id>'`) — so a device can NEVER mix a fresh HTML
+    shell with an old cached module; JS/CSS are then cached `immutable` (no revalidation, instant loads).
+  • HTML/config/SW/manifest/icons stay no-store / no-cache (a deploy is visible immediately).
+  • a LEAK GUARD hard-fails the build if any private file (Firebase rules, tests, package.json, VERSION,
+    *.md, functions source) reaches dist/. Fixes the public-exposure issue above.
+- netlify.toml: `publish="dist"`, `command="…npm install… && node scripts/build.mjs"`. functions dir unchanged.
+  Netlify keeps the previous deploy live if a build ever fails → no downtime risk. dist/ is gitignored
+  (generated on deploy); the release zip ships the SOURCE, Netlify builds dist/ from it.
+- FOOTER: now shows a clean human number "גרסה 70" from a `<meta name="crowndrive-version">` (bump per rev),
+  with the Build ID shown as the span's hover title (build 276e535d138a…) for cache debugging. The old code
+  read `?v=(\d+)` which would have shown garbage against the hash. (js/views.js APP_VERSION/APP_BUILD)
+- Verified: built dist/ boots (12 versioned modules load, app renders, footer "גרסה 70"); 122 tests pass.
+- NOT imported from Codex's version (deliberately, per the user): App Check, boot-watchdog, scheduled jobs,
+  payment/refund rework, legal pages — those stay as possible future steps.
 
 rev.69 (2026-07-14) — make the admin reply box BULLETPROOF on desktop (2 more causes of "no text box"). Cumulative.
 - The rev.66 min-height:0 fix (content overflow) is LIVE and works in every case I can test. Since the admin

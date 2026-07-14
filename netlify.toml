@@ -1,8 +1,11 @@
 [build]
-  # Wipe any stale node_modules that a web-upload may have committed, then install
-  # cleanly (a committed node_modules blocks npm's rename step with ENOTEMPTY).
-  command = "rm -rf node_modules package-lock.json && npm install --no-audit --no-fund --omit=dev"
-  publish = "."
+  # Wipe any stale node_modules that a web-upload may have committed, then install cleanly (a committed
+  # node_modules blocks npm's rename step with ENOTEMPTY), then run the content-hash build. The build uses
+  # ONLY Node built-ins (no deps), so it can't fail on an install/registry hiccup. It emits a public-only
+  # dist/ with immutable, Build-ID-versioned JS/CSS — so devices never mix a new shell with an old module,
+  # and private files (Firebase rules, tests, package.json) are no longer served publicly.
+  command = "rm -rf node_modules package-lock.json && npm install --no-audit --no-fund --omit=dev && node scripts/build.mjs"
+  publish = "dist"
   functions = "netlify/functions"
 
 [build.environment]

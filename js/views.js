@@ -10,7 +10,11 @@ const app = () => document.querySelector('#app');
 // The running build number, read from the app.js "?v=" in index.html — a single source of truth that
 // bumps every deploy. Shown at the bottom of the site so anyone can confirm which version they're on
 // after a refresh (that's how we verify a connected browser actually got the new version).
-const APP_VERSION = (document.querySelector('script[src*="app.js"]')?.getAttribute('src')?.match(/[?&]v=(\d+)/) || [])[1] || '';
+// Human-readable release number for the footer (bumped each rev via the meta tag). The content-hash Build
+// ID handles cache-busting invisibly; this stays a friendly number so a refresh visibly confirms the build.
+const APP_VERSION = document.querySelector('meta[name="crowndrive-version"]')?.content
+  || (document.querySelector('script[src*="app.js"]')?.getAttribute('src')?.match(/[?&]v=(\d+)/) || [])[1] || '';
+const APP_BUILD = document.querySelector('meta[name="crowndrive-build"]')?.content || '';
 const fallbackImage = 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=75';
 const carPhotos = car => [...(Array.isArray(car.photos) ? car.photos : []), car.photoUrl].filter((url, i, arr) => url && arr.indexOf(url) === i);
 const carImage = car => carPhotos(car)[0] || fallbackImage;
@@ -271,7 +275,7 @@ export function home() {
     <div class="trust-card"><div class="trust-icon">${ICON.chat}</div><h3>שירות לקוחות</h3><p>מענה מהיר ואישי לכל שאלה, ישירות בצ׳אט.</p></div>
   </div></section>
   <section class="info-section reveal" id="contact"><div class="foot-cta"><p class="kicker">צור קשר</p><h2>צריכים עזרה? אנחנו כאן</h2><p>צ׳אט ישיר עם שירות הלקוחות — מענה מהיר לכל שאלה.</p><button class="btn gold" id="contact-support">פתיחת צ׳אט עם התמיכה</button></div></section>
-  <footer class="site-foot"><span>© Crown Drive · קראון הייטס${APP_VERSION ? ` · גרסה ${esc(APP_VERSION)}` : ''}</span><button type="button" class="admin-entry" id="admin-entry">כניסת מנהל</button></footer>`;
+  <footer class="site-foot"><span${APP_BUILD ? ` title="build ${esc(APP_BUILD)}"` : ''}>© Crown Drive · קראון הייטס${APP_VERSION ? ` · גרסה ${esc(APP_VERSION)}` : ''}</span><button type="button" class="admin-entry" id="admin-entry">כניסת מנהל</button></footer>`;
   if (!paintApp(html)) return;  // nothing changed → keep DOM + handlers (no flicker on repeated data events)
   bindCarButtons();
   bindDateFields();
