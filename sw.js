@@ -12,12 +12,10 @@ self.addEventListener('activate', event => event.waitUntil((async () => {
   const keys = await caches.keys();
   await Promise.all(keys.map(key => caches.delete(key)));   // wipe EVERYTHING — nothing stays cached
   await self.clients.claim();
-  // Force any page still running OLD cached code to reload itself onto the fresh code the instant
-  // this worker takes over — so users NEVER have to clear their cache by hand. Runs once per update.
-  try {
-    const windows = await self.clients.matchAll({type: 'window'});
-    for (const client of windows) client.navigate(client.url);
-  } catch (error) { /* older browsers: they'll just get fresh code on their next navigation */ }
+  // NOTE: we deliberately do NOT call client.navigate() here. It fired on the FIRST install too, so a
+  // brand-new visitor's page finished loading and then immediately did a full reload (a visible flash).
+  // The single, guarded refresh now lives in sw-register.js (controllerchange → reload, ONLY when a
+  // previous worker was already in control — i.e. a real update, never the first install).
 })()));
 
 // NO 'fetch' handler on purpose → the browser always fetches the freshest code from the network,

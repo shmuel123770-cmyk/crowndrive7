@@ -1,6 +1,25 @@
-CrownDrive — FINAL build (2026-07-13, rev.56)
+CrownDrive — FINAL build (2026-07-13, rev.57)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
+rev.57 (2026-07-13) — FIRST-LOAD performance overhaul (per the user's focused render/flicker report).
+- #1 SERVICE WORKER no longer forces a reload: removed client.navigate() from sw.js — it fired on the
+  FIRST install too, so a new visitor's page finished loading and then did a full reload (a visible flash /
+  "loads twice"). The ONE guarded refresh now lives only in sw-register.js (controllerchange → reload, and
+  only when a previous worker was already in control = a real update, never first install).
+- #3 HERO RENDERS INSTANTLY: removed the full-page spinner gate in app.js that hid the whole home page
+  until the cars snapshot arrived (up to 5s). Header + hero + search now paint immediately; only the cars
+  grid shows a calm skeleton shimmer (carGrid → carSkeletons) until data is in.
+- #4 the 5s timer now SELF-CANCELS (does nothing once data arrived) instead of firing a redundant extra
+  render around the 5s mark.
+- #5 a cars-read ERROR (or a 5s hang) now ENDS the loading state (store.publicReady) so the UI never
+  strands on the skeleton waiting the full timeout.
+- Hero stats show '·' instead of a flashing 0 while loading. Verified in-browser: hero immediate + 6
+  skeletons while loading, no full-page spinner, no forced reload.
+- Already handled in earlier revs: event-burst debounce (one paint per burst), first-paint-ONLY entry
+  animations, memoized paintApp (skip repaint when HTML unchanged). ?v→57.
+- STILL OPEN from the report (offered as next steps): lazy-load admin/chat/camera/storage bundles (#13),
+  self-host the font (#14), lighten blur/backdrop-filter on weak devices (#15), image srcset (#16), stop
+  unrelated events re-rendering the login screen (#8), partial nav update (#7).
 rev.56 (2026-07-13) — ROOT CAUSE of "can't send messages" FOUND: it's a malformed Netlify env var, not code.
 - Diagnosed on the LIVE site with a REAL (guest) token: POST /api/message-send returns 500 "Unexpected
   non-whitespace character after JSON at position 6". parseBody() safely returns null on bad JSON, so that

@@ -10,11 +10,11 @@ authReady.then(() => { store.authSettled = true; scheduleRender(); });
 // Safety net: if Firebase Auth never reports back (blocked storage, dead network), don't spin
 // forever — after 10s treat auth as "settled" so gated screens resolve (login prompt / content).
 setTimeout(() => { if (!store.authSettled) { store.authSettled = true; scheduleRender(); } }, 10000);
-// Hold the FIRST paint of a data page (home/cars) until the cars snapshot arrives, so the page appears
-// once — fully — instead of flashing an empty version and then the full one ("loads twice"). Falls
-// through after 5s so a dead network never strands the loader.
-let publicTimedOut = false;
-setTimeout(() => { publicTimedOut = true; scheduleRender(); }, 5000);
+// The header + hero + search render INSTANTLY now; only the cars grid shows a skeleton until data
+// arrives (see carGrid). Ultimate fallback: if the cars read HANGS (no snapshot AND no error) for 5s,
+// end the loading state so the skeleton clears. Guarded so it fires NOTHING once the data arrived
+// (previously this timer always ran a redundant extra render around the 5s mark).
+setTimeout(() => { if (!store.publicReady) { store.publicReady = true; scheduleRender(); } }, 5000);
 
 const routes = {home, cars, auth: authView, dashboard, chats: chatsPage};
 
@@ -63,14 +63,6 @@ function render() {
       const gear = '<svg class="gear" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54A.49.49 0 0 0 14 2h-4c-.25 0-.46.18-.49.42l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.14 8.48a.49.49 0 0 0 .12.61l2.03 1.58c-.05.3-.07.63-.07.94 0 .31.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.01-1.58zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7z"/></svg>';
       document.querySelector('#app').innerHTML = `<section class="card maintenance"><div class="maint-gears" aria-hidden="true"><span class="g1">${gear}</span><span class="g2">${gear}</span></div><h1>האתר בתחזוקה</h1><p>אנחנו מעלים עדכון — נחזור ממש בקרוב. תודה על הסבלנות!</p><button class="btn outline" id="maint-admin">כניסת מנהל</button></section>`;
       document.querySelector('#maint-admin')?.addEventListener('click', () => openAdminLogin());
-      return;
-    }
-    // First-load gate: keep the loader on data pages until the cars snapshot is in (or 5s passed) — so
-    // the page appears once, fully, instead of flashing an empty version then the full one.
-    if (['home', 'cars'].includes(route) && !store.publicReady && !publicTimedOut) {
-      resetPaint();
-      const el = document.querySelector('#app');
-      if (!el.querySelector('.app-loader')) el.innerHTML = '<div class="app-loader"><div class="spinner"></div><p>טוען…</p></div>';
       return;
     }
     (routes[route] || home)();

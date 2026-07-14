@@ -225,6 +225,7 @@ export function home() {
   const all = list(store.cars);
   const available = all.filter(car => car.status === 'available');
   const rented = all.filter(car => car.status === 'rented');
+  const ready = store.publicReady;  // until the cars snapshot is in, show '·' instead of a flashing 0
   const html = `
   <section class="hero">
     <div class="aur aur-1" aria-hidden="true"></div><div class="aur aur-2" aria-hidden="true"></div><div class="aur aur-3" aria-hidden="true"></div>
@@ -241,16 +242,16 @@ export function home() {
         <button class="btn gold" id="home-search">חפש רכב</button>
       </div>
       <div class="hero-stats">
-        <div class="hstat"><b>${all.length}</b><span>רכבים באתר</span></div>
-        <div class="hstat"><b>${available.length}</b><span>זמינים כעת</span></div>
+        <div class="hstat"><b>${ready ? all.length : '·'}</b><span>רכבים באתר</span></div>
+        <div class="hstat"><b>${ready ? available.length : '·'}</b><span>זמינים כעת</span></div>
       </div>
     </div>
     <div class="road" aria-hidden="true"><div class="cars-far">${carSil('s1')}</div><div class="asphalt"></div><div class="cars-near">${carSil('s3')}</div></div>
   </section>
   <div class="strip"><div class="strip-in">
-    <span class="it"><span class="dot ok"></span><b>${available.length}</b> זמינים להשכרה</span>
-    <span class="it"><span class="dot no"></span><b>${rented.length}</b> מושכרים</span>
-    <span class="it"><span class="dot soon"></span><b>${Math.max(all.length - available.length - rented.length, 0)}</b> מתפנים בקרוב</span>
+    <span class="it"><span class="dot ok"></span><b>${ready ? available.length : '·'}</b> זמינים להשכרה</span>
+    <span class="it"><span class="dot no"></span><b>${ready ? rented.length : '·'}</b> מושכרים</span>
+    <span class="it"><span class="dot soon"></span><b>${ready ? Math.max(all.length - available.length - rented.length, 0) : '·'}</b> מתפנים בקרוב</span>
   </div></div>
   <section class="owner-cta-rich reveal"><div class="owner-cta-glow" aria-hidden="true"></div><div class="owner-cta-main"><p class="eyebrow">לבעלי רכבים</p><h2>יש לך רכב פנוי?</h2><p>פרסם רכב, קבע תנאים, גיל מינימלי, זמינות ואפשרות מסירה — והכל מנוהל באזור אישי אחד.</p><button class="btn gold" id="cta-add-car">הוסף רכב</button></div><div class="owner-cta-features"><div class="feature-chip">אימות שוכרים</div><div class="feature-chip">ניהול הזמנות</div><div class="feature-chip">תיעוד מסירה והחזרה</div><div class="feature-chip">דירוגים וביקורות</div></div></section>
   <section class="info-section fleet-zone reveal"><div class="sec-head"><p class="eyebrow">הצי שלנו</p><h2>הרכבים באתר</h2><p class="sec-sub">כל רכב עם תיעוד מלא ודירוגים אמיתיים. הסימון על כל כרטיס מראה מה פנוי ומה מושכר.</p></div>${carGrid(featuredFirst(all.filter(c => c.status !== 'hidden')).slice(0, 9))}<div class="see-all"><button class="btn primary see-all-btn" data-route="cars">כל הרכבים באתר ←</button></div></section>
@@ -409,8 +410,14 @@ function featuredFirst(cars) {
     (Number(b.featured || 0) - Number(a.featured || 0)) ||
     (Number(b.createdAt || 0) - Number(a.createdAt || 0)));
 }
+// Placeholder cards shown while the FIRST cars snapshot is still loading — so the catalog area has a
+// calm shimmer instead of a "no cars" message or an empty gap (the hero above already rendered).
+const carSkeletons = (n = 6) => Array.from({length: n}, () => '<article class="card car car-sk" aria-hidden="true"><div class="car-photo sk"></div><div class="car-body"><span class="sk-line sk-lg"></span><span class="sk-line sk-sm"></span><span class="sk-line sk-md"></span><span class="sk-btn"></span></div></article>').join('');
 function carGrid(cars, manage = false, period = null) {
-  if (!cars.length) return '<div class="grid"><div class="card empty">אין כרגע רכבים זמינים</div></div>';
+  if (!cars.length) {
+    if (!store.publicReady) return `<div class="grid">${carSkeletons(6)}</div>`;  // still loading — not "no cars"
+    return '<div class="grid"><div class="card empty">אין כרגע רכבים זמינים</div></div>';
+  }
   let ordered = featuredFirst(cars);
   if (period) {
     // Matching cars (and any rented ones) first; available cars whose rental mode doesn't fit the

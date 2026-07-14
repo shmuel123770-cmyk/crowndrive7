@@ -23,16 +23,20 @@ export const store = {
 
 const value = snap => snap.val() || {};
 function emit(key) { window.dispatchEvent(new CustomEvent('storechange', {detail: key})); }
-function listen(ref, setter, key) {
+function listen(ref, setter, key, onErr) {
   const handler = snap => { setter(value(snap)); emit(key); };
-  const onError = error => { console.error(`firebase listener ${key}`, error); emit(`${key}:error`); };
+  const onError = error => { console.error(`firebase listener ${key}`, error); if (onErr) onErr(error); emit(`${key}:error`); };
   ref.on('value', handler, onError);
   return () => ref.off('value', handler);
 }
 
 export async function startPublic() {
   if (store.publicUnsubs.length) return;
-  store.publicUnsubs.push(listen(refs.cars, v => { store.cars = v; store.publicReady = true; }, 'cars'));
+  // publicReady flips true the moment the cars snapshot arrives OR the read fails — either way the
+  // loading state is OVER, so the UI stops waiting and shows the cars (or an empty state) instead of
+  // an endless skeleton (audit: a known Firebase error must end loading, not stall the full timeout).
+  store.publicUnsubs.push(listen(refs.cars, v => { store.cars = v; store.publicReady = true; }, 'cars',
+    () => { if (!store.publicReady) { store.publicReady = true; emit('cars'); } }));
   // Read the SANITIZED public projection (carId/targetUid/type/score/review/date) — the full ratings
   // node (with authorUid + bookingId) is no longer public (audit #3).
   store.publicUnsubs.push(listen(refs.publicRatings, v => { store.ratings = v; }, 'ratings'));
