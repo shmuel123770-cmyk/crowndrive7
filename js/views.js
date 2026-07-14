@@ -886,10 +886,24 @@ function adminDashboard(tab = 'overview') {
 function adminUsersTable(users) {
   if (!users.length) return '<div class="empty">אין משתמשים</div>';
   const rentalCount = uid => myBookings().filter(b => b.renterUid === uid || b.ownerUid === uid).length;
-  return `<div class="table-wrap"><table class="data"><thead><tr><th>שם</th><th>מייל</th><th>טלפון</th><th>תפקיד</th><th>אימות</th><th>רישיון וסלפי</th><th>השכרות</th><th>ניהול</th></tr></thead><tbody>${users.map(user => {
+  return `<div class="admin-cards">${users.map(user => {
     const count = rentalCount(user.id);
-    return `<tr class="${user.blocked ? 'row-blocked' : ''}"><td class="t-main" data-label="שם">${esc(user.name || '—')}${user.blocked ? ' <span class="pill warn">חסום</span>' : ''}</td><td data-label="מייל">${esc(user.email || '—')}</td><td data-label="טלפון">${esc(user.phone || '—')}</td><td data-label="תפקיד">${esc(roleName(user.role))}</td><td data-label="אימות"><span class="pill ${user.verification?.status === 'approved' ? 'ok' : 'warn'}">${esc(verificationLabel(user.verification?.status))}</span></td><td data-label="מסמכים"><button class="btn outline" data-admin-user="${esc(user.id)}">צפייה במסמכים</button></td><td data-label="השכרות"><button class="btn outline" data-admin-rentals="${esc(user.id)}">${count} השכרות</button></td><td data-label="ניהול"><div class="t-actions"><button class="icon-btn" title="שליחת הודעה" data-user-message="${esc(user.id)}">${ICON.chat}</button><button class="icon-btn" title="עריכה" data-user-edit="${esc(user.id)}">${ICON.edit}</button><button class="icon-btn ${user.blocked ? '' : 'danger'}" title="${user.blocked ? 'שחרור חסימה' : 'חסימה'}" data-user-block="${esc(user.id)}">${user.blocked ? ICON.check : ICON.block}</button><button class="icon-btn danger" title="מחיקה" data-user-delete="${esc(user.id)}">${ICON.trash}</button></div></td></tr>`;
-  }).join('')}</tbody></table></div>`;
+    const initial = esc(String(user.name || user.email || '?').trim().charAt(0) || '?');
+    const vs = user.verification?.status;
+    return `<div class="auc${user.blocked ? ' auc-blocked' : ''}">
+      <div class="auc-head">
+        <span class="auc-ava" aria-hidden="true">${initial}</span>
+        <div class="auc-id"><b class="auc-name">${esc(user.name || '—')}${user.blocked ? ' <span class="pill warn">חסום</span>' : ''}</b><span class="auc-role">${esc(roleName(user.role))} · ${count} השכרות</span></div>
+        <span class="pill ${vs === 'approved' ? 'ok' : 'warn'}">${esc(verificationLabel(vs))}</span>
+      </div>
+      <div class="auc-contact"><span><span class="lab">מייל</span>${esc(user.email || '—')}</span><span><span class="lab">טלפון</span>${esc(user.phone || '—')}</span></div>
+      <div class="auc-actions">
+        <button class="btn outline" data-admin-user="${esc(user.id)}">מסמכים</button>
+        <button class="btn outline" data-admin-rentals="${esc(user.id)}">${count} השכרות</button>
+        <span class="auc-icons"><button class="icon-btn" title="שליחת הודעה" data-user-message="${esc(user.id)}">${ICON.chat}</button><button class="icon-btn" title="עריכה" data-user-edit="${esc(user.id)}">${ICON.edit}</button><button class="icon-btn ${user.blocked ? '' : 'danger'}" title="${user.blocked ? 'שחרור חסימה' : 'חסימה'}" data-user-block="${esc(user.id)}">${user.blocked ? ICON.check : ICON.block}</button><button class="icon-btn danger" title="מחיקה" data-user-delete="${esc(user.id)}">${ICON.trash}</button></span>
+      </div>
+    </div>`;
+  }).join('')}</div>`;
 }
 
 // Admin notifications feed (new car / booking / status / payment / chat / block).

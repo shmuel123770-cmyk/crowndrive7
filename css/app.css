@@ -1021,6 +1021,23 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
   table.data .t-actions{justify-content:flex-end;flex-wrap:wrap;gap:8px}
 }
 
+/* Admin USERS list as compact cards in a responsive grid — no wide table, no horizontal scroll at any
+   width (1 card/row on a phone, 2–3 across on the dashboard). Same info as the desktop table. */
+.admin-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.auc{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 15px;box-shadow:0 6px 16px rgba(12,20,32,.06)}
+.auc.auc-blocked{border-color:rgba(217,120,40,.55)}
+.auc-head{display:flex;align-items:center;gap:11px}
+.auc-ava{flex:0 0 42px;width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#3F6B8E,#28455c);color:#fff;display:grid;place-items:center;font-weight:800;font-size:1rem;text-transform:uppercase}
+.auc-id{flex:1;min-width:0}
+.auc-name{display:block;font-weight:700;font-size:1.02rem;color:#1B222B;line-height:1.2}
+.auc-role{font-size:.8rem;color:#66707a}
+.auc-contact{margin:11px 0 12px;display:flex;flex-direction:column;gap:5px}
+.auc-contact span{font-size:.88rem;color:#37414b;word-break:break-all}
+.auc-contact .lab{color:#8b95a0;font-weight:600;margin-inline-end:6px}
+.auc-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px solid var(--hair);padding-top:12px}
+.auc-actions .btn.outline{padding:8px 13px;font-size:.82rem}
+.auc-icons{display:flex;gap:6px;margin-inline-start:auto}
+
 /* ---------- Rental modes + date-search pricing ---------- */
 .mode-badge{position:absolute;bottom:12px;inset-inline-start:12px;background:rgba(27,34,43,.82);color:#fff;font-weight:700;font-size:.7rem;padding:5px 11px;border-radius:99px;letter-spacing:.02em;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
 .mode-badge.lg{position:static;display:inline-block;background:var(--brand);font-size:.8rem;padding:6px 14px}

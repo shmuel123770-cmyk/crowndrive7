@@ -1,6 +1,17 @@
-CrownDrive — FINAL build (2026-07-13, rev.57)
+CrownDrive — FINAL build (2026-07-13, rev.58)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
+rev.58 (2026-07-13) — admin USERS list: wide scrolling table → compact responsive CARDS (chosen with user).
+- The admin "משתמשים ואימותים" list was an 8-column table that needed left-right scrolling (worse on mobile).
+  Replaced adminUsersTable() with a compact card per user in a responsive grid (.admin-cards / .auc): avatar
+  initial + name + role·rentals, verification pill, מייל/טלפון, and one action row (מסמכים, N השכרות, +
+  message/edit/block/delete icons). ALL original handlers/data-attrs preserved (data-admin-user,
+  data-admin-rentals, data-user-message/-edit/-block/-delete). Blocked users get an orange card border.
+- Responsive grid = repeat(auto-fill,minmax(300px,1fr)): 1 card/row on a phone, 2–3 across on the dashboard
+  — NO horizontal scroll at ANY width. Picked "Option B" from side-by-side previews the user approved;
+  verified in-browser at 375px (1 col) and 1000px (2 cols). Same info as the desktop table, nothing tiny.
+- Cars + Bookings admin tables still use the existing table→cards-on-mobile treatment; converting them to
+  matching compact cards is the offered next step. ?v→58.
 rev.57 (2026-07-13) — FIRST-LOAD performance overhaul (per the user's focused render/flicker report).
 - #1 SERVICE WORKER no longer forces a reload: removed client.navigate() from sw.js — it fired on the
   FIRST install too, so a new visitor's page finished loading and then did a full reload (a visible flash /
