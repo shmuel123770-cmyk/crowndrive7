@@ -1,6 +1,32 @@
-CrownDrive — FINAL build (2026-07-13, rev.51)
+CrownDrive — FINAL build (2026-07-13, rev.53)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
+rev.53 (2026-07-13) — mobile denser (3 cars/row) + CACHE-BUST so the messaging fix actually reaches devices.
+- MESSAGING DIAGNOSIS (read-only live probe): rev.51 IS deployed (live VERSION + db.js confirm the server
+  routing), the message-send function is healthy, and Firebase Admin works (image uploads succeed). So the
+  fix is live and NO special/external service is needed. The reason the admin/users still saw failures is a
+  STALE cached client: rev.51 never bumped ?v (stuck at v=33), so devices holding the OLD db.js kept doing the
+  old client-side write that needs published rules. **FIX: bumped ?v=33 → ?v=53** on css/app.css + app.js +
+  sw-register.js, forcing every device to fetch the fresh CSS + JS (which also carries the messaging fix). The
+  SW is already cache-free + self-healing. After deploy the admin must fully close & reopen the site ONCE.
+- MOBILE denser + smaller (user request): phone root font 15px → 14px (shrink more), and the home/search car
+  catalog is now a compact **3-per-row** grid (was one full-width card). Cards get compact type, the mode
+  badge is hidden on the tiny card (redundant with the "השכרה לפי…" line), badges shrink. DESKTOP unchanged
+  (>600px). Consolidated the two conflicting @media(600px) car blocks into one. (css/app.css + index.html ?v)
+- The ?v bump ALSO delivers rev.52's fixed tests and rev.50/51's app to any device that was on a stale bundle.
+rev.52 (2026-07-13) — TEST-HARNESS correction + coverage. NO production app change vs rev.51.
+- Ran the FULL suite (node --test) for the first time since rev.48 (I'd been running only static-check) and
+  found tests/scenarios.test.mjs FAILING — not from an app bug, but from a STALE in-memory firebase-admin
+  mock that hadn't kept up with the code: (1) push() didn't return a ThenableReference, so audit()'s
+  `push().catch()` (rev.49) threw only in tests; (2) no transaction() — booking-action's atomic reservation
+  guard (rev.48) crashed on approve; (3) no remove() — releasing a reservation on rental completion crashed.
+  Real firebase-admin provides all three, so PRODUCTION was fine; the mock now mirrors it.
+- Added coverage for two previously-UNTESTED paths I recently added: the guest one-message-until-reply
+  support limit (rev.51, now server-enforced) and media-migrate (rev.50). The mock's verifyIdToken now
+  reports firebase.sign_in_provider so anonymous guests can be simulated.
+- Result: 92 scenarios + 12 node:test blocks + static-check ALL green. This is the first run that actually
+  verifies the rev.48–51 server changes (atomic booking, admin messaging via the server, Storage migration)
+  end-to-end. No client JS/CSS or function LOGIC changed vs rev.51 → deployed app is identical; ?v unchanged.
 rev.51 (2026-07-13) — admin messaging fixed for good + mobile sizing + "new" badge + user sort. INCLUDES rev.50.
 - ADMIN MESSAGING (the recurring "I still can't send messages from the admin account"): admin support messages
   were written CLIENT-SIDE to messages/admin/<uid>, so they needed the DB rules PUBLISHED — any rule drift

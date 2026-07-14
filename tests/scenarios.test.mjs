@@ -18,8 +18,17 @@ function ref(path = '') {
   return {
     key: path.split('/').filter(Boolean).at(-1) || null,
     child: p => ref(`${path}/${p}`),
-    push(value) { const key = `k${++pushCount}`; const r = ref(`${path}/${key}`); if (value !== undefined) r.set(value); return r; },
+    push(value) {
+      const key = `k${++pushCount}`; const r = ref(`${path}/${key}`);
+      const done = value !== undefined ? r.set(value) : Promise.resolve();
+      // Mirror firebase-admin's ThenableReference: the returned object has the full ref API AND is
+      // awaitable. `.then` resolves to the PLAIN ref `r` (which is NOT itself thenable), so awaiting it
+      // doesn't recurse. Both `const r = ref().push(); await r.set(...)` and `ref().push(v).catch(...)`
+      // (best-effort audit) work.
+      return {...r, then: (res, rej) => done.then(() => res(r), rej), catch: rej => done.catch(rej)};
+    },
     async set(value) { set(path, value === undefined ? null : JSON.parse(JSON.stringify(value))); },
+    async remove() { set(path, null); },
     async update(patch) { for (const [k, v] of Object.entries(patch)) set(`${path}/${k}`, v === undefined ? null : JSON.parse(JSON.stringify(v))); },
     async once() { const v = get(path); return {val: () => (v === undefined ? null : JSON.parse(JSON.stringify(v))), exists: () => v !== undefined}; },
     orderByChild(field) {
@@ -30,13 +39,22 @@ function ref(path = '') {
         return {val: () => (Object.keys(out).length ? JSON.parse(JSON.stringify(out)) : null), exists: () => Object.keys(out).length > 0};
       }})};
     },
+    // Mirror firebase-admin's transaction: run the updater on the current value; `undefined` aborts
+    // (committed:false, the conflict path), any other value commits. Used for atomic reservations.
+    async transaction(updater) {
+      const current = get(path);
+      const next = updater(current === undefined ? null : JSON.parse(JSON.stringify(current)));
+      if (next === undefined) return {committed: false, snapshot: {val: () => (current === undefined ? null : current)}};
+      set(path, next);
+      return {committed: true, snapshot: {val: () => next}};
+    },
   };
 }
 const usersByEmail = {};
 const fakeApp = {
   database: () => ({ref}),
   auth: () => ({
-    verifyIdToken: async token => ({uid: token, email: `${token}@x.com`, email_verified: true}),
+    verifyIdToken: async token => ({uid: token, email: `${token}@x.com`, email_verified: true, firebase: {sign_in_provider: token.startsWith('guest') ? 'anonymous' : 'password'}}),
     deleteUser: async () => {},
     getUserByEmail: async email => { const uid = usersByEmail[email]; if (!uid) throw new Error('not found'); return {uid}; },
   }),
@@ -56,7 +74,7 @@ const S = r => r.statusCode;
 const B = r => JSON.parse(r.body);
 
 const fn = {};
-for (const f of ['profile-save', 'car-action', 'booking-create', 'booking-action', 'message-send', 'payment-submit', 'rating-submit', 'document-register', 'verification-review', 'private-car-details', 'user-private-profile', 'media-sign-upload', 'media-upload', 'media-sign-read', 'car-media-public', 'admin-action', 'migrate-legacy', 'car-image-search'])
+for (const f of ['profile-save', 'car-action', 'booking-create', 'booking-action', 'message-send', 'payment-submit', 'rating-submit', 'document-register', 'verification-review', 'private-car-details', 'user-private-profile', 'media-sign-upload', 'media-upload', 'media-migrate', 'media-sign-read', 'car-media-public', 'admin-action', 'migrate-legacy', 'car-image-search'])
   fn[f] = (await import(`../netlify/functions/${f}.mjs`)).handler;
 
 // ---------- seed ----------
@@ -267,6 +285,36 @@ r = await call(fn['profile-save'], 'o1', {action: 'update', photoURL: dataImg});
 check('תמונת פרופיל data URL נשמרת', S(r) === 200 && get('users/o1/photoURL') === dataImg);
 r = await call(fn['document-register'], 'r2', {documentType: 'selfie', path: dataImg});
 check('מסמך אימות data URL נשמר', S(r) === 200 && get('privateUserDocuments/r2/selfie') === dataImg);
+
+console.log('\nתרחיש N: צ׳אט תמיכה + הגבלת אורח (server-enforced)');
+// A registered user messages support freely (goes through the message-send function now, not a client write).
+r = await call(fn['message-send'], 'r1', {thread: 'admin', text: 'שלום, שאלה על הזמנה'});
+check('משתמש רשום שולח הודעת תמיכה', S(r) === 200);
+// A GUEST (anonymous) may send ONE message, then is blocked until the admin replies.
+r = await call(fn['message-send'], 'guest1', {thread: 'admin', text: 'יש רכב פנוי להיום?'});
+check('אורח שולח הודעה ראשונה', S(r) === 200 && get('supportGuestState/guest1/firstSent') === true);
+r = await call(fn['message-send'], 'guest1', {thread: 'admin', text: 'הלו?'});
+check('אורח חסום להודעה שנייה עד מענה (429)', S(r) === 429);
+// The admin replies → the guest is opened to write freely.
+r = await call(fn['message-send'], 'a1', {thread: 'admin', userUid: 'guest1', text: 'כן, יש!'});
+check('מנהל עונה לאורח', S(r) === 200 && get('supportGuestState/guest1/adminReplied') === true);
+r = await call(fn['message-send'], 'guest1', {thread: 'admin', text: 'מעולה, תודה!'});
+check('אורח כותב חופשי אחרי מענה', S(r) === 200);
+// A guest can never write into ANOTHER user's support thread.
+r = await call(fn['message-send'], 'guest1', {thread: 'admin', userUid: 'r1', text: 'התחזות'});
+check('אורח לא יכול לכתוב לשיחת משתמש אחר (403)', S(r) === 403);
+
+console.log('\nתרחיש O: העברת תמונות רכב ל-Storage (media-migrate)');
+r = await call(fn['media-migrate'], 'r1', {});
+check('לא-מנהל לא יכול להעביר תמונות (403)', S(r) === 403);
+set('cars/mig1', {make: 'T', model: 'M', ownerUid: 'o1', status: 'available', photoUrl: dataImg, photos: [dataImg, 'https://cdn/keep.jpg']});
+r = await call(fn['media-migrate'], 'a1', {});
+check('מנהל מעביר תמונות inline ל-Storage', S(r) === 200 && B(r).migrated >= 2);
+check('photoUrl של data URL הוחלף ב-https', /^https:\/\//.test(String(get('cars/mig1/photoUrl'))));
+check('תמונת https קיימת נשמרה כמו שהיא', get('cars/mig1/photos')[1] === 'https://cdn/keep.jpg');
+check('אין יותר data URL ברכב + done=true', B(r).done === true && !/^data:/.test(String(get('cars/mig1/photos')[0])));
+r = await call(fn['media-migrate'], 'a1', {});
+check('הרצה חוזרת בטוחה (idempotent) — אין מה להעביר', S(r) === 200 && B(r).migrated === 0 && B(r).done === true);
 
 console.log(`\n========== ${passed} עברו · ${failed} נכשלו ==========`);
 process.exit(failed ? 1 : 0);
