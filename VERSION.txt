@@ -1,5 +1,22 @@
-CrownDrive — FINAL build (2026-07-14, rev.70)
+CrownDrive — FINAL build (2026-07-14, rev.71)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.71 (2026-07-14) — APP-STYLE MOBILE BOTTOM TAB BAR + boot watchdog (feels-like-an-app pass). Cumulative.
+- BOTTOM TAB BAR (mobile only): a fixed bottom bar with בית / רכבים / אזור אישי, icons + labels, active tab in
+  brand blue with a top indicator, press feedback, safe-area padding. Hidden on desktop (top nav) and on the
+  full-screen chat/auth routes + blocked/maintenance screens. "אזור אישי" → dashboard if signed in, else auth.
+  New `bottomNav()` in views.js (called from app.js render, after store.route is set so the active tab is
+  correct on the FIRST paint), `#bottom-nav` in index.html, a `home` ICON, `.bottom-nav`/`.tab-item` CSS,
+  and safe-area bottom padding on content so the bar never covers it. Verified: renders, navigates, active
+  state tracks the route, hides on auth. (Tested live at 375px.)
+- BOOT WATCHDOG (imported from Codex rev51_FIXED, no ego): js/boot-watchdog.js — a tiny dependency-free guard
+  loaded BEFORE the Firebase CDN scripts; if a script fails to load (blocked CDN / in-app browser / offline)
+  or the app never paints within 15s, it swaps the dead spinner for a friendly retry screen (.boot-failure).
+  The app cancels it via window.__CD_BOOT_READY__() on first paint, so it only shows on a real failure.
+- ?v→71, version meta→71. 122 tests pass (now 13 client modules). Build ID auto per deploy.
+- STILL TO IMPORT from Codex (deliberately staged, next revs): App Check (needs a reCAPTCHA key), scheduled
+  fns (booking-expire / sms-outbox / media-delete), payment/refund state machine + idempotency, legal pages
+  (privacy/terms), media registry + signed links. Doing these one-at-a-time + tested, not a reckless dump.
 
 rev.70 (2026-07-14) — CONTENT-HASH BUILD SYSTEM (adapted from the Codex rev51_FIXED, per the user's choice to
 keep rev.69 features + import its build). Cumulative. Deploy method CHANGED — see below.

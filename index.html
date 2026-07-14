@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#1B222B">
-  <meta name="crowndrive-version" content="70">
+  <meta name="crowndrive-version" content="71">
   <title>Crown Drive · השכרת רכבים · קראון הייטס</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon-192.png">
@@ -13,11 +13,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/app.css?v=70">
+  <link rel="stylesheet" href="css/app.css?v=71">
   <!-- start the app's own JS modules downloading immediately, in parallel (execution order unchanged) -->
-  <link rel="modulepreload" href="js/app.js?v=70">
+  <link rel="modulepreload" href="js/app.js?v=71">
   <link rel="modulepreload" href="js/views.js">
   <link rel="modulepreload" href="js/store.js">
+  <!-- Registers before the Firebase CDN scripts so it can catch a boot failure (blocked CDN / offline) and
+       show a retry instead of a dead spinner. Cancelled by the app on first paint. -->
+  <script src="js/boot-watchdog.js"></script>
 </head>
 <body>
 <header class="topbar">
@@ -27,14 +30,15 @@
 <main id="app" tabindex="-1"><div class="app-loader"><div class="spinner"></div><p>טוען…</p></div></main>
 <div id="toast" role="status" aria-live="polite"></div>
 <div id="modal-root"></div>
+<nav id="bottom-nav" class="bottom-nav hide" aria-label="ניווט תחתון"></nav>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="js/tawk.js?v=70"></script>
-<script type="module" src="js/app.js?v=70"></script>
-<script src="js/sw-register.js?v=70"></script>
+<script src="js/tawk.js?v=71"></script>
+<script type="module" src="js/app.js?v=71"></script>
+<script src="js/sw-register.js?v=71"></script>
 </body>
 </html>

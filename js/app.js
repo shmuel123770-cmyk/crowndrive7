@@ -1,6 +1,6 @@
 import {startPublic, store} from './store.js';
 import {authReady} from './auth.js';
-import {nav, home, cars, authView, dashboard, chatsPage, openAdminLogin} from './views.js';
+import {nav, bottomNav, home, cars, authView, dashboard, chatsPage, openAdminLogin} from './views.js';
 import {toast, closeModal, resetPaint} from './core.js';
 
 // Start data + auth in the background — do NOT block first paint on them.
@@ -53,10 +53,11 @@ function render() {
   if (rendering) return;
   rendering = true;
   try {
-    nav();
     const route = location.hash.slice(1) || 'home';
     store.route = route;
     document.body.dataset.page = route;
+    nav();
+    bottomNav();
     // A user blocked by the admin is fully locked out of the app (every route) with a big notice. (This is
     // the reliable account-level lock; an optional IP-level block for logged-OUT access is separate.)
     if (store.profile?.blocked === true && !store.isAdmin) {
@@ -86,6 +87,7 @@ function render() {
     }
     watchReveals();
     firstPaintDone = true;
+    window.__CD_BOOT_READY__?.();  // app painted — stand the boot watchdog down
     document.querySelector('#app')?.focus({preventScroll: true});
   } catch (error) {
     console.error('render failed', error);

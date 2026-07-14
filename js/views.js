@@ -25,6 +25,7 @@ const avatarHtml = (user, size = 42) => user?.photoURL
 
 // Inline icons for the KPI cards (match the reference dashboard look).
 const ICON = {
+  home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
   money: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>',
   calendar: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
   car: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l1.5-4.5A2 2 0 0 1 8.4 7h7.2a2 2 0 0 1 1.9 1.5L19 13v5a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H8v1a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z"/><circle cx="7.5" cy="16.5" r="1"/><circle cx="16.5" cy="16.5" r="1"/></svg>',
@@ -227,6 +228,33 @@ export function nav() {
     else location.hash = button.dataset.route;
   });
   node.querySelector('#nav-add-car')?.addEventListener('click', () => carForm());
+}
+
+// App-style fixed bottom tab bar (mobile only). Three tabs — בית / רכבים / אזור אישי — mirroring how a
+// polished car app is navigated on a phone. Hidden on desktop (top nav is used there) and on the full-screen
+// routes (chat / auth) + the blocked / maintenance screens, where a tab bar would fight the layout.
+export function bottomNav() {
+  const node = document.querySelector('#bottom-nav');
+  if (!node) return;
+  const route = store.route || 'home';
+  const blocked = store.profile?.blocked === true && !store.isAdmin;
+  const maintenance = store.config?.maintenance?.on && !store.isAdmin && route !== 'auth';
+  if (blocked || maintenance || ['chats', 'auth'].includes(route)) { node.classList.add('hide'); node.innerHTML = ''; return; }
+  node.classList.remove('hide');
+  const loggedIn = store.user && !store.user.isAnonymous;
+  const items = [
+    ['home', 'בית', ICON.home, route === 'home'],
+    ['cars', 'רכבים', ICON.car, route === 'cars'],
+    [loggedIn ? 'dashboard' : 'auth', 'אזור אישי', ICON.selfie, route === 'dashboard' || route === 'auth'],
+  ];
+  node.innerHTML = items.map(([key, label, icon, active]) =>
+    `<button class="tab-item ${active ? 'active' : ''}" data-route="${key}" aria-label="${esc(label)}"${active ? ' aria-current="page"' : ''}>${icon}<span>${esc(label)}</span></button>`).join('');
+  node.querySelectorAll('[data-route]').forEach(button => button.onclick = event => {
+    event.stopPropagation();
+    const target = button.dataset.route;
+    if ((location.hash.slice(1) || 'home') === target) { window.scrollTo({top: 0, behavior: 'smooth'}); window.dispatchEvent(new HashChangeEvent('hashchange')); }
+    else location.hash = target;
+  });
 }
 
 export function home() {

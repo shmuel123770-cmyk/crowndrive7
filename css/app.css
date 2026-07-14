@@ -547,6 +547,11 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
 .blocked-screen .blocked-ic{font-size:4.6rem;line-height:1;margin-bottom:12px}
 .blocked-screen h1{font-size:clamp(1.9rem,5.4vw,2.7rem);color:#b71c1c;margin:0 0 12px}
 .blocked-screen p{color:var(--muted);font-size:1.05rem;margin:0}
+.boot-failure{max-width:520px;margin:12vh auto;padding:40px 28px;text-align:center;background:#fff;border:1px solid var(--hair);border-radius:20px;box-shadow:0 20px 60px rgba(10,14,19,.12)}
+.boot-failure h1{margin:0 0 12px;font-size:1.45rem;color:var(--dark)}
+.boot-failure p{margin:0 0 22px;color:var(--muted);line-height:1.6}
+.boot-failure button{background:var(--brand);color:#fff;border:none;border-radius:99px;padding:12px 32px;font-size:1rem;font-weight:700;cursor:pointer;font-family:inherit;transition:background .18s}
+.boot-failure button:hover{background:var(--brand-d)}
 .maintenance{max-width:520px;margin:70px auto;padding:44px 30px;text-align:center;display:grid;gap:12px;justify-items:center}
 .maint-gears{position:relative;width:128px;height:104px;margin-bottom:6px}
 .maint-gears .g1,.maint-gears .g2{position:absolute;display:block}
@@ -662,8 +667,20 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
   .blueprint{top:44px;opacity:.08}
   .overview-grid{grid-template-columns:1fr}
 }
+/* App-style fixed bottom tab bar — mobile only (the top nav serves desktop). */
+.bottom-nav{display:none}
+@media(max-width:820px){
+  .bottom-nav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:60;background:#fff;border-top:1px solid var(--hair);box-shadow:0 -6px 22px rgba(20,26,33,.09);padding-bottom:env(safe-area-inset-bottom)}
+  .bottom-nav.hide{display:none}
+  .tab-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 4px 7px;border:none;background:none;cursor:pointer;color:var(--muted);font-family:inherit;font-size:.66rem;font-weight:600;letter-spacing:.01em;position:relative;transition:color .18s,transform .12s;-webkit-tap-highlight-color:transparent}
+  .tab-item svg{width:23px;height:23px;stroke-width:2}
+  .tab-item.active{color:var(--brand-d)}
+  .tab-item.active::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:32px;height:3px;border-radius:0 0 4px 4px;background:var(--brand)}
+  .tab-item:active{transform:scale(.93)}
+}
 @media(max-width:820px){
   main{width:100%;margin:0 auto 64px;padding:0 12px}
+  body:not([data-page="chats"]):not([data-page="auth"]) main{padding-bottom:env(safe-area-inset-bottom)}
   .hero,.strip{margin-inline:-12px;width:calc(100% + 24px)}
   .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .kpis{grid-template-columns:repeat(2,1fr);gap:10px}
