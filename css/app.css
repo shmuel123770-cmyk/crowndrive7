@@ -270,8 +270,8 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
 .grid > .empty-state{grid-column:1 / -1}
 
 /* ---------- owner CTA (gradient split card, like the reference) ---------- */
-.owner-cta-rich{margin-top:34px;display:grid;grid-template-columns:1.2fr .8fr;gap:24px;align-items:center;direction:rtl;text-align:right;
-  background:linear-gradient(135deg,#2D2414,#735A22);color:#fff;border-radius:20px;padding:32px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+.owner-cta-rich{margin-top:34px;display:grid;grid-template-columns:1.2fr .8fr;gap:28px;align-items:center;direction:rtl;text-align:right;
+  background:linear-gradient(135deg,#2D2414,#735A22);color:#fff;border-radius:18px;padding:30px 32px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
 .owner-cta-main{grid-column:1}
 .owner-cta-features{grid-column:2}
 .owner-cta-main .kicker,.owner-cta-main .eyebrow,.owner-cta-main h2,.owner-cta-main p{text-align:right}
@@ -280,10 +280,10 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
   radial-gradient(420px 260px at 0% 120%, rgba(16,24,32,.35), transparent 60%)}
 .owner-cta-rich>*{position:relative}
 .owner-cta-main .eyebrow{color:#BFD4E6}
-.owner-cta-main h2{margin:7px 0 12px;color:#fff;font-size:clamp(1.6rem,3.2vw,2rem)}
+.owner-cta-main h2{margin:6px 0 10px;color:#fff;font-size:clamp(1.5rem,3vw,1.9rem)}
 .owner-cta-main p{color:rgba(255,255,255,.78);margin:0 0 20px;line-height:1.7;max-width:650px}
 .owner-cta-features{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.feature-chip{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);border-radius:14px;
+.feature-chip{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);border-radius:12px;
   padding:12px;font-weight:600;color:#fff;white-space:nowrap;text-align:center;transition:background .2s,border-color .2s,transform .18s var(--ease)}
 .feature-chip:hover{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.3);transform:translateY(-2px)}
 
@@ -1236,8 +1236,9 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
   .mode-badge{font-size:.58rem;padding:3px 8px;bottom:8px;inset-inline-start:8px}
   .has-video{font-size:.58rem;padding:2px 8px;bottom:8px}
 }
-/* Below ~360px two columns get too tight — fall back to one comfortable column. */
-@media (max-width:360px){
+/* Keep TWO columns on phones (user wants 4 cars per view = 2×2). Only fall back to a single
+   column below ~320px — narrower than any current phone — so it never triggers in practice. */
+@media (max-width:319px){
   .grid{grid-template-columns:1fr}
   .car-photo{aspect-ratio:16/9}
 }

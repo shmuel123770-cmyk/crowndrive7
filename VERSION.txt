@@ -1,4 +1,4 @@
-CrownDrive — FINAL build (2026-07-14, rev.84)
+CrownDrive — FINAL build (2026-07-14, rev.88)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
 rev.82 (2026-07-14) — personal-area bar SOLID+FIXED + home shows 4 cars on phones. Cumulative.
@@ -1052,3 +1052,37 @@ See התחל_כאן_גרסה_סופית.md to deploy. Remember to publish the up
   .dashboard-panel 20→18; .owner-cta-rich 26→20 (one notch for the big hero panel). 27 panels now = 18px.
 - RIGHT-SIZED sprawl: .step-card padding 34/26→28/24; .foot-cta 56/40→44/32.
 - All global classes, so dashboards/detail/booking/modals inherit it. Verified home (full page) + cars list.
+
+=== rev.85 (2026-07-14) — home order + phone grid (per user feedback) ===
+- Moved the gold owner-CTA panel ("יש לך רכב פנוי?") from directly-after-hero to NEAR THE BOTTOM
+  (after the trust section, before contact). Entering the site now shows hero → cars first (the product);
+  owner-recruitment is no longer the first thing a renter sees. #cta-add-car binding unaffected (querySelector).
+- Phone grid stays 2 COLUMNS on all phones (user wants 4 cars per view = 2x2). The 1-col fallback was
+  @media(max-width:360px) — but most Android phones are exactly 360px logical, so they saw 1 car per row.
+  Lowered the 1-col fallback to max-width:319px (narrower than any current phone) so it never triggers.
+
+=== rev.86 (2026-07-14) — owner-CTA panel redesigned to the clean card language ===
+- Replaced the heavy gold-brown GRADIENT panel (background:linear-gradient(#2D2414,#735A22) + white text +
+  radial glow + var(--shadow)) with a CLEAN light panel that matches the cards: background rgba(63,107,142,.05),
+  1px rgba(63,107,142,.15) hairline border, 18px radius, soft box-shadow 0 10px 28px rgba(20,28,40,.05).
+- Text recolored for the light bg: .eyebrow var(--brand), h2 var(--brand-d) (clamp trimmed 1.6-2→1.5-1.9rem),
+  body var(--muted). .feature-chip now #fff + hairline border + var(--brand-d) text (was white-on-dark).
+- .owner-cta-glow hidden. Blue "הוסף רכב" button unchanged (.btn.gold = blue gradient). Padding 32→30/32.
+- Verified desktop + mobile (360px): panel bg rgba(63,107,142,.05), 18px, 4 white chips visible.
+
+=== rev.87 (2026-07-14) — owner-CTA back to GOLD (per user: "leave it gold like it was") ===
+- rev.86 recolored the panel blue; user only wanted its SIZE fixed, not the color. Restored the GOLD
+  gradient(#2D2414→#735A22) + white text + radial glow + translucent-white .feature-chips (as it was),
+  but KEPT the size-consistency: 18px radius (matches the site) + right-sized 30px/32px padding + 12px chips.
+  So: gold identity, site-consistent sizing. Blue "הוסף רכב" button unchanged.
+
+=== rev.88 (2026-07-14) — boot/speed optimization (hint-only, no behavior change) ===
+- PRELOAD the 4 Firebase compat SDK scripts (~200KB gz, boot-critical) in <head> so they download
+  immediately in parallel with CSS/modules — before they only started when the parser reached the <script>
+  tags at the END of <body>, delaying time-to-content on every first load.
+- Fixed the www.gstatic.com preconnect: removed crossorigin (the Firebase compat scripts load as classic
+  NON-CORS scripts, so a CORS preconnect opened a connection they could not reuse). fonts.gstatic keeps it.
+- Added modulepreload for the boot-critical leaf modules (firebase.js, core.js, db.js, auth.js) — the browser
+  was only discovering them AFTER app/views/store parsed, adding a round-trip on high-latency mobile.
+- Already-good (verified, left as-is): media.js downscales uploads client-side (<=900-1024px, q0.6);
+  SW immutable-caches versioned assets. Future option (not done, higher risk): code-split views.js (48KB gz).

@@ -4,20 +4,33 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#1B222B">
-  <meta name="crowndrive-version" content="84">
+  <meta name="crowndrive-version" content="88">
   <title>Crown Drive · השכרת רכבים · קראון הייטס</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon-192.png">
-  <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://www.gstatic.com">
   <link rel="preconnect" href="https://amar-75684-default-rtdb.firebaseio.com" crossorigin>
+  <!-- The Firebase SDK is boot-critical (nothing real renders until it loads) but the <script> tags sit at
+       the end of <body>, so they only start downloading after the whole page parses. Preload them here so
+       they fetch immediately, in parallel with the CSS and app modules. (Classic scripts → no crossorigin.) -->
+  <link rel="preload" as="script" href="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js">
+  <link rel="preload" as="script" href="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js">
+  <link rel="preload" as="script" href="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js">
+  <link rel="preload" as="script" href="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/app.css?v=84">
+  <link rel="stylesheet" href="css/app.css?v=88">
   <!-- start the app's own JS modules downloading immediately, in parallel (execution order unchanged) -->
-  <link rel="modulepreload" href="js/app.js?v=84">
+  <link rel="modulepreload" href="js/app.js?v=88">
   <link rel="modulepreload" href="js/views.js">
   <link rel="modulepreload" href="js/store.js">
+  <!-- The boot-critical leaf modules too — otherwise the browser only discovers them after app.js/views.js/
+       store.js parse, adding a round-trip on high-latency mobile. Preloading flattens that waterfall. -->
+  <link rel="modulepreload" href="js/firebase.js">
+  <link rel="modulepreload" href="js/core.js">
+  <link rel="modulepreload" href="js/db.js">
+  <link rel="modulepreload" href="js/auth.js">
   <!-- Registers before the Firebase CDN scripts so it can catch a boot failure (blocked CDN / offline) and
        show a retry instead of a dead spinner. Cancelled by the app on first paint. -->
   <script src="js/boot-watchdog.js"></script>
@@ -37,8 +50,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="js/tawk.js?v=84"></script>
-<script type="module" src="js/app.js?v=84"></script>
-<script src="js/sw-register.js?v=84"></script>
+<script src="js/tawk.js?v=88"></script>
+<script type="module" src="js/app.js?v=88"></script>
+<script src="js/sw-register.js?v=88"></script>
 </body>
 </html>
