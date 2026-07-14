@@ -307,6 +307,9 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
 .admin-entry{background:none;border:none;color:var(--muted);font-size:.78rem;cursor:pointer;opacity:.55;
   text-decoration:underline;text-underline-offset:3px;padding:6px 4px;transition:opacity .15s,color .15s}
 .admin-entry:hover{opacity:1;color:var(--brand-d)}
+.foot-links{display:flex;gap:16px;flex-wrap:wrap}
+.foot-links a{color:var(--muted);font-size:.78rem;text-decoration:none;opacity:.75;transition:opacity .15s,color .15s}
+.foot-links a:hover{opacity:1;color:var(--brand-d);text-decoration:underline;text-underline-offset:3px}
 
 /* ---------- cars page + filter bar ---------- */
 .cars-page{margin-top:26px}

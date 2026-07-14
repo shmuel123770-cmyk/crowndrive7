@@ -303,7 +303,7 @@ export function home() {
     <div class="trust-card"><div class="trust-icon">${ICON.chat}</div><h3>שירות לקוחות</h3><p>מענה מהיר ואישי לכל שאלה, ישירות בצ׳אט.</p></div>
   </div></section>
   <section class="info-section reveal" id="contact"><div class="foot-cta"><p class="kicker">צור קשר</p><h2>צריכים עזרה? אנחנו כאן</h2><p>צ׳אט ישיר עם שירות הלקוחות — מענה מהיר לכל שאלה.</p><button class="btn gold" id="contact-support">פתיחת צ׳אט עם התמיכה</button></div></section>
-  <footer class="site-foot"><span${APP_BUILD ? ` title="build ${esc(APP_BUILD)}"` : ''}>© Crown Drive · קראון הייטס${APP_VERSION ? ` · גרסה ${esc(APP_VERSION)}` : ''}</span><button type="button" class="admin-entry" id="admin-entry">כניסת מנהל</button></footer>`;
+  <footer class="site-foot"><span${APP_BUILD ? ` title="build ${esc(APP_BUILD)}"` : ''}>© Crown Drive · קראון הייטס${APP_VERSION ? ` · גרסה ${esc(APP_VERSION)}` : ''}</span><nav class="foot-links"><a href="privacy.html">פרטיות</a><a href="terms.html">תנאי שימוש</a></nav><button type="button" class="admin-entry" id="admin-entry">כניסת מנהל</button></footer>`;
   if (!paintApp(html)) return;  // nothing changed → keep DOM + handlers (no flicker on repeated data events)
   bindCarButtons();
   bindDateFields();

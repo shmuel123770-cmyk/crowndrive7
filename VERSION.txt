@@ -1,5 +1,22 @@
-CrownDrive — FINAL build (2026-07-14, rev.71)
+CrownDrive — FINAL build (2026-07-14, rev.72)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.72 (2026-07-14) — LEGAL PAGES (privacy + terms) + footer links. Cumulative (incl. rev.71 bottom bar + watchdog).
+- Ported the Codex privacy.html + terms.html + css/legal.css (self-contained, no scripts) — Hebrew policy for a
+  rental platform. Removed the "App Check" claims from privacy (we don't have App Check yet — accuracy).
+  These are TEMPLATES the user should review with a lawyer. Footer now links פרטיות / תנאי שימוש (.foot-links).
+- Build: privacy/terms added to runtimeFiles + the HTML-versioning loop (their css/legal.css + logo get the
+  Build ID) + _headers (no-cache). Standalone pages served directly (the /* → /index.html SPA redirect doesn't
+  touch real files). Verified: privacy.html renders with the branded header + legal.css. 29 public files in dist/.
+- HONEST FINDING on "import everything good": the REMAINING Codex value (payment/refund state machine, scheduled
+  booking-expire / sms-outbox / media-delete, media registry) is NOT file-copyable — it's coupled to a
+  re-architected backend (pendingBookingExpiries + reservations index, statusHistory/statusVersion, idempotency
+  Expiries, sms/delete OUTBOX queues) that my backend has none of. Importing = adopting that backend + touching
+  every working flow. Right approach = re-implement the VALUE natively (auto-expire pending, explicit payment
+  approval, idempotency) as deliberate staged features, NOT a verbatim port. App Check also needs the user's
+  reCAPTCHA key + server enforcement. So rev.70 build-system + rev.71 watchdog + rev.72 legal were the cleanly
+  importable pieces; the rest is a native re-implementation project.
+- ?v→72, version meta→72. 122 tests pass.
 
 rev.71 (2026-07-14) — APP-STYLE MOBILE BOTTOM TAB BAR + boot watchdog (feels-like-an-app pass). Cumulative.
 - BOTTOM TAB BAR (mobile only): a fixed bottom bar with בית / רכבים / אזור אישי, icons + labels, active tab in

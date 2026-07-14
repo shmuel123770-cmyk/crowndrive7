@@ -13,7 +13,7 @@ import {fileURLToPath} from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dist = path.join(root, 'dist');
 
-const runtimeFiles = ['index.html', 'firebase-config.js', 'manifest.json', 'sw.js', '_headers'];
+const runtimeFiles = ['index.html', 'privacy.html', 'terms.html', 'firebase-config.js', 'manifest.json', 'sw.js', '_headers'];
 const runtimeDirs = ['js', 'css', 'icons'];
 const optionalPublicFiles = ['googlef21d119a5e0daadb.html'];
 
@@ -56,16 +56,16 @@ for (const file of listFiles(path.join(dist, 'js')).filter(f => f.endsWith('.js'
 
 // Stamp the Build ID onto css/js/icons references in index.html (leaving firebase-config.js + manifest.json
 // as stable, always-revalidated URLs), and record the build in a meta tag.
-{
-  const indexPath = path.join(dist, 'index.html');
-  let html = fs.readFileSync(indexPath, 'utf8').replace(
+for (const htmlName of ['index.html', 'privacy.html', 'terms.html']) {
+  const htmlPath = path.join(dist, htmlName);
+  let html = fs.readFileSync(htmlPath, 'utf8').replace(
     /\b(href|src)="((?:css|js|icons)\/[^"?]+)(?:\?[^"#]*)?(#[^"]*)?"/g,
     (_, attribute, asset, fragment = '') => `${attribute}="${asset}?v=${buildId}${fragment || ''}"`,
   );
-  if (!/name="crowndrive-build"/.test(html)) {
+  if (htmlName === 'index.html' && !/name="crowndrive-build"/.test(html)) {
     html = html.replace('<meta charset="utf-8">', `<meta charset="utf-8">\n  <meta name="crowndrive-build" content="${buildId}">`);
   }
-  fs.writeFileSync(indexPath, html);
+  fs.writeFileSync(htmlPath, html);
 }
 
 // Make sw.js bytes change every build so the worker updates, without touching its logic.
@@ -82,6 +82,10 @@ fs.writeFileSync(headersPath, `${securityBlock}
   Cache-Control: no-store
 /index.html
   Cache-Control: no-store
+/privacy.html
+  Cache-Control: no-cache, must-revalidate
+/terms.html
+  Cache-Control: no-cache, must-revalidate
 /sw.js
   Cache-Control: no-store
 /firebase-config.js
