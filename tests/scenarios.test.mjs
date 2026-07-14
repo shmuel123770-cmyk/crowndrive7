@@ -321,5 +321,24 @@ check('אין יותר data URL ברכב + done=true', B(r).done === true && !/^
 r = await call(fn['media-migrate'], 'a1', {});
 check('הרצה חוזרת בטוחה (idempotent) — אין מה להעביר', S(r) === 200 && B(r).migrated === 0 && B(r).done === true);
 
+console.log('\nתרחיש P: סיום שיחה (בעל רכב/מנהל מסיים → השוכר חסום, הם עדיין שולחים)');
+r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'End', model: 'Chat', dailyPrice: 100, photos: ['https://a/1.jpg', 'https://b/2.jpg']}});
+const carEnd = B(r).id;
+const s3 = new Date(Date.now() + 10 * 86400000).toISOString(), e3 = new Date(Date.now() + 12 * 86400000).toISOString();
+r = await call(fn['booking-create'], 'r1', {carId: carEnd, startAt: s3, endAt: e3});
+const bId3 = B(r).id;
+r = await call(fn['booking-action'], 'o1', {action: 'status', bookingId: bId3, status: 'approved'});
+check('הזמנה להמחשת סיום-שיחה אושרה', S(r) === 200);
+r = await call(fn['message-send'], 'r1', {bookingId: bId3, text: 'שאלה'});
+check('שוכר שולח לפני סיום שיחה', S(r) === 200);
+r = await call(fn['booking-action'], 'r1', {action: 'end-chat', bookingId: bId3});
+check('שוכר לא יכול לסיים שיחה (403)', S(r) === 403);
+r = await call(fn['booking-action'], 'o1', {action: 'end-chat', bookingId: bId3});
+check('בעל רכב מסיים שיחה', S(r) === 200);
+r = await call(fn['message-send'], 'r1', {bookingId: bId3, text: 'עוד'});
+check('אחרי סיום שיחה — שוכר חסום (403)', S(r) === 403);
+r = await call(fn['message-send'], 'o1', {bookingId: bId3, text: 'בעל רכב עדיין יכול'});
+check('אחרי סיום שיחה — בעל רכב עדיין שולח', S(r) === 200);
+
 console.log(`\n========== ${passed} עברו · ${failed} נכשלו ==========`);
 process.exit(failed ? 1 : 0);

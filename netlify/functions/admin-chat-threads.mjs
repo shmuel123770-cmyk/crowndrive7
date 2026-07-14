@@ -15,14 +15,16 @@ export async function handler(event) {
     const threads = [];
     snap.forEach(child => {
       const msgs = child.val() || {};
-      let lastAt = 0, lastText = '', unreadHint = false;
+      let lastAt = 0, lastText = '', lastRealAt = 0, unreadHint = false;
       for (const m of Object.values(msgs)) {
         const t = Number(m?.createdAt || 0);
         if (t >= lastAt) {
           lastAt = t;
           lastText = String(m?.text || (m?.attachment ? '📷 תמונה' : '')).slice(0, 90);
-          unreadHint = m?.fromAdmin !== true;  // last message came from the user → likely needs a reply
         }
+        // Unread light: look at the last GENUINE message, ignoring the automatic acknowledgement so a
+        // guest's very first message still flags the thread as awaiting a real reply.
+        if (m?.auto !== true && t >= lastRealAt) { lastRealAt = t; unreadHint = m?.fromAdmin !== true; }
       }
       threads.push({uid: child.key, lastAt, lastText, unread: unreadHint});
     });

@@ -57,6 +57,14 @@ function render() {
     const route = location.hash.slice(1) || 'home';
     store.route = route;
     document.body.dataset.page = route;
+    // A user blocked by the admin is fully locked out of the app (every route) with a big notice. (This is
+    // the reliable account-level lock; an optional IP-level block for logged-OUT access is separate.)
+    if (store.profile?.blocked === true && !store.isAdmin) {
+      resetPaint();
+      const navEl = document.querySelector('#main-nav'); if (navEl) navEl.innerHTML = '';
+      document.querySelector('#app').innerHTML = '<section class="card blocked-screen"><div class="blocked-ic" aria-hidden="true">⛔</div><h1>הגישה נחסמה</h1><p>החשבון הזה נחסם על ידי הנהלת האתר.</p></section>';
+      return;
+    }
     // Maintenance mode: only admins can browse; everyone else sees a notice (login stays open).
     if (store.config?.maintenance?.on && !store.isAdmin && route !== 'auth') {
       resetPaint();

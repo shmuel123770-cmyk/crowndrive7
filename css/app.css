@@ -543,6 +543,10 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
 }
 
 /* ---------- maintenance / admin extras ---------- */
+.blocked-screen{max-width:540px;margin:11vh auto;padding:46px 30px;text-align:center}
+.blocked-screen .blocked-ic{font-size:4.6rem;line-height:1;margin-bottom:12px}
+.blocked-screen h1{font-size:clamp(1.9rem,5.4vw,2.7rem);color:#b71c1c;margin:0 0 12px}
+.blocked-screen p{color:var(--muted);font-size:1.05rem;margin:0}
 .maintenance{max-width:520px;margin:70px auto;padding:44px 30px;text-align:center;display:grid;gap:12px;justify-items:center}
 .maint-gears{position:relative;width:128px;height:104px;margin-bottom:6px}
 .maint-gears .g1,.maint-gears .g2{position:absolute;display:block}
@@ -555,8 +559,11 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
 .notif-row{display:flex;gap:13px;align-items:center;background:#fff;border:1px solid var(--hair);border-radius:14px;padding:13px 16px}
 .notif-row.unread{border-inline-start:4px solid var(--brand);background:rgba(63,107,142,.05)}
 .notif-icon{font-size:1.3rem;width:40px;height:40px;display:grid;place-items:center;background:var(--bg2);border-radius:50%;flex:none}
-.notif-main{display:grid;gap:2px}
+.notif-main{display:grid;gap:2px;flex:1;min-width:0}
 .notif-main small{color:var(--muted);font-size:.74rem}
+.notif-row.clickable{cursor:pointer;transition:background .15s,border-color .15s}
+.notif-row.clickable:hover,.notif-row.clickable:focus-visible{background:rgba(63,107,142,.09);border-color:var(--brand);outline:none}
+.notif-go{flex:none;font-size:.75rem;font-weight:600;color:var(--brand-d);white-space:nowrap;background:rgba(63,107,142,.1);padding:5px 11px;border-radius:99px}
 .admin-search-wrap{margin-bottom:14px}
 #admin-search{font-size:1rem}
 .search-group{margin:12px 0 6px;font-weight:800;font-size:.74rem;letter-spacing:.18em;color:var(--brand-d)}
@@ -601,11 +608,13 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
 .chat-item:hover{background:var(--bg2)}
 .chat-item.active{background:rgba(63,107,142,.12)}
 .chat-item.ended{opacity:.6}
+.chat-unread-dot{width:11px;height:11px;border-radius:50%;background:#1db954;flex:0 0 auto;align-self:center;margin-inline-start:4px;animation:unreadPulse 2s ease-in-out infinite}
+@keyframes unreadPulse{0%,100%{box-shadow:0 0 0 0 rgba(29,185,84,.45)}50%{box-shadow:0 0 0 5px rgba(29,185,84,0)}}
 .chat-item-emoji{font-size:1.15rem;width:42px;height:42px;display:grid;place-items:center;background:#232A33;color:#fff;border-radius:50%;flex:0 0 auto}
 .chat-item-main{min-width:0;flex:1;display:grid}
 .chat-item-main b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.88rem;font-weight:600}
 .chat-item-main small{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.76rem}
-.chat-pane{display:flex;flex-direction:column;min-width:0;background:#fff}
+.chat-pane{display:flex;flex-direction:column;min-width:0;min-height:0;background:#fff}
 .chat-empty{margin:auto;text-align:center;color:var(--muted)}
 .chat-empty span{font-size:2.4rem;display:block;margin-bottom:8px}
 .chat-head{display:flex;align-items:center;gap:10px;padding:13px 16px;background:var(--dark);color:#fff}
@@ -615,7 +624,8 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
 .ev-checklist{display:flex;gap:10px;flex-wrap:wrap;padding:10px 16px;background:#FFF8E8;border-bottom:1px solid rgba(160,90,0,.18)}
 .ev-status{font-size:.74rem;font-weight:700;color:var(--warn);letter-spacing:.02em}
 .ev-status.ok{color:var(--ok)}
-.chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:9px;background:var(--bg)}
+.chat-msgs{flex:1;min-height:0;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:9px;background:var(--bg)}
+.chat-composer{flex-shrink:0}
 .chat-msgs .message,.messages .message{max-width:78%;padding:9px 13px;border-radius:15px;font-size:.86rem;line-height:1.5;word-wrap:break-word;animation:fadeUp .25s var(--ease);border:none;box-shadow:none}
 .chat-msgs .message{align-self:flex-end;background:#fff;border:1px solid var(--hair);border-end-end-radius:5px}
 .chat-msgs .message.mine{align-self:flex-start;margin:0;background:var(--dark);color:#fff;border:none;border-end-end-radius:15px;border-end-start-radius:5px}

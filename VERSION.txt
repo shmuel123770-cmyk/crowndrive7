@@ -1,6 +1,38 @@
-CrownDrive — FINAL build (2026-07-14, rev.64)
+CrownDrive — FINAL build (2026-07-14, rev.66)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
+rev.66 (2026-07-14) — FIXED "admin can't reply" + green unread light + clickable chat notifications.
+- ROOT CAUSE of "אני יכול להיכנס לצ׳אט אבל אין לי אפשרות להגיב" (admin opens a chat but has no reply box):
+  a flex/grid min-height:auto trap. `.chat-pane` (a grid item) and `.chat-msgs` (a flex item) had no
+  `min-height:0`, so once a thread had enough messages the message list grew to its full content height and
+  PUSHED THE COMPOSER below the shell — which is `overflow:hidden`, so the reply box was CLIPPED and invisible.
+  Reproduced live (30 messages → composerBottom 2257px, far below the 720px viewport). Fix: min-height:0 on
+  `.chat-pane` + `.chat-msgs`, and `flex-shrink:0` on `.chat-composer` → the list scrolls internally and the
+  composer is always pinned in view (verified: composer back inside the shell at every message count).
+- GREEN UNREAD LIGHT: a pulsing green dot (נורת חיווי) next to any support thread whose last GENUINE message
+  is from the user (awaiting the admin). Driven by admin-chat-threads' `unread` flag (now ignores the guest
+  auto-ack so a guest's first message still lights up). Opening a thread clears its dot; it re-lights only on a
+  genuinely newer message (local adminReadAt vs lastAt). (js/views.js, css .chat-unread-dot)
+- CLICKABLE NOTIFICATIONS: on the admin notifications page a chat notification now links straight to that
+  user's support thread ("לצ׳אט ←"); booking/status/payment notifications link to that booking's chat
+  ("לשיחה ←"). Keyboard-accessible (role=button, Enter/Space). (adminNotificationsView + notifThread)
+- ?v→66. All 112 tests pass (100 scenarios + 12 fuzz/unit).
+- NEXT: renter↔owner conversation feature (pre-booking inquiry + admin add-participant / transfer).
+
+rev.65 (2026-07-14) — user chat completeness + "end conversation" + blocked-user lockout screen.
+- USER PERSONAL-AREA CHAT: already had the "צ׳אטים" tab showing ONLY the user's own support + booking
+  conversations (no sidebar, can't start new ones, done→closed). Now also includes PENDING bookings, so a
+  renter can continue the conversation from the personal area right after requesting. (js/views.js chatItems)
+- "סיום שיחה" (end conversation) button for the OWNER + ADMIN in a booking chat → sets bookings/<id>/chatEnded
+  and the RENTER can no longer send (owner + admin still can). Server-enforced (booking-action 'end-chat' +
+  message-send guard); the renter's composer shows "השיחה נסגרה על ידי הצד השני". +6 scenario tests → 100 pass.
+- BLOCKED-USER LOCKOUT: a user blocked by the admin (users/<uid>/blocked) is now fully locked out of the app
+  on EVERY route with a big "הגישה נחסמה" page (app.js render gate + .blocked-screen). This is the reliable
+  ACCOUNT-level block (works wherever they're logged in).
+- IP-LEVEL block (so a blocked user can't even OPEN the site logged-out) is NOT built yet — it needs a Netlify
+  Edge Function + has real caveats (bypassable via VPN / changing network / mobile-IP rotation, and can block
+  INNOCENT users sharing an IP). Explained to the user; awaiting their decision before adding that layer.
+- ?v→65.
 rev.64 (2026-07-14) — FIXED the admin chat FREEZE ("I click the chat and everything is stuck").
 - ROOT CAUSE: ensureAdminChatFeed() did firebase.database().ref('messages/admin').on('value') in the BROWSER
   — downloading the ENTIRE support-messages tree (every thread, every message, INCLUDING base64 image

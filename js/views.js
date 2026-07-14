@@ -877,7 +877,14 @@ function adminDashboard(tab = 'overview') {
     catch (error) { toast('לא ניתן לעדכן את מצב התחזוקה — יש לפרסם את חוקי ה-Firebase המעודכנים'); button.disabled = false; }
   });
   bindAdminSearch();
-  if (tab === 'notifications') localStorage.setItem('cd-admin-seen', String(Date.now()));
+  if (tab === 'notifications') {
+    localStorage.setItem('cd-admin-seen', String(Date.now()));
+    document.querySelectorAll('[data-notif-thread]').forEach(row => {
+      const go = () => openChatThread(row.dataset.notifThread);
+      row.onclick = go;
+      row.onkeydown = event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); go(); } };
+    });
+  }
   if (tab === 'cars') bindAdminCarActions();
   if (tab === 'bookings') bindAdminBookingActions();
   document.querySelector('#export-json')?.addEventListener('click', () => {
@@ -919,10 +926,20 @@ function adminUnreadCount() {
   const seen = Number(localStorage.getItem('cd-admin-seen') || 0);
   return list(store.adminNotifications).filter(n => Number(n.createdAt || 0) > seen).length;
 }
+// A notification that concerns a conversation links straight to it: a support-chat message opens that
+// user's support thread; a booking event opens that booking's chat.
+function notifThread(n) {
+  if (n.type === 'chat' && n.meta?.userUid) return `a:${n.meta.userUid}`;
+  if (n.meta?.bookingId && ['status', 'payment', 'booking'].includes(n.type)) return `b:${n.meta.bookingId}`;
+  return '';
+}
 function adminNotificationsView() {
   const rows = list(store.adminNotifications).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
   const seen = Number(localStorage.getItem('cd-admin-seen') || 0);
-  return `<h2 style="margin-bottom:16px">התראות מנהל</h2><div class="list">${rows.length ? rows.map(n => `<div class="notif-row ${Number(n.createdAt || 0) > seen ? 'unread' : ''}"><span class="notif-icon">${NOTIF_ICONS[n.type] || ICON.check}</span><div class="notif-main"><b>${esc(n.text || '')}</b><small>${fmtDate(n.createdAt)}</small></div></div>`).join('') : '<div class="empty">אין התראות עדיין — כל אירוע באתר יופיע כאן</div>'}</div>`;
+  return `<h2 style="margin-bottom:16px">התראות מנהל</h2><div class="list">${rows.length ? rows.map(n => {
+    const thread = notifThread(n);
+    return `<div class="notif-row ${Number(n.createdAt || 0) > seen ? 'unread' : ''}${thread ? ' clickable' : ''}"${thread ? ` role="button" tabindex="0" data-notif-thread="${esc(thread)}"` : ''}><span class="notif-icon">${NOTIF_ICONS[n.type] || ICON.check}</span><div class="notif-main"><b>${esc(n.text || '')}</b><small>${fmtDate(n.createdAt)}</small></div>${thread ? `<span class="notif-go">${n.type === 'chat' ? 'לצ׳אט' : 'לשיחה'} ←</span>` : ''}</div>`;
+  }).join('') : '<div class="empty">אין התראות עדיין — כל אירוע באתר יופיע כאן</div>'}</div>`;
 }
 
 // Admin global search: users, cars and bookings by any field.
@@ -1207,6 +1224,13 @@ function messagesView() {
 const chatState = {thread: null, unsub: null, draft: ''};
 let pendingThread = null;
 let adminChatActivity = null;
+let adminUnread = {};   // uid -> true when the thread's last message is from the USER (awaiting the admin)
+let adminReadAt = {};   // uid -> ts the admin last opened the thread; clears the green "unread" dot
+
+// A thread shows the green unread light only if the server says its last message isn't from the admin
+// AND that message is newer than the last time the admin opened it (so reading a thread clears the dot,
+// and it re-lights only when a genuinely newer message arrives).
+const adminThreadUnread = id => !!adminUnread[id] && (adminChatActivity?.[id] || 0) > (adminReadAt[id] || 0);
 
 export function openChatThread(threadKey) {
   pendingThread = threadKey;
@@ -1273,13 +1297,15 @@ let adminFeedTimer = null;
 function teardownAdminChatFeed() {
   if (adminFeedTimer) { clearInterval(adminFeedTimer); adminFeedTimer = null; }
   adminChatActivity = null;
+  adminUnread = {};
+  adminReadAt = {};
 }
 async function loadAdminThreads() {
   if (!store.isAdmin) return teardownAdminChatFeed();
   try {
     const {threads} = await api('admin-chat-threads');
     adminChatActivity = {};
-    for (const t of threads || []) adminChatActivity[t.uid] = t.lastAt || 0;
+    for (const t of threads || []) { adminChatActivity[t.uid] = t.lastAt || 0; adminUnread[t.uid] = !!t.unread; }
     if (store.route === 'chats') renderChatItems();
   } catch { /* transient network/permission error — keep the list we already have */ }
 }
@@ -1303,16 +1329,16 @@ function chatItems() {
       .filter(u => !query || `${u.name || ''} ${u.email || ''}`.toLowerCase().includes(query) || (u.guest && 'אורח'.includes(query)))
       .sort((a, b) => (adminChatActivity[b.id] || 0) - (adminChatActivity[a.id] || 0) || String(a.name || a.email || '').localeCompare(String(b.name || b.email || ''), 'he'))
       .map(u => u.guest
-        ? {key: `a:${u.id}`, emoji: ICON.chat, title: u.name, subtitle: `לקוח לא רשום${adminChatActivity[u.id] ? ' · ' + fmtDate(adminChatActivity[u.id]) : ''}`, live: true}
-        : {key: `a:${u.id}`, avatar: avatarHtml(u, 42), title: u.name || u.email || 'משתמש', subtitle: `${roleName(u.role)}${adminChatActivity[u.id] ? ' · ' + fmtDate(adminChatActivity[u.id]) : ''}`, live: true});
+        ? {key: `a:${u.id}`, emoji: ICON.chat, title: u.name, subtitle: `לקוח לא רשום${adminChatActivity[u.id] ? ' · ' + fmtDate(adminChatActivity[u.id]) : ''}`, live: true, unread: adminThreadUnread(u.id)}
+        : {key: `a:${u.id}`, avatar: avatarHtml(u, 42), title: u.name || u.email || 'משתמש', subtitle: `${roleName(u.role)}${adminChatActivity[u.id] ? ' · ' + fmtDate(adminChatActivity[u.id]) : ''}`, live: true, unread: adminThreadUnread(u.id)});
   }
   const role = myRole();
   const bookingItems = myBookings()
-    .filter(b => ['approved', 'active', 'done'].includes(b.status))
+    .filter(b => ['pending', 'approved', 'active', 'done'].includes(b.status))
     .sort((a, b) => Number(b.updatedAt || b.createdAt || 0) - Number(a.updatedAt || a.createdAt || 0))
     .map(b => {
       const car = store.cars[b.carId] || {};
-      return {key: `b:${b.id}`, emoji: ICON.car, title: `${car.make || 'רכב'} ${car.model || ''}`.trim(), subtitle: role === 'owner' ? 'שיחה עם השוכר' : 'שיחה עם בעל הרכב', status: b.status, live: ['approved', 'active'].includes(b.status)};
+      return {key: `b:${b.id}`, emoji: ICON.car, title: `${car.make || 'רכב'} ${car.model || ''}`.trim(), subtitle: role === 'owner' ? 'שיחה עם השוכר' : 'שיחה עם בעל הרכב', status: b.status, live: ['pending', 'approved', 'active'].includes(b.status)};
     });
   return [{key: `a:${store.user.uid}`, emoji: ICON.chat, title: 'שירות לקוחות', subtitle: 'תמיכה טכנית · מענה מהיר', live: true}, ...bookingItems];
 }
@@ -1321,7 +1347,7 @@ function renderChatItems() {
   const box = document.querySelector('#chat-items');
   if (!box) return;
   const items = chatItems();
-  box.innerHTML = items.length ? items.map(item => `<button class="chat-item ${item.key === chatState.thread ? 'active' : ''} ${item.live ? '' : 'ended'}" data-thread="${esc(item.key)}">${item.avatar || `<span class="chat-item-emoji">${item.emoji}</span>`}<span class="chat-item-main"><b>${esc(item.title)}</b><small>${esc(item.subtitle)}</small></span>${item.status ? `<span class="status-badge ${esc(item.status)}">${statusLabel(item.status)}</span>` : ''}</button>`).join('') : '<div class="empty">אין שיחות פעילות</div>';
+  box.innerHTML = items.length ? items.map(item => `<button class="chat-item ${item.key === chatState.thread ? 'active' : ''} ${item.live ? '' : 'ended'}" data-thread="${esc(item.key)}">${item.avatar || `<span class="chat-item-emoji">${item.emoji}</span>`}<span class="chat-item-main"><b>${esc(item.title)}</b><small>${esc(item.subtitle)}</small></span>${item.unread ? '<span class="chat-unread-dot" title="הודעה חדשה שלא נקראה" aria-label="הודעה חדשה שלא נקראה"></span>' : ''}${item.status ? `<span class="status-badge ${esc(item.status)}">${statusLabel(item.status)}</span>` : ''}</button>`).join('') : '<div class="empty">אין שיחות פעילות</div>';
   box.querySelectorAll('[data-thread]').forEach(button => button.onclick = () => selectThread(button.dataset.thread));
 }
 
@@ -1336,20 +1362,23 @@ function selectThread(key) {
   if (!pane) return;
   const isSupport = key.startsWith('a:');
   const id = key.slice(2);
+  // The admin opened this thread → it's now read; drop the green unread light for it.
+  if (isSupport && store.isAdmin) { adminReadAt[id] = Date.now(); if (adminUnread[id]) { adminUnread[id] = false; renderChatItems(); } }
   const booking = isSupport ? null : store.bookings[id];
   if (!isSupport && !booking) { pane.innerHTML = '<div class="chat-empty"><p>השיחה לא נמצאה</p></div>'; return; }
   const car = booking ? store.cars[booking.carId] || {} : {};
   const title = isSupport ? (store.isAdmin ? (store.users[id]?.name || store.users[id]?.email || `אורח · ${id.slice(-5)}`) : 'שירות לקוחות') : `${car.make || 'רכב'} ${car.model || ''}`.trim();
-  const live = isSupport || ['pending', 'approved', 'active'].includes(booking.status);
   const isOwner = booking && booking.ownerUid === store.user.uid;
   const isRenter = booking && booking.renterUid === store.user.uid;
+  const convEnded = booking ? booking.chatEnded === true : false;   // owner/admin pressed "סיום שיחה"
+  const live = (isSupport || ['pending', 'approved', 'active'].includes(booking.status)) && !(convEnded && isRenter);
   const ev = booking ? evidenceState(booking, id) : null;
   const evReady = ev && ev.video && ev.fuel && ev.odometer && ev.payment;
 
   const headActions = `${booking && isOwner
     ? (booking.status === 'approved' ? `<button class="btn gold ${evReady ? '' : 'soft-disabled'}" id="rental-start">התחלת השכרה</button>`
       : booking.status === 'active' ? `<button class="btn primary" id="rental-end">סיום השכרה</button>` : '')
-    : ''}${store.isAdmin ? '<button class="btn dark-out" id="chat-clear" title="מחיקת כל ההודעות">ניקוי</button>' : ''}`;
+    : ''}${booking && (isOwner || store.isAdmin) && !convEnded ? '<button class="btn dark-out" id="chat-end" title="הצד השני לא יוכל לשלוח עוד הודעות">סיום שיחה</button>' : ''}${store.isAdmin ? '<button class="btn dark-out" id="chat-clear" title="מחיקת כל ההודעות">ניקוי</button>' : ''}`;
   const checklist = booking && booking.status === 'approved'
     ? `<div class="ev-checklist">${[['video', 'סרטון חוץ'], ['fuel', 'דלק'], ['odometer', 'קילומטראז׳'], ['payment', 'תשלום']].map(([k, label]) => `<span class="ev-status ${ev[k] ? 'ok' : ''}">${ev[k] ? '✓' : '○'} ${label}</span>`).join('')}</div>` : '';
   const evidenceRow = booking && booking.status === 'approved' && isRenter
@@ -1361,7 +1390,7 @@ function selectThread(key) {
       </div>` : '';
   const composer = live
     ? `${evidenceRow}<form class="chat-composer" id="chat-composer" autocomplete="off"><label class="chat-attach" title="שליחת תמונה">${ICON.image}<input hidden type="file" accept="image/*" id="chat-photo"></label><input name="text" maxlength="2000" placeholder="כתבו הודעה…" value="${esc(chatState.draft)}"><button class="btn primary">שליחה</button></form>`
-    : `<div class="chat-closed">ההשכרה הסתיימה — הצ׳אט פתוח רק מאישור ההזמנה ועד סיום ההשכרה</div>`;
+    : `<div class="chat-closed">${convEnded && isRenter ? 'השיחה נסגרה על ידי הצד השני — לא ניתן לשלוח הודעות נוספות' : 'ההשכרה הסתיימה — הצ׳אט פתוח רק מאישור ההזמנה ועד סיום ההשכרה'}</div>`;
 
   pane.innerHTML = `<header class="chat-head">
       <button class="chat-back" id="chat-back" aria-label="חזרה לרשימה">→</button><button class="chat-x" id="chat-close" aria-label="סגירת הצ׳אט">×</button>
@@ -1424,6 +1453,11 @@ function selectThread(key) {
   pane.querySelector('#chat-clear')?.addEventListener('click', async () => {
     if (!confirm('למחוק לצמיתות את כל ההודעות בשיחה זו?')) return;
     try { await adminAction('chat-clear', isSupport ? {userUid: id} : {bookingId: id}); toast('הצ׳אט נוקה'); }
+    catch (error) { toast(error.message); }
+  });
+  pane.querySelector('#chat-end')?.addEventListener('click', async () => {
+    if (!confirm('לסיים את השיחה? הצד השני לא יוכל לשלוח יותר הודעות.')) return;
+    try { await api('booking-action', {action: 'end-chat', bookingId: id}); toast('השיחה נסגרה'); }
     catch (error) { toast(error.message); }
   });
 

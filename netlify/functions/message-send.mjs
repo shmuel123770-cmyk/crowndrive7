@@ -73,6 +73,8 @@ export async function handler(event) {
     if (!value) return json(404, {error: 'הזמנה לא נמצאה'});
     if (!admin && ![value.ownerUid, value.renterUid].includes(token.uid)) return json(403, {error: 'אין הרשאה'});
     if (!admin && !CHAT_OPEN.has(value.status)) return json(409, {error: 'הצ׳אט פתוח רק מאישור ההזמנה ועד סיום ההשכרה'});
+    // Owner/admin ended the conversation → the renter can no longer send (owner + admin still can).
+    if (value.chatEnded && token.uid === value.renterUid) return json(403, {error: 'השיחה נסגרה על ידי הצד השני'});
 
     let stored = null;
     if (attachment) {

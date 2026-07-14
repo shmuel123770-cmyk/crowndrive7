@@ -110,6 +110,13 @@ export async function handler(event) {
       await audit(token.uid, 'handover_submit', 'booking', body.bookingId, {stage: body.stage});
       return json(200, {ok: true});
     }
+    // Owner (or admin) ends the conversation: after this the RENTER can no longer send in this thread.
+    if (body.action === 'end-chat') {
+      if (!owner && !admin) return json(403, {error: 'פעולה לבעל הרכב או מנהל בלבד'});
+      await ref.update({chatEnded: true, updatedAt: Date.now()});
+      await audit(token.uid, 'chat_end', 'booking', body.bookingId, {});
+      return json(200, {ok: true});
+    }
     return json(400, {error: 'פעולה לא מוכרת'});
   } catch (error) {
     console.error(error);
