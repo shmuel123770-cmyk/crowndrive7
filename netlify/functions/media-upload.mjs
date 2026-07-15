@@ -10,8 +10,14 @@ import {rateLimit, tooMany} from './_ratelimit.mjs';
 // The client always downscales/re-encodes to a compact high-quality JPEG before sending, so
 // the received bytes are far smaller than the source. This is the ceiling for the encoded
 // bytes (well within Netlify's ~6MB request limit); any image type is accepted.
-const MAX_IMAGE = 25 * 1024 * 1024;
+const MAX_IMAGE = 4 * 1024 * 1024;
 const safe = value => String(value || 'file').replace(/[^a-zA-Z0-9._-]/g, '_').slice(-100);
+function detectedImageType(buffer) {
+  if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return 'image/jpeg';
+  if (buffer.length >= 8 && buffer.subarray(0, 8).equals(Buffer.from([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]))) return 'image/png';
+  if (buffer.length >= 12 && buffer.subarray(0, 4).toString('ascii') === 'RIFF' && buffer.subarray(8, 12).toString('ascii') === 'WEBP') return 'image/webp';
+  return '';
+}
 
 export async function handler(event) {
   try {
@@ -21,12 +27,14 @@ export async function handler(event) {
     const reqBody = parseBody(event);
     if (!reqBody) return json(400, {error: 'בקשה לא תקינה — נסו שוב'});
     const {name, type, kind, entityId, data} = reqBody;
-    if (!String(type || '').startsWith('image/')) return json(400, {error: 'יש להעלות קובץ תמונה'});
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(String(type || '').toLowerCase())) return json(400, {error: 'יש להעלות תמונת JPG, PNG או WebP'});
     const base64 = String(data || '').replace(/^data:[^,]*,/, '');
     if (!base64) return json(400, {error: 'לא התקבל קובץ'});
     const buffer = Buffer.from(base64, 'base64');
     if (!buffer.length) return json(400, {error: 'קובץ ריק'});
     if (buffer.length > MAX_IMAGE) return json(400, {error: 'התמונה גדולה מדי גם אחרי אופטימיזציה — נסו תמונה אחרת'});
+    const detectedType = detectedImageType(buffer);
+    if (!detectedType) return json(400, {error: 'תוכן הקובץ אינו תמונת JPG, PNG או WebP תקינה'});
 
     let path;
     if (kind === 'user-document') {
@@ -48,7 +56,9 @@ export async function handler(event) {
 
     // Write the bytes to Storage server-side (Admin credential → GCS JSON API) and get back a
     // permanent, publicly-readable, CDN-cached token URL. Shared with media-migrate.
-    const url = await putStorageObject(path, buffer, type);
+    // Identity documents, payment proofs and handover evidence are private: no permanent public token.
+    const privateObject = ['user-document', 'payment', 'booking-media'].includes(kind);
+    const url = await putStorageObject(path, buffer, detectedType, {privateObject});
     return json(200, {path, url});
   } catch (error) {
     console.error('media-upload failed', error);

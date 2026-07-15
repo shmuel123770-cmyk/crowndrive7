@@ -1,4 +1,4 @@
-CrownDrive — FINAL build (2026-07-14, rev.107)
+CrownDrive — FINAL build (2026-07-14, rev.109)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
 rev.82 (2026-07-14) — personal-area bar SOLID+FIXED + home shows 4 cars on phones. Cumulative.
@@ -1262,3 +1262,38 @@ See התחל_כאן_גרסה_סופית.md to deploy. Remember to publish the up
 - og:image/twitter:image now point to a NEW file (icons/share-512.png) — WhatsApp caches previews per-URL, so
   the old car would have stuck around; a new URL forces a fresh fetch. Added missing <link rel=apple-touch-icon>.
 - NOTE: WhatsApp may still show the old preview for chats where the link was ALREADY shared; new shares get the logo.
+
+=== rev.108 (2026-07-15) — THE MERGE: Codex MOBILE_FIXED imported into the main tree ===
+Base = my rev.107; imported from Codex (their fork of ~rev.100), after full review + fixes:
+- SERVER (wholesale, no new npm deps): all 10 changed functions — booking-create now computes+stores a server
+  QUOTE (client price never trusted, #22); payment-submit validates the amount against the quote; media-upload
+  sniffs real file content (#69); verification-review, profile-save, car-action, _storage, _firebase-admin,
+  booking-action, user-private-profile hardened. RULES: new FIREBASE_DATABASE_RULES_V2.json +
+  FIREBASE_STORAGE_RULES_V2.txt — cars/messages writes now server-only, legalAcceptance node, profile
+  name/birthDate locked after verification (#68). MUST BE PUBLISHED TOGETHER WITH THIS DEPLOY.
+- CLIENT (merged): their core.js (NY timezone fmtDate #29, enhanceUI a11y labels #35/#63, modal aria);
+  auth.js (terms acceptance #25, 12+char password for NEW signups, notify hook); db.js/media.js (fullscreen
+  camera #39-41); app.js (deep links preserved #13, offline banner #50, password show/hide #38, aria-busy)
+  + my rev.106 scroll-top re-applied; views.js (their mobile-booking-bar #20, single-column booking + terms,
+  NY note #30, filter persistence) + my rev.104 auth-return re-applied + their REGRESSION fixed (availability
+  default reverted to available — re-fixed to all, rev.96); views-app.js = MINE + their paymentModal
+  (quote-locked amount + upload states #43), handoverModal (capture + progress), profileView (verLocked #68);
+  css = theirs (44px targets #6/#15, safe-area #4/#17, bottom-sheet modals, booking bar) + my attn-cards,
+  tab-font .7rem, scoped home-cap re-applied; index.html = mine + their viewport interactive-widget (#34),
+  apple metas (#56), skip-link, #network-status; manifest = theirs (id, shortcuts, display_override).
+- KEPT MINE (deliberately): netlify.toml deploy command (their npm ci + verify-in-deploy would break the
+  GitHub-web-upload workflow); VERSION.txt; icons/og (rev.107 logo).
+- TESTS: their suite adopted — static-check (6 ids) + 129 scenarios + 11 node tests, ALL PASS on the merged
+  tree. Verified live: home 4 cars, cars page all 15 (rented last unless featured), booking bar + terms + NY
+  note, guest auth-return, admin attention cards, car-form draft, console clean.
+
+=== rev.109 (2026-07-15) — NEW brand logo + WhatsApp ad preview + simple password ===
+- NEW LOGO (black tile, gold crown+car, CrownDrive wordmark) applied everywhere: site header (icons/logo.png,
+  256px — index/privacy/terms), app icons icon-512/192, apple-touch-icon, maskable-512 (full-bleed black =
+  mask-safe). Extracted from the user.s original image in the conversation. share-512.png removed.
+- WhatsApp/social link preview now shows the user.s PROMO AD: icons/og-ad.jpg (1200x1200 JPEG, 204KB) —
+  og:image/twitter:image point at it (new URL = cache-bust), twitter:card → summary_large_image,
+  og:image:width/height added.
+- Password policy RELAXED per user: validPassword = 6+ chars, no complexity requirement (was Codex.s 12+ with
+  upper/lower/digit). auth.js error text, register form minlength/hint, and the core.test.mjs policy test updated.
+- All suites pass: static-check, 129 scenarios, 11 node tests.

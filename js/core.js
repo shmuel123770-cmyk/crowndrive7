@@ -3,13 +3,49 @@ export const $$ = (selector, root = document) => [...root.querySelectorAll(selec
 export const esc = value => String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
 export const money = value => new Intl.NumberFormat('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0}).format(Number(value || 0));
 // Date + time WITHOUT seconds ("22.7.2026, 10:00", not "…10:00:00") — seconds are noise on booking/message times.
-export const fmtDate = value => value ? new Date(value).toLocaleString('he-IL', {dateStyle: 'short', timeStyle: 'short'}) : '—';
+export const fmtDate = value => value ? new Date(value).toLocaleString('he-IL', {dateStyle: 'short', timeStyle: 'short', timeZone: 'America/New_York'}) : '—';
 export function toast(message) {
   const node = $('#toast');
   node.textContent = message;
   node.classList.add('show');
   clearTimeout(toast.timer);
   toast.timer = setTimeout(() => node.classList.remove('show'), 3200);
+}
+
+// Give dynamically-rendered forms a dependable accessible name without requiring every template to
+// hand-maintain unique ids. The helper is idempotent and also runs for lazy-loaded dashboard screens.
+let _autoControlId = 0;
+export function enhanceUI(root = document) {
+  root.querySelectorAll?.('.field').forEach(field => {
+    const label = field.querySelector(':scope > label');
+    if (!label) return;
+    const controls = [...field.querySelectorAll('input:not([type="hidden"]), select, textarea')];
+    if (!controls.length) return;
+    const text = label.textContent.trim().replace(/\s+/g, ' ');
+    const primary = controls.find(control => control.style.display !== 'none') || controls[0];
+    if (!primary.id) primary.id = `cd-field-${++_autoControlId}`;
+    if (!label.htmlFor) label.htmlFor = primary.id;
+    controls.filter(control => control !== primary && !control.getAttribute('aria-label')).forEach(control => control.setAttribute('aria-label', text));
+  });
+  root.querySelectorAll?.('.phone-row').forEach(group => {
+    const field = group.closest('.field');
+    const label = field?.querySelector(':scope > label');
+    if (label) {
+      if (!label.id) label.id = `cd-label-${++_autoControlId}`;
+      group.setAttribute('role', 'group');
+      group.setAttribute('aria-labelledby', label.id);
+    }
+    group.querySelector('select')?.setAttribute('aria-label', 'מדינה וקידומת');
+    group.querySelector('input')?.setAttribute('aria-label', 'מספר טלפון');
+  });
+  root.querySelectorAll?.('.date-field').forEach(field => {
+    const label = field.querySelector('.df-label');
+    const button = field.querySelector('[data-date-btn]');
+    if (!label || !button) return;
+    if (!label.id) label.id = `cd-date-label-${++_autoControlId}`;
+    button.setAttribute('aria-labelledby', label.id);
+    button.setAttribute('aria-haspopup', 'dialog');
+  });
 }
 // Accessible modal (audit #41): role="dialog" + aria-modal, focus moves into the dialog and is trapped,
 // Escape closes, focus returns to the trigger, and icon-only close buttons get an aria-label.
@@ -21,7 +57,13 @@ export function modal(html) {
   $('#modal-root').innerHTML = `<div class="modal-backdrop"><section class="modal" role="dialog" aria-modal="true" tabindex="-1">${html}</section></div>`;
   const section = $('#modal-root .modal');
   if (!section) return;
+  const heading = section.querySelector('h1, h2, h3');
+  if (heading) {
+    if (!heading.id) heading.id = `cd-modal-title-${++_autoControlId}`;
+    section.setAttribute('aria-labelledby', heading.id);
+  } else section.setAttribute('aria-label', 'חלון מידע');
   section.querySelectorAll('.close, [data-close-modal]').forEach(b => { if (!b.getAttribute('aria-label')) b.setAttribute('aria-label', 'סגירה'); });
+  enhanceUI(section);
   section.focus({preventScroll: true});
   section.addEventListener('keydown', event => {
     if (event.key === 'Escape') { event.preventDefault(); closeModal(); return; }
@@ -34,6 +76,7 @@ export function modal(html) {
   });
 }
 export function closeModal() {
+  $('#modal-root .modal')?.dispatchEvent(new CustomEvent('cd:modal-close'));
   $('#modal-root').innerHTML = '';
   document.documentElement.classList.remove('modal-open');
   const back = _modalReturnFocus; _modalReturnFocus = null;
@@ -61,7 +104,7 @@ export function statusLabel(status) {
 export function verificationLabel(status) {
   return ({missing:'חסר', pending:'ממתין לבדיקה', approved:'מאומת', rejected:'נדחה', needs_resubmission:'נדרש צילום מחדש'}[status] || (typeof status === 'string' && status) || 'חסר');
 }
-export function validPassword(value) { return /[a-z]/.test(value) && /[A-Z]/.test(value) && value.length >= 6; }
+export function validPassword(value) { return String(value || '').length >= 6; }
 // A real email: something@something.tld, no spaces, a dot in the domain.
 export function validEmail(value) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim()); }
 export function validImageUrl(value) { return typeof value === 'string' && /^https:\/\//.test(value); }

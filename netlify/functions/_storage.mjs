@@ -17,17 +17,18 @@ export function storageBucketName() {
 // credential bypasses them). A cache-control of one immutable year lets Google's CDN + the browser
 // cache the image forever, so a returned URL is downloaded at most once per client.
 // Returns a public, permanent token download URL. Throws with .storageStatus set on a write failure.
-export async function putStorageObject(path, buffer, contentType) {
+export async function putStorageObject(path, buffer, contentType, {privateObject = false} = {}) {
   const {access_token} = await getAdmin().options.credential.getAccessToken();
   if (!access_token) throw new Error('service account token unavailable');
   const bucketName = storageBucketName();
   const downloadToken = randomUUID();
   const boundary = `cd${downloadToken}`;
+  const metadata = privateObject ? {} : {firebaseStorageDownloadTokens: downloadToken};
   const metaJson = JSON.stringify({
     name: path,
     contentType,
-    cacheControl: 'public, max-age=31536000, immutable',
-    metadata: {firebaseStorageDownloadTokens: downloadToken},
+    cacheControl: privateObject ? 'private, no-store' : 'public, max-age=31536000, immutable',
+    metadata,
   });
   const body = Buffer.concat([
     Buffer.from(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${metaJson}\r\n--${boundary}\r\nContent-Type: ${contentType}\r\n\r\n`, 'utf8'),
@@ -43,6 +44,7 @@ export async function putStorageObject(path, buffer, contentType) {
     const detail = await res.text().catch(() => '');
     throw Object.assign(new Error(detail || `storage ${res.status}`), {storageStatus: res.status});
   }
-  // A token download URL is publicly readable and permanent (no makePublic / no signed-url expiry).
+  // Private evidence/documents return no public token at all; callers read them through media-sign-read.
+  if (privateObject) return '';
   return `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodeURIComponent(path)}?alt=media&token=${downloadToken}`;
 }

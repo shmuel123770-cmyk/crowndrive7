@@ -22,7 +22,7 @@
           ".validate": "newData.val() === 'renter' || newData.val() === 'owner'"
         },
         "name": {
-          ".write": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid && root.child('verificationStatus').child($uid).val() !== 'pending' && root.child('verificationStatus').child($uid).val() !== 'approved'",
           ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
         },
         "phone": {
@@ -30,8 +30,11 @@
           ".validate": "newData.isString() && newData.val().length <= 40"
         },
         "birthDate": {
-          ".write": "auth != null && auth.uid === $uid",
+          ".write": "auth != null && auth.uid === $uid && root.child('verificationStatus').child($uid).val() !== 'pending' && root.child('verificationStatus').child($uid).val() !== 'approved'",
           ".validate": "newData.isString() && newData.val().length <= 20"
+        },
+        "legalAcceptance": {
+          ".validate": "newData.hasChildren(['termsVersion','privacyVersion','acceptedAt']) && newData.child('termsVersion').isString() && newData.child('termsVersion').val().length <= 60 && newData.child('privacyVersion').isString() && newData.child('privacyVersion').val().length <= 60 && newData.child('acceptedAt').isNumber()"
         },
         "verification": {
           "email": {
@@ -51,7 +54,7 @@
       ".read": true,
       ".indexOn": ["ownerUid", "status"],
       "$carId": {
-        ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || root.child('users').child(auth.uid).child('blocked').val() !== true) && ((newData.exists() && ((!data.exists() && newData.child('ownerUid').val() === auth.uid && root.child('users').child(auth.uid).child('role').val() === 'owner') || (data.exists() && data.child('ownerUid').val() === auth.uid) || root.child('admins').child(auth.uid).val() === true)) || (!newData.exists() && data.exists() && (data.child('ownerUid').val() === auth.uid || root.child('admins').child(auth.uid).val() === true)))",
+        ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
         ".validate": "newData.hasChildren(['make','model','ownerUid']) && newData.child('make').isString() && newData.child('make').val().length <= 80 && newData.child('model').val().length <= 80 && (!data.exists() || newData.child('ownerUid').val() === data.child('ownerUid').val()) && (!data.exists() || root.child('admins').child(auth.uid).val() === true || newData.child('featured').val() === data.child('featured').val()) && (!data.exists() || newData.child('createdAt').val() === data.child('createdAt').val())",
         "photoUrl": {
           ".validate": "newData.isString() && newData.val().length <= 1000000 && (newData.val().length === 0 || newData.val().matches(/^data:image/) || newData.val().matches(/^https:/))"
@@ -82,7 +85,7 @@
         ".read": "auth != null && root.child('admins').child(auth.uid).val() === true",
         "$uid": {
           ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
-          ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || (auth.uid === $uid && root.child('users').child(auth.uid).child('blocked').val() !== true && (auth.token.firebase.sign_in_provider !== 'anonymous' || root.child('supportGuestState').child($uid).child('adminReplied').val() === true || root.child('supportGuestState').child($uid).child('firstSent').val() !== true)))",
+          ".write": false,
           "$msgId": {
             ".validate": "newData.hasChildren(['senderUid','createdAt']) && newData.child('senderUid').val() === auth.uid && newData.child('createdAt').isNumber() && (!newData.hasChild('text') || (newData.child('text').isString() && newData.child('text').val().length <= 2000)) && (!newData.child('fromAdmin').exists() || newData.child('fromAdmin').val() === (root.child('admins').child(auth.uid).val() === true)) && (!newData.child('attachment').exists() || newData.child('attachment/path').val().length <= 1400000)"
           }
@@ -101,11 +104,11 @@
       "$uid": {
         ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
         "firstSent": {
-          ".write": "auth != null && auth.uid === $uid",
+          ".write": false,
           ".validate": "newData.isBoolean()"
         },
         "adminReplied": {
-          ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
+          ".write": false,
           ".validate": "newData.isBoolean()"
         }
       }
@@ -125,7 +128,7 @@
     "privateCarDetails": {
       "$carId": {
         ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || data.child('ownerUid').val() === auth.uid)",
-        ".write": "auth != null && (root.child('admins').child(auth.uid).val() === true || (root.child('users').child(auth.uid).child('blocked').val() !== true && (root.child('cars').child($carId).child('ownerUid').val() === auth.uid || !root.child('cars').child($carId).exists())))",
+        ".write": "auth != null && root.child('admins').child(auth.uid).val() === true",
         ".validate": "!newData.exists() || newData.child('ownerUid').val() === auth.uid || root.child('admins').child(auth.uid).val() === true"
       }
     },

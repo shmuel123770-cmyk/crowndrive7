@@ -6,7 +6,7 @@ import {startPrivate, stopPrivate} from './store.js';
 // Create the user's own profile directly (works even if the server functions are
 // down). Firebase rules allow this write once, for the user's own uid, with the
 // role limited to renter/owner — see FIREBASE_DATABASE_RULES_V2.json.
-export async function createOwnProfile({name, phone, role}) {
+export async function createOwnProfile({name, phone, role, legalAccepted = false, termsVersion = ''}) {
   const user = auth.currentUser;
   if (!user) throw new Error('נדרשת התחברות');
   const txt = (v, n) => String(v ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, n);
@@ -38,6 +38,11 @@ export async function createOwnProfile({name, phone, role}) {
       phone: digits(phone),
       role: chosenRole,
       createdAt: Date.now(),
+      legalAcceptance: legalAccepted === true ? {
+        termsVersion: txt(termsVersion, 60) || '2026-07-14-rev101',
+        privacyVersion: '2026-07-14-rev101',
+        acceptedAt: Date.now(),
+      } : null,
       verification: {email: !!user.emailVerified, licenseFront: false, licenseBack: false, selfie: false},
     });
   } catch (error) {
@@ -98,10 +103,11 @@ function authError(error) {
   return new Error(map[String(error?.code || '')] || error?.message || 'שגיאת התחברות');
 }
 
-export async function register({name, email, phone, password, role}) {
+export async function register({name, email, phone, password, role, legalAccepted, termsVersion}) {
   if (!validPassword(password)) {
-    throw new Error('הסיסמה חייבת לכלול לפחות 6 תווים, אות גדולה ואות קטנה באנגלית');
+    throw new Error('הסיסמה חייבת לכלול לפחות 6 תווים');
   }
+  if (legalAccepted !== true) throw new Error('יש לאשר את תנאי השימוש ומדיניות הפרטיות');
   let credential;
   try {
     credential = await auth.createUserWithEmailAndPassword(email.trim(), password);
@@ -114,7 +120,7 @@ export async function register({name, email, phone, password, role}) {
     throw authError(error);
   }
   await credential.user.updateProfile({displayName: name.trim()});
-  await createOwnProfile({name, phone, role});
+  await createOwnProfile({name, phone, role, legalAccepted, termsVersion});
   return credential.user;
 }
 

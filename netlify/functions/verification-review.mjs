@@ -11,6 +11,17 @@ export async function handler(event) {
     const {uid, status, note} = body;
     if (!uid || !['approved', 'rejected', 'needs_resubmission', 'pending'].includes(status)) return json(400, {error: 'נתונים לא תקינים'});
     const db = getAdmin().database();
+    if (status === 'approved') {
+      const [profileSnap, docsSnap] = await Promise.all([
+        db.ref(`users/${uid}`).once('value'), db.ref(`privateUserDocuments/${uid}`).once('value'),
+      ]);
+      const userProfile = profileSnap.val() || {};
+      const docs = docsSnap.val() || {};
+      const verification = userProfile.verification || {};
+      if (verification.email !== true) return json(409, {error: 'יש לאמת את כתובת המייל לפני אישור המשתמש'});
+      if (!verification.licenseFront || !verification.licenseBack || !verification.selfie
+        || !docs.licenseFront || !docs.licenseBack || !docs.selfie) return json(409, {error: 'אי אפשר לאשר לפני שכל שלושת המסמכים הוגשו'});
+    }
     const updates = {
       [`verificationStatus/${uid}`]: status,
       [`users/${uid}/verification/reviewNote`]: cleanText(note, 500),

@@ -1,5 +1,6 @@
 import {api} from './api.js';
 import {storage} from './firebase.js';
+import {modal, closeModal} from './core.js';
 
 const isVideo = file => String(file?.type || '').startsWith('video/');
 
@@ -52,6 +53,7 @@ async function uploadVideoViaSdk(file, kind, entityId) {
   const {path} = await api('media-sign-upload', {name: file.name, type: file.type, size: file.size, kind, entityId});
   try {
     const snapshot = await storage.ref(path).put(file, {contentType: file.type});
+    if (['user-document', 'payment', 'booking-media'].includes(kind)) return {path, url: ''};
     const meta = snapshot?.metadata || {};
     const token = String(meta.downloadTokens || '').split(',')[0];
     const bucket = meta.bucket || window.CROWNDRIVE_FIREBASE_CONFIG?.storageBucket;
@@ -68,8 +70,8 @@ async function uploadVideoViaSdk(file, kind, entityId) {
 // first (reliable everywhere), then hands the compact JPEG to the media-upload function, which writes
 // it to Storage server-side — so it works inside in-app browsers that block direct Storage uploads.
 // If Storage isn't set up, or the call fails for ANY reason, we fall back to the inline data URL, so
-// uploads NEVER break. Private kinds (documents, payment proofs, booking media) stay inline: they are
-// admin-only reads, not on the public load path, and moving them would need signed reads.
+// uploads NEVER break for public media. Private kinds never fall back to the database: they are written
+// to private Storage paths and later read only through short-lived signed URLs.
 const OFFLOAD_KINDS = new Set(['car-image', 'avatar']);
 async function offloadImage(dataUrl, kind, entityId) {
   if (!OFFLOAD_KINDS.has(kind)) return '';
@@ -79,10 +81,13 @@ async function offloadImage(dataUrl, kind, entityId) {
   } catch { return ''; }
 }
 
-// Images become an inline data URL stored straight in the record; videos keep the SDK path.
 export async function uploadPrivate(file, kind, entityId = '') {
   if (!file) throw new Error('לא נבחר קובץ');
-  return isVideo(file) ? (await uploadVideoViaSdk(file, kind, entityId)).path : await toImageDataUrl(file);
+  if (isVideo(file)) return (await uploadVideoViaSdk(file, kind, entityId)).path;
+  const dataUrl = await toImageDataUrl(file);
+  const result = await api('media-upload', {name: `${kind}.jpg`, type: 'image/jpeg', kind, entityId, data: dataUrl});
+  if (!result?.path) throw new Error('העלאת התמונה נכשלה — נסו שוב');
+  return result.path;
 }
 export async function uploadPublicMedia(file, kind, entityId = '') {
   if (!file) throw new Error('לא נבחר קובץ');
@@ -91,8 +96,7 @@ export async function uploadPublicMedia(file, kind, entityId = '') {
   return (await offloadImage(dataUrl, kind, entityId)) || dataUrl;
 }
 
-// A stored image is already an inline data URL — return it as-is. Only true storage paths
-// (legacy / video) still need a server-signed read url.
+// Legacy inline images are still readable; new private media is stored as a path and receives a short URL.
 export async function signedRead(path) {
   if (/^data:/.test(String(path || ''))) return path;
   return (await api('media-sign-read', {path})).url;
@@ -100,29 +104,47 @@ export async function signedRead(path) {
 
 export async function capturePhoto({facingMode = 'environment', title = 'צילום תמונה'} = {}) {
   if (!navigator.mediaDevices?.getUserMedia) throw new Error('המצלמה אינה נתמכת בדפדפן זה');
-  const stream = await navigator.mediaDevices.getUserMedia({video: {facingMode}, audio: false});
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({video: {facingMode}, audio: false}); }
+  catch (error) {
+    if (['NotAllowedError', 'PermissionDeniedError'].includes(error?.name)) throw new Error('לא ניתנה הרשאה למצלמה — אפשרו גישה בהגדרות הדפדפן או בחרו תמונה מהגלריה');
+    throw new Error('לא ניתן לפתוח את המצלמה — נסו שוב או בחרו תמונה מהגלריה');
+  }
   return new Promise((resolve, reject) => {
+    modal(`<div class="modal-head"><h2>${title}</h2><button type="button" class="close" id="camera-cancel" data-close-modal>×</button></div><div class="camera-stage"><video id="camera-preview" autoplay playsinline muted></video><div class="camera-guide" aria-hidden="true"></div></div><p class="camera-hint">מקמו את המסמך או לוח המחוונים בתוך המסגרת</p><div class="camera-actions"><button type="button" class="btn outline" id="camera-switch">החלפת מצלמה</button><button type="button" class="camera-shot" id="camera-shot" aria-label="צילום תמונה"><span aria-hidden="true"></span></button><button type="button" class="btn outline" id="camera-gallery">בחירה מהגלריה</button><input type="file" id="camera-gallery-input" accept="image/jpeg,image/png,image/webp" hidden></div>`);
     const root = document.querySelector('#modal-root');
-    root.innerHTML = `<div class="modal-backdrop"><section class="modal camera-modal"><div class="modal-head"><h2>${title}</h2><button class="close" id="camera-cancel">×</button></div><video id="camera-preview" autoplay playsinline muted></video><div class="chips"><button class="btn primary" id="camera-shot">צלם</button><button class="btn outline" id="camera-switch">החלף מצלמה</button></div></section></div>`;
+    const section = root.querySelector('.modal');
+    section?.classList.add('camera-modal');
     const video = root.querySelector('#camera-preview');
     video.srcObject = stream;
-    const stop = () => stream.getTracks().forEach(track => track.stop());
-    root.querySelector('#camera-cancel').onclick = () => { stop(); root.innerHTML = ''; reject(new Error('הצילום בוטל')); };
+    let settled = false;
+    const stop = () => stream?.getTracks().forEach(track => track.stop());
+    const cancel = () => { if (settled) return; settled = true; stop(); reject(new Error('הצילום בוטל')); };
+    section?.addEventListener('cd:modal-close', cancel, {once: true});
     root.querySelector('#camera-shot').onclick = () => {
       const canvas = document.createElement('canvas');
       canvas.width = video.videoWidth || 1280;
       canvas.height = video.videoHeight || 720;
       canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
       canvas.toBlob(blob => {
-        stop(); root.innerHTML = '';
+        if (settled) return;
+        settled = true; stop(); closeModal();
         if (!blob) return reject(new Error('הצילום נכשל'));
         resolve(new File([blob], `camera-${Date.now()}.jpg`, {type: 'image/jpeg'}));
       }, 'image/jpeg', 0.9);
     };
     root.querySelector('#camera-switch').onclick = async () => {
-      stop(); root.innerHTML = '';
+      if (settled) return;
+      settled = true; stop(); closeModal();
       try { resolve(await capturePhoto({facingMode: facingMode === 'user' ? 'environment' : 'user', title})); }
       catch (error) { reject(error); }
+    };
+    const fileInput = root.querySelector('#camera-gallery-input');
+    root.querySelector('#camera-gallery').onclick = () => fileInput.click();
+    fileInput.onchange = () => {
+      const file = fileInput.files?.[0];
+      if (!file || settled) return;
+      settled = true; stop(); closeModal(); resolve(file);
     };
   });
 }

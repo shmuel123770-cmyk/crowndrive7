@@ -15,11 +15,16 @@ export async function handler(event) {
     if (!['approved', 'active'].includes(value.status)) return json(409, {error: 'אפשר לשלוח הוכחה רק להזמנה מאושרת או פעילה'});
     const amount = Number(body.amount);
     if (!Number.isFinite(amount) || amount <= 0 || amount > 1000000) return json(400, {error: 'הסכום אינו תקין'});
+    const expectedAmount = Number(value.quote?.total);
+    if (Number.isFinite(expectedAmount) && expectedAmount > 0 && Math.abs(amount - expectedAmount) > 0.01) return json(400, {error: 'הסכום אינו תואם לסיכום ההזמנה'});
     // The proof image is stored inline as a data URL; also accept a legacy storage path.
     const media = String(body.mediaPath || '');
     const isImage = /^data:image\//i.test(media);
     const expected = `bookings/${body.bookingId}/payments/${token.uid}/`;
     if (!isImage && !media.startsWith(expected)) return json(400, {error: 'נתיב הוכחה לא תקין'});
+    const existing = (await getAdmin().database().ref(`payments/${body.bookingId}`).once('value')).val();
+    if (existing?.status === 'approved') return json(409, {error: 'התשלום כבר אושר ואינו ניתן להחלפה'});
+    if (existing?.status === 'pending') return json(409, {error: 'הוכחת התשלום כבר ממתינה לאישור'});
     await getAdmin().database().ref(`payments/${body.bookingId}`).set({
       bookingId: body.bookingId,
       renterUid: value.renterUid,

@@ -1,4 +1,5 @@
-import {getAdmin, verify, json, isAdmin, profile, cleanText, audit, notifyAdmin, parseBody} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, isAdmin, profile, cleanText, audit, notifyAdmin, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
+import {rateLimit, tooMany} from './_ratelimit.mjs';
 // A photo is either an inline data-URL image (stored straight in the record — capped at ~1MB)
 // or an https link. Anything else is dropped.
 const httpsUrl = value => {
@@ -37,6 +38,10 @@ function publicCar(data, ownerUid, existing = {}, ownerName = '') {
     photoUrl,
     photos,
     videoUrl: httpsUrl(data.videoUrl ?? existing.videoUrl),
+    rentalMode: ['hourly', 'hourly_daily', 'long_term'].includes(data.rentalMode) ? data.rentalMode : (existing.rentalMode || 'hourly_daily'),
+    priceOnRequest: Boolean(data.priceOnRequest ?? existing.priceOnRequest),
+    weekendEnabled: Boolean(data.weekendEnabled ?? existing.weekendEnabled),
+    weekendPrice: number(data.weekendPrice ?? existing.weekendPrice, 0, 1000000, 0),
     ownerUid,
     ownerName: cleanText(ownerName || existing.ownerName, 80),
   };
@@ -45,6 +50,8 @@ export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const token = await verify(event);
+    if (!(await rateLimit(token.uid, 'car-action', 30, 10 * 60 * 1000))) throw tooMany();
+    if (await maintenanceBlocked(token.uid)) return json(503, {error: 'האתר בתחזוקה כרגע — נסו שוב בעוד מספר דקות'});
     const body = parseBody(event);
     if (!body) return json(400, {error: 'הבקשה גדולה או פגומה — נסו תמונה קטנה יותר'});
     const admin = await isAdmin(token.uid);

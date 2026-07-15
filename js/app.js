@@ -1,7 +1,7 @@
 import {startPublic, store} from './store.js';
 import {authReady} from './auth.js';
 import {nav, bottomNav, home, cars, authView, dashboard, chatsPage, openAdminLogin} from './views.js';
-import {toast, closeModal, resetPaint} from './core.js';
+import {toast, closeModal, resetPaint, enhanceUI} from './core.js';
 
 // Start data + auth in the background — do NOT block first paint on them.
 // The home page renders instantly; auth-gated views wait via store.authSettled.
@@ -54,7 +54,9 @@ function render() {
   if (rendering) return;
   rendering = true;
   try {
-    const route = location.hash.slice(1) || 'home';
+    const requestedRoute = location.hash.slice(1) || 'home';
+    const route = routes[requestedRoute] ? requestedRoute : 'home';
+    if (route !== requestedRoute) history.replaceState(null, '', '#home');
     store.route = route;
     document.body.dataset.page = route;
     nav();
@@ -80,12 +82,11 @@ function render() {
     // (incoming messages, store updates) don't re-animate and flicker.
     if (route !== lastRoute) {
       lastRoute = route;
-      // A NEW page must open at its TOP. Without this the browser keeps the previous page's scroll offset —
-      // e.g. clicking "כל הרכבים באתר" from the bottom of the home page opened the cars list scrolled to its
-      // bottom. Only on route CHANGE, so data-driven re-renders never yank the user's scroll position.
-      window.scrollTo({top: 0, behavior: 'instant'});  // jump, not animate — the CSS sets scroll-behavior:smooth
+      // A NEW page must open at its TOP (rev.106). Instant, because the CSS sets scroll-behavior:smooth.
+      window.scrollTo({top: 0, behavior: 'instant'});
       const appEl = document.querySelector('#app');
       if (appEl) { appEl.classList.remove('app-enter'); void appEl.offsetWidth; appEl.classList.add('app-enter'); }
+      document.querySelector('#app')?.focus({preventScroll: true});
     }
     // Only the cars listing gets the in-flow "→ חזרה" button. home/dashboard/auth/chats each have
     // their own navigation (bottom tab bar, in-form back link, chat back/close), so they don't need it.
@@ -98,9 +99,10 @@ function render() {
       }
     }
     watchReveals();
+    enhanceUI(document);
     firstPaintDone = true;
     window.__CD_BOOT_READY__?.();  // app painted — stand the boot watchdog down
-    document.querySelector('#app')?.focus({preventScroll: true});
+    document.querySelector('#app')?.setAttribute('aria-busy', 'false');
   } catch (error) {
     console.error('render failed', error);
     toast(`שגיאה בטעינת המסך: ${error.message}`);
@@ -110,6 +112,17 @@ function render() {
 }
 
 document.addEventListener('click', event => {
+  const passwordToggle = event.target.closest('[data-toggle-password]');
+  if (passwordToggle) {
+    const input = document.getElementById(passwordToggle.dataset.togglePassword);
+    if (input) {
+      const visible = input.type === 'text';
+      input.type = visible ? 'password' : 'text';
+      passwordToggle.textContent = visible ? 'הצגה' : 'הסתרה';
+      passwordToggle.setAttribute('aria-pressed', String(!visible));
+    }
+    return;
+  }
   const routeButton = event.target.closest('button[data-route], a[data-route]');
   if (routeButton) {
     event.preventDefault();
@@ -136,8 +149,30 @@ window.addEventListener('unhandledrejection', event => {
 window.addEventListener('error', event => {
   console.error('window error', event.error || event.message);
 });
-// The site always opens on the home page.
-if (location.hash && location.hash !== '#home') history.replaceState(null, '', '#home');
+// Preserve valid deep links (cars, dashboard, chats, auth). Unknown routes alone return home.
+if (location.hash && !routes[location.hash.slice(1)]) history.replaceState(null, '', '#home');
+
+// Keep the app usable on weak mobile connections: show an explicit connection state and let forms remain
+// on screen instead of looking frozen. Firebase/API calls still provide their own retry/error handling.
+const networkNode = document.querySelector('#network-status');
+function updateNetworkStatus() {
+  if (!networkNode) return;
+  const offline = navigator.onLine === false;
+  document.body.classList.toggle('is-offline', offline);
+  networkNode.hidden = !offline;
+  networkNode.textContent = offline ? 'אין חיבור לאינטרנט — המידע שמוצג עשוי להיות לא מעודכן' : '';
+}
+window.addEventListener('online', updateNetworkStatus);
+window.addEventListener('offline', updateNetworkStatus);
+updateNetworkStatus();
+
+// Dashboard/auth content is lazy-rendered after the route paint. Enhance labels and controls whenever a
+// new block is inserted, while coalescing a burst of mutations into one inexpensive pass.
+let enhanceTimer = null;
+new MutationObserver(() => {
+  clearTimeout(enhanceTimer);
+  enhanceTimer = setTimeout(() => enhanceUI(document), 0);
+}).observe(document.body, {childList: true, subtree: true});
 
 document.querySelector('.brand')?.addEventListener('click', event => {
   event.preventDefault();

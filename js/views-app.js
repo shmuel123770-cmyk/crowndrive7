@@ -410,7 +410,7 @@ function profileView() {
   const cardSvg = '<svg viewBox="0 0 96 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="92" height="60" rx="8" fill="#EDF2F7" stroke="#3F6B8E" stroke-width="2.5"/><rect x="10" y="12" width="26" height="26" rx="4" fill="#C9D8E5"/><circle cx="23" cy="21" r="5" fill="#3F6B8E"/><path d="M14 36c2-6 6-8 9-8s7 2 9 8" fill="#3F6B8E"/><rect x="44" y="14" width="42" height="5" rx="2.5" fill="#9FB6C9"/><rect x="44" y="24" width="34" height="5" rx="2.5" fill="#C9D8E5"/><rect x="44" y="34" width="38" height="5" rx="2.5" fill="#C9D8E5"/><rect x="10" y="48" width="76" height="5" rx="2.5" fill="#9FB6C9"/></svg>';
   const verLocked = done && !['needs_resubmission', 'rejected'].includes(verification.status);
   return `<div class="section-head"><h2>פרופיל ואימות</h2><span class="status-badge ${approved ? 'approved' : 'pending'}">${esc(verificationLabel(verification.status))}</span></div>
-    <div class="avatar-row"><button type="button" class="avatar-click" id="avatar-open" title="החלפת תמונת פרופיל">${avatarHtml(profile, 116)}<span class="avatar-cam">${ICON.camera}</span></button><input hidden type="file" accept="image/*" id="avatar-file"><div class="avatar-actions"><b>תמונת פרופיל</b><button type="button" class="btn outline" id="avatar-open2">בחירת תמונה מהגלריה</button></div></div><form id="profile-form" class="card inset"><div class="form-grid"><div class="field"><label>שם מלא</label><input name="name" value="${esc(profile.name || '')}" disabled required></div><div class="field"><label>טלפון</label><input name="phone" value="${esc(profile.phone || '')}" disabled></div><div class="field"><label>תאריך לידה</label><input name="birthDate" type="date" value="${esc(profile.birthDate || '')}" disabled required></div><div class="field"><label>מייל 🔒</label><input value="${esc(profile.email || store.user?.email || '')}" disabled data-locked></div></div><button type="button" class="btn outline block" id="profile-edit">עריכה</button><button class="btn primary block" id="profile-save" style="display:none">שמירת שינויים</button></form>
+    <div class="avatar-row"><button type="button" class="avatar-click" id="avatar-open" title="החלפת תמונת פרופיל">${avatarHtml(profile, 116)}<span class="avatar-cam">${ICON.camera}</span></button><input hidden type="file" accept="image/jpeg,image/png,image/webp" id="avatar-file"><div class="avatar-actions"><b>תמונת פרופיל</b><button type="button" class="btn outline" id="avatar-open2">בחירת תמונה מהגלריה</button></div></div><form id="profile-form" class="card inset"><div class="form-grid"><div class="field"><label>שם חוקי ${verLocked ? '🔒' : ''}</label><input name="name" value="${esc(profile.name || '')}" disabled ${verLocked ? 'data-locked' : ''} required>${verLocked ? '<small>נעול לאחר הגשת מסמכים. לשינוי פנו לתמיכה.</small>' : ''}</div><div class="field"><label>טלפון</label><input name="phone" type="tel" inputmode="tel" autocomplete="tel" value="${esc(profile.phone || '')}" disabled></div><div class="field"><label>תאריך לידה ${verLocked ? '🔒' : ''}</label><input name="birthDate" type="date" value="${esc(profile.birthDate || '')}" disabled ${verLocked ? 'data-locked' : ''} required></div><div class="field"><label>מייל 🔒</label><input value="${esc(profile.email || store.user?.email || '')}" disabled data-locked></div></div><button type="button" class="btn outline block" id="profile-edit">עריכה</button><button class="btn primary block" id="profile-save" style="display:none">שמירת שינויים</button></form>
     ${verLocked
       ? `<div class="ver-card ver-locked ${approved ? 'ver-ok' : ''}"><span class="ver-illustration">${cardSvg}</span><span class="ver-main"><b>אימות רישיון נהיגה</b><small>${approved ? 'האימות אושר ונעול 🔒 — אפשר להזמין רכבים' : 'המסמכים נשלחו ונעולים 🔒 · בבדיקת מנהל'}</small></span><span class="ver-arrow">${approved ? '✓' : '🔒'}</span></div>`
       : `<button type="button" class="ver-card" id="ver-wizard"><span class="ver-illustration">${cardSvg}</span><span class="ver-main"><b>אימות רישיון נהיגה</b><small>${verification.status === 'needs_resubmission' ? 'המנהל ביקש צילום מחדש — לחצו להעלאה' : 'צלמו רישיון (2 צדדים) וסלפי — לוקח דקה'}</small></span><span class="ver-arrow">←</span></button>`}
@@ -878,17 +878,19 @@ function renderChatMessage(message) {
 }
 
 function paymentModal(bookingId, onDone = null) {
-  modal(`<div class="modal-head"><h2>הוכחת תשלום</h2><button class="close" data-close-modal>×</button></div><form id="payment-form"><div class="field"><label>סכום ששולם</label><input name="amount" type="number" min="0.01" step="0.01" required></div><div class="field"><label>צילום הוכחה</label><input name="file" type="file" accept="image/*" required></div><button class="btn primary">שמירה</button></form>`);
+  const expected = Number(store.bookings?.[bookingId]?.quote?.total || 0);
+  modal(`<div class="modal-head"><h2>דיווח על תשלום</h2><button class="close" data-close-modal>×</button></div><p class="mut">הצילום יישלח לבדיקה. התשלום ייחשב מאושר רק לאחר אישור בעל הרכב.</p><form id="payment-form"><div class="field"><label>סכום ששולם</label><input name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" ${expected ? `value="${expected.toFixed(2)}" readonly` : ''} required>${expected ? `<small>הסכום נקבע לפי סיכום ההזמנה: ${money(expected)}</small>` : ''}</div><div class="field"><label>צילום הוכחה</label><input name="file" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" required></div><div class="upload-state" role="status" aria-live="polite"></div><button class="btn primary block">שליחת הדיווח</button></form>`);
   document.querySelector('#payment-form').onsubmit = async event => {
     event.preventDefault();
-    const btn = event.submitter; if (btn) btn.disabled = true;  // the upload takes seconds — block a double-tap
+    const btn = event.submitter; if (btn) { btn.disabled = true; btn.textContent = 'מעלה…'; }
+    const state = event.target.querySelector('.upload-state'); if (state) state.textContent = 'מכווץ ומעלה את התמונה בצורה מאובטחת…';
     try {
       const amount = Number(event.target.amount.value);
       const path = await uploadPrivate(event.target.file.files[0], 'payment', bookingId);
       await savePayment(bookingId, {amount, mediaPath: path});
       closeModal(); toast('הוכחת התשלום נשמרה');
       await onDone?.(amount);
-    } catch (error) { toast(error.message); if (btn) btn.disabled = false; }
+    } catch (error) { toast(error.message); if (state) state.textContent = 'ההעלאה לא הושלמה. אפשר לנסות שוב.'; if (btn) { btn.disabled = false; btn.textContent = 'שליחת הדיווח'; } }
   };
 }
 
@@ -903,16 +905,20 @@ async function viewPaymentModal(bookingId) {
 
 function handoverModal(bookingId, stage) {
   const title = stage === 'pickup' ? 'תיעוד לפני נסיעה' : 'תיעוד החזרה';
-  modal(`<div class="modal-head"><h2>${title}</h2><button class="close" data-close-modal>×</button></div><form id="handover-form"><div class="field"><label>סרטון הרכב מבחוץ</label><input name="video" type="file" accept="video/*" required></div><div class="field"><label>תמונה של הדלק והמיילים</label><input name="dash" type="file" accept="image/*" required></div><div class="form-grid"><div class="field"><label>מיילים / קילומטראז׳</label><input name="mileage" type="number" min="0" required></div><div class="field"><label>רמת דלק</label><select name="fuel"><option>מלא</option><option>3/4</option><option>1/2</option><option>1/4</option><option>ריק</option></select></div></div><div class="field"><label>נזקים והערות</label><textarea name="notes" maxlength="2000"></textarea></div><button class="btn primary">שמירה</button></form>`);
+  modal(`<div class="modal-head"><h2>${title}</h2><button class="close" data-close-modal>×</button></div><p class="mut">צלמו באור טוב והקיפו את הרכב לאט. אל תסגרו את החלון בזמן ההעלאה.</p><form id="handover-form"><div class="field"><label>סרטון הרכב מבחוץ</label><input name="video" type="file" accept="video/*" capture="environment" required></div><div class="field"><label>תמונה של הדלק והמיילים</label><input name="dash" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" required></div><div class="form-grid"><div class="field"><label>מיילים / קילומטראז׳</label><input name="mileage" type="number" inputmode="numeric" min="0" required></div><div class="field"><label>רמת דלק</label><select name="fuel"><option>מלא</option><option>3/4</option><option>1/2</option><option>1/4</option><option>ריק</option></select></div></div><div class="field"><label>נזקים והערות</label><textarea name="notes" maxlength="2000" placeholder="תארו שריטות, מכות או מידע שחשוב לתעד"></textarea></div><div class="upload-state" role="status" aria-live="polite"></div><button class="btn primary block">שמירת התיעוד</button></form>`);
   document.querySelector('#handover-form').onsubmit = async event => {
     event.preventDefault();
-    const btn = event.submitter; if (btn) btn.disabled = true;  // two uploads — block a double-tap
+    const btn = event.submitter; if (btn) { btn.disabled = true; btn.textContent = 'מעלה…'; }
+    const state = event.target.querySelector('.upload-state');
     try {
+      if (state) state.textContent = 'מעלה את הסרטון…';
       const videoPath = await uploadPrivate(event.target.video.files[0], 'booking-media', bookingId);
+      if (state) state.textContent = 'מעלה את תמונת לוח המחוונים…';
       const dashboardPhotoPath = await uploadPrivate(event.target.dash.files[0], 'booking-media', bookingId);
+      if (state) state.textContent = 'שומר את התיעוד…';
       await saveHandover(bookingId, stage, {videoPath, dashboardPhotoPath, mileage: Number(event.target.mileage.value), fuel: event.target.fuel.value, notes: event.target.notes.value});
       closeModal(); toast('התיעוד נשמר');
-    } catch (error) { toast(error.message); if (btn) btn.disabled = false; }
+    } catch (error) { toast(error.message); if (state) state.textContent = 'התיעוד לא הושלם. הקבצים נשארו בטופס ואפשר לנסות שוב.'; if (btn) { btn.disabled = false; btn.textContent = 'שמירת התיעוד'; } }
   };
 }
 

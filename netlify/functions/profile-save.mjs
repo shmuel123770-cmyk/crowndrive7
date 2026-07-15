@@ -38,13 +38,19 @@ export async function handler(event) {
     }
     if (body.action === 'update') {
       const patch = {};
+      const verificationStatus = (await db.ref(`verificationStatus/${token.uid}`).once('value')).val();
+      const identityLocked = ['pending', 'approved'].includes(verificationStatus);
       // The role is chosen once (right after signup) and then locked — only an admin can change it.
       if ('role' in body) {
         if (!['renter', 'owner'].includes(body.role)) return json(400, {error: 'סוג חשבון לא תקין'});
         if (['renter', 'owner'].includes(existing.role)) return json(403, {error: 'שינוי סוג חשבון אפשרי רק דרך מנהל האתר'});
         patch.role = body.role;
       }
-      if ('name' in body) patch.name = cleanText(body.name, 100);
+      if ('name' in body) {
+        const name = cleanText(body.name, 100);
+        if (identityLocked && name !== cleanText(existing.name, 100)) return json(409, {error: 'השם החוקי נעול בזמן האימות — לשינוי פנו למנהל האתר'});
+        patch.name = name;
+      }
       if ('phone' in body) patch.phone = cleanText(body.phone, 40);
       if ('photoURL' in body) {
         const v = String(body.photoURL || '');
@@ -52,6 +58,7 @@ export async function handler(event) {
       }
       if ('birthDate' in body) {
         const date = /^\d{4}-\d{2}-\d{2}$/.test(String(body.birthDate)) ? String(body.birthDate) : '';
+        if (identityLocked && date !== String(existing.birthDate || '')) return json(409, {error: 'תאריך הלידה נעול בזמן האימות — לשינוי פנו למנהל האתר'});
         patch.birthDate = date;
       }
       patch.updatedAt = Date.now();

@@ -34,6 +34,7 @@ export async function handler(event) {
       const pref = db.ref(`payments/${body.bookingId}`);
       const payment = (await pref.once('value')).val();
       if (!payment) return json(404, {error: 'לא נמצאה הוכחת תשלום'});
+      if (payment.status !== 'pending') return json(409, {error: 'אפשר לבדוק רק תשלום שממתין לאישור'});
       await pref.update({status: decision, reviewedBy: token.uid, reviewedAt: Date.now()});
       await audit(token.uid, 'payment_review', 'booking', body.bookingId, {decision});
       const ref7 = String(body.bookingId).slice(-7);
@@ -46,6 +47,7 @@ export async function handler(event) {
     if (body.action === 'status') {
       const next = body.status;
       const present = current.status || 'pending';
+      let reservationCreated = false;
       // Whitelist the status for EVERYONE (audit #23) — an admin (or a buggy client) can no longer store
       // an arbitrary string and corrupt the record.
       if (!['pending', 'approved', 'rejected', 'active', 'done', 'cancelled'].includes(next)) return json(400, {error: 'סטטוס לא תקין'});
@@ -90,9 +92,14 @@ export async function handler(event) {
           return reservations;
         });
         if (!result.committed) return json(409, {error: 'קיימת הזמנה חופפת לרכב'});
+        reservationCreated = true;
       }
       const stamps = next === 'active' ? {startedAt: Date.now()} : next === 'done' ? {endedAt: Date.now()} : {};
-      await ref.update({status: next, done: next === 'done', updatedAt: Date.now(), ...stamps});
+      try { await ref.update({status: next, done: next === 'done', updatedAt: Date.now(), ...stamps}); }
+      catch (error) {
+        if (reservationCreated) await db.ref(`reservations/${current.carId}/${body.bookingId}`).remove().catch(cleanupError => console.error('reservation rollback failed', cleanupError));
+        throw error;
+      }
       // Free the slot the moment the booking leaves the reserved set, so the car opens up again.
       if (['done', 'rejected', 'cancelled'].includes(next)) await db.ref(`reservations/${current.carId}/${body.bookingId}`).remove().catch(() => {});
       await audit(token.uid, 'booking_status', 'booking', body.bookingId, {from: present, to: next});
@@ -116,10 +123,13 @@ export async function handler(event) {
       if (current.handover?.[body.stage] && !admin) return json(409, {error: 'התיעוד כבר הוגש'});
       if (body.stage === 'pickup') {
         const payment = (await db.ref(`payments/${body.bookingId}`).once('value')).val();
-        if (!payment && !admin) return json(409, {error: 'יש לשלוח הוכחת תשלום לפני תיעוד האיסוף'});
+        if (payment?.status !== 'approved' && !admin) return json(409, {error: 'יש לקבל אישור תשלום לפני תיעוד האיסוף'});
       }
       const data = body.data || {};
       if (!data.videoPath || !data.dashboardPhotoPath || !Number.isFinite(Number(data.mileage)) || !data.fuel) return json(400, {error: 'חסר תיעוד חובה'});
+      const allowedPrefix = `bookings/${body.bookingId}/media/${token.uid}/`;
+      if (!String(data.videoPath).startsWith(allowedPrefix) || !String(data.dashboardPhotoPath).startsWith(allowedPrefix)
+        || String(data.videoPath).includes('..') || String(data.dashboardPhotoPath).includes('..')) return json(400, {error: 'נתיב תיעוד לא תקין'});
       await ref.child(`handover/${body.stage}`).set({
         videoPath: cleanText(data.videoPath, 500),
         dashboardPhotoPath: cleanText(data.dashboardPhotoPath, 500),

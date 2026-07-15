@@ -18,6 +18,7 @@ function overlaps(aStart, aEnd, bStart, bEnd) {
 // Server-side mirror of the client's rental-mode matching (audit #14) — a malicious client can no longer
 // book a range the owner never offered. Kept in sync with js/views.js (carBuckets/periodBucket/weekend).
 const DAY = 86400000;
+const TERMS_VERSION = '2026-07-14-rev101';
 const MODE_BUCKETS = {hourly: ['hours'], hourly_daily: ['hours', 'days'], long_term: ['weeks']};
 function periodBucket(ms) { return ms < 24 * 3600000 ? 'hours' : ms < 7 * DAY ? 'days' : 'weeks'; }
 function carBuckets(car) {
@@ -40,6 +41,25 @@ function carServesPeriod(car, startRaw, endRaw, startMs, endMs) {
   if (carBuckets(car).includes(periodBucket(endMs - startMs))) return true;
   return !!car.weekendEnabled && Number(car.weekendPrice) > 0 && (endMs - startMs) <= 4 * DAY && (endMs - startMs) >= 20 * 3600000 && rangeIncludesSaturday(startRaw, endRaw);
 }
+function quoteFor(car, startRaw, endRaw, startMs, endMs, fulfillment) {
+  const deliveryFee = fulfillment === 'delivery' ? Number(car.deliveryCost || 0) : 0;
+  if (car.priceOnRequest) return {currency: 'USD', status: 'on_request', baseAmount: null, deliveryFee, total: null};
+  const ms = Math.max(0, endMs - startMs);
+  const hours = Math.max(1, Math.ceil(ms / 3600000));
+  const days = Math.max(1, Math.ceil(ms / DAY));
+  const weeks = Math.max(1, Math.ceil(days / 7));
+  let baseAmount = 0, pricingMode = '';
+  if (car.weekendEnabled && Number(car.weekendPrice) > 0 && ms >= 20 * 3600000 && ms <= 4 * DAY && rangeIncludesSaturday(startRaw, endRaw)) {
+    baseAmount = Number(car.weekendPrice);
+    pricingMode = 'weekend';
+  }
+  else if (periodBucket(ms) === 'weeks' && Number(car.priceWeekly)) { baseAmount = weeks * Number(car.priceWeekly); pricingMode = 'weekly'; }
+  else if (periodBucket(ms) !== 'hours' && Number(car.dailyPrice)) { baseAmount = days * Number(car.dailyPrice); pricingMode = 'daily'; }
+  else if (Number(car.priceHourly)) { baseAmount = hours * Number(car.priceHourly); pricingMode = 'hourly'; }
+  else if (Number(car.dailyPrice)) { baseAmount = days * Number(car.dailyPrice); pricingMode = 'daily'; }
+  else if (Number(car.priceWeekly)) { baseAmount = weeks * Number(car.priceWeekly); pricingMode = 'weekly'; }
+  return {currency: 'USD', status: 'quoted', pricingMode, baseAmount, deliveryFee, total: baseAmount + deliveryFee};
+}
 export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
@@ -48,9 +68,11 @@ export async function handler(event) {
     if (await maintenanceBlocked(token.uid)) return json(503, {error: 'האתר בתחזוקה כרגע — נסו שוב בעוד מספר דקות'});
     const body = parseBody(event);
     if (!body) return json(400, {error: 'בקשה לא תקינה — נסו שוב'});
+    if (body.termsAccepted !== true) return json(400, {error: 'יש לאשר את תנאי השימוש לפני שליחת ההזמנה'});
     const db = getAdmin().database();
     const userProfile = await profile(token.uid);
     if (userProfile?.role !== 'renter') return json(403, {error: 'רק שוכר יכול לבצע הזמנה'});
+    if (token.email_verified !== true) return json(403, {error: 'יש לאמת את כתובת המייל לפני הזמנה'});
     const verification = userProfile.verification || {};
     const status = (await db.ref(`verificationStatus/${token.uid}`).once('value')).val();
     if (!(verification.licenseFront && verification.licenseBack && verification.selfie && status === 'approved')) {
@@ -71,24 +93,44 @@ export async function handler(event) {
     const startAt = new Date(startRaw).getTime();
     const endAt = new Date(endRaw).getTime();
     if (!Number.isFinite(startAt) || !Number.isFinite(endAt) || endAt <= startAt) return json(400, {error: 'טווח התאריכים אינו תקין'});
-    if (startAt < Date.now() - 18 * 60 * 60 * 1000) return json(400, {error: 'זמן האיסוף כבר עבר'});  // wide grace so timezone offsets never reject a valid same-day booking
-    if (!carServesPeriod(car, startRaw, endRaw, startAt, endAt)) return json(409, {error: 'הרכב אינו מושכר לטווח שנבחר'});  // #14: enforce rental mode server-side
+    if (startAt < Date.now() - 5 * 60 * 1000) return json(400, {error: 'זמן האיסוף כבר עבר'});
+    const startLocal = cleanText(body.startLocal, 40) || startRaw;
+    const endLocal = cleanText(body.endLocal, 40) || endRaw;
+    if (!carServesPeriod(car, startLocal, endLocal, startAt, endAt)) return json(409, {error: 'הרכב אינו מושכר לטווח שנבחר'});  // #14: enforce rental mode server-side
     if ((endAt - startAt) > 90 * DAY) return json(400, {error: 'משך ההשכרה ארוך מדי (עד 90 ימים)'});  // #40
     if (startAt > Date.now() + 365 * DAY) return json(400, {error: 'לא ניתן להזמין יותר משנה מראש'});  // #40
     const fulfillment = body.fulfillment === 'delivery' && car.deliveryEnabled ? 'delivery' : 'pickup';
     if (fulfillment === 'delivery' && !cleanText(body.deliveryAddress, 500)) return json(400, {error: 'יש להזין כתובת למסירה'});
     const existingSnap = await db.ref('bookings').orderByChild('carId').equalTo(carId).once('value');
-    const hasOverlap = Object.values(existingSnap.val() || {}).some(b => ['approved', 'active'].includes(b.status) && overlaps(startAt, endAt, new Date(b.startAt).getTime(), new Date(b.endAt).getTime()));
+    const existingBookings = existingSnap.val() || {};
+    const requestId = cleanText(body.requestId, 100).replace(/[^a-zA-Z0-9_-]/g, '');
+    if (requestId) {
+      const duplicate = Object.entries(existingBookings).find(([, b]) => b.renterUid === token.uid && b.requestId === requestId);
+      if (duplicate) return json(200, {ok: true, id: duplicate[0], duplicate: true});
+    }
+    const hasOverlap = Object.values(existingBookings).some(b => ['approved', 'active'].includes(b.status) && overlaps(startAt, endAt, new Date(b.startAt).getTime(), new Date(b.endAt).getTime()));
     if (hasOverlap) return json(409, {error: 'הרכב תפוס בטווח שבחרת'});
     const id = db.ref('bookings').push().key;
+    const quote = quoteFor(car, startLocal, endLocal, startAt, endAt, fulfillment);
     await db.ref(`bookings/${id}`).set({
       carId,
       ownerUid: car.ownerUid,
       renterUid: token.uid,
       startAt: startRaw,
       endAt: endRaw,
+      startLocal,
+      endLocal,
       fulfillment,
       deliveryAddress: fulfillment === 'delivery' ? cleanText(body.deliveryAddress, 500) : '',
+      timezone: 'America/New_York',
+      requestId: requestId || null,
+      quote: {...quote, calculatedAt: Date.now()},
+      carSnapshot: {
+        make: cleanText(car.make, 60), model: cleanText(car.model, 60), trim: cleanText(car.trim, 80),
+        year: Number(car.year || 0), ownerUid: car.ownerUid,
+      },
+      termsAcceptedAt: Date.now(),
+      termsVersion: TERMS_VERSION,
       status: 'pending',
       // The request auto-expires if the owner doesn't respond within 48h (a scheduled fn flips it to
       // 'expired'), so a car isn't left with a stale pending request forever.

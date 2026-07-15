@@ -158,7 +158,21 @@ const hourOptions = (selected = '10:00') => Array.from({length: 24}, (_, h) => {
 // Custom big calendar picker (the native one is tiny and unstylable).
 const pad2 = n => String(n).padStart(2, '0');
 const fmtHe = iso => { if (!iso) return 'בחרו תאריך'; const [y, m, d] = iso.split('-'); return `${d}.${m}.${y}`; };
-const dateField = (name, label, value = '') => `<div class="date-field"><span class="df-label">${label}</span><button type="button" class="date-btn ${value ? 'has-val' : ''}" data-date-btn><span>${fmtHe(value)}</span><i class="date-ic">${ICON.cal}</i></button><input type="hidden" name="${name}" value="${value}"></div>`;
+function newYorkIso(dateValue, timeValue) {
+  const match = `${dateValue || ''}T${timeValue || ''}`.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
+  if (!match) return '';
+  const [, y, mo, d, h, mi] = match.map((value, index) => index ? Number(value) : value);
+  const wallUtc = Date.UTC(y, mo - 1, d, h, mi, 0);
+  const formatter = new Intl.DateTimeFormat('en-US', {timeZone: 'America/New_York', hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'});
+  let guess = wallUtc;
+  for (let i = 0; i < 3; i++) {
+    const parts = Object.fromEntries(formatter.formatToParts(new Date(guess)).filter(p => p.type !== 'literal').map(p => [p.type, p.value]));
+    const asUtc = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(parts.hour) % 24, Number(parts.minute), Number(parts.second));
+    guess = wallUtc - (asUtc - guess);
+  }
+  return new Date(guess).toISOString();
+}
+const dateField = (name, label, value = '') => `<div class="date-field"><span class="df-label">${label}</span><button type="button" class="date-btn ${value ? 'has-val' : ''}" data-date-btn aria-expanded="false"><span>${fmtHe(value)}</span><i class="date-ic" aria-hidden="true">${ICON.cal}</i></button><input type="hidden" name="${name}" value="${value}"></div>`;
 function bindDateFields(scope = document) {
   scope.querySelectorAll('[data-date-btn]').forEach(button => button.onclick = event => { event.stopPropagation(); openCalendar(button); });
 }
@@ -169,7 +183,15 @@ function openCalendar(button) {
   let view = hidden.value ? new Date(`${hidden.value}T00:00`) : new Date();
   const pop = document.createElement('div');
   pop.className = 'cal-pop';
+  pop.setAttribute('role', 'dialog');
+  pop.setAttribute('aria-label', 'בחירת תאריך');
+  button.setAttribute('aria-expanded', 'true');
   button.parentElement.appendChild(pop);
+  const closePop = ({returnFocus = false} = {}) => {
+    pop.remove();
+    button.setAttribute('aria-expanded', 'false');
+    if (returnFocus) button.focus({preventScroll: true});
+  };
   const render = () => {
     const y = view.getFullYear(), m = view.getMonth();
     const startDay = new Date(y, m, 1).getDay();
@@ -180,28 +202,40 @@ function openCalendar(button) {
     for (let d = 1; d <= daysInMonth; d++) {
       const iso = `${y}-${pad2(m + 1)}-${pad2(d)}`;
       const date = new Date(y, m, d);
-      cells += `<button type="button" class="cal-day ${hidden.value === iso ? 'sel' : ''} ${date.getTime() === today.getTime() ? 'today' : ''}" ${date < today ? 'disabled' : ''} data-iso="${iso}">${d}</button>`;
+      const fullDate = new Intl.DateTimeFormat('he-IL', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'}).format(date);
+      cells += `<button type="button" role="gridcell" aria-label="${fullDate}" aria-selected="${hidden.value === iso}" ${date.getTime() === today.getTime() ? 'aria-current="date"' : ''} class="cal-day ${hidden.value === iso ? 'sel' : ''} ${date.getTime() === today.getTime() ? 'today' : ''}" ${date < today ? 'disabled' : ''} data-iso="${iso}">${d}</button>`;
     }
-    pop.innerHTML = `<div class="cal-head"><button type="button" class="cal-nav" data-nav="-1">‹</button><b>${monthName}</b><button type="button" class="cal-nav" data-nav="1">›</button></div><div class="cal-grid">${['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'].map(x => `<span class="cal-dow">${x}</span>`).join('')}${cells}</div>`;
+    const monthId = `cal-month-${y}-${m}`;
+    pop.innerHTML = `<div class="cal-head"><button type="button" class="cal-nav" data-nav="-1" aria-label="החודש הקודם">‹</button><b id="${monthId}">${monthName}</b><button type="button" class="cal-nav" data-nav="1" aria-label="החודש הבא">›</button></div><div class="cal-grid" role="grid" aria-labelledby="${monthId}">${['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'].map(x => `<span class="cal-dow" role="columnheader">${x}</span>`).join('')}${cells}</div>`;
     pop.querySelectorAll('.cal-nav').forEach(nav => nav.onclick = event => { event.stopPropagation(); view = new Date(y, m + Number(nav.dataset.nav), 1); render(); });
     pop.querySelectorAll('.cal-day').forEach(day => day.onclick = () => {
       hidden.value = day.dataset.iso;
-      button.textContent = fmtHe(day.dataset.iso);
+      const text = button.querySelector('span'); if (text) text.textContent = fmtHe(day.dataset.iso);
       button.classList.add('has-val');
-      pop.remove();
+      closePop({returnFocus: true});
       hidden.dispatchEvent(new Event('change', {bubbles: true}));  // let price estimates react to a picked date
+    });
+    pop.querySelector('.cal-grid')?.addEventListener('keydown', event => {
+      const days = [...pop.querySelectorAll('.cal-day:not(:disabled)')];
+      const index = days.indexOf(document.activeElement);
+      if (index < 0) return;
+      const delta = {ArrowRight: -1, ArrowLeft: 1, ArrowUp: -7, ArrowDown: 7}[event.key];
+      if (delta == null) return;
+      event.preventDefault();
+      days[Math.max(0, Math.min(days.length - 1, index + delta))]?.focus();
     });
   };
   render();
+  pop.addEventListener('keydown', event => { if (event.key === 'Escape') { event.preventDefault(); closePop({returnFocus: true}); } });
+  (pop.querySelector('.cal-day.sel:not(:disabled)') || pop.querySelector('.cal-day.today:not(:disabled)') || pop.querySelector('.cal-day:not(:disabled)'))?.focus({preventScroll: true});
   setTimeout(() => document.addEventListener('click', function close(event) {
-    if (!pop.contains(event.target)) { pop.remove(); document.removeEventListener('click', close); }
+    if (!pop.contains(event.target)) { closePop(); document.removeEventListener('click', close); }
   }), 0);
 }
 
 let pendingAuthRole = null, pendingAuthTab = null, pendingAdminLogin = false;
-// Deep-link return (mobile audit #8): remember where the user was headed before being sent to sign in,
-// and take them back there after a successful login/registration — instead of always landing on the dashboard.
-// sessionStorage (not memory) so it survives the page being backgrounded during a long sign-up.
+// Deep-link return (rev.104): remember where the user was headed before being sent to sign in, and take
+// them back there after a successful login/registration. sessionStorage so it survives backgrounding.
 export function saveAuthReturn(data) { try { sessionStorage.setItem('cd-auth-return', JSON.stringify(data)); } catch {} }
 export function afterAuthDestination() {
   let saved = null;
@@ -317,10 +351,10 @@ export function home() {
       <h1>השכרת רכבים <em>קראון הייטס</em></h1>
       <p class="hero-copy">בחרו זמן איסוף והחזרה — וקבלו רק רכבים שמתאימים לחיפוש.</p>
       <div class="quick-search" aria-label="חיפוש מהיר לרכב">
-        ${dateField('homeStart', 'תאריך איסוף')}
-        <label><span>שעת איסוף</span><select id="home-start-hour">${hourOptions('10:00')}</select></label>
-        ${dateField('homeEnd', 'תאריך החזרה')}
-        <label><span>שעת החזרה</span><select id="home-end-hour">${hourOptions('10:00')}</select></label>
+        ${dateField('homeStart', 'תאריך איסוף', searchPeriod.startAt.slice(0, 10))}
+        <label><span>שעת איסוף</span><select id="home-start-hour">${hourOptions(searchPeriod.startAt.slice(11, 16) || '10:00')}</select></label>
+        ${dateField('homeEnd', 'תאריך החזרה', searchPeriod.endAt.slice(0, 10))}
+        <label><span>שעת החזרה</span><select id="home-end-hour">${hourOptions(searchPeriod.endAt.slice(11, 16) || '10:00')}</select></label>
         <button class="btn gold" id="home-search">חפש רכב</button>
       </div>
       <div class="hero-stats">
@@ -367,6 +401,7 @@ export function home() {
     const sh = document.querySelector('#home-start-hour')?.value || '10:00';
     const eh = document.querySelector('#home-end-hour')?.value || '10:00';
     if (sd && ed) { searchPeriod.startAt = `${sd}T${sh}`; searchPeriod.endAt = `${ed}T${eh}`; if (!searchRange()) { searchPeriod.startAt = ''; searchPeriod.endAt = ''; } }
+    persistSearch();
     location.hash = 'cars';
   });
 }
@@ -440,7 +475,9 @@ function estimatePrice(car, startMs, endMs) {
   return null;
 }
 // The active date search (chosen on the home hero or the cars filter). Empty = no date search.
-const searchPeriod = {startAt: '', endAt: ''};
+const readSession = (key, fallback) => { try { return {...fallback, ...JSON.parse(sessionStorage.getItem(key) || '{}')}; } catch { return {...fallback}; } };
+const searchPeriod = readSession('cd-search-period', {startAt: '', endAt: ''});
+const persistSearch = () => { try { sessionStorage.setItem('cd-search-period', JSON.stringify(searchPeriod)); } catch {} };
 function searchRange() {
   const s = new Date(searchPeriod.startAt).getTime();
   const e = new Date(searchPeriod.endAt).getTime();
@@ -552,7 +589,7 @@ export function bindCarButtons() {
 // Default to showing the WHOLE fleet — available AND rented (each carries its own status badge), matching the
 // home page. Filtering to 'available' only is opt-in via the "זמינים כעת" filter. (Was 'available', which hid
 // every rented car from the cars page entirely.)
-const carFilters = {make: '', model: '', year: '', category: '', availability: 'all', sort: 'new'};
+const carFilters = readSession('cd-car-filters', {make: '', model: '', year: '', category: '', availability: 'all', sort: 'new'});
 function applyCarFilters(all) {
   let rows = all.filter(car => car.status !== 'hidden');
   const f = carFilters;
@@ -600,14 +637,15 @@ export function cars() {
   bindCarButtons();
   bindDateFields();
   const rerender = () => cars();
-  const bind = (id, key) => { const el = document.querySelector(id); if (el) el.onchange = () => { carFilters[key] = el.value; if (key === 'make') carFilters.model = ''; rerender(); }; };
+  const persistFilters = () => { try { sessionStorage.setItem('cd-car-filters', JSON.stringify(carFilters)); } catch {} };
+  const bind = (id, key) => { const el = document.querySelector(id); if (el) el.onchange = () => { carFilters[key] = el.value; if (key === 'make') carFilters.model = ''; persistFilters(); rerender(); }; };
   bind('#f-make', 'make');
   bind('#f-model', 'model');
   bind('#f-year', 'year');
   bind('#f-availability', 'availability');
   bind('#f-sort', 'sort');
-  document.querySelectorAll('[data-type-chip]').forEach(chip => chip.onclick = () => { carFilters.category = carFilters.category === chip.dataset.typeChip ? '' : chip.dataset.typeChip; rerender(); });
-  document.querySelector('#f-clear')?.addEventListener('click', () => { Object.assign(carFilters, {make: '', model: '', year: '', category: '', availability: 'all', sort: 'new'}); rerender(); });
+  document.querySelectorAll('[data-type-chip]').forEach(chip => chip.onclick = () => { carFilters.category = carFilters.category === chip.dataset.typeChip ? '' : chip.dataset.typeChip; persistFilters(); rerender(); });
+  document.querySelector('#f-clear')?.addEventListener('click', () => { Object.assign(carFilters, {make: '', model: '', year: '', category: '', availability: 'all', sort: 'new'}); persistFilters(); rerender(); });
   // Date search: set the shared search period and re-render so cards show estimates + fit/no-fit notes.
   document.querySelector('#period-apply')?.addEventListener('click', () => {
     const sd = document.querySelector('input[name="carsStart"]')?.value || '';
@@ -618,9 +656,10 @@ export function cars() {
     searchPeriod.startAt = `${sd}T${sh}`;
     searchPeriod.endAt = `${ed}T${eh}`;
     if (!searchRange()) { searchPeriod.startAt = ''; searchPeriod.endAt = ''; return toast('תאריך ההחזרה חייב להיות אחרי האיסוף'); }
+    persistSearch();
     rerender();
   });
-  document.querySelector('#period-clear')?.addEventListener('click', () => { searchPeriod.startAt = ''; searchPeriod.endAt = ''; rerender(); });
+  document.querySelector('#period-clear')?.addEventListener('click', () => { searchPeriod.startAt = ''; searchPeriod.endAt = ''; persistSearch(); rerender(); });
 }
 
 function openCar(id) {
@@ -639,17 +678,13 @@ function openCar(id) {
   // "Contact owner" is offered to everyone except the admin and the car's own owner (the handler asks a
   // guest / logged-out visitor to sign in). It opens a DIRECT renter↔owner thread — no booking needed.
   const canInquire = !store.isAdmin && (!store.user || car.ownerUid !== store.user.uid);
-  const bStart = searchPeriod.startAt ? searchPeriod.startAt.slice(0, 10) : '';
-  const bEnd = searchPeriod.endAt ? searchPeriod.endAt.slice(0, 10) : '';
-  const bStartH = searchPeriod.startAt ? searchPeriod.startAt.slice(11, 16) : '10:00';
-  const bEndH = searchPeriod.endAt ? searchPeriod.endAt.slice(11, 16) : '10:00';
-  // Sticky "book" bar — price + CTA pinned to the bottom of the modal so it's always reachable without scrolling.
-  const barRows = [];
-  if (car.dailyPrice) barRows.push([money(car.dailyPrice), 'ליום']);
-  if (car.priceHourly) barRows.push([money(car.priceHourly), 'לשעה']);
-  if (car.priceWeekly) barRows.push([money(car.priceWeekly), 'לשבוע']);
-  const barPrice = rented ? 'לא זמין כעת' : onRequest ? 'מחיר לפי בקשה' : (barRows.length ? `${barRows[0][0]}<small> ${barRows[0][1]}</small>` : '');
-  const barCta = rented ? 'הרכב מושכר' : onRequest ? 'שליחת הודעה' : 'להזמנה ←';
+  const draftKey = `cd-booking-draft-${car.id}`;
+  const draft = readSession(draftKey, {});
+  const requestId = draft.requestId || crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`;
+  const bStart = searchPeriod.startAt ? searchPeriod.startAt.slice(0, 10) : (draft.startDate || '');
+  const bEnd = searchPeriod.endAt ? searchPeriod.endAt.slice(0, 10) : (draft.endDate || '');
+  const bStartH = searchPeriod.startAt ? searchPeriod.startAt.slice(11, 16) : (draft.startHour || '10:00');
+  const bEndH = searchPeriod.endAt ? searchPeriod.endAt.slice(11, 16) : (draft.endHour || '10:00');
   modal(`<div class="modal-head"><h2>${esc(car.make || '')} ${esc(car.model || '')} ${esc(car.trim || '')}</h2><button class="close" data-close-modal>×</button></div>
     ${gallery}
     <div class="car-detail-head">${availPill(car.status)}${newBadge(car)}${mode ? `<span class="mode-badge lg">${mode.label}</span>` : ''}${car.ownerName ? `<span class="owner-tag">בעל הרכב: ${esc(car.ownerName)}</span>` : ''}</div>
@@ -667,8 +702,7 @@ function openCar(id) {
     ${onRequest && canInquire ? '<div class="price-contact-cta"><div><b>שלחו הודעה לקבלת מחיר</b><small>המחיר נקבע מול בעל הרכב — שלחו הודעה כדי לקבל אותו.</small></div><button type="button" class="btn gold" id="price-contact">שליחת הודעה לקבלת מחיר</button></div>' : ''}
     ${canInquire && !onRequest ? `<div class="owner-contact-cta"><div><b>יש לכם שאלה על הרכב?</b><small>דברו ישירות עם בעל הרכב עוד לפני שליחת הבקשה.</small></div><button type="button" class="btn dark-out" id="contact-owner">${ICON.chat} צור קשר עם בעל הרכב</button></div>` : ''}
     ${reviewsHtml}
-    ${rented ? '<div class="chat-closed">הרכב אינו זמין להזמנה כרגע</div>' : `<form id="booking-form"><h3>הזמנת הרכב</h3><div class="form-grid">${dateField('startDate', 'תאריך איסוף', bStart)}<div class="field"><label>שעת איסוף</label><select name="startHour">${hourOptions(bStartH)}</select></div>${dateField('endDate', 'תאריך החזרה', bEnd)}<div class="field"><label>שעת החזרה</label><select name="endHour">${hourOptions(bEndH)}</select></div></div><div class="booking-est" id="booking-est"></div><div class="field"><label>אופן קבלה</label><select name="fulfillment"><option value="pickup">איסוף עצמי</option>${car.deliveryEnabled ? '<option value="delivery">מסירה</option>' : ''}</select></div><div class="field"><label>כתובת מסירה, אם נבחרה</label><input name="deliveryAddress"></div><button class="btn primary block">שליחת בקשה</button></form>`}
-    <div class="car-book-bar${rented ? ' cbb-off' : ''}"><div class="cbb-price">${barPrice}</div><button type="button" class="btn ${rented ? 'outline' : 'primary'} cbb-cta" id="cbb-book"${rented ? ' disabled' : ''}>${barCta}</button></div>`);
+    ${rented ? '<div class="chat-closed">הרכב אינו זמין להזמנה כרגע</div>' : `<form id="booking-form" autocomplete="on"><div class="booking-form-head"><span>בקשת הזמנה</span><h3>בחירת מועד וקבלת מחיר</h3><small>כל השעות לפי ניו יורק (ET)</small></div><div class="form-grid">${dateField('startDate', 'תאריך איסוף', bStart)}<div class="field"><label>שעת איסוף</label><select name="startHour">${hourOptions(bStartH)}</select></div>${dateField('endDate', 'תאריך החזרה', bEnd)}<div class="field"><label>שעת החזרה</label><select name="endHour">${hourOptions(bEndH)}</select></div></div><div class="booking-est" id="booking-est" aria-live="polite"></div><div class="field"><label>אופן קבלה</label><select name="fulfillment"><option value="pickup" ${draft.fulfillment !== 'delivery' ? 'selected' : ''}>איסוף עצמי</option>${car.deliveryEnabled ? `<option value="delivery" ${draft.fulfillment === 'delivery' ? 'selected' : ''}>מסירה</option>` : ''}</select></div><div class="field" id="delivery-address-field"><label>כתובת מסירה</label><input name="deliveryAddress" autocomplete="street-address" value="${esc(draft.deliveryAddress || '')}" placeholder="רחוב, מספר, עיר"></div><label class="booking-consent"><input type="checkbox" name="termsAccepted" required><span>קראתי ואני מסכים/ה ל<a href="terms.html" target="_blank" rel="noopener">תנאי השימוש</a>, כולל תנאי הביטול המפורטים בהם.</span></label><button type="submit" class="btn primary block booking-submit-main">שליחת בקשה</button></form><div class="mobile-booking-bar"><div><small>סיכום הזמנה</small><b id="mobile-booking-total">בחרו תאריכים</b></div><button type="submit" form="booking-form" class="btn primary">שליחת בקשה</button></div>`}`);
   const galleryImg = document.querySelector('#gallery-img');
   galleryImg?.addEventListener('error', event => { event.currentTarget.src = fallbackImage; }, {once: true});
   document.querySelectorAll('[data-photo]').forEach(button => button.onclick = () => {
@@ -687,62 +721,73 @@ function openCar(id) {
     // Live price estimate: recompute the total from the chosen dates by the same duration rule as
     // search (hours→hourly, days→daily, week+→weekly) and warn if the range doesn't fit this car.
     const estBox = bookingForm.querySelector('#booking-est');
+    const mobileTotal = document.querySelector('#mobile-booking-total');
+    const addressField = bookingForm.querySelector('#delivery-address-field');
+    const fulfillment = bookingForm.querySelector('[name="fulfillment"]');
+    const syncDelivery = () => {
+      const delivery = fulfillment?.value === 'delivery';
+      addressField?.classList.toggle('hide', !delivery);
+      const input = addressField?.querySelector('input'); if (input) input.required = delivery;
+    };
     const recalc = () => {
       if (!estBox) return;
       const sd = bookingForm.querySelector('input[name="startDate"]')?.value || '';
       const ed = bookingForm.querySelector('input[name="endDate"]')?.value || '';
       const sh = bookingForm.querySelector('select[name="startHour"]')?.value || '10:00';
       const eh = bookingForm.querySelector('select[name="endHour"]')?.value || '10:00';
-      if (!sd || !ed) { estBox.innerHTML = ''; return; }
+      if (!sd || !ed) { estBox.innerHTML = ''; if (mobileTotal) mobileTotal.textContent = 'בחרו תאריכים'; return; }
       const s = new Date(`${sd}T${sh}`).getTime(), e = new Date(`${ed}T${eh}`).getTime();
-      if (!(e > s)) { estBox.innerHTML = '<div class="period-note">תאריך ההחזרה חייב להיות אחרי האיסוף</div>'; return; }
-      if (onRequest) { estBox.innerHTML = '<div class="period-note contact">שלחו הודעה לבעל הרכב לקבלת מחיר לטווח שבחרתם</div>'; return; }
+      if (!(e > s)) { estBox.innerHTML = '<div class="period-note">תאריך ההחזרה חייב להיות אחרי האיסוף</div>'; if (mobileTotal) mobileTotal.textContent = 'טווח לא תקין'; return; }
+      if (onRequest) { estBox.innerHTML = '<div class="period-note contact">שלחו הודעה לבעל הרכב לקבלת מחיר לטווח שבחרתם</div>'; if (mobileTotal) mobileTotal.textContent = 'מחיר בתיאום'; return; }
       if (!carServesPeriod(car, s, e)) {
         const only = mode ? mode.short : carBuckets(car).map(b => BUCKET_HE[b]).join(' / ');
         estBox.innerHTML = `<div class="period-note">רכב זה זמין להשכרה ${only} בלבד — לא מתאים לטווח שבחרתם</div>`;
+        if (mobileTotal) mobileTotal.textContent = 'הטווח אינו מתאים';
         return;
       }
       const est = estimatePrice(car, s, e);
       estBox.innerHTML = est ? `<div class="period-est"><span>מחיר משוער</span><b>${money(est.total)}</b><small>${est.label}</small></div>` : '';
+      if (mobileTotal) mobileTotal.textContent = est ? money(est.total + (fulfillment?.value === 'delivery' ? Number(car.deliveryCost || 0) : 0)) : 'המחיר יחושב';
     };
-    bookingForm.addEventListener('change', recalc);
-    recalc();
+    bookingForm.addEventListener('change', () => {
+      syncDelivery(); recalc();
+      try { sessionStorage.setItem(draftKey, JSON.stringify({...formData(bookingForm), requestId})); } catch {}
+    });
+    syncDelivery(); recalc();
   }
   // "שלחו הודעה לקבלת מחיר" → open the support chat so the renter can ask the price (no public price).
   document.querySelector('#price-contact')?.addEventListener('click', () => openOwnerInquiry(car.id));
   document.querySelector('#contact-owner')?.addEventListener('click', () => openOwnerInquiry(car.id));
-  document.querySelector('#cbb-book')?.addEventListener('click', () => {
-    if (rented) return;
-    if (onRequest) return openOwnerInquiry(car.id);
-    const form = document.querySelector('#booking-form');
-    if (!form) return;
-    // Dates already chosen (e.g. from the search) → submit straight away; otherwise scroll to the form to pick them.
-    const sd = form.querySelector('[name="startDate"]')?.value, ed = form.querySelector('[name="endDate"]')?.value;
-    if (sd && ed) { form.requestSubmit(); return; }
-    // Scroll the MODAL (its own scroll container) to the form — scrollIntoView targets the body, which is locked.
-    const box = form.closest('.modal');
-    if (!box) return form.scrollIntoView({behavior: 'smooth', block: 'start'});
-    const target = box.scrollTop + form.getBoundingClientRect().top - box.getBoundingClientRect().top - 14;
-    box.scrollTo({top: target, behavior: 'smooth'});
-    // Fallback: some browsers no-op smooth-scroll on an overflow container — if it didn't move, jump instantly.
-    setTimeout(() => { if (Math.abs(box.scrollTop - target) > 24) box.scrollTop = target; }, 90);
-  });
   if (bookingForm) bookingForm.onsubmit = async event => {
     event.preventDefault();
+    const submitButtons = [...document.querySelectorAll('#booking-form [type="submit"], [type="submit"][form="booking-form"]')];
     try {
       // A guest/anonymous user (or nobody) can't book — send them to register/login. (Anonymous users HAVE a
       // store.user, so `!store.user` alone let them fall through to createBooking, which then failed.)
       if (!store.user || store.user.isAnonymous) { saveAuthReturn({carId: car.id}); toast('התחברו או הירשמו כדי להזמין רכב'); closeModal(); location.hash = 'auth'; return; }
       const data = formData(event.target);
       if (!data.startDate || !data.endDate) return toast('בחרו תאריך איסוף והחזרה');
-      data.startAt = `${data.startDate}T${data.startHour}`;
-      data.endAt = `${data.endDate}T${data.endHour}`;
+      if (!event.target.reportValidity()) return;
+      data.startLocal = `${data.startDate}T${data.startHour}`;
+      data.endLocal = `${data.endDate}T${data.endHour}`;
+      data.startAt = newYorkIso(data.startDate, data.startHour);
+      data.endAt = newYorkIso(data.endDate, data.endHour);
+      if (!data.startAt || !data.endAt) return toast('התאריך או השעה אינם תקינים');
+      data.timezone = 'America/New_York';
+      data.termsAccepted = data.termsAccepted === 'on';
+      data.termsVersion = '2026-07-14-rev101';
+      data.requestId = requestId;
       // Immediate feedback for a range the car's rental mode doesn't cover (the server also enforces this).
       const s = new Date(data.startAt).getTime(), e = new Date(data.endAt).getTime();
       if (!onRequest && e > s && !carServesPeriod(car, s, e)) return toast('הרכב אינו מושכר לטווח שבחרתם');
+      submitButtons.forEach(button => { button.disabled = true; button.setAttribute('aria-busy', 'true'); button.dataset.label = button.textContent; button.textContent = 'שולח…'; });
       await createBooking(car, data);
+      try { sessionStorage.removeItem(draftKey); } catch {}
       toast('ההזמנה נשלחה'); closeModal(); location.hash = 'dashboard';
-    } catch (error) { toast(error.message); }
+    } catch (error) {
+      toast(error.message);
+      submitButtons.forEach(button => { button.disabled = false; button.removeAttribute('aria-busy'); button.textContent = button.dataset.label || 'שליחת בקשה'; });
+    }
   };
 }
 
@@ -780,18 +825,19 @@ export function authView() {
     const label = role === 'owner' ? 'בעל רכב' : 'שוכר';
     content().innerHTML = `<button class="link-back" id="auth-back">→ חזרה</button>
       <div class="auth-head"><h2>כניסה · Sign in</h2><p>${label} · הזינו מייל וסיסמה</p></div>
-      <form id="login-form"><div class="field"><label>מייל</label><input name="email" type="email" autocomplete="email" required></div><div class="field"><label>סיסמה</label><input name="password" type="password" autocomplete="current-password" required></div><button class="btn primary block">כניסה</button><button type="button" class="forgot-pw" id="forgot-pw">שכחתי סיסמה</button></form>`;
+      <form id="login-form"><div class="field"><label>מייל</label><input name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" required></div><div class="field"><label>סיסמה</label><div class="password-field"><input id="login-password" name="password" type="password" autocomplete="current-password" required><button type="button" data-toggle-password="login-password" aria-pressed="false">הצגה</button></div></div><button class="btn primary block">כניסה</button><button type="button" class="forgot-pw" id="forgot-pw">שכחתי סיסמה</button></form>`;
     content().querySelector('#auth-back').onclick = () => modeChoice(role);
     content().querySelector('#login-form').onsubmit = async event => {
       event.preventDefault();
       const data = formData(event.target);
+      const button = event.submitter; if (button) { button.disabled = true; button.textContent = 'מתחבר…'; }
       try {
         const user = await login(data.email, data.password);
         // Admins may enter ONLY through the "כניסת מנהל" button at the bottom of the home page.
         if (await checkIsAdmin(user.uid)) { await logout(); return toast('זהו חשבון מנהל — יש להיכנס דרך כפתור "כניסת מנהל" בתחתית דף הבית'); }
         afterAuthDestination();
       }
-      catch (error) { toast(error.message); }
+      catch (error) { toast(error.message); if (button) { button.disabled = false; button.textContent = 'כניסה'; } }
     };
     content().querySelector('#forgot-pw').onclick = async () => {
       const email = content().querySelector('#login-form')?.email?.value?.trim() || prompt('כתובת המייל של החשבון:');
@@ -806,7 +852,7 @@ export function authView() {
     const label = role === 'owner' ? 'בעל רכב' : 'שוכר';
     content().innerHTML = `<button class="link-back" id="auth-back">→ חזרה</button>
       <div class="auth-head"><h2>הרשמה · Sign up</h2><p>פתיחת חשבון ${label}</p></div>
-      <form id="register-form"><input type="hidden" name="role" value="${role}"><div class="field"><label>שם מלא</label><input name="name" autocomplete="name" required></div>${phoneField()}<div class="field"><label>מייל</label><input name="email" type="email" autocomplete="email" required></div><div class="field"><label>בחירת סיסמה</label><input name="password" type="password" minlength="6" autocomplete="new-password" required><small>לפחות 6 תווים, אות גדולה ואות קטנה באנגלית.</small></div><button class="btn primary block">הרשמה כ${label}</button></form>`;
+      <form id="register-form"><input type="hidden" name="role" value="${role}"><div class="field"><label>שם מלא</label><input name="name" autocomplete="name" required></div>${phoneField()}<div class="field"><label>מייל</label><input name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" required></div><div class="field"><label>בחירת סיסמה</label><div class="password-field"><input id="register-password" name="password" type="password" minlength="6" autocomplete="new-password" required><button type="button" data-toggle-password="register-password" aria-pressed="false">הצגה</button></div><small>לפחות 6 תווים.</small></div><div class="field"><label>אישור סיסמה</label><input name="passwordConfirm" type="password" minlength="6" autocomplete="new-password" required></div><label class="booking-consent"><input type="checkbox" name="legalAccepted" required><span>קראתי ואני מסכים/ה ל<a href="terms.html" target="_blank" rel="noopener">תנאי השימוש</a> ול<a href="privacy.html" target="_blank" rel="noopener">מדיניות הפרטיות</a>.</span></label><button class="btn primary block">הרשמה כ${label}</button></form>`;
     content().querySelector('#auth-back').onclick = () => modeChoice(role);
     content().querySelector('#register-form').onsubmit = async event => {
       event.preventDefault();
@@ -814,6 +860,10 @@ export function authView() {
       const data = composePhone(formData(event.target));
       const reset = () => { if (button) { button.disabled = false; button.textContent = `הרשמה כ${label}`; } };
       if (!validEmail(data.email)) return toast('כתובת המייל אינה תקינה — בדקו שהיא בפורמט name@example.com');
+      if (data.password !== data.passwordConfirm) return toast('הסיסמאות אינן תואמות');
+      delete data.passwordConfirm;
+      data.legalAccepted = data.legalAccepted === 'on';
+      data.termsVersion = '2026-07-14-rev101';
       if (button) { button.disabled = true; button.textContent = 'נרשם…'; }
       try { await register(data); afterAuthDestination(); }
       catch (error) { toast(error.message); reset(); }
@@ -825,13 +875,14 @@ export function authView() {
   function adminLoginScreen() {
     content().innerHTML = `<button class="link-back" id="auth-back">→ חזרה</button>
       <div class="auth-head"><span class="role-pill">מנהל האתר</span><h2>כניסת מנהל · Sign in</h2><p>הזינו מייל וסיסמה של חשבון המנהל</p></div>
-      <form id="login-form"><div class="field"><label>מייל</label><input name="email" type="email" autocomplete="email" required></div><div class="field"><label>סיסמה</label><input name="password" type="password" autocomplete="current-password" required></div><button class="btn primary block">כניסת מנהל</button><button type="button" class="forgot-pw" id="forgot-pw">שכחתי סיסמה</button></form>`;
+      <form id="login-form"><div class="field"><label>מייל</label><input name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" required></div><div class="field"><label>סיסמה</label><div class="password-field"><input id="admin-password" name="password" type="password" autocomplete="current-password" required><button type="button" data-toggle-password="admin-password" aria-pressed="false">הצגה</button></div></div><button class="btn primary block">כניסת מנהל</button><button type="button" class="forgot-pw" id="forgot-pw">שכחתי סיסמה</button></form>`;
     content().querySelector('#auth-back').onclick = roleChoice;
     content().querySelector('#login-form').onsubmit = async event => {
       event.preventDefault();
       const data = formData(event.target);
+      const button = event.submitter; if (button) { button.disabled = true; button.textContent = 'מתחבר…'; }
       try { await login(data.email, data.password); location.hash = 'dashboard'; }
-      catch (error) { toast(error.message); }
+      catch (error) { toast(error.message); if (button) { button.disabled = false; button.textContent = 'כניסת מנהל'; } }
     };
     content().querySelector('#forgot-pw').onclick = async () => {
       const email = content().querySelector('#login-form')?.email?.value?.trim() || prompt('כתובת המייל של החשבון:');

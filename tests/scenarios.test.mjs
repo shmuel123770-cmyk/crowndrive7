@@ -127,16 +127,33 @@ r = await call(fn['verification-review'], 'r1', {uid: 'r1', status: 'approved'})
 check('לא-מנהל לא יכול לאשר אימות (403)', S(r) === 403);
 r = await call(fn['verification-review'], 'a1', {uid: 'r1', status: 'approved', note: 'אושר'});
 check('מנהל מאשר אימות', S(r) === 200 && get('verificationStatus/r1') === 'approved');
+r = await call(fn['profile-save'], 'r1', {action: 'update', name: 'שם אחר'});
+check('שם חוקי נעול לאחר אימות (409)', S(r) === 409 && get('users/r1/name') === 'יוסי כהן');
+r = await call(fn['profile-save'], 'r1', {action: 'update', phone: '+1 5557770000'});
+check('טלפון נשאר ניתן לעדכון לאחר אימות', S(r) === 200 && get('users/r1/phone') === '+1 5557770000');
 
 console.log('\nתרחיש D: הזמנה מלאה (booking-create → action)');
 const start = new Date(Date.now() + 86400000).toISOString(), end = new Date(Date.now() + 3 * 86400000).toISOString();
-r = await call(fn['booking-create'], 'r1', {carId, startAt: start, endAt: end});
-check('שוכר מאומת מזמין', S(r) === 200);
+r = await call(fn['booking-create'], 'r1', {carId, startAt: start, endAt: end, termsAccepted: false, requestId: 'no-terms'});
+check('הזמנה ללא אישור תנאים נדחית (400)', S(r) === 400);
+r = await call(fn['booking-create'], 'r1', {carId, startAt: start, endAt: end, termsAccepted: true, requestId: 'test-booking-1'});
+check('שוכר מאומת מזמין עם מחיר ותיעוד הסכמה', S(r) === 200 && get(`bookings/${B(r).id}/quote/total`) === 400 && get(`bookings/${B(r).id}/termsVersion`) === '2026-07-14-rev101');
 const bId = B(r).id;
-r = await call(fn['booking-create'], 'o1', {carId, startAt: start, endAt: end});
+r = await call(fn['booking-create'], 'r1', {carId, startAt: start, endAt: end, termsAccepted: true, requestId: 'test-booking-1'});
+check('שליחה כפולה מחזירה אותה הזמנה (idempotent)', S(r) === 200 && B(r).id === bId && B(r).duplicate === true);
+r = await call(fn['booking-create'], 'o1', {carId, startAt: start, endAt: end, termsAccepted: true});
 check('בעל הרכב לא יכול להזמין את עצמו', S(r) !== 200);
-r = await call(fn['booking-create'], 'r1', {carId, startAt: 'bad', endAt: 'bad'});
+r = await call(fn['booking-create'], 'r1', {carId, startAt: 'bad', endAt: 'bad', termsAccepted: true});
 check('תאריכים לא תקינים נדחו (400)', S(r) === 400);
+// Fixed weekend price must win over the regular daily rate on both client and server.
+r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'Weekend', model: 'Special', dailyPrice: 999, weekendEnabled: true, weekendPrice: 250, photos: ['https://a/1.jpg']}});
+const weekendCar = B(r).id;
+const nextSaturday = new Date(Date.now() + 8 * 86400000);
+while (nextSaturday.getUTCDay() !== 6) nextSaturday.setUTCDate(nextSaturday.getUTCDate() + 1);
+nextSaturday.setUTCHours(14, 0, 0, 0);
+const weekendEnd = new Date(nextSaturday.getTime() + 48 * 3600000);
+r = await call(fn['booking-create'], 'r1', {carId: weekendCar, startAt: nextSaturday.toISOString(), endAt: weekendEnd.toISOString(), startLocal: nextSaturday.toISOString(), endLocal: weekendEnd.toISOString(), termsAccepted: true, requestId: 'weekend-quote'});
+check('מחיר סופ״ש קבוע מחושב בשרת', S(r) === 200 && get(`bookings/${B(r).id}/quote/pricingMode`) === 'weekend' && get(`bookings/${B(r).id}/quote/total`) === 250);
 // Owner↔renter chat is open already at PENDING, so they can coordinate before approval.
 r = await call(fn['message-send'], 'r1', {bookingId: bId, text: 'שלום, אפשר לאסוף מוקדם?'});
 check('צ׳אט הזמנה פתוח כבר בסטטוס ממתין (שוכר)', S(r) === 200);
@@ -155,8 +172,8 @@ check('אי אפשר להתחיל בלי ראיות (409)', S(r) === 409);
 for (const [type, name] of [['evidence-video', 'v.mp4'], ['evidence-fuel', 'f.jpg'], ['evidence-odometer', 'o.jpg']])
   await call(fn['message-send'], 'r1', {bookingId: bId, text: 't', attachment: {type, path: `bookings/${bId}/media/r1/${name}`}});
 check('3 ראיות נרשמו', get(`bookings/${bId}/evidence/video`) && get(`bookings/${bId}/evidence/fuel`) && get(`bookings/${bId}/evidence/odometer`));
-r = await call(fn['payment-submit'], 'r1', {bookingId: bId, amount: 600, mediaPath: `bookings/${bId}/payments/r1/p.jpg`});
-check('הוכחת תשלום נשלחה (ממתינה לאישור)', S(r) === 200 && get(`payments/${bId}/amount`) === 600 && get(`payments/${bId}/status`) === 'pending');
+r = await call(fn['payment-submit'], 'r1', {bookingId: bId, amount: 400, mediaPath: `bookings/${bId}/payments/r1/p.jpg`});
+check('הוכחת תשלום נשלחה (ממתינה לאישור)', S(r) === 200 && get(`payments/${bId}/amount`) === 400 && get(`payments/${bId}/status`) === 'pending');
 r = await call(fn['payment-submit'], 'r1', {bookingId: bId, amount: -5, mediaPath: `bookings/${bId}/payments/r1/p.jpg`});
 check('סכום שלילי נדחה (400)', S(r) === 400);
 r = await call(fn['payment-submit'], 'r1', {bookingId: bId, amount: 5, mediaPath: 'bookings/OTHER/payments/r1/p.jpg'});
@@ -170,10 +187,12 @@ r = await call(fn['booking-action'], 'o1', {action: 'payment-review', bookingId:
 check('בעל הרכב דוחה תשלום', S(r) === 200 && get(`payments/${bId}/status`) === 'rejected');
 r = await call(fn['booking-action'], 'o1', {action: 'status', bookingId: bId, status: 'active'});
 check('תשלום שנדחה חוסם התחלה (409)', S(r) === 409);
-r = await call(fn['payment-submit'], 'r1', {bookingId: bId, amount: 600, mediaPath: `bookings/${bId}/payments/r1/p.jpg`});
+r = await call(fn['payment-submit'], 'r1', {bookingId: bId, amount: 400, mediaPath: `bookings/${bId}/payments/r1/p.jpg`});
 check('שוכר שולח הוכחה מחדש (ממתינה)', S(r) === 200 && get(`payments/${bId}/status`) === 'pending');
 r = await call(fn['booking-action'], 'o1', {action: 'payment-review', bookingId: bId, decision: 'approved'});
 check('בעל הרכב מאשר תשלום', S(r) === 200 && get(`payments/${bId}/status`) === 'approved');
+r = await call(fn['payment-submit'], 'r1', {bookingId: bId, amount: 400, mediaPath: `bookings/${bId}/payments/r1/new.jpg`});
+check('אי אפשר לדרוס תשלום שכבר אושר (409)', S(r) === 409 && get(`payments/${bId}/status`) === 'approved');
 r = await call(fn['booking-action'], 'o1', {action: 'status', bookingId: bId, status: 'active'});
 check('התחלת השכרה אחרי אישור התשלום', S(r) === 200);
 
@@ -183,7 +202,7 @@ check('שוכר רואה כתובת אחרי אישור', S(r) === 200 && B(r).f
 r = await call(fn['private-car-details'], 'x9', {bookingId: bId});
 check('זר לא רואה כתובת (403)', S(r) === 403);
 r = await call(fn['user-private-profile'], 'o1', {uid: 'r1'});
-check('בעל הרכב רואה מסמכי שוכר פעיל', S(r) === 200 && !!B(r).documents.licenseFront);
+check('בעל הרכב רואה פרטים תפעוליים אך לא מסמכי זהות', S(r) === 200 && !!B(r).profile && !B(r).documents.licenseFront);
 r = await call(fn['user-private-profile'], 'x9', {uid: 'r1'});
 check('זר לא רואה מסמכי שוכר (403)', S(r) === 403);
 r = await call(fn['media-sign-upload'], 'r1', {name: 'x.jpg', type: 'image/jpeg', size: 1000, kind: 'user-document', entityId: 'licenseFront'});
@@ -196,14 +215,16 @@ r = await call(fn['media-sign-upload'], 'r1', {name: 'a.jpg', type: 'image/jpeg'
 check('חתימת תמונת פרופיל', S(r) === 200 && B(r).path.startsWith('avatars/r1/'));
 // Direct server image upload (base64 → Admin SDK write). 1x1 png:
 const png1x1 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMBAQAY3Y2wAAAAAElFTkSuQmCC';
-r = await call(fn['media-upload'], 'o1', {name: 'car.jpg', type: 'image/jpeg', kind: 'car-image', data: png1x1});
+r = await call(fn['media-upload'], 'o1', {name: 'car.png', type: 'image/png', kind: 'car-image', data: png1x1});
 check('העלאת תמונת רכב בשרת (מחזיר url+path)', S(r) === 200 && B(r).path.startsWith('cars/o1/') && /firebasestorage.*token=/.test(B(r).url));
-r = await call(fn['media-upload'], 'r1', {name: 'car.jpg', type: 'image/jpeg', kind: 'car-image', data: png1x1});
+r = await call(fn['media-upload'], 'r1', {name: 'car.png', type: 'image/png', kind: 'car-image', data: png1x1});
 check('שוכר לא יכול להעלות תמונת רכב (403)', S(r) === 403);
 r = await call(fn['media-upload'], 'r1', {name: 'x.exe', type: 'application/x-msdownload', kind: 'avatar', data: png1x1});
 check('סוג לא-תמונה בהעלאת שרת נדחה (400)', S(r) === 400);
 r = await call(fn['media-upload'], 'r1', {name: 'a.jpg', type: 'image/jpeg', kind: 'avatar', data: ''});
 check('העלאת שרת בלי נתונים נדחית (400)', S(r) === 400);
+r = await call(fn['media-upload'], 'r1', {name: 'proof.png', type: 'image/png', kind: 'payment', entityId: bId, data: png1x1});
+check('ראיית תשלום פרטית נשמרת בלי קישור ציבורי', S(r) === 200 && B(r).path.startsWith(`bookings/${bId}/payments/r1/`) && B(r).url === '');
 r = await call(fn['media-sign-read'], 'r1', {path: `bookings/${bId}/media/r1/v.mp4`});
 check('קריאת מדיה של הזמנה מורשית', S(r) === 200);
 r = await call(fn['media-sign-read'], 'x9', {path: '../../etc/passwd'});
@@ -214,6 +235,10 @@ r = await call(fn['car-media-public'], 'r1', {path: 'avatars/OTHER/a.jpg'});
 check('לא יכול לפרסם אוואטר של אחר (403)', S(r) === 403);
 
 console.log('\nתרחיש G: סיום, דירוגים וצ׳אט סגור');
+r = await call(fn['booking-action'], 'r1', {action: 'handover', bookingId: bId, stage: 'return', data: {videoPath: 'bookings/OTHER/media/r1/v.mp4', dashboardPhotoPath: `bookings/${bId}/media/r1/d.jpg`, mileage: 1234, fuel: 'full'}});
+check('נתיב תיעוד החזרה מזויף נדחה (400)', S(r) === 400);
+r = await call(fn['booking-action'], 'r1', {action: 'handover', bookingId: bId, stage: 'return', data: {videoPath: `bookings/${bId}/media/r1/return.mp4`, dashboardPhotoPath: `bookings/${bId}/media/r1/dashboard.jpg`, mileage: 1234, fuel: 'full'}});
+check('תיעוד החזרה נשמר כנתיבי Storage מלאים', S(r) === 200 && get(`bookings/${bId}/handover/return/videoPath`) === `bookings/${bId}/media/r1/return.mp4`);
 r = await call(fn['rating-submit'], 'r1', {bookingId: bId, type: 'car', score: 5, review: 'מעולה'});
 check('אי אפשר לדרג לפני סיום (409)', S(r) === 409);
 r = await call(fn['booking-action'], 'o1', {action: 'status', bookingId: bId, status: 'done'});
@@ -234,7 +259,7 @@ r = await call(fn['admin-action'], 'r1', {action: 'user-block', uid: 'x9', block
 check('לא-מנהל חסום (403)', S(r) === 403);
 r = await call(fn['admin-action'], 'a1', {action: 'user-block', uid: 'r1', blocked: true});
 check('מנהל חוסם משתמש', S(r) === 200 && get('users/r1/blocked') === true);
-r = await call(fn['booking-create'], 'r1', {carId, startAt: start, endAt: end});
+r = await call(fn['booking-create'], 'r1', {carId, startAt: start, endAt: end, termsAccepted: true, requestId: 'blocked-test'});
 check('משתמש חסום לא יכול לפעול (403)', S(r) === 403);
 r = await call(fn['admin-action'], 'a1', {action: 'user-block', uid: 'r1', blocked: false});
 check('שחרור חסימה', S(r) === 200 && get('users/r1/blocked') === false);
@@ -338,7 +363,7 @@ console.log('\nתרחיש P: סיום שיחה (בעל רכב/מנהל מסיי�
 r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'End', model: 'Chat', dailyPrice: 100, photos: ['https://a/1.jpg', 'https://b/2.jpg']}});
 const carEnd = B(r).id;
 const s3 = new Date(Date.now() + 10 * 86400000).toISOString(), e3 = new Date(Date.now() + 12 * 86400000).toISOString();
-r = await call(fn['booking-create'], 'r1', {carId: carEnd, startAt: s3, endAt: e3});
+r = await call(fn['booking-create'], 'r1', {carId: carEnd, startAt: s3, endAt: e3, termsAccepted: true, requestId: 'end-chat-test'});
 const bId3 = B(r).id;
 r = await call(fn['booking-action'], 'o1', {action: 'status', bookingId: bId3, status: 'approved'});
 check('הזמנה להמחשת סיום-שיחה אושרה', S(r) === 200);

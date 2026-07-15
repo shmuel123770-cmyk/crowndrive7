@@ -73,9 +73,12 @@ export async function canAccessBooking(uid, id) {
   return !!value && [value.ownerUid, value.renterUid].includes(uid);
 }
 export async function canReadUserDocs(viewer, target) {
+  return viewer === target || await isAdmin(viewer);
+}
+export async function canReadUserProfile(viewer, target) {
   if (viewer === target || await isAdmin(viewer)) return true;
   const snap = await getAdmin().database().ref('bookings').orderByChild('renterUid').equalTo(target).once('value');
-  return Object.values(snap.val() || {}).some(b => b.ownerUid === viewer && ['pending', 'approved', 'active'].includes(b.status) && !b.done);
+  return Object.values(snap.val() || {}).some(b => b.ownerUid === viewer && ['approved', 'active'].includes(b.status) && !b.done);
 }
 export function cleanText(value, max = 500) {
   return String(value ?? '').trim().replace(/[\u0000-\u001f\u007f]/g, '').slice(0, max);

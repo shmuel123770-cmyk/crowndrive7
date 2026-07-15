@@ -2,9 +2,12 @@
 <html lang="he" dir="rtl">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
   <meta name="theme-color" content="#1B222B">
-  <meta name="crowndrive-version" content="107">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="crowndrive-version" content="109">
   <title>Crown Drive · השכרת רכבים · קראון הייטס</title>
   <meta name="description" content="השכרת רכבים בקראון הייטס, ברוקלין — חיפוש לפי זמן איסוף והחזרה, תיעוד מלא ודירוגים אמיתיים. הזמנה פשוטה ומאובטחת.">
   <!-- Social sharing (WhatsApp / Facebook / iMessage) + SEO. og:image/url are absolute (crawlers need that) so the build leaves them untouched. -->
@@ -14,11 +17,13 @@
   <meta property="og:title" content="Crown Drive · השכרת רכבים · קראון הייטס">
   <meta property="og:description" content="השכרת רכבים בקראון הייטס, ברוקלין — הזמנה פשוטה ומאובטחת, תיעוד מלא ודירוגים אמיתיים.">
   <meta property="og:url" content="https://crowndrive770.com/">
-  <meta property="og:image" content="https://crowndrive770.com/icons/share-512.png">
-  <meta name="twitter:card" content="summary">
+  <meta property="og:image" content="https://crowndrive770.com/icons/og-ad.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="1200">
+  <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Crown Drive · השכרת רכבים · קראון הייטס">
   <meta name="twitter:description" content="השכרת רכבים בקראון הייטס, ברוקלין — הזמנה פשוטה ומאובטחת.">
-  <meta name="twitter:image" content="https://crowndrive770.com/icons/share-512.png">
+  <meta name="twitter:image" content="https://crowndrive770.com/icons/og-ad.jpg">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
@@ -34,9 +39,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/app.css?v=107">
+  <link rel="stylesheet" href="css/app.css?v=109">
   <!-- start the app's own JS modules downloading immediately, in parallel (execution order unchanged) -->
-  <link rel="modulepreload" href="js/app.js?v=107">
+  <link rel="modulepreload" href="js/app.js?v=109">
   <link rel="modulepreload" href="js/views.js">
   <link rel="modulepreload" href="js/store.js">
   <!-- The boot-critical leaf modules too — otherwise the browser only discovers them after app.js/views.js/
@@ -50,12 +55,14 @@
   <script src="js/boot-watchdog.js"></script>
 </head>
 <body>
+<a class="skip-link" href="#app">דלגו לתוכן הראשי</a>
 <header class="topbar">
-  <a class="brand" href="#home" aria-label="Crown Drive"><img src="icons/logo.svg" alt="CrownDrive"><span>CROWN DRIVE</span></a>
+  <a class="brand" href="#home" aria-label="Crown Drive"><img src="icons/logo.png" alt="CrownDrive"><span>CROWN DRIVE</span></a>
   <nav id="main-nav" aria-label="ניווט ראשי"></nav>
 </header>
-<main id="app" tabindex="-1"><div class="app-loader"><div class="spinner"></div><p>טוען…</p></div></main>
+<main id="app" tabindex="-1" aria-busy="true"><div class="app-loader"><div class="spinner"></div><p>טוען…</p></div></main>
 <div id="toast" role="status" aria-live="polite"></div>
+<div id="network-status" class="network-status" role="status" aria-live="polite" hidden></div>
 <div id="modal-root"></div>
 <nav id="bottom-nav" class="bottom-nav hide" aria-label="ניווט תחתון"></nav>
 
@@ -64,8 +71,8 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-storage-compat.js"></script>
 <script src="firebase-config.js"></script>
-<script src="js/tawk.js?v=107"></script>
-<script type="module" src="js/app.js?v=107"></script>
-<script src="js/sw-register.js?v=107"></script>
+<script src="js/tawk.js?v=109"></script>
+<script type="module" src="js/app.js?v=109"></script>
+<script src="js/sw-register.js?v=109"></script>
 </body>
 </html>
