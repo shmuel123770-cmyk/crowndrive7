@@ -1,4 +1,4 @@
-CrownDrive — FINAL build (2026-07-14, rev.105)
+CrownDrive — FINAL build (2026-07-14, rev.106)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
 rev.82 (2026-07-14) — personal-area bar SOLID+FIXED + home shows 4 cars on phones. Cumulative.
@@ -1246,3 +1246,10 @@ See התחל_כאן_גרסה_סופית.md to deploy. Remember to publish the up
   4 of all cars. Scoped the rule to body[data-page="home"] (the router stamps data-page per route).
 - Verified at 375px: home 4-of-6 visible (intended), cars page ALL visible (15/15, was 4).
 - NOTE: this bug ships in EVERY zip since rev.82, including the Codex MOBILE_FIXED zip (forked from rev.100).
+
+=== rev.106 (2026-07-15) — route change opens at TOP ===
+- Clicking "כל הרכבים באתר" from the bottom of the home page opened the cars list scrolled to its BOTTOM —
+  the browser keeps the previous page.s scroll offset across hash-route re-renders. render() now does
+  window.scrollTo({top:0,behavior:"instant"}) on route CHANGE only (instant, because the CSS sets
+  scroll-behavior:smooth; data-driven re-renders don.t touch scroll). This was also why the user counted
+  "12 of 15" — they landed mid-list. Verified: scrollY 1479 → click → cars page at 0, all 15 visible.

@@ -80,6 +80,10 @@ function render() {
     // (incoming messages, store updates) don't re-animate and flicker.
     if (route !== lastRoute) {
       lastRoute = route;
+      // A NEW page must open at its TOP. Without this the browser keeps the previous page's scroll offset —
+      // e.g. clicking "כל הרכבים באתר" from the bottom of the home page opened the cars list scrolled to its
+      // bottom. Only on route CHANGE, so data-driven re-renders never yank the user's scroll position.
+      window.scrollTo({top: 0, behavior: 'instant'});  // jump, not animate — the CSS sets scroll-behavior:smooth
       const appEl = document.querySelector('#app');
       if (appEl) { appEl.classList.remove('app-enter'); void appEl.offsetWidth; appEl.classList.add('app-enter'); }
     }
