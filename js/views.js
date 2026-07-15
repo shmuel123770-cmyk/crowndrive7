@@ -15,7 +15,9 @@ export const app = () => document.querySelector('#app');
 const APP_VERSION = document.querySelector('meta[name="crowndrive-version"]')?.content
   || (document.querySelector('script[src*="app.js"]')?.getAttribute('src')?.match(/[?&]v=(\d+)/) || [])[1] || '';
 const APP_BUILD = document.querySelector('meta[name="crowndrive-build"]')?.content || '';
-export const fallbackImage = 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=75';
+// Local SVG placeholder for a car with no photo (or one whose image fails to load) — self-contained, so it
+// loads instantly and never 404s / hangs the way the old external Unsplash URL could (offline, blocked, down).
+export const fallbackImage = 'data:image/svg+xml,' + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='400' height='240' viewBox='0 0 400 240'><rect width='400' height='240' fill='#D3DAE2'/><g transform='translate(152 72) scale(2)' fill='#9AA7B5'><path d='M37 22l-2.6-6.5A3 3 0 0 0 31.6 14H16.4a3 3 0 0 0-2.8 1.9L11 22a3 3 0 0 0-2 2.8V32a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-2h22v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-7.2A3 3 0 0 0 37 22zm-21.2-4.7a1 1 0 0 1 .9-.6h14.6a1 1 0 0 1 .9.6L34 22H14l1.8-4.7zM15 28a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm18 0a2 2 0 1 1 0-4 2 2 0 0 1 0 4z'/></g></svg>");
 const carPhotos = car => [...(Array.isArray(car.photos) ? car.photos : []), car.photoUrl].filter((url, i, arr) => url && arr.indexOf(url) === i);
 export const carImage = car => carPhotos(car)[0] || fallbackImage;
 export const roleName = role => ({renter:'שוכר', owner:'בעל רכב', admin:'מנהל'}[role] || 'משתמש');
@@ -197,6 +199,20 @@ function openCalendar(button) {
 }
 
 let pendingAuthRole = null, pendingAuthTab = null, pendingAdminLogin = false;
+// Deep-link return (mobile audit #8): remember where the user was headed before being sent to sign in,
+// and take them back there after a successful login/registration — instead of always landing on the dashboard.
+// sessionStorage (not memory) so it survives the page being backgrounded during a long sign-up.
+export function saveAuthReturn(data) { try { sessionStorage.setItem('cd-auth-return', JSON.stringify(data)); } catch {} }
+export function afterAuthDestination() {
+  let saved = null;
+  try { saved = JSON.parse(sessionStorage.getItem('cd-auth-return') || 'null'); sessionStorage.removeItem('cd-auth-return'); } catch {}
+  if (saved?.carId && store.cars[saved.carId]) {
+    location.hash = 'cars';
+    setTimeout(() => openCar(saved.carId), 300);  // reopen the car they were about to book
+    return;
+  }
+  location.hash = (saved?.hash && saved.hash !== 'auth') ? saved.hash : 'dashboard';
+}
 export function openAuthAs(role, tab) { pendingAuthRole = role; pendingAuthTab = tab; if (store.route === 'auth') authView(); else location.hash = 'auth'; }
 export function openAdminLogin() { pendingAdminLogin = true; if (store.route === 'auth') authView(); else location.hash = 'auth'; }
 
@@ -533,7 +549,10 @@ export function bindCarButtons() {
   app().querySelectorAll('[data-car-edit]').forEach(button => button.onclick = () => carForm({id: button.dataset.carEdit, ...store.cars[button.dataset.carEdit]}));
 }
 
-const carFilters = {make: '', model: '', year: '', category: '', availability: 'available', sort: 'new'};
+// Default to showing the WHOLE fleet — available AND rented (each carries its own status badge), matching the
+// home page. Filtering to 'available' only is opt-in via the "זמינים כעת" filter. (Was 'available', which hid
+// every rented car from the cars page entirely.)
+const carFilters = {make: '', model: '', year: '', category: '', availability: 'all', sort: 'new'};
 function applyCarFilters(all) {
   let rows = all.filter(car => car.status !== 'hidden');
   const f = carFilters;
@@ -543,7 +562,10 @@ function applyCarFilters(all) {
   if (f.year) rows = rows.filter(car => String(car.year || '') === f.year);
   if (f.category) rows = rows.filter(car => (car.category || '').includes(f.category));
   const sorters = {new: (a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0), priceLow: (a, b) => (a.dailyPrice || 0) - (b.dailyPrice || 0), priceHigh: (a, b) => (b.dailyPrice || 0) - (a.dailyPrice || 0), rating: (a, b) => carRating(b.id) - carRating(a.id)};
-  return rows.sort(sorters[f.sort] || sorters.new);
+  const primary = sorters[f.sort] || sorters.new;
+  // Available cars first, then rented — so a browser sees what they can book now, while rented cars still show.
+  const avail = car => (car.status === 'available' ? 0 : 1);
+  return rows.sort((a, b) => (avail(a) - avail(b)) || primary(a, b));
 }
 export function cars() {
   const all = list(store.cars);
@@ -565,12 +587,12 @@ export function cars() {
     </div>
     ${periodNote}
     <div class="filter-bar" id="filter-bar">
-      <select id="f-make"><option value="">כל היצרנים</option>${[...new Set(all.map(c => c.make).filter(Boolean))].sort().map(t => opt(t, t, carFilters.make)).join('')}</select>
-      <select id="f-model"><option value="">כל הדגמים</option>${[...new Set(all.filter(c => !carFilters.make || c.make === carFilters.make).map(c => c.model).filter(Boolean))].sort().map(t => opt(t, t, carFilters.model)).join('')}</select>
-      <select id="f-year"><option value="">כל השנים</option>${[...new Set(all.map(c => String(c.year || '')).filter(Boolean))].sort((a, b) => b - a).map(t => opt(t, t, carFilters.year)).join('')}</select>
-      <select id="f-availability">${opt('available', 'זמינים כעת', carFilters.availability)}${opt('all', 'כל הרכבים', carFilters.availability)}</select>
-      <select id="f-sort">${opt('new', 'מיון: החדשים ביותר', carFilters.sort)}${opt('priceLow', 'מיון: מהזול ליקר', carFilters.sort)}${opt('priceHigh', 'מיון: מהיקר לזול', carFilters.sort)}</select>
-      ${(carFilters.make || carFilters.model || carFilters.year || carFilters.category || carFilters.availability !== 'available' || carFilters.sort !== 'new') ? '<button class="btn outline" id="f-clear">ניקוי</button>' : ''}
+      <select id="f-make" aria-label="סינון לפי יצרן"><option value="">כל היצרנים</option>${[...new Set(all.map(c => c.make).filter(Boolean))].sort().map(t => opt(t, t, carFilters.make)).join('')}</select>
+      <select id="f-model" aria-label="סינון לפי דגם"><option value="">כל הדגמים</option>${[...new Set(all.filter(c => !carFilters.make || c.make === carFilters.make).map(c => c.model).filter(Boolean))].sort().map(t => opt(t, t, carFilters.model)).join('')}</select>
+      <select id="f-year" aria-label="סינון לפי שנה"><option value="">כל השנים</option>${[...new Set(all.map(c => String(c.year || '')).filter(Boolean))].sort((a, b) => b - a).map(t => opt(t, t, carFilters.year)).join('')}</select>
+      <select id="f-availability" aria-label="סינון לפי זמינות">${opt('all', 'כל הרכבים', carFilters.availability)}${opt('available', 'זמינים כעת', carFilters.availability)}</select>
+      <select id="f-sort" aria-label="מיון רכבים">${opt('new', 'מיון: החדשים ביותר', carFilters.sort)}${opt('priceLow', 'מיון: מהזול ליקר', carFilters.sort)}${opt('priceHigh', 'מיון: מהיקר לזול', carFilters.sort)}</select>
+      ${(carFilters.make || carFilters.model || carFilters.year || carFilters.category || carFilters.availability !== 'all' || carFilters.sort !== 'new') ? '<button class="btn outline" id="f-clear">ניקוי</button>' : ''}
       <div class="type-chips">${['סדאן', 'SUV', 'פיקאפ', 'מיניוואן'].map(t => `<button class="type-chip ${carFilters.category === t ? 'on' : ''}" data-type-chip="${t}">${t}</button>`).join('')}</div>
     </div>
     ${carGrid(rows, false, period)}</div>`;
@@ -585,7 +607,7 @@ export function cars() {
   bind('#f-availability', 'availability');
   bind('#f-sort', 'sort');
   document.querySelectorAll('[data-type-chip]').forEach(chip => chip.onclick = () => { carFilters.category = carFilters.category === chip.dataset.typeChip ? '' : chip.dataset.typeChip; rerender(); });
-  document.querySelector('#f-clear')?.addEventListener('click', () => { Object.assign(carFilters, {make: '', model: '', year: '', category: '', availability: 'available', sort: 'new'}); rerender(); });
+  document.querySelector('#f-clear')?.addEventListener('click', () => { Object.assign(carFilters, {make: '', model: '', year: '', category: '', availability: 'all', sort: 'new'}); rerender(); });
   // Date search: set the shared search period and re-render so cards show estimates + fit/no-fit notes.
   document.querySelector('#period-apply')?.addEventListener('click', () => {
     const sd = document.querySelector('input[name="carsStart"]')?.value || '';
@@ -621,6 +643,13 @@ function openCar(id) {
   const bEnd = searchPeriod.endAt ? searchPeriod.endAt.slice(0, 10) : '';
   const bStartH = searchPeriod.startAt ? searchPeriod.startAt.slice(11, 16) : '10:00';
   const bEndH = searchPeriod.endAt ? searchPeriod.endAt.slice(11, 16) : '10:00';
+  // Sticky "book" bar — price + CTA pinned to the bottom of the modal so it's always reachable without scrolling.
+  const barRows = [];
+  if (car.dailyPrice) barRows.push([money(car.dailyPrice), 'ליום']);
+  if (car.priceHourly) barRows.push([money(car.priceHourly), 'לשעה']);
+  if (car.priceWeekly) barRows.push([money(car.priceWeekly), 'לשבוע']);
+  const barPrice = rented ? 'לא זמין כעת' : onRequest ? 'מחיר לפי בקשה' : (barRows.length ? `${barRows[0][0]}<small> ${barRows[0][1]}</small>` : '');
+  const barCta = rented ? 'הרכב מושכר' : onRequest ? 'שליחת הודעה' : 'להזמנה ←';
   modal(`<div class="modal-head"><h2>${esc(car.make || '')} ${esc(car.model || '')} ${esc(car.trim || '')}</h2><button class="close" data-close-modal>×</button></div>
     ${gallery}
     <div class="car-detail-head">${availPill(car.status)}${newBadge(car)}${mode ? `<span class="mode-badge lg">${mode.label}</span>` : ''}${car.ownerName ? `<span class="owner-tag">בעל הרכב: ${esc(car.ownerName)}</span>` : ''}</div>
@@ -638,7 +667,8 @@ function openCar(id) {
     ${onRequest && canInquire ? '<div class="price-contact-cta"><div><b>שלחו הודעה לקבלת מחיר</b><small>המחיר נקבע מול בעל הרכב — שלחו הודעה כדי לקבל אותו.</small></div><button type="button" class="btn gold" id="price-contact">שליחת הודעה לקבלת מחיר</button></div>' : ''}
     ${canInquire && !onRequest ? `<div class="owner-contact-cta"><div><b>יש לכם שאלה על הרכב?</b><small>דברו ישירות עם בעל הרכב עוד לפני שליחת הבקשה.</small></div><button type="button" class="btn dark-out" id="contact-owner">${ICON.chat} צור קשר עם בעל הרכב</button></div>` : ''}
     ${reviewsHtml}
-    ${rented ? '<div class="chat-closed">הרכב אינו זמין להזמנה כרגע</div>' : `<form id="booking-form"><h3>הזמנת הרכב</h3><div class="form-grid">${dateField('startDate', 'תאריך איסוף', bStart)}<div class="field"><label>שעת איסוף</label><select name="startHour">${hourOptions(bStartH)}</select></div>${dateField('endDate', 'תאריך החזרה', bEnd)}<div class="field"><label>שעת החזרה</label><select name="endHour">${hourOptions(bEndH)}</select></div></div><div class="booking-est" id="booking-est"></div><div class="field"><label>אופן קבלה</label><select name="fulfillment"><option value="pickup">איסוף עצמי</option>${car.deliveryEnabled ? '<option value="delivery">מסירה</option>' : ''}</select></div><div class="field"><label>כתובת מסירה, אם נבחרה</label><input name="deliveryAddress"></div><button class="btn primary block">שליחת בקשה</button></form>`}`);
+    ${rented ? '<div class="chat-closed">הרכב אינו זמין להזמנה כרגע</div>' : `<form id="booking-form"><h3>הזמנת הרכב</h3><div class="form-grid">${dateField('startDate', 'תאריך איסוף', bStart)}<div class="field"><label>שעת איסוף</label><select name="startHour">${hourOptions(bStartH)}</select></div>${dateField('endDate', 'תאריך החזרה', bEnd)}<div class="field"><label>שעת החזרה</label><select name="endHour">${hourOptions(bEndH)}</select></div></div><div class="booking-est" id="booking-est"></div><div class="field"><label>אופן קבלה</label><select name="fulfillment"><option value="pickup">איסוף עצמי</option>${car.deliveryEnabled ? '<option value="delivery">מסירה</option>' : ''}</select></div><div class="field"><label>כתובת מסירה, אם נבחרה</label><input name="deliveryAddress"></div><button class="btn primary block">שליחת בקשה</button></form>`}
+    <div class="car-book-bar${rented ? ' cbb-off' : ''}"><div class="cbb-price">${barPrice}</div><button type="button" class="btn ${rented ? 'outline' : 'primary'} cbb-cta" id="cbb-book"${rented ? ' disabled' : ''}>${barCta}</button></div>`);
   const galleryImg = document.querySelector('#gallery-img');
   galleryImg?.addEventListener('error', event => { event.currentTarget.src = fallbackImage; }, {once: true});
   document.querySelectorAll('[data-photo]').forEach(button => button.onclick = () => {
@@ -681,10 +711,28 @@ function openCar(id) {
   // "שלחו הודעה לקבלת מחיר" → open the support chat so the renter can ask the price (no public price).
   document.querySelector('#price-contact')?.addEventListener('click', () => openOwnerInquiry(car.id));
   document.querySelector('#contact-owner')?.addEventListener('click', () => openOwnerInquiry(car.id));
+  document.querySelector('#cbb-book')?.addEventListener('click', () => {
+    if (rented) return;
+    if (onRequest) return openOwnerInquiry(car.id);
+    const form = document.querySelector('#booking-form');
+    if (!form) return;
+    // Dates already chosen (e.g. from the search) → submit straight away; otherwise scroll to the form to pick them.
+    const sd = form.querySelector('[name="startDate"]')?.value, ed = form.querySelector('[name="endDate"]')?.value;
+    if (sd && ed) { form.requestSubmit(); return; }
+    // Scroll the MODAL (its own scroll container) to the form — scrollIntoView targets the body, which is locked.
+    const box = form.closest('.modal');
+    if (!box) return form.scrollIntoView({behavior: 'smooth', block: 'start'});
+    const target = box.scrollTop + form.getBoundingClientRect().top - box.getBoundingClientRect().top - 14;
+    box.scrollTo({top: target, behavior: 'smooth'});
+    // Fallback: some browsers no-op smooth-scroll on an overflow container — if it didn't move, jump instantly.
+    setTimeout(() => { if (Math.abs(box.scrollTop - target) > 24) box.scrollTop = target; }, 90);
+  });
   if (bookingForm) bookingForm.onsubmit = async event => {
     event.preventDefault();
     try {
-      if (!store.user) { closeModal(); location.hash = 'auth'; return; }
+      // A guest/anonymous user (or nobody) can't book — send them to register/login. (Anonymous users HAVE a
+      // store.user, so `!store.user` alone let them fall through to createBooking, which then failed.)
+      if (!store.user || store.user.isAnonymous) { saveAuthReturn({carId: car.id}); toast('התחברו או הירשמו כדי להזמין רכב'); closeModal(); location.hash = 'auth'; return; }
       const data = formData(event.target);
       if (!data.startDate || !data.endDate) return toast('בחרו תאריך איסוף והחזרה');
       data.startAt = `${data.startDate}T${data.startHour}`;
@@ -741,7 +789,7 @@ export function authView() {
         const user = await login(data.email, data.password);
         // Admins may enter ONLY through the "כניסת מנהל" button at the bottom of the home page.
         if (await checkIsAdmin(user.uid)) { await logout(); return toast('זהו חשבון מנהל — יש להיכנס דרך כפתור "כניסת מנהל" בתחתית דף הבית'); }
-        location.hash = 'dashboard';
+        afterAuthDestination();
       }
       catch (error) { toast(error.message); }
     };
@@ -767,7 +815,7 @@ export function authView() {
       const reset = () => { if (button) { button.disabled = false; button.textContent = `הרשמה כ${label}`; } };
       if (!validEmail(data.email)) return toast('כתובת המייל אינה תקינה — בדקו שהיא בפורמט name@example.com');
       if (button) { button.disabled = true; button.textContent = 'נרשם…'; }
-      try { await register(data); location.hash = 'dashboard'; }
+      try { await register(data); afterAuthDestination(); }
       catch (error) { toast(error.message); reset(); }
     };
   }

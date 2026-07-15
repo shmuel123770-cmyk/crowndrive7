@@ -5,7 +5,7 @@ import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, s
 import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './media.js';
 import {legacyStatus, migrateLegacy} from './migrate.js';
 import {api} from './api.js';
-import {CAR_MAKES, CAR_TYPES, ICON, MODELS_BY_MAKE, RENTAL_MODES, TAB_ICONS, app, avatarHtml, carImage, carPhotoList, carStatusPill, carYears, composePhone, emptyState, fallbackImage, kpi, phoneField, roleName, selectOptions, bindCarButtons, carGrid, featuredFirst} from './views.js';
+import {saveAuthReturn, afterAuthDestination, CAR_MAKES, CAR_TYPES, ICON, MODELS_BY_MAKE, RENTAL_MODES, TAB_ICONS, app, avatarHtml, carImage, carPhotoList, carStatusPill, carYears, composePhone, emptyState, fallbackImage, kpi, phoneField, roleName, selectOptions, bindCarButtons, carGrid, featuredFirst} from './views.js';
 
 function dashboardLayout(title, tabs, active, content, actions = '', navFooter = '') {
   const firstName = String(store.profile?.name || '').trim().split(/\s+/)[0];
@@ -71,8 +71,9 @@ function completeProfile() {
     event.preventDefault();
     const data = composePhone(formData(event.target));
     if (!['renter', 'owner'].includes(data.role)) return toast('בחרו סוג חשבון');
-    try { await createOwnProfile({name: data.name, phone: data.phone, role: data.role}); location.hash = 'dashboard'; toast('הפרופיל נשמר!'); }
-    catch (error) { toast(error.message); }
+    const btn = event.submitter; if (btn) btn.disabled = true;
+    try { await createOwnProfile({name: data.name, phone: data.phone, role: data.role}); afterAuthDestination(); toast('הפרופיל נשמר!'); }
+    catch (error) { toast(error.message); if (btn) btn.disabled = false; }
   };
 }
 
@@ -106,14 +107,23 @@ function ownerDashboard(tab = 'overview') {
 }
 
 function adminDashboard(tab = 'overview') {
-  const users = list(store.users).map(user => ({...user, verification: {...(user.verification || {}), status: store.verificationStatuses[user.id] || 'missing'}})).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+  // Users needing verification review float to the top (they're the action items), then newest-first.
+  const users = list(store.users).map(user => ({...user, verification: {...(user.verification || {}), status: store.verificationStatuses[user.id] || 'missing'}}))
+    .sort((a, b) => ((a.verification.status === 'pending' ? 0 : 1) - (b.verification.status === 'pending' ? 0 : 1)) || Number(b.createdAt || 0) - Number(a.createdAt || 0));
   const bookings = myBookings();
   const cars = list(store.cars);
   const total = Object.values(store.payments).reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
   const recentCars = cars.slice().sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0)).slice(0, 5);
   const recentBookings = bookings.slice().sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0)).slice(0, 5);
+  // "Needs attention" — the items the admin must act on, surfaced at the top of the overview so nothing is missed.
+  const pendingVerif = users.filter(u => u.verification?.status === 'pending').length;
+  const pendingPay = Object.values(store.payments).filter(p => p && p.status === 'pending').length;
+  const pendingBook = bookings.filter(b => b.status === 'pending').length;
+  const attnCards = [pendingVerif && ['users', pendingVerif, 'אימותים לבדיקה'], pendingPay && ['bookings', pendingPay, 'תשלומים לאישור'], pendingBook && ['bookings', pendingBook, 'הזמנות ממתינות']].filter(Boolean);
+  const attnHtml = `<div class="admin-attention">${attnCards.length ? attnCards.map(([t, n, label]) => `<button class="attn-card" data-attn-tab="${t}"><b>${n}</b><span>${esc(label)}</span></button>`).join('') : '<div class="attn-clear">✓ אין פעולות ממתינות — הכל מטופל</div>'}</div>`;
   const contents = {
     overview: `<div class="panel-head-actions"><h2>סקירה</h2><div class="chips"><button class="btn ${store.config?.maintenance?.on ? 'danger' : 'outline'}" id="maintenance-toggle">${store.config?.maintenance?.on ? 'האתר בתחזוקה — לחצו לפתיחה' : 'מצב תחזוקה'}</button></div></div>
+      ${attnHtml}
       <div class="field admin-search-wrap"><input id="admin-search" placeholder="🔎 חיפוש: שם, מייל, טלפון, רכב, בעל רכב, סטטוס…" autocomplete="off"></div><div id="admin-search-results"></div>
       <div class="kpis">${kpi('money', money(total), 'תשלומים מדווחים')}${kpi('calendar', bookings.length, 'הזמנות')}${kpi('car', cars.length, 'רכבים')}${kpi('users', users.length, 'משתמשים')}</div>
       <div class="overview-grid">
@@ -133,6 +143,7 @@ function adminDashboard(tab = 'overview') {
   document.querySelector('#admin-refresh')?.addEventListener('click', () => window.location.reload());
   document.querySelector('#admin-logout')?.addEventListener('click', async () => { try { await logout(); location.hash = 'home'; } catch (error) { toast(error.message); } });
   bindDashboardTabs(adminDashboard); bindActions(); bindCarButtons(); bindProfileActions();
+  document.querySelectorAll('[data-attn-tab]').forEach(btn => btn.onclick = () => { store.dashTab = btn.dataset.attnTab; adminDashboard(btn.dataset.attnTab); });
   document.querySelectorAll('[data-admin-user]').forEach(button => button.onclick = () => adminUserModal(button.dataset.adminUser));
   document.querySelectorAll('[data-admin-rentals]').forEach(button => button.onclick = () => adminUserBookingsModal(button.dataset.adminRentals));
   document.querySelectorAll('[data-user-message]').forEach(button => button.onclick = () => openChatThread(`a:${button.dataset.userMessage}`));
@@ -296,6 +307,8 @@ function bindAdminCarActions() {
 function bindAdminBookingActions() {
   document.querySelectorAll('[data-admin-status]').forEach(select => select.onchange = async () => {
     if (!select.value) return;
+    // Confirm the destructive changes; reset the dropdown if the admin backs out.
+    if ((select.value === 'cancelled' || select.value === 'rejected') && !confirm(select.value === 'cancelled' ? 'לבטל את ההזמנה?' : 'לדחות את ההזמנה?')) { select.value = ''; return; }
     try { await setBookingStatus(select.dataset.adminStatus, select.value); toast('הסטטוס עודכן'); }
     catch (error) { toast(error.message); select.value = ''; }
   });
@@ -353,8 +366,14 @@ function bookingList(bookings, role) {
 
 function bindActions() {
   document.querySelectorAll('[data-status]').forEach(button => button.onclick = async () => {
-    try { await setBookingStatus(button.dataset.booking, button.dataset.status); toast('ההזמנה עודכנה'); }
-    catch (error) { toast(error.message); }
+    const status = button.dataset.status;
+    // Confirm the significant/irreversible transitions (reject denies the renter; done ends the rental) — the
+    // forward steps (approve/start) don't need it. Also disable during the call so a double-click can't double-submit.
+    if (status === 'rejected' && !confirm('לדחות את ההזמנה? השוכר יקבל הודעה שהבקשה נדחתה.')) return;
+    if (status === 'done' && !confirm('לסיים את ההשכרה?')) return;
+    button.disabled = true;
+    try { await setBookingStatus(button.dataset.booking, status); toast('ההזמנה עודכנה'); }
+    catch (error) { toast(error.message); button.disabled = false; }
   });
   // audit #19: renter/owner can cancel a pending/approved booking themselves (with confirmation).
   document.querySelectorAll('[data-cancel-booking]').forEach(button => button.onclick = async () => {
@@ -571,6 +590,7 @@ export async function openSupportChat() {
 // sign in first (inquiries are between real accounts and owners — the server rejects anonymous users).
 export async function openOwnerInquiry(carId) {
   if (!store.user || store.user.isAnonymous) {
+    saveAuthReturn({carId});  // come back to this car after signing in
     closeModal();
     toast('התחברו עם חשבון כדי לפנות לבעל הרכב');
     location.hash = 'auth';
@@ -602,6 +622,7 @@ export function chatsPage() {
   resetPaint();
   if (!store.user) {
     if (!store.authSettled) { app().innerHTML = '<div class="app-loader"><div class="spinner"></div><p>טוען…</p></div>'; return; }
+    saveAuthReturn({hash: 'chats'});  // come back to the chats after signing in
     location.hash = 'auth'; return;
   }
   // If the chat shell is already up, a re-render (incoming message, any data event) only needs the sidebar
@@ -860,13 +881,14 @@ function paymentModal(bookingId, onDone = null) {
   modal(`<div class="modal-head"><h2>הוכחת תשלום</h2><button class="close" data-close-modal>×</button></div><form id="payment-form"><div class="field"><label>סכום ששולם</label><input name="amount" type="number" min="0.01" step="0.01" required></div><div class="field"><label>צילום הוכחה</label><input name="file" type="file" accept="image/*" required></div><button class="btn primary">שמירה</button></form>`);
   document.querySelector('#payment-form').onsubmit = async event => {
     event.preventDefault();
+    const btn = event.submitter; if (btn) btn.disabled = true;  // the upload takes seconds — block a double-tap
     try {
       const amount = Number(event.target.amount.value);
       const path = await uploadPrivate(event.target.file.files[0], 'payment', bookingId);
       await savePayment(bookingId, {amount, mediaPath: path});
       closeModal(); toast('הוכחת התשלום נשמרה');
       await onDone?.(amount);
-    } catch (error) { toast(error.message); }
+    } catch (error) { toast(error.message); if (btn) btn.disabled = false; }
   };
 }
 
@@ -884,12 +906,13 @@ function handoverModal(bookingId, stage) {
   modal(`<div class="modal-head"><h2>${title}</h2><button class="close" data-close-modal>×</button></div><form id="handover-form"><div class="field"><label>סרטון הרכב מבחוץ</label><input name="video" type="file" accept="video/*" required></div><div class="field"><label>תמונה של הדלק והמיילים</label><input name="dash" type="file" accept="image/*" required></div><div class="form-grid"><div class="field"><label>מיילים / קילומטראז׳</label><input name="mileage" type="number" min="0" required></div><div class="field"><label>רמת דלק</label><select name="fuel"><option>מלא</option><option>3/4</option><option>1/2</option><option>1/4</option><option>ריק</option></select></div></div><div class="field"><label>נזקים והערות</label><textarea name="notes" maxlength="2000"></textarea></div><button class="btn primary">שמירה</button></form>`);
   document.querySelector('#handover-form').onsubmit = async event => {
     event.preventDefault();
+    const btn = event.submitter; if (btn) btn.disabled = true;  // two uploads — block a double-tap
     try {
       const videoPath = await uploadPrivate(event.target.video.files[0], 'booking-media', bookingId);
       const dashboardPhotoPath = await uploadPrivate(event.target.dash.files[0], 'booking-media', bookingId);
       await saveHandover(bookingId, stage, {videoPath, dashboardPhotoPath, mileage: Number(event.target.mileage.value), fuel: event.target.fuel.value, notes: event.target.notes.value});
       closeModal(); toast('התיעוד נשמר');
-    } catch (error) { toast(error.message); }
+    } catch (error) { toast(error.message); if (btn) btn.disabled = false; }
   };
 }
 
@@ -954,8 +977,9 @@ function ratingModal(bookingId, type) {
   modal(`<div class="modal-head"><h2>דירוג וביקורת</h2><button class="close" data-close-modal>×</button></div><form id="rating-form"><div class="field"><label>דירוג</label><select name="score"><option value="5">5 — מצוין</option><option value="4">4 — טוב מאוד</option><option value="3">3 — טוב</option><option value="2">2 — טעון שיפור</option><option value="1">1 — לא טוב</option></select></div><div class="field"><label>ביקורת</label><textarea name="review" maxlength="1000"></textarea></div><button class="btn primary">שליחה</button></form>`);
   document.querySelector('#rating-form').onsubmit = async event => {
     event.preventDefault();
+    const btn = event.submitter; if (btn) btn.disabled = true;
     try { const data = formData(event.target); await submitRating({bookingId, type, score: Number(data.score), review: data.review}); closeModal(); toast('הדירוג נשמר'); }
-    catch (error) { toast(error.message); }
+    catch (error) { toast(error.message); if (btn) btn.disabled = false; }
   };
 }
 
@@ -1074,6 +1098,37 @@ export function carForm(car = null) {
   weekendCheck?.addEventListener('change', updatePriceFields);
   updatePriceFields();
 
+  // --- Draft persistence (mobile audit #4): picking a photo opens the camera/gallery, which backgrounds the
+  // page — and iOS sometimes reloads it, wiping everything typed. Save the TEXT/select/checkbox fields (never
+  // photos or files) to sessionStorage as the owner types; restore them when the form reopens; clear on save.
+  const draftKey = `cd-car-draft:${car?.id || 'new'}`;
+  const draftFields = () => [...form.elements].filter(el => el.name && el.type !== 'file' && el.type !== 'hidden');
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(draftKey) || 'null');
+    if (saved && typeof saved === 'object') {
+      // Restore make first (the model dropdown's options depend on it), then everything else.
+      if (saved.makeSelect !== undefined && makeSelect) { makeSelect.value = saved.makeSelect; makeSelect.dispatchEvent(new Event('change')); populateModels(); }
+      let restored = 0;
+      for (const el of draftFields()) {
+        const val = saved[el.name];
+        if (val === undefined || el.id === 'make-select') continue;
+        if (el.type === 'checkbox') { if (el.checked !== !!val) { el.checked = !!val; restored++; } }
+        else if (el.type === 'radio') { if (val === el.value && !el.checked) { el.checked = true; restored++; } }
+        else if (val !== '' && String(el.value || '') !== String(val)) { el.value = val; restored++; }
+      }
+      populateModels(); updatePriceFields();
+      if (saved.modelSelect !== undefined && modelSelect) modelSelect.value = saved.modelSelect;
+      if (restored) toast('שוחזרה טיוטה שלא נשמרה');
+    }
+  } catch {}
+  const saveDraft = () => {
+    const draft = {};
+    for (const el of draftFields()) draft[el.name] = el.type === 'checkbox' ? el.checked : (el.type === 'radio' ? (el.checked ? el.value : draft[el.name]) : el.value);
+    try { sessionStorage.setItem(draftKey, JSON.stringify(draft)); } catch {}
+  };
+  form.addEventListener('input', saveDraft);
+  form.addEventListener('change', saveDraft);
+
   // The site "chats" a photo suggestion the moment the owner picks the spec.
   let lastSuggest = '';
   async function suggestPhoto() {
@@ -1159,6 +1214,7 @@ export function carForm(car = null) {
     submit.disabled = true; submit.textContent = 'שומר…';
     try {
       if (editing) await updateCar(car.id, data); else await createCar(data);
+      try { sessionStorage.removeItem(draftKey); } catch {}  // the draft made it in — drop it
       closeModal(); toast(editing ? 'הרכב עודכן' : 'הרכב פורסם');
     } catch (error) { toast(error.message); submit.disabled = false; submit.textContent = editing ? 'שמירת שינויים' : 'פרסום הרכב'; }
   };

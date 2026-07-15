@@ -51,14 +51,20 @@ export async function startPrivate(user) {
   // Resilient admin-flag read: a denied OR slow read must never crash / stall the rest of
   // startPrivate — that used to strand the whole personal area on an endless "loading" spinner
   // (the profile listener below never got attached, so profileLoaded stayed false forever).
-  try {
-    store.isAdmin = await Promise.race([
-      refs.admins.child(user.uid).once('value').then(snap => snap.val() === true),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('admin-check-timeout')), 6000)),
-    ]);
-  } catch (error) {
-    console.error('admin check failed — continuing as non-admin', error);
+  if (user.isAnonymous) {
+    // Anonymous guests (support-chat only) are never admins — skip the /admins read entirely. The rules deny
+    // it, so it logged an "admin check failed" error and stalled setup for the full 6s timeout before falling through.
     store.isAdmin = false;
+  } else {
+    try {
+      store.isAdmin = await Promise.race([
+        refs.admins.child(user.uid).once('value').then(snap => snap.val() === true),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('admin-check-timeout')), 6000)),
+      ]);
+    } catch (error) {
+      console.error('admin check failed — continuing as non-admin', error);
+      store.isAdmin = false;
+    }
   }
   store.adminChecked = true;  // admin status is now known — safe to decide renter/owner vs admin
 

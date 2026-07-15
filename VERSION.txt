@@ -1,4 +1,4 @@
-CrownDrive — FINAL build (2026-07-14, rev.91)
+CrownDrive — FINAL build (2026-07-14, rev.105)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
 rev.82 (2026-07-14) — personal-area bar SOLID+FIXED + home shows 4 cars on phones. Cumulative.
@@ -1120,3 +1120,129 @@ See התחל_כאן_גרסה_סופית.md to deploy. Remember to publish the up
   users (they have no email + no /users profile, so the write was denied → "email verification sync skipped").
 - VERIFIED in-browser with a persisted anonymous session: ZERO inquiries errors + ZERO email-sync warnings
   generated after a fresh load (proven via console-marker window). Both were continuous before.
+
+=== rev.92 (2026-07-14) — image robustness + guest admin-check ===
+- fallbackImage (cars with no photo, or whose image fails to load) changed from an EXTERNAL Unsplash URL to a
+  self-contained inline SVG car placeholder — loads instantly, never 404s/hangs (offline/blocked/down). Shared
+  export, so views.js + views-app.js both use it.
+- .car-photo now shows a subtle centered car-icon placeholder (inline SVG background) WHILE the real photo
+  loads — loading / photo-less cards look intentional instead of empty gray. (Fixed a CSS url() parse bug: an
+  escaped \" had left the declaration invalid.)
+- store.js: anonymous guests now SKIP the /admins admin check (they are never admins). It was denied by the
+  rules, logging "admin check failed" AND stalling guest setup for the full 6s timeout. Completes rev.91 cleanup.
+- Verified in-browser: guest console fully clean after a fresh-load marker (no inquiries/email-sync/admin-check);
+  fallback SVG decodes (400px); placeholder background renders.
+
+=== rev.93 (2026-07-14) — a11y filter labels + booking guest-guard bug ===
+- BUG FIX: the car-detail booking form submit guard was `if (!store.user)` — but anonymous guests HAVE a
+  store.user, so they fell THROUGH to createBooking (which then failed with a raw error). Now
+  `if (!store.user || store.user.isAnonymous)` → guests get a "התחברו או הירשמו כדי להזמין רכב" toast +
+  redirect to auth. Verified live with a guest session (→ #auth). (Audited the whole `!store.user` bug class:
+  openOwnerInquiry + dashboard already gate anonymous; chatsPage intentionally shows a guest their support chat.)
+- A11Y: added aria-label to the 5 cars-page filter <select>s (make/model/year/availability/sort) — were
+  unlabeled, so screen readers could not announce them. Rest of the app (home/owner/admin/carForm) is clean.
+
+=== rev.94 (2026-07-14) — phone field: mobile layout ===
+- On phones (@media max-width:560px) the .phone-row now STACKS the dial-code <select> and the number <input>
+  (each full width) instead of squeezing them side by side. Side-by-side, the select clipped the country name
+  ("🇺🇸 ארה״ב / קנדה +1" was cut off) and both halves were cramped (~135px + ~150px). Stacked, the full
+  country label is readable and the number field is roomy — consistent with the form.s other full-width fields.
+  Verified at 375px: flex-direction column, select+input 294px each, no clip.
+
+=== rev.95 (2026-07-14) — social sharing + SEO + PWA manifest ===
+- Added the (previously MISSING) social/SEO meta tags to index.html: <meta name=description>, Open Graph
+  (og:type/site_name/locale/title/description/url/image) + Twitter card. A link shared in WhatsApp / community
+  groups now shows a title + description + the crown icon preview instead of a bare URL. og:image/og:url are
+  ABSOLUTE (crowndrive770.com) so the build leaves them unstamped (crawlers need absolute URLs).
+- manifest.json: aligned theme_color #0f2747 → #1B222B (was inconsistent with the HTML theme-color / the app.s
+  dark chrome); referenced the existing but UNUSED icons/maskable-512.png with purpose:"maskable" (proper Android
+  install-icon masking); added lang:he, dir:rtl, description, scope. name→"Crown Drive · השכרת רכבים".
+- NOTE: og:image is the square 512 app icon — a dedicated 1200x630 banner would look richer in link previews
+  (optional; user can supply one and point og:image/twitter:image at it, twitter:card→summary_large_image).
+
+=== rev.96 (2026-07-14) — BUG: rented cars missing from the cars page ===
+- The cars page (/#cars) defaulted carFilters.availability to "available", so applyCarFilters filtered out
+  EVERY rented car — they never appeared (the home page shows them with a "מושכר" badge, so this was
+  inconsistent and hid part of the fleet). Changed the default to "all" (show available + rented, each with its
+  status badge); updated the clear-button reset + its visibility check; reordered the filter <option>s so
+  "כל הרכבים" is first. "זמינים כעת" is now an opt-in filter.
+- Refinement: in the "all" view, available cars now sort BEFORE rented (avail() key in applyCarFilters) so a
+  browser sees bookable cars first while rented ones still show (at the end).
+- Verified live: cars page now renders 13 (was 12); the rented car appears LAST with its "מושכר" badge.
+
+=== rev.97 (2026-07-14) — personal-area audit + date format ===
+- fmtDate (core.js) now drops SECONDS: toLocaleString(he-IL) → toLocaleString(he-IL,{dateStyle:short,timeStyle:short}).
+  Every date across the personal areas (booking date ranges, notifications, payment/message times) showed
+  "…, 10:00:00" — now "…, 10:00". Applies to renter/owner/admin everywhere.
+- Audited all 3 personal areas: all 13 dashboard tabs render clean with edge-case data (no errors / undefined /
+  NaN / [object Object]); no mobile horizontal overflow (incl. admin users = truncated 2-col cards); empty states
+  have title+subtitle+CTA; profile/verification flow intact; RTL date-RANGE order verified correct (start on the
+  right). No other bugs found — the personal areas are solid.
+
+=== rev.98 (2026-07-14) — personal-area: booking-action confirmations + double-click guard ===
+- The booking status buttons (data-status: approve/reject/start/finish) fired with NO confirmation and did not
+  disable during the async call. Clicking "דחייה" (reject) instantly denied a renter.s booking. Added confirms
+  for the significant transitions — reject ("לדחות את ההזמנה? השוכר יקבל הודעה…") and finish ("לסיים את ההשכרה?",
+  matching the rental-pane path) — and the button now disables during setBookingStatus so a double-click cannot
+  double-submit. Verified live: declining the confirm leaves the booking pending.
+- The admin booking-status dropdown (data-admin-status) changed a booking to cancelled/rejected with no confirm —
+  added a confirm for those destructive values (and resets the dropdown if the admin backs out).
+
+=== rev.99 (2026-07-14) — personal-area: double-submit guard on record-creating forms ===
+- The payment-proof, handover (evidence), rating, and complete-profile forms did NOT disable their submit
+  button during the async write, so a fast double-tap (common on mobile / slow connections) could create
+  DUPLICATE records — two payment proofs, two handover docs, two ratings, two profile writes. Payment + handover
+  do slow file uploads, so the window is seconds. Added the same guard the car form already had: disable
+  event.submitter on submit, re-enable on error. Verified: event.submitter targets the button + disables
+  synchronously (a second tap hits a disabled button = no-op) + re-enables after an error.
+
+=== rev.100 (2026-07-14) — modal body-scroll lock ===
+- Modals had no background scroll lock: with any modal open (car detail, payment proof, handover, rating,
+  admin user modal, add-car form, etc.) the page BEHIND could still scroll — especially annoying on mobile
+  (scroll chaining past the modal). Added html.modal-open{overflow:hidden} (+ body), toggled by modal() /
+  closeModal(), plus overscroll-behavior:contain on .modal-backdrop. Verified: html overflow-y flips to hidden
+  while a modal is open and back to auto on close; the class is added/removed correctly.
+
+=== rev.101 (2026-07-14) — ADMIN DASHBOARD project: actionable overview ===
+- Added a "needs attention" section at the TOP of the admin overview: amber cards for pending verifications
+  (X אימותים לבדיקה), pending payments (Y תשלומים לאישור), pending bookings (Z הזמנות ממתינות) — each clickable
+  to jump to the relevant tab (users/bookings); a green "✓ אין פעולות ממתינות" all-clear when nothing is pending.
+  Before, the overview only showed RECENT activity, so the admin had to dig into every tab to find action items.
+- Admin users tab now sorts users with PENDING verification FIRST (then newest), so reviewing verifications
+  (esp. after clicking the attention card) is immediate instead of scanning the whole list.
+- Verified live: attention cards populate from real counts + navigate to the right tab; pending users sort to top.
+
+=== rev.102 (2026-07-14) — admin mobile tab-bar readability ===
+- Bumped the admin dashboard mobile bottom-tab label font .64rem → .7rem (~9.6px → 10.5px). All 6 tabs still
+  fit at 375px, no clipping/overflow. Small readability win.
+- DIAGNOSTIC (not a code change): the user reported the live site "still feels desktop-oriented" — root cause
+  is that the ~35 revs of mobile work (rev.66→102) are UNDEPLOYED; their phone shows the old pre-mobile-work
+  version. Deploying rev.102 makes all of it live.
+
+=== rev.103 (2026-07-15) — MOBILE AUDIT #1: sticky book bar on car detail ===
+- The car-detail is a modal and its "שליחת בקשה" button sat at the very bottom → long scroll to find it.
+  Added a STICKY price + book bar pinned to the bottom of the modal (position:sticky;bottom:0), safe-area-inset
+  padded for iPhone. Shows the price + a CTA that adapts: available → "להזמנה ←" (scrolls the modal to the
+  booking form, or submits directly if dates were already picked in the search); price-on-request → "שליחת הודעה"
+  (owner inquiry); rented → disabled "הרכב מושכר". Always reachable without scrolling.
+- The CTA scroll uses modal.scrollTo(smooth) with an instant fallback (some browsers no-op smooth-scroll on an
+  overflow container). Verified: tapping the bar scrolls the modal to the booking form.
+
+=== rev.104 (2026-07-15) — MOBILE AUDIT #8 + #4: auth deep-link return + car-form draft ===
+- #8: saveAuthReturn()/afterAuthDestination() (views.js, sessionStorage cd-auth-return). Saved when a guest is
+  sent to sign in from: booking-form submit ({carId}), contact-owner inquiry ({carId}), chats ({hash:chats}).
+  After login/registration/complete-profile the user returns THERE — the exact car modal reopens (or chats) —
+  instead of always landing on the dashboard. Admin login unchanged. Verified end-to-end: guest booking → auth →
+  same car modal reopens, key cleared.
+- #4: car-form DRAFT persistence (sessionStorage cd-car-draft:<id|new>). Picking a photo opens the camera and
+  backgrounds the page — iOS sometimes reloads it, wiping the form. Text/select/checkbox/radio fields now save
+  on input/change and restore when the form reopens (make first, then models — dependent dropdowns), with a
+  "שוחזרה טיוטה" toast. NEVER saves photos/files (audit #24 privacy). Cleared on successful save. Verified:
+  type→close→reopen→all values restored.
+
+=== rev.105 (2026-07-15) — BUG: mobile cars page showed only 4 cars ===
+- The rev.82 mobile rule ".fleet-zone .grid > .car:nth-child(n+5){display:none}" (home = 4 cars, 2x2) ALSO hit
+  the full cars page, because cars() renders <div class="cars-page fleet-zone"> — on phones /#cars showed only
+  4 of all cars. Scoped the rule to body[data-page="home"] (the router stamps data-page per route).
+- Verified at 375px: home 4-of-6 visible (intended), cars page ALL visible (15/15, was 4).
+- NOTE: this bug ships in EVERY zip since rev.82, including the Codex MOBILE_FIXED zip (forked from rev.100).

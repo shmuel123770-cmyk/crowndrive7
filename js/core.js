@@ -2,7 +2,8 @@ export const $ = (selector, root = document) => root.querySelector(selector);
 export const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 export const esc = value => String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
 export const money = value => new Intl.NumberFormat('en-US', {style:'currency', currency:'USD', maximumFractionDigits:0}).format(Number(value || 0));
-export const fmtDate = value => value ? new Date(value).toLocaleString('he-IL') : '—';
+// Date + time WITHOUT seconds ("22.7.2026, 10:00", not "…10:00:00") — seconds are noise on booking/message times.
+export const fmtDate = value => value ? new Date(value).toLocaleString('he-IL', {dateStyle: 'short', timeStyle: 'short'}) : '—';
 export function toast(message) {
   const node = $('#toast');
   node.textContent = message;
@@ -16,6 +17,7 @@ let _modalReturnFocus = null;
 const _focusableSel = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 export function modal(html) {
   _modalReturnFocus = document.activeElement;
+  document.documentElement.classList.add('modal-open');  // lock the background from scrolling behind the modal
   $('#modal-root').innerHTML = `<div class="modal-backdrop"><section class="modal" role="dialog" aria-modal="true" tabindex="-1">${html}</section></div>`;
   const section = $('#modal-root .modal');
   if (!section) return;
@@ -33,6 +35,7 @@ export function modal(html) {
 }
 export function closeModal() {
   $('#modal-root').innerHTML = '';
+  document.documentElement.classList.remove('modal-open');
   const back = _modalReturnFocus; _modalReturnFocus = null;
   if (back && back.focus) { try { back.focus({preventScroll: true}); } catch {} }
 }
