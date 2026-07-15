@@ -1,4 +1,4 @@
-CrownDrive — FINAL build (2026-07-14, rev.109)
+CrownDrive — FINAL build (2026-07-14, rev.110)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
 rev.82 (2026-07-14) — personal-area bar SOLID+FIXED + home shows 4 cars on phones. Cumulative.
@@ -1297,3 +1297,7 @@ Base = my rev.107; imported from Codex (their fork of ~rev.100), after full revi
 - Password policy RELAXED per user: validPassword = 6+ chars, no complexity requirement (was Codex.s 12+ with
   upper/lower/digit). auth.js error text, register form minlength/hint, and the core.test.mjs policy test updated.
 - All suites pass: static-check, 129 scenarios, 11 node tests.
+
+=== rev.110 (2026-07-15) — WhatsApp preview swapped to the LIGHT promo ad ===
+- icons/og-ad.jpg replaced with the user.s light ad ("מקום אחד לכל השכרת רכב", 1200x1200 JPEG ~220KB).
+  Same URL as rev.109 (not yet deployed, so no crawler cache to bust). og/twitter tags unchanged.
