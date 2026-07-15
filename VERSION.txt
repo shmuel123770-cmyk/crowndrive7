@@ -1,4 +1,4 @@
-CrownDrive — FINAL build (2026-07-14, rev.106)
+CrownDrive — FINAL build (2026-07-14, rev.107)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
 rev.82 (2026-07-14) — personal-area bar SOLID+FIXED + home shows 4 cars on phones. Cumulative.
@@ -1253,3 +1253,12 @@ See התחל_כאן_גרסה_סופית.md to deploy. Remember to publish the up
   window.scrollTo({top:0,behavior:"instant"}) on route CHANGE only (instant, because the CSS sets
   scroll-behavior:smooth; data-driven re-renders don.t touch scroll). This was also why the user counted
   "12 of 15" — they landed mid-list. Verified: scrollY 1479 → click → cars page at 0, all 15 visible.
+
+=== rev.107 (2026-07-15) — REAL brand logo everywhere (was a generic blue car) ===
+- The PNG icons (icon-512/192, apple-touch, maskable) contained a GENERIC BLUE CAR icon — that is what WhatsApp
+  link previews and the browser tab showed. Rebuilt ALL of them from the user.s actual logo (extracted the
+  pasted original from the conversation, auto-cropped to the gold-bordered card in-browser, derived 192/180 via
+  sips; maskable = padded to 80% safe-zone). logo.svg (site header) was already correct.
+- og:image/twitter:image now point to a NEW file (icons/share-512.png) — WhatsApp caches previews per-URL, so
+  the old car would have stuck around; a new URL forces a fresh fetch. Added missing <link rel=apple-touch-icon>.
+- NOTE: WhatsApp may still show the old preview for chats where the link was ALREADY shared; new shares get the logo.
