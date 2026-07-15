@@ -53,6 +53,11 @@ let _modalReturnFocus = null;
 const _focusableSel = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 export function modal(html) {
   _modalReturnFocus = document.activeElement;
+  // Android/browser BACK closes the modal instead of leaving the page (mobile audit #11): opening a modal
+  // pushes one marked history entry (not stacked for modal-over-modal); popstate with a modal open = close it.
+  // UI closes (X / Escape / backdrop) tear down the DOM only and leave the entry — the next Back consumes it
+  // invisibly, so programmatic `closeModal(); location.hash=…` flows are never raced by an async history.back().
+  if (!history.state?.cdModal) { try { history.pushState({cdModal: true}, ''); } catch {} }
   document.documentElement.classList.add('modal-open');  // lock the background from scrolling behind the modal
   $('#modal-root').innerHTML = `<div class="modal-backdrop"><section class="modal" role="dialog" aria-modal="true" tabindex="-1">${html}</section></div>`;
   const section = $('#modal-root .modal');
@@ -82,6 +87,10 @@ export function closeModal() {
   const back = _modalReturnFocus; _modalReturnFocus = null;
   if (back && back.focus) { try { back.focus({preventScroll: true}); } catch {} }
 }
+// BACK pressed while a modal is open → close the modal (the pushed entry was just consumed). With no modal
+// open this is either a stale modal entry (ignore — nothing visible happens) or a real hash navigation,
+// which the router's hashchange listener handles on its own.
+if (typeof window !== 'undefined') window.addEventListener('popstate', () => { if ($('#modal-root .modal')) closeModal(); });
 // Paint #app only when the HTML actually changed. The Firebase listeners (cars/ratings/config/auth…)
 // resolve over ~1–2s and each used to fully rebuild the DOM — the "whole site flashes 5 times" on load.
 // paintApp() diffs the new HTML against what's on screen and touches the DOM only when it differs.

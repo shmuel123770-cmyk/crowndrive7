@@ -590,9 +590,9 @@ export function bindCarButtons() {
 // home page. Filtering to 'available' only is opt-in via the "זמינים כעת" filter. (Was 'available', which hid
 // every rented car from the cars page entirely.)
 const carFilters = readSession('cd-car-filters', {make: '', model: '', year: '', category: '', availability: 'all', sort: 'new'});
-function applyCarFilters(all) {
+function applyCarFilters(all, filters = carFilters) {
   let rows = all.filter(car => car.status !== 'hidden');
-  const f = carFilters;
+  const f = filters;
   if (f.availability === 'available') rows = rows.filter(car => car.status === 'available');
   if (f.make) rows = rows.filter(car => car.make === f.make);
   if (f.model) rows = rows.filter(car => car.model === f.model);
@@ -604,6 +604,43 @@ function applyCarFilters(all) {
   const avail = car => (car.status === 'available' ? 0 : 1);
   return rows.sort((a, b) => (avail(a) - avail(b)) || primary(a, b));
 }
+// Mobile filter bottom-sheet (audit #16): all the filters in one touch-friendly sheet, editing a TEMP copy —
+// a live result count updates as you pick, "נקה" resets, and only "הצגת התוצאות" applies + closes.
+function openFilterSheet(all, rerender, persistFilters) {
+  const temp = {...carFilters};
+  const opt = (value, label, current) => `<option value="${esc(value)}" ${value === current ? 'selected' : ''}>${esc(label)}</option>`;
+  const makes = [...new Set(all.map(c => c.make).filter(Boolean))].sort();
+  const years = [...new Set(all.map(c => String(c.year || '')).filter(Boolean))].sort((a, b) => b - a);
+  const modelOpts = () => `<option value="">כל הדגמים</option>${[...new Set(all.filter(c => !temp.make || c.make === temp.make).map(c => c.model).filter(Boolean))].sort().map(t => opt(t, t, temp.model)).join('')}`;
+  const count = () => applyCarFilters(all, temp).length;
+  modal(`<div class="modal-head"><h2>סינון ומיון</h2><button class="close" data-close-modal>×</button></div>
+    <div class="filter-sheet">
+      <div class="field"><label>יצרן</label><select id="fs-make"><option value="">כל היצרנים</option>${makes.map(t => opt(t, t, temp.make)).join('')}</select></div>
+      <div class="field"><label>דגם</label><select id="fs-model">${modelOpts()}</select></div>
+      <div class="field"><label>שנה</label><select id="fs-year"><option value="">כל השנים</option>${years.map(t => opt(t, t, temp.year)).join('')}</select></div>
+      <div class="field"><label>זמינות</label><select id="fs-availability">${opt('all', 'כל הרכבים', temp.availability)}${opt('available', 'זמינים כעת', temp.availability)}</select></div>
+      <div class="field"><label>מיון</label><select id="fs-sort">${opt('new', 'החדשים ביותר', temp.sort)}${opt('priceLow', 'מהזול ליקר', temp.sort)}${opt('priceHigh', 'מהיקר לזול', temp.sort)}</select></div>
+      <div class="field"><label>סוג רכב</label><div class="type-chips">${['סדאן', 'SUV', 'פיקאפ', 'מיניוואן'].map(t => `<button type="button" class="type-chip ${temp.category === t ? 'on' : ''}" data-fs-chip="${t}">${t}</button>`).join('')}</div></div>
+      <div class="sheet-actions"><button type="button" class="btn outline" id="fs-clear">נקה מסננים</button><button type="button" class="btn primary" id="fs-apply">הצגת ${count()} רכבים</button></div>
+    </div>`);
+  const sheet = document.querySelector('#modal-root .filter-sheet');
+  const refresh = () => {
+    sheet.querySelector('#fs-model').innerHTML = modelOpts();
+    sheet.querySelectorAll('[data-fs-chip]').forEach(c => c.classList.toggle('on', temp.category === c.dataset.fsChip));
+    sheet.querySelector('#fs-apply').textContent = `הצגת ${count()} רכבים`;
+  };
+  [['#fs-make', 'make'], ['#fs-model', 'model'], ['#fs-year', 'year'], ['#fs-availability', 'availability'], ['#fs-sort', 'sort']].forEach(([id, key]) => {
+    sheet.querySelector(id).onchange = e => { temp[key] = e.target.value; if (key === 'make') temp.model = ''; refresh(); };
+  });
+  sheet.querySelectorAll('[data-fs-chip]').forEach(chip => chip.onclick = () => { temp.category = temp.category === chip.dataset.fsChip ? '' : chip.dataset.fsChip; refresh(); });
+  sheet.querySelector('#fs-clear').onclick = () => { Object.assign(temp, {make: '', model: '', year: '', category: '', availability: 'all', sort: 'new'}); ['#fs-make', '#fs-year', '#fs-availability', '#fs-sort'].forEach(id => { const el = sheet.querySelector(id); el.value = temp[id.slice(4)] ?? ''; }); sheet.querySelector('#fs-availability').value = 'all'; sheet.querySelector('#fs-sort').value = 'new'; refresh(); };
+  sheet.querySelector('#fs-apply').onclick = () => { Object.assign(carFilters, temp); carsShown = CARS_PAGE; persistFilters(); closeModal(); rerender(); };
+}
+// Paged list (mobile audit #17): render at most this many cars, with a "show more" button for the rest.
+const CARS_PAGE = 24;
+let carsShown = CARS_PAGE;
+// How many filters differ from the defaults — shown as a badge on the mobile filter button (audit #16).
+const activeFilterCount = f => ['make', 'model', 'year', 'category'].filter(k => f[k]).length + (f.availability !== 'all' ? 1 : 0) + (f.sort !== 'new' ? 1 : 0);
 export function cars() {
   const all = list(store.cars);
   const rows = applyCarFilters(all);
@@ -623,6 +660,7 @@ export function cars() {
       <button type="button" class="btn gold" id="period-apply">חישוב מחיר לתאריכים</button>
     </div>
     ${periodNote}
+    <div class="filter-mobile"><button type="button" class="btn outline block" id="open-filters">סינון ומיון${activeFilterCount(carFilters) ? ` · ${activeFilterCount(carFilters)} פעילים` : ''}</button></div>
     <div class="filter-bar" id="filter-bar">
       <select id="f-make" aria-label="סינון לפי יצרן"><option value="">כל היצרנים</option>${[...new Set(all.map(c => c.make).filter(Boolean))].sort().map(t => opt(t, t, carFilters.make)).join('')}</select>
       <select id="f-model" aria-label="סינון לפי דגם"><option value="">כל הדגמים</option>${[...new Set(all.filter(c => !carFilters.make || c.make === carFilters.make).map(c => c.model).filter(Boolean))].sort().map(t => opt(t, t, carFilters.model)).join('')}</select>
@@ -632,13 +670,16 @@ export function cars() {
       ${(carFilters.make || carFilters.model || carFilters.year || carFilters.category || carFilters.availability !== 'all' || carFilters.sort !== 'new') ? '<button class="btn outline" id="f-clear">ניקוי</button>' : ''}
       <div class="type-chips">${['סדאן', 'SUV', 'פיקאפ', 'מיניוואן'].map(t => `<button class="type-chip ${carFilters.category === t ? 'on' : ''}" data-type-chip="${t}">${t}</button>`).join('')}</div>
     </div>
-    ${carGrid(rows, false, period)}</div>`;
+    ${carGrid(rows.slice(0, carsShown), false, period)}
+    ${rows.length > carsShown ? `<div class="see-all"><button type="button" class="btn primary see-all-btn" id="cars-more">הצגת עוד רכבים (${rows.length - carsShown})</button></div>` : ''}</div>`;
   if (!paintApp(html)) return;  // unchanged → keep DOM + handlers (avoids flicker + preserves open date-pickers)
   bindCarButtons();
   bindDateFields();
   const rerender = () => cars();
   const persistFilters = () => { try { sessionStorage.setItem('cd-car-filters', JSON.stringify(carFilters)); } catch {} };
-  const bind = (id, key) => { const el = document.querySelector(id); if (el) el.onchange = () => { carFilters[key] = el.value; if (key === 'make') carFilters.model = ''; persistFilters(); rerender(); }; };
+  const bind = (id, key) => { const el = document.querySelector(id); if (el) el.onchange = () => { carFilters[key] = el.value; if (key === 'make') carFilters.model = ''; carsShown = CARS_PAGE; persistFilters(); rerender(); }; };
+  document.querySelector('#cars-more')?.addEventListener('click', () => { carsShown += CARS_PAGE; rerender(); });
+  document.querySelector('#open-filters')?.addEventListener('click', () => openFilterSheet(all, rerender, persistFilters));
   bind('#f-make', 'make');
   bind('#f-model', 'model');
   bind('#f-year', 'year');
@@ -781,9 +822,20 @@ function openCar(id) {
       const s = new Date(data.startAt).getTime(), e = new Date(data.endAt).getTime();
       if (!onRequest && e > s && !carServesPeriod(car, s, e)) return toast('הרכב אינו מושכר לטווח שבחרתם');
       submitButtons.forEach(button => { button.disabled = true; button.setAttribute('aria-busy', 'true'); button.dataset.label = button.textContent; button.textContent = 'שולח…'; });
-      await createBooking(car, data);
+      const bookingId = await createBooking(car, data);
       try { sessionStorage.removeItem(draftKey); } catch {}
-      toast('ההזמנה נשלחה'); closeModal(); location.hash = 'dashboard';
+      closeModal();
+      // Clear success screen (mobile audit #26): booking number, status, what happens next, and a direct
+      // link to the personal area — instead of a toast that vanishes before the renter reads it.
+      modal(`<div class="modal-head"><h2>✓ הבקשה נשלחה!</h2><button class="close" data-close-modal>×</button></div>
+        <div class="booking-success">
+          <div class="summary"><span>מספר הזמנה</span><b dir="ltr">${esc(String(bookingId || '').slice(-7).toUpperCase())}</b></div>
+          <div class="summary"><span>רכב</span><b>${esc(car.make || '')} ${esc(car.model || '')}</b></div>
+          <div class="summary"><span>סטטוס</span><b><span class="status-badge pending">ממתינה לאישור</span></b></div>
+          <p class="mut">בעל הרכב קיבל את הבקשה. תקבלו עדכון ברגע שיאשר — ואז נבקש הוכחת תשלום ותיעוד לפני הנסיעה.</p>
+          <button class="btn primary block" data-route="dashboard">מעבר לאזור האישי</button>
+        </div>`);
+      document.querySelector('#modal-root [data-route]')?.addEventListener('click', () => closeModal());
     } catch (error) {
       toast(error.message);
       submitButtons.forEach(button => { button.disabled = false; button.removeAttribute('aria-busy'); button.textContent = button.dataset.label || 'שליחת בקשה'; });
