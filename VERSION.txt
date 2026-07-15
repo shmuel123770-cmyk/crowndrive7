@@ -1,4 +1,4 @@
-CrownDrive — FINAL build (2026-07-14, rev.110)
+CrownDrive — FINAL build (2026-07-14, rev.112)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
 rev.82 (2026-07-14) — personal-area bar SOLID+FIXED + home shows 4 cars on phones. Cumulative.
@@ -1301,3 +1301,26 @@ Base = my rev.107; imported from Codex (their fork of ~rev.100), after full revi
 === rev.110 (2026-07-15) — WhatsApp preview swapped to the LIGHT promo ad ===
 - icons/og-ad.jpg replaced with the user.s light ad ("מקום אחד לכל השכרת רכב", 1200x1200 JPEG ~220KB).
   Same URL as rev.109 (not yet deployed, so no crawler cache to bust). og/twitter tags unchanged.
+
+=== rev.111 (2026-07-15) — post-merge bug hunt (seams audit) ===
+- db.js (Codex) contained RAW control bytes (NUL/US/DEL) inside sanitizer regexes — file(1) saw it as binary
+  ("data"), grep refused to parse it, and text tooling could mangle it. Replaced with escaped
+  \\u0000-\\u001f\\u007f (identical behavior); file is clean UTF-8 again.
+- Seams audit passed: every db.js/media.js import used by my kept views-app.js exists with a matching
+  signature (sendMessage payload shapes, uploadPrivate(file,kind,entityId), etc.).
+- DEAD CODE → FEATURE: bindActions wired [data-payment] buttons but nothing ever emitted one — the renter.s
+  only payment path was buried in the booking chat evidence row. Approved bookings (no payment / rejected
+  payment) now show a gold "💳 דיווח על תשלום" button on the booking card → opens the payment modal with the
+  amount PRE-FILLED READ-ONLY from the server quote (verified live: 150.00, readonly:true).
+- Verified on merged build: booking DRAFT survives close/reopen; calendar opens; all 13 dashboard tabs render
+  with zero errors/undefined/NaN; console clean.
+
+=== rev.112 (2026-07-15) — REGRESSION: mobile cars grid back to 2 columns ===
+- The merge (rev.108) brought a Codex @media(max-width:430px){.grid{grid-template-columns:1fr}} block — their
+  "single column on phones" philosophy — overriding the user.s explicit 2-columns/4-cars requirement on every
+  phone ≤430px, plus one-column card sizing (bigger fonts, 16/9). Removed the grid override + the 1-col card
+  sizing lines; KEPT their unrelated good tuning in that block (quick-search sizing, hero-stats radius).
+  The ≤820px 2-col rule, the ≤600px compact-card tuning, the ≤319px true-fallback, and the scoped home 4-cap
+  are the single source of truth again. Verified at 375px: home 2 cols/4 visible; cars page 2 cols/15 visible.
+- MERGE LESSON recorded: Codex leans single-column on mobile — every future import must be checked against the
+  2×2 cars-grid requirement.
