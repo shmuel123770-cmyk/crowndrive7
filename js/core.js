@@ -1,3 +1,6 @@
+// The SINGLE source of the current terms/privacy version on the client (server twin: netlify/functions/_terms.mjs).
+// Bump BOTH when the legal documents change — signed-in users are then asked to re-consent.
+export const TERMS_VERSION = '2026-07-14-rev101';
 export const $ = (selector, root = document) => root.querySelector(selector);
 export const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
 export const esc = value => String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));

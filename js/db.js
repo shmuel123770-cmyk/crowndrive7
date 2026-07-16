@@ -155,7 +155,7 @@ export async function setCarFeatured(id, featured) {
 export async function createBooking(car, data) { return (await api('booking-create', {carId: car.id, ...data})).id; }
 // Pre-booking inquiry: open (or reuse) a direct renter↔owner conversation about a car. Returns the inquiryId.
 export async function startInquiry(carId) { return (await api('inquiry-start', {carId})).inquiryId; }
-export async function setBookingStatus(id, status) { return api('booking-action', {action: 'status', bookingId: id, status}); }
+export async function setBookingStatus(id, status, reason = '') { return api('booking-action', {action: 'status', bookingId: id, status, ...(reason ? {reason} : {})}); }
 export async function savePayment(id, data) { return api('payment-submit', {bookingId: id, ...data}); }
 export async function registerDocument(documentType, path) { return api('document-register', {documentType, path}); }
 export async function approveVerification(uid, status, note = '') { return api('verification-review', {uid, status, note}); }

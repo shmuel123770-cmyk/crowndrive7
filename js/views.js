@@ -1,5 +1,5 @@
 import {store, list, myRole, myBookings, myCars, carRating, carRatingCount, userRating} from './store.js';
-import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail, paintApp, resetPaint, fieldError} from './core.js';
+import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail, paintApp, resetPaint, fieldError, TERMS_VERSION} from './core.js';
 import {register, login, logout, sendVerify, refreshEmailStatus, sendPasswordReset, createOwnProfile, signInGuest} from './auth.js';
 import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, startInquiry, setBookingStatus, registerDocument, approveVerification, sendMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction, setMaintenance, setCarStatus, setCarFeatured, checkIsAdmin} from './db.js';
 import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './media.js';
@@ -403,7 +403,7 @@ export function home() {
     <div class="aur aur-1" aria-hidden="true"></div><div class="aur aur-2" aria-hidden="true"></div><div class="aur aur-3" aria-hidden="true"></div>
     ${blueprintSvg}
     <div class="hero-in">
-      <span class="kicker">קראון הייטס · ברוקלין</span>
+      <span class="kicker">${(() => { const n = String(store.profile?.name || '').trim().split(/\s+/)[0]; return n ? `שלום, ${esc(n)} 👋` : 'קראון הייטס · ברוקלין'; })()}</span>
       <h1>השכרת רכבים <em>קראון הייטס</em></h1>
       <p class="hero-copy">בחרו זמן איסוף והחזרה — וקבלו רק רכבים שמתאימים לחיפוש.</p>
       <div class="quick-search" aria-label="חיפוש מהיר לרכב">
@@ -439,9 +439,21 @@ export function home() {
     <div class="trust-card"><div class="trust-icon">${ICON.chat}</div><h3>שירות לקוחות</h3><p>מענה מהיר ואישי לכל שאלה, ישירות בצ׳אט.</p></div>
   </div></section>
   <section class="info-section reveal" id="contact"><div class="foot-cta"><p class="kicker">צור קשר</p><h2>צריכים עזרה? אנחנו כאן</h2><p>צ׳אט ישיר עם שירות הלקוחות — מענה מהיר לכל שאלה.</p><button class="btn gold" id="contact-support">פתיחת צ׳אט עם התמיכה</button></div></section>
-  <footer class="site-foot"><span${APP_BUILD ? ` title="build ${esc(APP_BUILD)}"` : ''}>© Crown Drive · קראון הייטס${APP_VERSION ? ` · גרסה ${esc(APP_VERSION)}` : ''}</span><nav class="foot-links"><a href="privacy.html">פרטיות</a><a href="terms.html">תנאי שימוש</a></nav><button type="button" class="admin-entry" id="admin-entry">כניסת מנהל</button></footer>`;
+  <footer class="site-foot"><span${APP_BUILD ? ` title="build ${esc(APP_BUILD)}"` : ''}>© Crown Drive · קראון הייטס${APP_VERSION ? ` · גרסה ${esc(APP_VERSION)}` : ''}</span><nav class="foot-links"><a href="privacy.html">פרטיות</a><a href="terms.html">תנאי שימוש</a></nav><button type="button" class="admin-entry" id="admin-entry">כניסת מנהל</button></footer>
+  <button type="button" class="search-pill" id="search-pill" hidden aria-label="חזרה לחיפוש">${ICON.search || '🔍'} חיפוש רכב</button>`;
   if (!paintApp(html)) return;  // nothing changed → keep DOM + handlers (no flicker on repeated data events)
   bindCarButtons();
+  // Floating search pill (app-feel): once the hero search scrolls out of view, a fixed pill above the
+  // bottom nav brings the user back to it with one tap. Phones only (CSS-gated).
+  const searchPill = document.querySelector('#search-pill');
+  const quickSearch = document.querySelector('.quick-search');
+  if (searchPill && quickSearch && !searchPill.dataset.bound) {
+    searchPill.dataset.bound = '1';
+    const syncPill = () => { if (searchPill.isConnected) searchPill.hidden = quickSearch.getBoundingClientRect().bottom > 0; };
+    window.addEventListener('scroll', syncPill, {passive: true});
+    syncPill();
+    searchPill.onclick = () => window.scrollTo({top: 0, behavior: 'smooth'});
+  }
   bindDateFields();
   document.querySelector('#cta-add-car')?.addEventListener('click', () => {
     const role = myRole();
@@ -780,7 +792,7 @@ export function openCar(id) {
   const car = {id, ...store.cars[id]};
   if (!car.id) return toast('הרכב לא נמצא');
   const photos = carPhotoList(car);
-  const gallery = photos.length ? `<div class="gallery"><div class="gallery-main"><img id="gallery-img" ${carImgAttrs(photos[0], '(max-width:820px) 100vw, 780px')} alt="${esc(`${car.make || ''} ${car.model || ''}`)}">${photos.length > 1 ? `<span class="gallery-count" id="gallery-count" aria-live="polite">1 מתוך ${photos.length}</span>` : ''}</div>${photos.length > 1 || car.videoUrl ? `<div class="gallery-thumbs">${photos.map((p, i) => `<button class="thumb ${i === 0 ? 'active' : ''}" data-photo="${esc(p)}" data-idx="${i}"><img src="${esc(wikiThumb(p, 250) || p)}" alt="תמונה ${i + 1}"></button>`).join('')}${car.videoUrl ? `<button class="thumb thumb-video" data-video="${esc(car.videoUrl)}">▶</button>` : ''}</div>` : ''}</div>` : `<img class="modal-car-image" id="gallery-img" ${carImgAttrs(carImage(car), '(max-width:820px) 100vw, 780px')} alt="${esc(car.make || '')}">`;
+  const gallery = photos.length ? `<div class="gallery"><div class="gallery-main"><img id="gallery-img" ${carImgAttrs(photos[0], '(max-width:820px) 100vw, 780px')} alt="${esc(`${car.make || ''} ${car.model || ''}`)}">${photos.length > 1 ? `<span class="gallery-count" id="gallery-count" aria-live="polite">1 מתוך ${photos.length}</span>` : ''}</div>${photos.length > 1 || car.videoUrl ? `<div class="gallery-thumbs">${photos.map((p, i) => `<button class="thumb ${i === 0 ? 'active' : ''}" data-photo="${esc(p)}" data-idx="${i}"><img src="${esc(wikiThumb(p, 250) || p)}" alt="תמונה ${i + 1}"></button>`).join('')}${car.videoUrl ? `<button class="thumb thumb-video" data-video="${esc(car.videoUrl)}">▶</button>` : ''}</div>` : ''}${Array.isArray(car.photoCredits) && car.photoCredits.length ? `<small class="photo-credit">מקור תמונות: ${car.photoCredits.map(c => `${esc(c.title || 'Wikimedia Commons')}${c.license ? ' · ' + esc(c.license) : ''}`).join(' | ')}</small>` : ''}</div>` : `<img class="modal-car-image" id="gallery-img" ${carImgAttrs(carImage(car), '(max-width:820px) 100vw, 780px')} alt="${esc(car.make || '')}">`;
   const reviews = carReviews(car.id);
   const canRate = store.user && myBookings().some(b => b.carId === car.id && b.renterUid === store.user.uid && b.status === 'done');
   const rateNote = store.user && !canRate ? '<p class="rate-note">רק משתמש ששכר את הרכב בפועל יכול לדרג אותו — הדירוג נפתח מההזמנה לאחר סיום ההשכרה.</p>' : '';
@@ -897,7 +909,7 @@ export function openCar(id) {
       if (!data.startAt || !data.endAt) return toast('התאריך או השעה אינם תקינים');
       data.timezone = 'America/New_York';
       data.termsAccepted = data.termsAccepted === 'on';
-      data.termsVersion = '2026-07-14-rev101';
+      data.termsVersion = TERMS_VERSION;
       data.requestId = requestId;
       // Immediate feedback for a range the car's rental mode doesn't cover (the server also enforces this).
       const s = new Date(data.startAt).getTime(), e = new Date(data.endAt).getTime();

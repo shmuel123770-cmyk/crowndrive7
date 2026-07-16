@@ -1,6 +1,6 @@
 import {auth, db} from './firebase.js';
 import {api} from './api.js';
-import {validPassword} from './core.js';
+import {validPassword, TERMS_VERSION} from './core.js';
 import {startPrivate, stopPrivate} from './store.js';
 
 // Create the user's own profile directly (works even if the server functions are
@@ -39,8 +39,8 @@ export async function createOwnProfile({name, phone, role, legalAccepted = false
       role: chosenRole,
       createdAt: Date.now(),
       legalAcceptance: legalAccepted === true ? {
-        termsVersion: txt(termsVersion, 60) || '2026-07-14-rev101',
-        privacyVersion: '2026-07-14-rev101',
+        termsVersion: txt(termsVersion, 60) || TERMS_VERSION,
+        privacyVersion: TERMS_VERSION,
         acceptedAt: Date.now(),
       } : null,
       verification: {email: !!user.emailVerified, licenseFront: false, licenseBack: false, selfie: false},

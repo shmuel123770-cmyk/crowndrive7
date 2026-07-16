@@ -1,5 +1,5 @@
 import {store, list, myRole, myBookings, myCars, carRating, carRatingCount, userRating} from './store.js';
-import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail, paintApp, resetPaint} from './core.js';
+import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail, paintApp, resetPaint, TERMS_VERSION} from './core.js';
 import {register, login, logout, sendVerify, refreshEmailStatus, sendPasswordReset, createOwnProfile, signInGuest} from './auth.js';
 import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, startInquiry, setBookingStatus, registerDocument, approveVerification, sendMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction, setMaintenance, setCarStatus, setCarFeatured, checkIsAdmin} from './db.js';
 import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './media.js';
@@ -50,6 +50,30 @@ export function dashboard() {
   else if (role === 'renter') renterDashboard(store.dashTab);
   else if (!store.adminChecked || !store.profileLoaded) app().innerHTML = '<div class="app-loader"><div class="spinner"></div><p>טוען את האזור האישי…</p></div>';
   else completeProfile();
+  maybeReconsent();
+}
+
+// Re-consent (audit #10): when the terms/privacy version moves past what the user accepted (or an old
+// account has no acceptance record at all), a one-time-per-session dialog asks them to read + confirm.
+// Booking itself re-collects consent per booking, so this keeps the USER-LEVEL record current.
+let reconsentShownAt = '';
+function maybeReconsent() {
+  if (!store.user || store.user.isAnonymous || !store.profileLoaded) return;
+  if (store.profile?.legalAcceptance?.termsVersion === TERMS_VERSION) return;
+  if (reconsentShownAt === store.user.uid) return;  // once per session per account
+  reconsentShownAt = store.user.uid;
+  modal(`<div class="modal-head"><h2>עדכנו את התנאים</h2><button class="close" data-close-modal>×</button></div>
+    <p>עדכנו את <a href="terms.html" target="_blank" rel="noopener">תנאי השימוש</a> ואת <a href="privacy.html" target="_blank" rel="noopener">מדיניות הפרטיות</a>. כדי להמשיך להשתמש בכל האפשרויות, אנא קראו ואשרו את הגרסה העדכנית.</p>
+    <button class="btn primary block" id="reconsent-ok">קראתי ואני מאשר/ת</button>`);
+  document.querySelector('#reconsent-ok')?.addEventListener('click', async () => {
+    const btn = document.querySelector('#reconsent-ok');
+    btn.disabled = true;
+    try {
+      const result = await api('profile-save', {action: 'accept-terms'});
+      if (store.profile) store.profile.legalAcceptance = {termsVersion: result.termsVersion, acceptedAt: Date.now()};
+      closeModal(); toast('תודה! ההסכמה נרשמה');
+    } catch (error) { toast(error.message); btn.disabled = false; }
+  });
 }
 
 // The account exists in Firebase Auth but has no profile in the DB (old broken
@@ -387,7 +411,7 @@ function bookingList(bookings, role) {
       ? `${pmt.status === 'approved' ? '<span class="pill ok">תשלום אושר</span>' : pmt.status === 'rejected' ? '<span class="pill warn">תשלום נדחה</span>' : pmt.status === 'pending' ? '<span class="pill warn">ממתין לאישור</span>' : ''}<button class="btn outline" data-view-payment="${booking.id}">הוכחת תשלום</button>${pmt.status === 'pending' ? `<button class="btn primary" data-pay-approve="${booking.id}">אישור תשלום</button><button class="btn danger" data-pay-reject="${booking.id}">דחייה</button>` : ''}`
       : '';
     const renterPaymentNote = role === 'renter' && pmt ? `<p class="ev-note">${pmt.status === 'approved' ? '✓ התשלום שלך אושר על ידי בעל הרכב.' : pmt.status === 'rejected' ? '✗ התשלום נדחה — שלחו הוכחה מעודכנת בצ׳אט.' : '⏳ הוכחת התשלום ממתינה לאישור בעל הרכב.'}</p>` : '';
-    return `<article class="booking-card"><div class="booking-main"><div><small>הזמנה ${esc(booking.id.slice(-7))}</small><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3><p>${fmtDate(booking.startAt)} — ${fmtDate(booking.endAt)}</p>${booking.quote?.total ? `<p class="bk-total">${money(booking.quote.total)}</p>` : ''}${booking.status === 'pending' && booking.pendingExpiresAt ? `<p class="bk-expiry">ממתינה לאישור עד ${fmtDate(booking.pendingExpiresAt)}</p>` : ''}</div><span class="status-badge ${esc(booking.status)}">${statusLabel(booking.status)}</span></div><div class="chips">${role === 'renter' && booking.status === 'approved' && (!pmt || pmt.status === 'rejected') ? `<button class="btn gold" data-payment="${booking.id}">💳 דיווח על תשלום</button>` : ''}${role === 'owner' && booking.status === 'pending' ? `<button class="btn primary" data-status="approved" data-booking="${booking.id}">אישור</button><button class="btn danger" data-status="rejected" data-booking="${booking.id}">דחייה</button>` : ''}${role === 'owner' && booking.status === 'approved' ? `<button class="btn gold ${evidenceDone ? '' : 'soft-disabled'}" data-status="active" data-booking="${booking.id}">התחלת השכרה</button>` : ''}${role === 'owner' && booking.status === 'active' ? `<button class="btn gold" data-status="done" data-booking="${booking.id}">סיום השכרה</button>` : ''}${role === 'owner' && ['pending','approved','active'].includes(booking.status) ? `<button class="btn outline" data-renter="${booking.renterUid}">פרטי שוכר</button>` : ''}${['approved','active'].includes(booking.status) ? `<button class="btn outline" data-address="${booking.id}">כתובת איסוף</button>` : ''}${['pending','approved','active'].includes(booking.status) ? `<button class="btn outline" data-chat="${booking.id}">צ׳אט</button>` : ''}${car.id ? `<button class="btn outline" data-view-car="${esc(car.id)}">פרטי הרכב</button>` : ''}${role === 'renter' && booking.status === 'active' ? `<button class="btn outline" data-handover="${booking.id}" data-stage="return">תיעוד החזרה</button>` : ''}${paymentSection}${['owner','admin'].includes(role) && booking.handover ? `<button class="btn outline" data-view-handover="${booking.id}">צפייה בתיעוד</button>` : ''}${role === 'admin' ? `<select class="admin-status-select" data-admin-status="${booking.id}"><option value="">שינוי סטטוס…</option><option value="approved">אישור</option><option value="rejected">דחייה</option><option value="active">התחלת השכרה</option><option value="done">סיום</option><option value="cancelled">ביטול</option></select><button class="btn outline" data-admin-note="${booking.id}">הערת מנהל</button>` : ''}${['renter', 'owner'].includes(role) && ['pending', 'approved'].includes(booking.status) ? `<button class="btn outline" data-cancel-booking="${booking.id}">ביטול הזמנה</button>` : ''}${ratingButtons}</div>${booking.adminNote || booking.adminAmount !== undefined ? `<p class="ev-note">הערת מנהל: ${esc(booking.adminNote || '')}${booking.adminAmount !== undefined ? ` · סכום מתוקן: ${money(booking.adminAmount)}` : ''}</p>` : ''}${renterPaymentNote}${role === 'renter' && booking.status === 'approved' ? `<p class="ev-note">לפני תחילת ההשכרה שלחו בצ׳אט: סרטון חוץ, תמונת דלק, קילומטראז׳ והוכחת תשלום.</p>` : ''}</article>`;
+    return `<article class="booking-card"><div class="booking-main"><div><small>הזמנה ${esc(booking.id.slice(-7))}</small><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3><p>${fmtDate(booking.startAt)} — ${fmtDate(booking.endAt)}</p>${booking.quote?.total ? `<p class="bk-total">${money(booking.quote.total)}</p>` : ''}${booking.status === 'pending' && booking.pendingExpiresAt ? `<p class="bk-expiry">ממתינה לאישור עד ${fmtDate(booking.pendingExpiresAt)}</p>` : ''}</div><span class="status-badge ${esc(booking.status)}">${statusLabel(booking.status)}</span></div><div class="chips">${role === 'renter' && booking.status === 'approved' && (!pmt || pmt.status === 'rejected') ? `<button class="btn gold" data-payment="${booking.id}">💳 דיווח על תשלום</button>` : ''}${role === 'owner' && booking.status === 'pending' ? `<button class="btn primary" data-status="approved" data-booking="${booking.id}">אישור</button><button class="btn danger" data-status="rejected" data-booking="${booking.id}">דחייה</button>` : ''}${role === 'owner' && booking.status === 'approved' ? `<button class="btn gold ${evidenceDone ? '' : 'soft-disabled'}" data-status="active" data-booking="${booking.id}">התחלת השכרה</button>` : ''}${role === 'owner' && booking.status === 'active' ? `<button class="btn gold" data-status="done" data-booking="${booking.id}">סיום השכרה</button>` : ''}${role === 'owner' && ['pending','approved','active'].includes(booking.status) ? `<button class="btn outline" data-renter="${booking.renterUid}">פרטי שוכר</button>` : ''}${['approved','active'].includes(booking.status) ? `<button class="btn outline" data-address="${booking.id}">כתובת איסוף</button>` : ''}${['pending','approved','active'].includes(booking.status) ? `<button class="btn outline" data-chat="${booking.id}">צ׳אט</button>` : ''}${car.id ? `<button class="btn outline" data-view-car="${esc(car.id)}">פרטי הרכב</button>` : ''}${role === 'renter' && booking.status === 'active' ? `<button class="btn outline" data-handover="${booking.id}" data-stage="return">תיעוד החזרה</button>` : ''}${paymentSection}${['owner','admin'].includes(role) && booking.handover ? `<button class="btn outline" data-view-handover="${booking.id}">צפייה בתיעוד</button>` : ''}${role === 'admin' ? `<select class="admin-status-select" data-admin-status="${booking.id}"><option value="">שינוי סטטוס…</option><option value="approved">אישור</option><option value="rejected">דחייה</option><option value="active">התחלת השכרה</option><option value="done">סיום</option><option value="cancelled">ביטול</option></select><button class="btn outline" data-admin-note="${booking.id}">הערת מנהל</button>` : ''}${['renter', 'owner'].includes(role) && ['pending', 'approved'].includes(booking.status) ? `<button class="btn outline" data-cancel-booking="${booking.id}">ביטול הזמנה</button>` : ''}${ratingButtons}</div>${booking.adminNote || booking.adminAmount !== undefined ? `<p class="ev-note">הערת מנהל: ${esc(booking.adminNote || '')}${booking.adminAmount !== undefined ? ` · סכום מתוקן: ${money(booking.adminAmount)}` : ''}</p>` : ''}${booking.status === 'cancelled' && (booking.cancelledByRole || booking.cancelReason) ? `<p class="ev-note">בוטלה${booking.cancelledByRole ? ` על ידי ${({renter: 'השוכר', owner: 'בעל הרכב', admin: 'המנהל'})[booking.cancelledByRole] || ''}` : ''}${booking.cancelReason ? ` · סיבה: ${esc(booking.cancelReason)}` : ''}</p>` : ''}${renterPaymentNote}${role === 'renter' && booking.status === 'approved' ? `<p class="ev-note">לפני תחילת ההשכרה שלחו בצ׳אט: סרטון חוץ, תמונת דלק, קילומטראז׳ והוכחת תשלום.</p>` : ''}</article>`;
   }).join('') : emptyState(ICON.calendar, role === 'renter' ? 'אין לך הזמנות עדיין' : 'אין הזמנות עדיין', role === 'renter' ? 'מצאו רכב מהצי שלנו והזמינו — זה מהיר ופשוט.' : 'כשתתקבל בקשת הזמנה היא תופיע כאן.', role === 'renter' ? '<button class="btn primary" data-route="cars">חיפוש רכב</button>' : '')}</div>${listMoreBtn(`bookings-${role}`, sorted.length)}`;
 }
 
@@ -412,9 +436,11 @@ function bindActions() {
   });
   // audit #19: renter/owner can cancel a pending/approved booking themselves (with confirmation).
   document.querySelectorAll('[data-cancel-booking]').forEach(button => button.onclick = async () => {
-    if (!confirm('לבטל את ההזמנה?')) return;
+    // The reason is optional but recorded (audit #12) — Escape/ביטול in the prompt aborts the whole action.
+    const reason = prompt('לבטל את ההזמנה? אפשר לציין סיבה (רשות):', '');
+    if (reason === null) return;
     button.disabled = true;
-    try { await setBookingStatus(button.dataset.cancelBooking, 'cancelled'); toast('ההזמנה בוטלה'); }
+    try { await setBookingStatus(button.dataset.cancelBooking, 'cancelled', reason.trim()); toast('ההזמנה בוטלה'); }
     catch (error) { toast(error.message); button.disabled = false; }
   });
   document.querySelectorAll('[data-chat]').forEach(button => button.onclick = () => openChatThread(`b:${button.dataset.chat}`));
@@ -732,7 +758,7 @@ function chatItems() {
         ? {key: `a:${u.id}`, emoji: ICON.chat, title: u.name, subtitle: `לקוח לא רשום${adminChatActivity[u.id] ? ' · ' + fmtDate(adminChatActivity[u.id]) : ''}`, live: true, unread: adminThreadUnread(u.id)}
         : {key: `a:${u.id}`, avatar: avatarHtml(u, 42), title: u.name || u.email || 'משתמש', subtitle: `${roleName(u.role)}${adminChatActivity[u.id] ? ' · ' + fmtDate(adminChatActivity[u.id]) : ''}`, live: true, unread: adminThreadUnread(u.id)});
     // Inquiry (pre-booking) conversations — the admin could always READ them but had no way in from
-    // this screen (audit #48). store.inquiries is the FULL tree for admins; recent 100 is plenty.
+    // this screen (audit #48). ALL of them, newest first (user decision: no limits).
     const inquiryThreads = list(store.inquiries)
       .filter(inq => {
         const car = store.cars[inq.carId] || {};
@@ -740,7 +766,6 @@ function chatItems() {
         return !query || `פנייה ${car.make || ''} ${car.model || ''} ${renter.name || ''} ${car.ownerName || ''}`.toLowerCase().includes(query);
       })
       .sort((a, b) => Number(b.updatedAt || b.createdAt || 0) - Number(a.updatedAt || a.createdAt || 0))
-      .slice(0, 100)
       .map(inq => {
         const car = store.cars[inq.carId] || {};
         const renter = store.users[inq.renterUid] || {};
@@ -1058,6 +1083,8 @@ export function carForm(car = null) {
   const editing = Boolean(car?.id);
   // Photo manager state: up to 6 photos, one marked as main.
   const photos = editing ? carPhotoList(car).slice(0, 6) : [];
+  // Attribution for Wikimedia-sourced photos (audit #37) — Commons licenses require credit.
+  const photoCredits = editing && Array.isArray(car?.photoCredits) ? car.photoCredits.slice() : [];
   let mainUrl = car?.photoUrl || photos[0] || '';
   let videoUrl = car?.videoUrl || '';
   const knownMake = CAR_MAKES.includes(car?.make);
@@ -1242,6 +1269,11 @@ export function carForm(car = null) {
   form.addEventListener('input', saveDraft);
   form.addEventListener('change', saveDraft);
 
+  // Wikimedia images are REHOSTED onto our own storage/CDN (audit #36): a hot-linked external URL
+  // lets its host see every visitor and even swap the picture later. Falls back to the original
+  // link if the rehost fails, so the owner is never blocked.
+  const rehostWikiImage = async url => { try { return (await api('image-rehost', {url})).url || url; } catch { return url; } };
+
   // The site "chats" a photo suggestion the moment the owner picks the spec.
   let lastSuggest = '';
   async function suggestPhoto() {
@@ -1256,8 +1288,13 @@ export function carForm(car = null) {
     try {
       const result = await api('car-image-search', {make, model, year: form.year.value}).catch(() => null);
       if (!result?.url) { box.innerHTML = ''; return; }
-      box.innerHTML = `<div class="suggest-bubble"><img class="suggest-img" src="${esc(result.url)}" alt=""><div class="suggest-text"><b>מצאתי תמונה של ${esc(make)} ${esc(model)}</b><small>רוצים שאוסיף אותה לגלריה?</small><div class="chips"><button type="button" class="btn primary" id="suggest-yes">כן, הוסף</button><button type="button" class="btn outline" id="suggest-no">לא תודה</button></div></div></div>`;
-      box.querySelector('#suggest-yes').onclick = () => { addPhoto(result.url); box.innerHTML = ''; toast('התמונה נוספה לגלריה'); };
+      box.innerHTML = `<div class="suggest-bubble"><img class="suggest-img" src="${esc(result.url)}" alt=""><div class="suggest-text"><b>מצאתי תמונה של ${esc(make)} ${esc(model)}</b><small>רוצים שאוסיף אותה לגלריה?</small><small class="mut">התמונה להמחשה — ייתכן דגם או שנתון שונה</small><div class="chips"><button type="button" class="btn primary" id="suggest-yes">כן, הוסף</button><button type="button" class="btn outline" id="suggest-no">לא תודה</button></div></div></div>`;
+      box.querySelector('#suggest-yes').onclick = async () => {
+        box.innerHTML = '<div class="suggest-bubble">מאחסן את התמונה…</div>';
+        const stored = await rehostWikiImage(result.url);
+        addPhoto(stored); photoCredits.push({url: stored, title: result.title || '', license: result.license || ''});
+        box.innerHTML = ''; toast('התמונה נוספה לגלריה');
+      };
       box.querySelector('#suggest-no').onclick = () => { box.innerHTML = ''; };
     } catch { box.innerHTML = ''; }
   }
@@ -1281,8 +1318,11 @@ export function carForm(car = null) {
       note.textContent = 'מחפש תמונה רשמית…';
       const result = await api('car-image-search', {make, model, year: form.year.value, trim: form.trim.value});
       if (!result?.url) throw new Error('לא נמצאה תמונה מתאימה — אפשר להעלות תמונה מהגלריה');
-      addPhoto(result.url);
-      note.textContent = `${result.title || 'תמונה'} ${result.license ? '· ' + result.license : ''}`;
+      note.textContent = 'מאחסן את התמונה…';
+      const stored = await rehostWikiImage(result.url);
+      addPhoto(stored);
+      photoCredits.push({url: stored, title: result.title || '', license: result.license || ''});
+      note.textContent = `${result.title || 'תמונה'} ${result.license ? '· ' + result.license : ''} · להמחשה — ייתכן דגם/שנתון שונה`;
     } catch (error) { toast(error.message); note.textContent = error.message; }
   };
   document.querySelector('#video-file').onchange = async event => {
@@ -1318,6 +1358,7 @@ export function carForm(car = null) {
     if (!weekendOn) data.weekendPrice = 0;
     data.make = make; data.model = model;
     data.photos = photos;
+    data.photoCredits = photoCredits.filter(credit => photos.includes(credit.url));  // only photos still in the gallery
     data.photoUrl = mainUrl || photos[0];
     data.videoUrl = videoUrl;
     delete data.makeSelect; delete data.modelSelect;

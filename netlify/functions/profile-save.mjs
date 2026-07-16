@@ -1,4 +1,5 @@
 import {getAdmin, verify, json, profile, cleanText, audit, isAdmin, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
+import {TERMS_VERSION} from './_terms.mjs';
 export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
@@ -9,6 +10,14 @@ export async function handler(event) {
     const db = getAdmin().database();
     const ref = db.ref(`users/${token.uid}`);
     let existing = await profile(token.uid);
+    // Re-consent after a terms/privacy update (audit #10): the client shows the "התנאים עודכנו" dialog
+    // when the stored version differs from the current one, and records the fresh acceptance here
+    // (the legalAcceptance node is deliberately not client-writable after registration).
+    if (body.action === 'accept-terms') {
+      await db.ref(`users/${token.uid}/legalAcceptance`).set({termsVersion: TERMS_VERSION, privacyVersion: TERMS_VERSION, acceptedAt: Date.now(), source: 're-consent'});
+      await audit(token.uid, 'terms_reconsent', 'user', token.uid, {version: TERMS_VERSION});
+      return json(200, {ok: true, termsVersion: TERMS_VERSION});
+    }
     if (body.action === 'create') {
       if (existing) return json(200, {ok: true});
       const role = ['renter', 'owner'].includes(body.role) ? body.role : '';

@@ -37,6 +37,10 @@ function publicCar(data, ownerUid, existing = {}, ownerName = '') {
     deliveryCost: number(data.deliveryCost ?? existing.deliveryCost, 0, 100000, 0),
     photoUrl,
     photos,
+    // Attribution for Wikimedia-sourced photos (audit #37) — Commons licenses require credit.
+    photoCredits: Array.isArray(data.photoCredits)
+      ? data.photoCredits.slice(0, 6).map(c => ({url: httpsUrl(c?.url), title: cleanText(c?.title, 200), license: cleanText(c?.license, 100)})).filter(c => c.url)
+      : (Array.isArray(existing.photoCredits) ? existing.photoCredits : []),
     videoUrl: httpsUrl(data.videoUrl ?? existing.videoUrl),
     rentalMode: ['hourly', 'hourly_daily', 'long_term'].includes(data.rentalMode) ? data.rentalMode : (existing.rentalMode || 'hourly_daily'),
     priceOnRequest: Boolean(data.priceOnRequest ?? existing.priceOnRequest),

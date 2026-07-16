@@ -65,7 +65,11 @@ admin.initializeApp = () => fakeApp;
 admin.credential = {cert: () => ({})};
 process.env.FIREBASE_SERVICE_ACCOUNT_JSON = '{}';
 // media-upload writes via the Firebase Storage REST API — stub fetch to accept the upload.
-globalThis.fetch = async () => ({ok: true, status: 200, json: async () => ({name: 'obj', downloadTokens: 'tok-123'}), text: async () => ''});
+// image-rehost downloads from upload.wikimedia.org — serve it a tiny REAL PNG (magic bytes matter).
+const stubPng = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52]);
+globalThis.fetch = async url => String(url).includes('upload.wikimedia.org')
+  ? {ok: true, status: 200, headers: {get: () => String(stubPng.length)}, arrayBuffer: async () => stubPng.buffer.slice(stubPng.byteOffset, stubPng.byteOffset + stubPng.byteLength), json: async () => ({}), text: async () => ''}
+  : {ok: true, status: 200, json: async () => ({name: 'obj', downloadTokens: 'tok-123'}), text: async () => ''};
 
 const call = (handler, uid, body) => handler({httpMethod: 'POST', headers: {authorization: `Bearer ${uid}`}, body: JSON.stringify(body)});
 let passed = 0, failed = 0;
@@ -74,7 +78,7 @@ const S = r => r.statusCode;
 const B = r => JSON.parse(r.body);
 
 const fn = {};
-for (const f of ['profile-save', 'car-action', 'booking-create', 'booking-action', 'message-send', 'payment-submit', 'rating-submit', 'document-register', 'verification-review', 'private-car-details', 'user-private-profile', 'media-sign-upload', 'media-upload', 'media-migrate', 'media-sign-read', 'car-media-public', 'admin-action', 'migrate-legacy', 'car-image-search', 'inquiry-start'])
+for (const f of ['profile-save', 'car-action', 'booking-create', 'booking-action', 'message-send', 'payment-submit', 'rating-submit', 'document-register', 'verification-review', 'private-car-details', 'user-private-profile', 'media-sign-upload', 'media-upload', 'media-migrate', 'media-sign-read', 'car-media-public', 'admin-action', 'migrate-legacy', 'car-image-search', 'inquiry-start', 'image-rehost'])
   fn[f] = (await import(`../netlify/functions/${f}.mjs`)).handler;
 
 // ---------- seed ----------
@@ -395,8 +399,9 @@ r = await call(fn['booking-action'], 'o1', {action: 'end-chat', bookingId: bId3}
 check('אי אפשר לסגור שיחה כשההזמנה חיה (409)', S(r) === 409);
 r = await call(fn['message-send'], 'r1', {bookingId: bId3, text: 'הערוץ נשאר פתוח'});
 check('השוכר עדיין שולח כל עוד ההזמנה חיה', S(r) === 200);
-r = await call(fn['booking-action'], 'o1', {action: 'status', bookingId: bId3, status: 'cancelled'});
+r = await call(fn['booking-action'], 'o1', {action: 'status', bookingId: bId3, status: 'cancelled', reason: 'הרכב במוסך'});
 check('ביטול ההזמנה (לקראת סגירת השיחה)', S(r) === 200);
+check('חותמות ביטול נרשמו (audit #12)', get(`bookings/${bId3}/cancelledByRole`) === 'owner' && !!get(`bookings/${bId3}/cancelledAt`) && get(`bookings/${bId3}/cancelReason`) === 'הרכב במוסך');
 r = await call(fn['booking-action'], 'o1', {action: 'end-chat', bookingId: bId3});
 check('בעל רכב מסיים שיחה אחרי ביטול', S(r) === 200);
 r = await call(fn['message-send'], 'r1', {bookingId: bId3, text: 'עוד'});
@@ -475,6 +480,17 @@ r = await call(fn['car-action'], 'o1', {action: 'feature', id: carMir, featured:
 check('בעל רכב לא יכול לקדם רכב (403)', S(r) === 403);
 r = await call(fn['car-action'], 'o1', {action: 'delete', id: carMir});
 check('מחיקת רכב מסירה גם את המראה', S(r) === 200 && get(`publicCars/${carMir}`) === undefined);
+// audit #10: re-consent records a fresh user-level acceptance of the current terms version.
+r = await call(fn['profile-save'], 'r1', {action: 'accept-terms'});
+check('הסכמה מחדש לתנאים נרשמת', S(r) === 200 && get('users/r1/legalAcceptance/termsVersion') === '2026-07-14-rev101' && get('users/r1/legalAcceptance/source') === 're-consent');
+
+console.log('\nתרחיש T: אחסון עצמי לתמונת ויקימדיה (audit #36)');
+r = await call(fn['image-rehost'], 'o1', {url: 'https://evil.example.com/x.png'});
+check('כתובת שאינה ויקימדיה נדחית (400)', S(r) === 400);
+r = await call(fn['image-rehost'], 'r1', {url: 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Car.png'});
+check('שוכר לא יכול לאחסן תמונות רכב (403)', S(r) === 403);
+r = await call(fn['image-rehost'], 'o1', {url: 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Car.png'});
+check('תמונת ויקימדיה מאוחסנת אצלנו', S(r) === 200 && /^https:/.test(B(r).url || ''));
 
 console.log(`\n========== ${passed} עברו · ${failed} נכשלו ==========`);
 process.exit(failed ? 1 : 0);

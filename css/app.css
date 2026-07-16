@@ -1469,3 +1469,110 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 .more-item svg{width:22px;height:22px;color:var(--brand-d);flex:0 0 22px}
 /* "הצגת עוד" under long lists (audit #30) */
 .list-more{margin-top:14px}
+
+/* ================= APP-FEEL HOME (rev127) =================
+   "עדיין לא מרגיש אפליקציה": on phones the home read like a 4,000px marketing landing page — the cars
+   were buried below ~1,000px of copy. An app puts CONTENT first. Mobile-only; desktop untouched. */
+@media(max-width:820px){
+  /* 1. Content-first order: search → cars → numbers → owner CTA → the marketing extras → footer. */
+  body[data-page="home"] main{display:flex;flex-direction:column}
+  body[data-page="home"] main>*{order:4;min-width:0}
+  body[data-page="home"] main>.hero{order:0}
+  body[data-page="home"] main>.fleet-zone{order:1}
+  body[data-page="home"] main>.strip{order:2}
+  body[data-page="home"] main>.owner-cta-rich{order:3}
+  body[data-page="home"] main>.site-foot{order:9}
+
+  /* 2. Compact hero: one short value line + the search card — not a billboard. */
+  .hero-in{padding:26px 16px 30px}
+  .hero .kicker{margin-bottom:10px;font-size:.74rem}
+  .hero h1{font-size:1.62rem}
+  .hero-copy{font-size:.95rem;margin:8px auto 14px;max-width:32ch}
+
+  /* 3. Long marketing blocks become SWIPEABLE card rows (app pattern) instead of vertical walls. */
+  .steps-grid{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;margin-inline:-16px;padding:4px 16px 10px;scrollbar-width:none}
+  .steps-grid::-webkit-scrollbar{display:none}
+  .steps-grid>*{flex:0 0 76%;scroll-snap-align:center}
+  .trust-grid{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;margin-inline:-16px;padding:4px 16px 10px;scrollbar-width:none}
+  .trust-grid::-webkit-scrollbar{display:none}
+  .trust-grid>*{flex:0 0 62%;scroll-snap-align:center}
+  .info-section{margin-top:26px}
+  .info-section h2{font-size:1.3rem}
+
+  /* 4. Kill the "webpage" tells: no rubber-band bounce behind the shell, no long-press text
+     selection / iOS callout on chrome and cards (real content — chat, terms — stays selectable). */
+  html{overscroll-behavior-y:none}
+  .topbar,.bottom-nav,.dashboard-tabs,.btn,.tab-item,.chips,.quick-search,.kpi,.car,.pill,.status-badge{-webkit-user-select:none;user-select:none}
+  .car img,.gallery-main img,.topbar img{-webkit-touch-callout:none}
+}
+
+/* ---- app-feel rev127b: directional tab transitions + floating search pill ---- */
+/* Entering content slides in from the side you moved toward in the (RTL) tab bar — 220ms, subtle. */
+@keyframes routeFwd{from{opacity:0;transform:translateX(-16px)}to{opacity:1;transform:none}}
+@keyframes routeBack{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:none}}
+#app.app-enter-fwd{animation:routeFwd .22s var(--ease)}
+#app.app-enter-back{animation:routeBack .22s var(--ease)}
+@media(prefers-reduced-motion:reduce){#app.app-enter-fwd,#app.app-enter-back{animation:none}}
+/* Once the hero search scrolls away, a floating pill above the bottom nav brings it back. Phones only. */
+.search-pill{display:none}
+@media(max-width:820px){
+  /* Centered with insets + auto margins (NOT transform — the fadeUp keyframes own the transform). */
+  .search-pill{position:fixed;bottom:calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 14px);inset-inline:0;margin-inline:auto;width:fit-content;z-index:55;display:flex;align-items:center;gap:8px;min-height:44px;padding:10px 20px;border:none;border-radius:99px;background:var(--dark);color:#fff;font:inherit;font-weight:700;font-size:.92rem;box-shadow:0 14px 34px rgba(20,26,33,.38);cursor:pointer;animation:fadeUp .22s var(--ease)}
+  .search-pill[hidden]{display:none}
+  .search-pill svg{width:18px;height:18px}
+  .search-pill:active{transform:scale(.95)}
+  body:not([data-page="home"]) .search-pill{display:none}
+}
+/* Wikimedia photo attribution under the car gallery (audit #37) */
+.photo-credit{display:block;font-size:11px;color:var(--muted);margin:6px 2px 0;line-height:1.5}
+
+/* ================= DEPTH & SHINE (rev132) =================
+   User request: "צלליות וברק ועומק שירגיש חי". Two-layer elevation shadows (tight contact + soft
+   ambient), hairline top-lights on raised surfaces, glass gradients on photos, a passing gleam on
+   the main CTAs, and glow on the active tab. Transform/opacity only — nothing that hurts scrolling. */
+:root{
+  --elev-1:0 1px 2px rgba(16,24,40,.05), 0 10px 28px rgba(16,24,40,.09);
+  --elev-2:0 3px 8px rgba(16,24,40,.09), 0 22px 52px rgba(16,24,40,.17);
+}
+/* Raised surfaces: layered shadow + a hairline top-light, like real material catching the light */
+.card{box-shadow:inset 0 1px 0 rgba(255,255,255,.9), var(--elev-1)}
+.car:hover{transform:translateY(-4px);box-shadow:inset 0 1px 0 rgba(255,255,255,.9), var(--elev-2)}
+.car:active{transform:translateY(-1px) scale(.985)}
+.car:active::after{transform:translateX(0)}  /* the sheen sweep fires on TAP too — phones feel it */
+/* Car photos: light falls from above, the body grounds into shade below */
+.car-photo{position:relative}
+.car-photo::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:1;
+  background:linear-gradient(180deg, rgba(255,255,255,.10), transparent 26%, transparent 68%, rgba(12,19,28,.22))}
+.car-photo img{transition:transform .5s var(--ease)}
+.car:hover .car-photo img{transform:scale(1.045)}
+/* KPI tiles */
+.kpi{box-shadow:inset 0 1px 0 rgba(255,255,255,.95), var(--elev-1)}
+/* Primary buttons: pressed-metal base + a passing gleam on hover/tap */
+.btn.primary,.btn.gold{position:relative;overflow:hidden;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35), inset 0 -1px 0 rgba(0,0,0,.12), 0 6px 16px rgba(63,107,142,.3), 0 1px 3px rgba(63,107,142,.35)}
+.btn.primary::after,.btn.gold::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  background:linear-gradient(115deg, transparent 35%, rgba(255,255,255,.38) 50%, transparent 65%);
+  transform:translateX(-160%)}
+.btn.primary:hover::after,.btn.gold:hover::after,.btn.primary:active::after,.btn.gold:active::after{transform:translateX(160%);transition:transform .7s var(--ease)}
+/* Ambient life: the two main CTAs get a slow gleam that passes every few seconds */
+@keyframes ambientSheen{0%,72%{transform:translateX(-160%)}88%,100%{transform:translateX(160%)}}
+#home-search::after,.booking-submit-main::after{animation:ambientSheen 5.5s var(--ease) infinite}
+/* Hero: headline pops off the dark backdrop; the search panel reads as floating glass */
+.hero h1{text-shadow:0 2px 24px rgba(0,0,0,.35)}
+.quick-search{box-shadow:inset 0 1px 0 rgba(255,255,255,.14), 0 24px 60px rgba(4,10,18,.45)}
+/* Shell: the top bar and bottom dock separate from the page with soft depth */
+.topbar{box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 8px 24px rgba(10,16,24,.22)}
+.bottom-nav{box-shadow:inset 0 1px 0 rgba(255,255,255,.7), 0 -10px 30px rgba(20,26,33,.12)}
+.tab-item.active svg{filter:drop-shadow(0 3px 8px rgba(63,107,142,.55))}
+/* Pills, badges, toast: a touch of inner light */
+.pill,.status-badge{box-shadow:inset 0 1px 0 rgba(255,255,255,.5), 0 1px 2px rgba(16,24,40,.08)}
+#toast{box-shadow:0 12px 34px rgba(10,14,19,.4), inset 0 1px 0 rgba(255,255,255,.15)}
+/* Gallery photo sits IN the page: inner ring + bottom grounding, drawn above the image */
+.gallery-main::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  box-shadow:inset 0 0 0 1px rgba(16,24,40,.1), inset 0 -30px 44px -34px rgba(12,19,28,.45)}
+/* Bottom sheets / dialogs: heavier, softer elevation */
+.modal{box-shadow:0 -8px 24px rgba(0,0,0,.08), 0 40px 90px rgba(0,0,0,.35)}
+@media(prefers-reduced-motion:reduce){
+  #home-search::after,.booking-submit-main::after{animation:none}
+  .car:hover .car-photo img,.car:active{transform:none}
+}

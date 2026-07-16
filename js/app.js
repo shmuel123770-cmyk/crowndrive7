@@ -50,6 +50,7 @@ function scheduleRender() {
 
 let rendering = false;
 let lastRoute = null;  // for the subtle enter-transition, fired only on a real route change (not re-renders)
+const scrollMemory = {};  // per-route scroll position — switching tabs keeps your place (design spec §6)
 function render() {
   if (rendering) return;
   rendering = true;
@@ -77,15 +78,25 @@ function render() {
       document.querySelector('#maint-admin')?.addEventListener('click', () => openAdminLogin());
       return;
     }
+    // Remember how far the user scrolled on the route they're LEAVING (design spec §6: switching
+    // tabs must not lose your place) — captured before the new route repaints.
+    if (route !== lastRoute && lastRoute) scrollMemory[lastRoute] = window.scrollY;
     (routes[route] || home)();
     // Subtle app-like enter transition — only when the route actually changed, so data-driven re-renders
     // (incoming messages, store updates) don't re-animate and flicker.
     if (route !== lastRoute) {
+      // Directional slide (app-feel): the page enters from the side you moved toward in the tab bar
+      // (RTL: a higher-index tab sits further left). Unknown routes keep the plain fade-up.
+      const ROUTE_ORDER = {home: 0, cars: 1, dashboard: 2, chats: 3, auth: 4};
+      const from = ROUTE_ORDER[lastRoute], to = ROUTE_ORDER[route];
+      const enterClass = from !== undefined && to !== undefined && from !== to
+        ? (to > from ? 'app-enter-fwd' : 'app-enter-back') : 'app-enter';
       lastRoute = route;
-      // A NEW page must open at its TOP (rev.106). Instant, because the CSS sets scroll-behavior:smooth.
-      window.scrollTo({top: 0, behavior: 'instant'});
+      // Returning to a tab restores its scroll position (app behavior); a first visit opens at the top.
+      // Instant, because the CSS sets scroll-behavior:smooth.
+      window.scrollTo({top: scrollMemory[route] || 0, behavior: 'instant'});
       const appEl = document.querySelector('#app');
-      if (appEl) { appEl.classList.remove('app-enter'); void appEl.offsetWidth; appEl.classList.add('app-enter'); }
+      if (appEl) { appEl.classList.remove('app-enter', 'app-enter-fwd', 'app-enter-back'); void appEl.offsetWidth; appEl.classList.add(enterClass); }
       document.querySelector('#app')?.focus({preventScroll: true});
     }
     // Only the cars listing gets the in-flow "→ חזרה" button. home/dashboard/auth/chats each have

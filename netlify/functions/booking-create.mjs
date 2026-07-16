@@ -18,7 +18,7 @@ function overlaps(aStart, aEnd, bStart, bEnd) {
 // Server-side mirror of the client's rental-mode matching (audit #14) — a malicious client can no longer
 // book a range the owner never offered. Kept in sync with js/views.js (carBuckets/periodBucket/weekend).
 const DAY = 86400000;
-const TERMS_VERSION = '2026-07-14-rev101';
+import {TERMS_VERSION} from './_terms.mjs';
 const MODE_BUCKETS = {hourly: ['hours'], hourly_daily: ['hours', 'days'], long_term: ['weeks']};
 // One hour of DST tolerance at each boundary (audit #40) — mirrors js/views.js: a 23-real-hour "day"
 // across the spring switch still prices as a day, and a 167-hour week as a week.

@@ -51,7 +51,7 @@
       }
     },
     "cars": {
-      ".read": true,
+      ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || (query.orderByChild === 'ownerUid' && query.equalTo === auth.uid))",
       ".indexOn": [
         "ownerUid",
         "status"
@@ -66,7 +66,8 @@
           "$i": {
             ".validate": "newData.isString() && newData.val().length <= 1000000 && (newData.val().matches(/^data:image/) || newData.val().matches(/^https:/))"
           }
-        }
+        },
+        ".read": "auth != null && (root.child('admins').child(auth.uid).val() === true || data.child('ownerUid').val() === auth.uid)"
       }
     },
     "bookings": {

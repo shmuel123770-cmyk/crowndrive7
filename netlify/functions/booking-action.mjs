@@ -99,6 +99,16 @@ export async function handler(event) {
         reservationCreated = true;
       }
       const stamps = next === 'active' ? {startedAt: Date.now()} : next === 'done' ? {endedAt: Date.now()} : {};
+      // Cancellation record (audit #12): WHO cancelled, in what role, when, an optional reason, and
+      // the policy version in force — the raw material for any future fee/refund policy.
+      if (next === 'cancelled') {
+        stamps.cancelledAt = Date.now();
+        stamps.cancelledBy = token.uid;
+        stamps.cancelledByRole = admin ? 'admin' : owner ? 'owner' : 'renter';
+        stamps.cancelPolicyVersion = '2026-07-14-rev101';
+        const reason = cleanText(body.reason, 300);
+        if (reason) stamps.cancelReason = reason;
+      }
       try { await ref.update({status: next, done: next === 'done', updatedAt: Date.now(), ...stamps}); }
       catch (error) {
         if (reservationCreated) await db.ref(`reservations/${current.carId}/${body.bookingId}`).remove().catch(cleanupError => console.error('reservation rollback failed', cleanupError));

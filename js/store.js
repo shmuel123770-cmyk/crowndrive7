@@ -8,7 +8,14 @@ export const store = {
   adminChecked: false,
   authSettled: false,
   publicReady: false,
+  // store.cars is a MERGED view (audit #45 phase B): the public mirror (no hidden cars) + the legacy
+  // public node during the transition + the signed-in user's own cars (incl. their hidden ones) + the
+  // admin's full tree. Everything else in the app keeps reading store.cars as before.
   cars: {},
+  publicCatalog: {},
+  legacyCatalog: {},
+  ownCars: {},
+  adminCars: {},
   bookings: {},
   inquiries: {},
   payments: {},
@@ -33,13 +40,23 @@ function listen(ref, setter, key, onErr) {
   return () => ref.off('value', handler);
 }
 
+function mergeCars() {
+  store.cars = {...store.legacyCatalog, ...store.publicCatalog, ...store.ownCars, ...store.adminCars};
+}
+
 export async function startPublic() {
   if (store.publicUnsubs.length) return;
-  // publicReady flips true the moment the cars snapshot arrives OR the read fails — either way the
-  // loading state is OVER, so the UI stops waiting and shows the cars (or an empty state) instead of
-  // an endless skeleton (audit: a known Firebase error must end loading, not stall the full timeout).
-  store.publicUnsubs.push(listen(refs.cars, v => { store.cars = v; store.publicReady = true; }, 'cars',
+  // publicReady flips true the moment the FIRST catalog snapshot arrives OR the read fails — either
+  // way the loading state is OVER, so the UI stops waiting and shows the cars (or an empty state)
+  // instead of an endless skeleton.
+  // PHASE B of audit #45: the public catalog comes from the server-maintained publicCars mirror
+  // (hidden cars are absent from it). During the transition — mirror not yet seeded, or the locked-
+  // down rules not yet published — the legacy world-readable cars node fills the gap; once cars is
+  // locked its read simply fails, legacyCatalog empties, and only the mirror remains.
+  store.publicUnsubs.push(listen(refs.publicCars, v => { store.publicCatalog = v; mergeCars(); store.publicReady = true; }, 'cars',
     () => { if (!store.publicReady) { store.publicReady = true; emit('cars'); } }));
+  store.publicUnsubs.push(listen(refs.cars, v => { store.legacyCatalog = v; mergeCars(); store.publicReady = true; }, 'cars',
+    () => { store.legacyCatalog = {}; mergeCars(); if (!store.publicReady) { store.publicReady = true; } emit('cars'); }));
   // Read the SANITIZED public projection (carId/targetUid/type/score/review/date) — the full ratings
   // node (with authorUid + bookingId) is no longer public (audit #3).
   store.publicUnsubs.push(listen(refs.publicRatings, v => { store.ratings = v; }, 'ratings'));
@@ -127,7 +144,14 @@ export async function startPrivate(user) {
     store.privateUnsubs.push(listen(refs.inquiries, v => { store.inquiries = v; }, 'inquiries'));
     store.privateUnsubs.push(listen(refs.payments, v => { store.payments = v; }, 'payments'));
     store.privateUnsubs.push(listen(refs.adminNotifications.limitToLast(200), v => { store.adminNotifications = v; }, 'admin-notifications'));
+    // The admin manages EVERYTHING, including hidden cars — full source-of-truth tree (audit #45 phase B).
+    store.privateUnsubs.push(listen(refs.cars, v => { store.adminCars = v; mergeCars(); }, 'cars'));
   } else {
+    // An owner must keep seeing their OWN cars (including hidden ones) after the cars node is locked
+    // to the public — the rules allow exactly this ownerUid query. Renters simply get an empty set.
+    if (!user.isAnonymous) {
+      store.privateUnsubs.push(listen(refs.cars.orderByChild('ownerUid').equalTo(user.uid), v => { store.ownCars = v; mergeCars(); }, 'cars'));
+    }
     try {
       const profile = (await refs.users.child(user.uid).once('value')).val() || {};
       // FIX (verification status race): merge instead of overwriting so the status already
@@ -151,6 +175,10 @@ export function stopPrivate() {
   store.payments = {};
   store.users = {};
   store.verificationStatuses = {};
+  // Drop the signed-in-only car sources (own hidden cars / admin full tree) from the merged catalog.
+  store.ownCars = {};
+  store.adminCars = {};
+  mergeCars();
   emit('private-stopped');
 }
 
