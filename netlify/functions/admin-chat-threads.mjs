@@ -29,9 +29,11 @@ export async function handler(event) {
       threads.push({uid: child.key, lastAt, lastText, unread: unreadHint});
     });
     threads.sort((a, b) => b.lastAt - a.lastAt);
-    return json(200, {threads});
+    // Bound the payload (audit #29): the sidebar shows recent conversations; 150 summaries is plenty
+    // and keeps the 15s poll cheap no matter how much history accumulates.
+    return json(200, {threads: threads.slice(0, 150)});
   } catch (error) {
     console.error(error);
-    return json(error.status || 500, {error: error.message});
+    return json(error.status || 500, {error: error.status ? error.message : 'שגיאת שרת — נסו שוב בעוד רגע'});
   }
 }

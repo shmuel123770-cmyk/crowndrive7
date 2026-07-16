@@ -30,5 +30,6 @@ export const refs = {
   privateCarDetails: db.ref('privateCarDetails'),
   adminNotifications: db.ref('adminNotifications'),
   config: db.ref('config'),
+  reservations: db.ref('reservations'),
   legacy: db.ref('crowndrive-live/state/data'),
 };

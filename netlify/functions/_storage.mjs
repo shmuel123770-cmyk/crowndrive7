@@ -48,3 +48,22 @@ export async function putStorageObject(path, buffer, contentType, {privateObject
   if (privateObject) return '';
   return `https://firebasestorage.googleapis.com/v0/b/${bucketName}/o/${encodeURIComponent(path)}?alt=media&token=${downloadToken}`;
 }
+
+// Does an object actually exist in the bucket? (audit #7/#8 — fake paths could be "registered" as license /
+// payment proof / handover evidence.) Returns true/false, or null when storage is unreachable — callers FAIL
+// OPEN on null so an infra hiccup can't block legitimate media, but a definitive "not there" is rejected.
+export async function storageObjectExists(path) {
+  try {
+    const [exists] = await getAdmin().storage().bucket(storageBucketName()).file(String(path)).exists();
+    return exists === true;
+  } catch { return null; }
+}
+
+// Best-effort delete for a REPLACED object (old payment proof / re-shot document) so sensitive files
+// don't pile up forever (audit #21). Never throws — cleanup must not fail the main action.
+export async function deleteStorageObject(path) {
+  try {
+    await getAdmin().storage().bucket(storageBucketName()).file(String(path)).delete();
+    return true;
+  } catch { return false; }
+}

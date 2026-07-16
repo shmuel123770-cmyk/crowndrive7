@@ -36,7 +36,7 @@ export async function handler(event) {
             selfie: !!user.verification?.selfie,
           },
         };
-        if (!(await db.ref(`verificationStatus/${uid}`).once('value')).exists()) updates[`verificationStatus/${uid}`] = user.verification?.status || 'missing';
+        if (!(await db.ref(`verificationStatus/${uid}`).once('value')).exists()) updates[`verificationStatus/${uid}`] = ['missing', 'pending', 'approved', 'rejected', 'needs_resubmission'].includes(user.verification?.status) ? user.verification.status : 'missing';
       }
     }
     for (const car of values(legacy.cars)) {
@@ -44,12 +44,16 @@ export async function handler(event) {
       const ownerUid = car.ownerUid || userMap[car.ownerId];
       if (!ownerUid) continue;
       if ((await db.ref(`cars/${id}`).once('value')).exists()) continue;
-      updates[`cars/${id}`] = {
+      const migratedCar = {
         make: cleanText(car.make, 60), model: cleanText(car.model, 60), year: Number(car.year || new Date().getFullYear()), trim: cleanText(car.trim, 80),
-        ownerUid, status: car.status || 'available', dailyPrice: Number(car.dailyPrice || car.price || 0), minAge: Number(car.minAge || 21),
+        // Statuses are WHITELISTED (audit #19) — a legacy record can't smuggle an arbitrary string that
+        // later lands in the UI's HTML.
+        ownerUid, status: ['available', 'hidden'].includes(car.status) ? car.status : 'available', dailyPrice: Number(car.dailyPrice || car.price || 0), minAge: Number(car.minAge || 21),
         area: cleanText(car.area || car.location, 120) || 'Crown Heights', deliveryEnabled: !!car.deliveryEnabled,
         photoUrl: Array.isArray(car.photos) ? car.photos[0] || '' : car.photoUrl || '', createdAt: Number(car.createdAt || Date.now()),
       };
+      updates[`cars/${id}`] = migratedCar;
+      if (migratedCar.status !== 'hidden') updates[`publicCars/${id}`] = migratedCar;  // public mirror (audit #45)
     }
     for (const old of values(legacy.bookings)) {
       const id = String(old.id || db.ref('bookings').push().key);
@@ -57,7 +61,8 @@ export async function handler(event) {
       const renterUid = old.renterUid || userMap[old.renterId];
       if (!ownerUid || !renterUid) continue;
       if ((await db.ref(`bookings/${id}`).once('value')).exists()) continue;
-      updates[`bookings/${id}`] = {carId: String(old.carId || ''), ownerUid, renterUid, startAt: old.startAt || old.from || '', endAt: old.endAt || old.to || '', status: old.done ? 'done' : old.status || 'pending', done: !!old.done, createdAt: Number(old.createdAt || Date.now())};
+      const bookingStatus = old.done ? 'done' : ['pending', 'approved', 'rejected', 'active', 'done', 'cancelled', 'expired'].includes(old.status) ? old.status : 'pending';
+      updates[`bookings/${id}`] = {carId: String(old.carId || ''), ownerUid, renterUid, startAt: old.startAt || old.from || '', endAt: old.endAt || old.to || '', status: bookingStatus, done: !!old.done, createdAt: Number(old.createdAt || Date.now())};
     }
     updates['migration/v2'] = {completedAt: Date.now(), source: 'crowndrive-live/state/data', actorUid: token.uid};
     await db.ref().update(updates);
@@ -65,6 +70,6 @@ export async function handler(event) {
     return json(200, {ok: true, count: Object.keys(updates).length});
   } catch (error) {
     console.error(error);
-    return json(error.status || 500, {error: error.message});
+    return json(error.status || 500, {error: error.status ? error.message : 'שגיאת שרת — נסו שוב בעוד רגע'});
   }
 }

@@ -119,7 +119,8 @@ export async function updateCar(id, patch) {
   const car = buildCar(patch, existing.ownerUid, existing);
   car.updatedAt = Date.now();
   const update = {...car};
-  if (txt(patch.fullAddress, 500)) update.fullAddress = txt(patch.fullAddress, 500);
+  // Send the address even when EMPTY — that's how the owner deletes a stale pickup address (audit #46).
+  if (patch.fullAddress !== undefined) update.fullAddress = txt(patch.fullAddress, 500);
   await api('car-action', {action: 'update', id, patch: update});
 }
 // Delete a car by writing it out directly (rules allow the owner or an admin to remove it) — the
@@ -146,10 +147,10 @@ export async function setCarStatus(id, status) {
   await api('car-action', {action: 'status', id, status});
 }
 // Admin-only: pin a car to the top of the listings (featured = timestamp) or unpin (null).
+// Goes through the server (not a direct DB write) so the public catalog mirror stays in step.
 export async function setCarFeatured(id, featured) {
   if (!store.isAdmin) throw new Error('מנהל בלבד');
-  try { await db.ref(`cars/${id}`).update({featured: featured ? Date.now() : null, updatedAt: Date.now()}); } // client-write:own-car
-  catch (error) { throw new Error('עדכון נכשל — נסו שוב'); }
+  await api('car-action', {action: 'feature', id, featured: !!featured});
 }
 export async function createBooking(car, data) { return (await api('booking-create', {carId: car.id, ...data})).id; }
 // Pre-booking inquiry: open (or reuse) a direct renter↔owner conversation about a car. Returns the inquiryId.

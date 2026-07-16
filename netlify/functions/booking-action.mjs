@@ -1,6 +1,7 @@
 import {getAdmin, verify, json, isAdmin, booking, audit, cleanText, notifyAdmin, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
 import {smsUser} from './_sms.mjs';
 import {rateLimit, tooMany} from './_ratelimit.mjs';
+import {storageObjectExists} from './_storage.mjs';
 const transitions = {
   pending: ['approved', 'rejected', 'cancelled'],
   approved: ['active', 'cancelled'],
@@ -72,7 +73,10 @@ export async function handler(event) {
         else if (payment.status === 'rejected') missing.push('הוכחת תשלום תקינה (הקודמת נדחתה)');
         if (missing.length) return json(409, {error: `אי אפשר להתחיל את ההשכרה, חסר: ${missing.join(', ')}`});
       }
-      if (next === 'approved') {
+      // Any transition INTO the reserved set claims the slot — not just pending→approved. This also
+      // covers an admin resurrecting a done/cancelled booking straight to approved/active (audit #14):
+      // without it the car could be double-booked because the reservation entry was already removed.
+      if (['approved', 'active'].includes(next) && !['approved', 'active'].includes(present)) {
         const start = new Date(current.startAt).getTime();
         const end = new Date(current.endAt).getTime();
         // First line: check against the actual bookings (covers any approved/active booking not yet in
@@ -100,8 +104,9 @@ export async function handler(event) {
         if (reservationCreated) await db.ref(`reservations/${current.carId}/${body.bookingId}`).remove().catch(cleanupError => console.error('reservation rollback failed', cleanupError));
         throw error;
       }
-      // Free the slot the moment the booking leaves the reserved set, so the car opens up again.
-      if (['done', 'rejected', 'cancelled'].includes(next)) await db.ref(`reservations/${current.carId}/${body.bookingId}`).remove().catch(() => {});
+      // Free the slot the moment the booking leaves the reserved set, so the car opens up again
+      // ('pending' included — an admin resetting an approved booking must release the hold, audit #14).
+      if (['done', 'rejected', 'cancelled', 'pending'].includes(next)) await db.ref(`reservations/${current.carId}/${body.bookingId}`).remove().catch(() => {});
       await audit(token.uid, 'booking_status', 'booking', body.bookingId, {from: present, to: next});
       const statusText = {approved: 'בעל הרכב אישר הזמנה', rejected: 'בעל הרכב דחה הזמנה', active: 'השכרה התחילה', done: 'השכרה הסתיימה', cancelled: 'הזמנה בוטלה'}[next];
       if (statusText) await notifyAdmin('status', `${statusText} (${body.bookingId.slice(-7)})`, {bookingId: body.bookingId, to: next, by: token.uid});
@@ -127,13 +132,20 @@ export async function handler(event) {
       }
       const data = body.data || {};
       if (!data.videoPath || !data.dashboardPhotoPath || !Number.isFinite(Number(data.mileage)) || !data.fuel) return json(400, {error: 'חסר תיעוד חובה'});
+      // Sanity bounds (audit #44): whole, non-negative, below any real odometer.
+      const mileage = Math.round(Number(data.mileage));
+      if (mileage < 0 || mileage > 2000000) return json(400, {error: 'קילומטראז׳ לא סביר — בדקו את המספר'});
       const allowedPrefix = `bookings/${body.bookingId}/media/${token.uid}/`;
       if (!String(data.videoPath).startsWith(allowedPrefix) || !String(data.dashboardPhotoPath).startsWith(allowedPrefix)
         || String(data.videoPath).includes('..') || String(data.dashboardPhotoPath).includes('..')) return json(400, {error: 'נתיב תיעוד לא תקין'});
+      // Both evidence objects must really exist in Storage (audit #8) — invented paths no longer count as
+      // submitted evidence. Fails open (null) only when storage itself is unreachable.
+      const [videoExists, dashExists] = await Promise.all([storageObjectExists(data.videoPath), storageObjectExists(data.dashboardPhotoPath)]);
+      if (videoExists === false || dashExists === false) return json(400, {error: 'קובצי התיעוד לא נמצאו באחסון — העלו אותם שוב'});
       await ref.child(`handover/${body.stage}`).set({
         videoPath: cleanText(data.videoPath, 500),
         dashboardPhotoPath: cleanText(data.dashboardPhotoPath, 500),
-        mileage: Number(data.mileage),
+        mileage,
         fuel: cleanText(data.fuel, 40),
         notes: cleanText(data.notes, 2000),
         submittedBy: token.uid,
@@ -143,15 +155,25 @@ export async function handler(event) {
       return json(200, {ok: true});
     }
     // Owner (or admin) ends the conversation: after this the RENTER can no longer send in this thread.
+    // Only once the booking is FINISHED (audit #5) — closing the chat on an approved/active booking used to
+    // permanently strand the renter: no channel left for evidence/payment, and no way to reopen.
     if (body.action === 'end-chat') {
       if (!owner && !admin) return json(403, {error: 'פעולה לבעל הרכב או מנהל בלבד'});
+      if (!['done', 'cancelled', 'rejected', 'expired'].includes(current.status)) return json(409, {error: 'אפשר לסגור את השיחה רק אחרי סיום או ביטול ההזמנה — עד אז השוכר צריך ערוץ לראיות ולתשלום'});
       await ref.update({chatEnded: true, updatedAt: Date.now()});
       await audit(token.uid, 'chat_end', 'booking', body.bookingId, {});
+      return json(200, {ok: true});
+    }
+    // Undo for an accidentally closed conversation (owner or admin).
+    if (body.action === 'reopen-chat') {
+      if (!owner && !admin) return json(403, {error: 'פעולה לבעל הרכב או מנהל בלבד'});
+      await ref.update({chatEnded: null, updatedAt: Date.now()});
+      await audit(token.uid, 'chat_reopen', 'booking', body.bookingId, {});
       return json(200, {ok: true});
     }
     return json(400, {error: 'פעולה לא מוכרת'});
   } catch (error) {
     console.error(error);
-    return json(error.status || 500, {error: error.message});
+    return json(error.status || 500, {error: error.status ? error.message : 'שגיאת שרת — נסו שוב בעוד רגע'});
   }
 }

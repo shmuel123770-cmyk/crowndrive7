@@ -78,7 +78,9 @@ export async function canReadUserDocs(viewer, target) {
 export async function canReadUserProfile(viewer, target) {
   if (viewer === target || await isAdmin(viewer)) return true;
   const snap = await getAdmin().database().ref('bookings').orderByChild('renterUid').equalTo(target).once('value');
-  return Object.values(snap.val() || {}).some(b => b.ownerUid === viewer && ['approved', 'active'].includes(b.status) && !b.done);
+  // The owner sees the renter's details already at 'pending' (user decision) — they decide whether
+  // to approve based on who is asking.
+  return Object.values(snap.val() || {}).some(b => b.ownerUid === viewer && ['pending', 'approved', 'active'].includes(b.status) && !b.done);
 }
 export function cleanText(value, max = 500) {
   return String(value ?? '').trim().replace(/[\u0000-\u001f\u007f]/g, '').slice(0, max);

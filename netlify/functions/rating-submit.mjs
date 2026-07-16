@@ -25,19 +25,21 @@ export async function handler(event) {
     const id = `${body.bookingId}_${type}_${token.uid}`;
     const db = getAdmin().database();
     const ref = db.ref(`ratings/${id}`);
-    if ((await ref.once('value')).exists()) return json(409, {error: 'כבר דירגת הזמנה זו'});
     const review = cleanText(body.review, 1000);
     const createdAt = Date.now();
     // Two records: the FULL private one (with authorUid + bookingId, admin-only) and a SANITIZED public
     // projection with no bookingId / authorUid, so public reads can't enumerate bookings (audit #3).
-    await db.ref().update({
-      [`ratings/${id}`]: {bookingId: body.bookingId, type, authorUid: token.uid, targetUid, carId, score, review, createdAt},
-      [`publicRatings/${id}`]: {type, targetUid, carId, score, review, createdAt},
+    // Transaction (audit #13): the duplicate check IS the write — a double-tap can't land twice.
+    const result = await ref.transaction(existing => {
+      if (existing) return;  // abort — already rated
+      return {bookingId: body.bookingId, type, authorUid: token.uid, targetUid, carId, score, review, createdAt};
     });
+    if (!result.committed) return json(409, {error: 'כבר דירגת הזמנה זו'});
+    await db.ref(`publicRatings/${id}`).set({type, targetUid, carId, score, review, createdAt});
     await audit(token.uid, 'rating_submit', type, type === 'car' ? carId : targetUid, {score});
     return json(200, {ok: true});
   } catch (error) {
     console.error(error);
-    return json(error.status || 500, {error: error.message});
+    return json(error.status || 500, {error: error.status ? error.message : 'שגיאת שרת — נסו שוב בעוד רגע'});
   }
 }

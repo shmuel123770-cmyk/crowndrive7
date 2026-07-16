@@ -757,8 +757,12 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
   .booking-card .chips{gap:8px}
   .booking-card .chips .btn{flex:1 1 44%;text-align:center}
   .booking-main{flex-direction:column}
-  .modal{width:100%;max-height:96vh;max-height:96dvh;padding:0 18px 18px;border-radius:18px}
-  .modal-head{margin:0 -18px 14px;padding:15px 18px}
+  /* Design spec §16: desktop dialogs become BOTTOM SHEETS on phones — full width, anchored to the
+     bottom, 24px top radius, drag-handle, sticky header. Long flows (chat/camera) stay full-screen. */
+  .modal{width:100%;max-height:94vh;max-height:94dvh;padding:0 16px calc(16px + env(safe-area-inset-bottom));border-radius:24px 24px 0 0;align-self:end;animation:sheetUp .32s var(--ease)}
+  .modal::before{content:"";display:block;width:36px;height:4px;border-radius:99px;background:var(--line-2);margin:8px auto 0}
+  .modal-head{margin:0 -16px 14px;padding:12px 16px;min-height:56px}
+  .modal-backdrop{place-items:end center;padding:0}
   .media-grid{grid-template-columns:1fr}
   .table-wrap{max-width:100%}
   table.data{min-width:480px}
@@ -1020,7 +1024,7 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
   .dashboard-head{padding:20px 18px}
   /* Renter/owner personal area uses the DYNAMIC site bottom bar (#bottom-nav) instead of the built-in tab bar;
      the admin keeps its own fixed .dashboard-tabs bar. */
-  body[data-dash-role="renter"] .dashboard-tabs,body[data-dash-role="owner"] .dashboard-tabs{display:none}
+  body[data-dash-role="renter"] .dashboard-tabs,body[data-dash-role="owner"] .dashboard-tabs,body[data-dash-role="admin"] .dashboard-tabs{display:none}
 }
 .wizard-btn svg{width:30px;height:30px;stroke:var(--brand-d)}
 
@@ -1364,3 +1368,104 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 .install-tip span{flex:1;min-width:0}
 .install-tip .btn{padding:9px 16px;min-height:44px}
 .install-tip .install-x{border:0;background:var(--bg2);border-radius:10px;width:34px;height:34px;font-size:1.1rem;color:var(--muted);cursor:pointer}
+
+/* Booking card: price + pending-expiry lines, and touch-friendly action chips on phones. */
+.bk-total{margin:4px 0 0;font-size:1.15rem;font-weight:800;color:var(--brand-d)}
+.bk-expiry{margin:2px 0 0;font-size:.78rem;font-weight:600;color:var(--warn)}
+@media(max-width:430px){
+  .booking-card .chips .btn{min-height:44px}
+  .booking-card .chips .btn.gold{flex:1 1 100%}
+}
+
+/* Owner "my cars" performance strip (bookings / earnings / rating per car). */
+.car-stats{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;padding:9px 12px;background:var(--bg2);border-radius:12px;font-size:.82rem;font-weight:600;color:var(--brand-d)}
+
+/* ================= MOBILE DESIGN SPEC (rev121) =================
+   From the design-only spec (2026-07-16): app-like feel on 320–820px without changing the design
+   language. Sizes follow the spec tables — buttons 50/46/44, fields 50-52, radii 12/14/18/24,
+   bottom-nav text 11px, chat text 15px, toast ≥52px. Desktop (>820px) is untouched. */
+@keyframes sheetUp{from{transform:translateY(38%);opacity:.55}to{transform:none;opacity:1}}
+@media(prefers-reduced-motion:reduce){.modal{animation:none}}
+@media(max-width:820px){
+  /* §5 buttons: primary 50px, secondary 46px, small/chips 44px; radius 14px; full feedback kept */
+  .btn{border-radius:14px;min-height:46px}
+  .btn.primary,.btn.gold,.btn.block{min-height:50px}
+  .chips .btn,.car .btn,.pill-btn{min-height:44px}
+  .close{width:44px;height:44px;min-width:44px}
+  /* §11 forms: fields 50px, textarea ≥110px, 22px checks inside a 44px target, 16px gaps */
+  .field input,.field select{min-height:50px;padding-block:12px}
+  .field textarea{min-height:110px}
+  .form-grid{gap:16px}
+  .check input,.booking-consent input{width:22px;height:22px;flex:0 0 22px}
+  .check,.booking-consent{min-height:44px;align-items:center}
+  /* §7 home: main search 52px */
+  .quick-search input,.quick-search select,.quick-search .date-btn{height:52px}
+  /* §6 shell: compact 56px top bar; 11px bottom-nav labels (icons/indicator already per spec) */
+  .topbar{min-height:56px;padding-block:8px}
+  .tab-item{font-size:11px}
+  /* §9 car card: 12px inner padding, 15-16px name, 16-18px price, tight consistent gaps */
+  .car-body{padding:12px}
+  .car h3{font-size:1.02rem}
+  .car .price,.car-price{font-size:1.1rem}
+  .grid{gap:12px 10px}
+  /* §10 car page: gallery 4:3 (≈281px on a 375px phone, inside the 240–300px window) + counter chip */
+  .modal .gallery-main{aspect-ratio:4/3}
+  /* §13 booking bar: ≥76px total, 52px action */
+  .mobile-booking-bar{min-height:calc(76px + env(safe-area-inset-bottom))}
+  .mobile-booking-bar .btn{min-height:52px}
+  /* §14 chat: 15px messages, 11px time, ≥44px composer field */
+  .chat-msgs .message,.messages .message{font-size:15px;max-width:80%}
+  .chat-msgs .message small,.messages .message small{font-size:11px}
+  .chat-composer{min-height:64px}
+  .chat-composer input{min-height:44px}
+  /* §20-22 admin: KPI cards ≥112px in 2 columns (already 2-col); the cars table becomes record
+     cards — no horizontal table scrolling as the main pattern */
+  .kpi{min-height:112px}
+  .table-wrap{overflow:visible;border:none;background:none;border-radius:0}
+  table.data{min-width:0;display:block;border:none}
+  table.data thead{display:none}
+  table.data tbody{display:grid;gap:10px}
+  table.data tr{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;background:#fff;border:1px solid var(--hair);border-radius:18px;padding:12px;min-height:96px;box-shadow:0 10px 26px rgba(20,28,40,.05)}
+  table.data tr:hover{background:#fff}
+  table.data td{display:block;border:none;padding:2px 0;font-weight:400}
+  table.data td.t-main{grid-column:1 / -1;font-size:1.02rem;font-weight:700}
+  table.data td:last-child{grid-column:1 / -1}
+  table.data .t-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-start}
+}
+/* §10 gallery counter chip — all widths (harmless on desktop, required on mobile) */
+.gallery-main{position:relative}
+.gallery-count{position:absolute;bottom:10px;inset-inline-start:10px;z-index:2;background:rgba(20,26,33,.72);color:#fff;font-size:12px;font-weight:600;padding:4px 10px;border-radius:99px;pointer-events:none;-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+/* §17 toast: ≥52px, 14px text, 12-14px radius (position/width already handled per-page above) */
+#toast{min-height:52px;display:flex;align-items:center;justify-content:center;border-radius:14px;font-size:14px;padding:12px 16px}
+
+/* ---- design spec rev122: car-form step wizard (§11), calendar bottom-sheet (§12), admin "עוד" (§20) ---- */
+/* Wizard header: step counter + progress bar. Chrome is phone-only; the steps themselves always render
+   (desktop just shows all four at once), so drafts and formData() are untouched. */
+.wiz-head{display:none}
+.wiz-nav{display:none}
+@media(max-width:820px){
+  .wiz-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 0 14px;font-size:.92rem;font-weight:600;color:var(--brand-d)}
+  .wiz-bar{flex:0 0 96px;height:6px;border-radius:99px;background:var(--bg2);overflow:hidden}
+  .wiz-bar i{display:block;height:100%;width:25%;border-radius:99px;background:var(--brand);transition:width .25s var(--ease)}
+  #car-form .wiz-step{display:none}
+  #car-form .wiz-step.active{display:block;animation:fadeUp .22s var(--ease)}
+  /* Sticky continue/back row above the sheet's bottom edge (spec: "כפתור ההמשך יהיה דביק") */
+  .wiz-nav{display:flex;gap:10px;position:sticky;bottom:calc(-16px - env(safe-area-inset-bottom));z-index:4;margin:14px -16px 0;padding:10px 16px calc(10px + env(safe-area-inset-bottom));background:rgba(255,255,255,.97);border-top:1px solid var(--hair);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+  .wiz-nav #wiz-next{flex:1;min-height:52px}
+  .wiz-nav #wiz-prev{flex:0 0 auto}
+  .wiz-nav #wiz-prev:disabled{opacity:.4}
+  #car-form #car-submit{margin-top:12px}
+  #car-form #car-submit.wiz-hidden{display:none}
+  /* §12: the date picker opens as a bottom sheet with ≥44px day cells */
+  .cal-pop{position:fixed;top:auto;inset-inline:0;bottom:0;width:100%;max-width:100%;border-radius:24px 24px 0 0;padding:14px 16px calc(16px + env(safe-area-inset-bottom));box-shadow:0 -24px 70px rgba(10,14,19,.38);z-index:140;animation:sheetUp .28s var(--ease)}
+  .cal-pop::before{content:"";display:block;width:36px;height:4px;border-radius:99px;background:var(--line-2);margin:0 auto 10px}
+  .cal-day{height:44px;border-radius:12px}
+}
+/* Admin "עוד" sheet items — large, thumb-friendly rows in the existing card language */
+.more-sheet{display:grid;gap:10px;padding-bottom:4px}
+.more-item{display:flex;align-items:center;gap:14px;width:100%;min-height:56px;padding:12px 16px;background:#fff;border:1px solid var(--line);border-radius:14px;font:inherit;font-weight:600;font-size:1rem;color:var(--text);cursor:pointer;transition:background .15s,transform .12s}
+.more-item:hover{background:var(--bg-soft)}
+.more-item:active{transform:scale(.98)}
+.more-item svg{width:22px;height:22px;color:var(--brand-d);flex:0 0 22px}
+/* "הצגת עוד" under long lists (audit #30) */
+.list-more{margin-top:14px}

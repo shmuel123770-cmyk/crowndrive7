@@ -37,3 +37,9 @@ export function validateImageDataUrl(value, maxBytes = 1000000) {
 export function validateIfDataUrl(value, maxBytes = 1000000) {
   return /^data:/i.test(String(value || '')) ? validateImageDataUrl(value, maxBytes) : value;
 }
+
+// The TRUE content type from the magic bytes — for callers that hold raw bytes (media-upload,
+// media-migrate) and must never trust a declared MIME. Returns '' when it's not a supported image.
+export function detectedImageType(buffer) {
+  return {jpeg: 'image/jpeg', png: 'image/png', gif: 'image/gif', webp: 'image/webp'}[sniff(buffer)] || '';
+}

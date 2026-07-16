@@ -112,10 +112,11 @@ export async function register({name, email, phone, password, role, legalAccepte
   try {
     credential = await auth.createUserWithEmailAndPassword(email.trim(), password);
   } catch (error) {
-    // Existing email + the correct password = just sign in instead of failing.
+    // No silent sign-in on an existing email (audit #61): the person filled a REGISTRATION form —
+    // logging them into an old account would ignore the role and consent they just chose, and
+    // confirms to a stranger that the email is registered only after a correct password anyway.
     if (error?.code === 'auth/email-already-in-use') {
-      try { return (await auth.signInWithEmailAndPassword(email.trim(), password)).user; }
-      catch { throw new Error('המייל כבר רשום באתר אבל הסיסמה שגויה — התחברו או אפסו סיסמה'); }
+      throw new Error('המייל כבר רשום באתר — עברו ל"התחברות" (או אפסו סיסמה אם שכחתם)');
     }
     throw authError(error);
   }

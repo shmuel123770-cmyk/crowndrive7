@@ -5,7 +5,14 @@ import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, s
 import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './media.js';
 import {legacyStatus, migrateLegacy} from './migrate.js';
 import {api} from './api.js';
-import {saveAuthReturn, afterAuthDestination, CAR_MAKES, CAR_TYPES, ICON, MODELS_BY_MAKE, RENTAL_MODES, TAB_ICONS, app, avatarHtml, carImage, carPhotoList, carStatusPill, carYears, composePhone, emptyState, fallbackImage, kpi, phoneField, roleName, selectOptions, bindCarButtons, carGrid, featuredFirst} from './views.js';
+import {saveAuthReturn, afterAuthDestination, openCar, CAR_MAKES, CAR_TYPES, ICON, MODELS_BY_MAKE, RENTAL_MODES, TAB_ICONS, app, avatarHtml, carImage, carPhotoList, carStatusPill, carYears, composePhone, emptyState, fallbackImage, kpi, phoneField, roleName, selectOptions, bindCarButtons, carGrid, featuredFirst} from './views.js';
+
+// Incremental list rendering (audit #30 / design spec §22): long admin lists paint the first 30
+// records and grow by 50 per tap, so the DOM stays light as the community grows. State survives
+// re-renders within the session; the button disappears once everything is shown.
+const listPages = {};
+const pageOf = key => listPages[key] || 30;
+const listMoreBtn = (key, total) => total > pageOf(key) ? `<button class="btn outline block list-more" data-list-more="${key}">הצגת עוד (${total - pageOf(key)} נוספים)</button>` : '';
 
 function dashboardLayout(title, tabs, active, content, actions = '', navFooter = '') {
   const firstName = String(store.profile?.name || '').trim().split(/\s+/)[0];
@@ -93,9 +100,13 @@ function renterDashboard(tab = 'overview') {
 function ownerDashboard(tab = 'overview') {
   const bookings = myBookings();
   const cars = myCars();
-  const total = Object.values(store.payments).reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+  // Real earnings = payments the owner APPROVED (paymentApproved also grandfathers legacy no-status rows) —
+  // pending/rejected proofs are counted separately so the KPI never overstates income.
+  const payments = Object.values(store.payments || {});
+  const approvedTotal = payments.filter(paymentApproved).reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+  const pendingPayments = payments.filter(p => p && p.status === 'pending').length;
   const contents = {
-    overview: `<div class="kpis">${kpi('car', cars.length, 'רכבים')}${kpi('check', cars.filter(c => c.status === 'available').length, 'זמינים')}${kpi('calendar', bookings.filter(b => b.status === 'pending').length, 'ממתינות לאישור')}${kpi('money', money(total), 'תשלומים מדווחים')}</div><h2>הזמנות פעילות</h2>${bookingList(bookings.filter(b => ['pending','approved','active'].includes(b.status)), 'owner')}`,
+    overview: `<div class="kpis">${kpi('car', cars.length, 'רכבים')}${kpi('check', cars.filter(c => c.status === 'available').length, 'זמינים')}${kpi('calendar', bookings.filter(b => b.status === 'pending').length, 'ממתינות לאישור')}${kpi('money', money(approvedTotal), 'הכנסות שאושרו')}</div>${pendingPayments ? `<div class="notice">💳 ${pendingPayments} הוכחות תשלום ממתינות לאישורך — בדקו בכרטיסי ההזמנות.</div>` : ''}<h2>הזמנות פעילות</h2>${bookingList(bookings.filter(b => ['pending','approved','active'].includes(b.status)), 'owner')}`,
     bookings: `<h2>הזמנות</h2>${bookingList(bookings, 'owner')}`,
     cars: `<div class="section-head"><h2>הרכבים שלי</h2><button class="btn gold" id="add-car">הוספת רכב</button></div>${carGrid(cars, true)}`,
     profile: ownerProfileView(),
@@ -104,6 +115,19 @@ function ownerDashboard(tab = 'overview') {
   bindDashboardTabs(ownerDashboard); bindActions(); bindCarButtons(); bindProfileActions();
   document.querySelector('#add-car')?.addEventListener('click', () => carForm());
   document.querySelector('#add-car-head')?.addEventListener('click', () => carForm());
+  // Per-car performance strip on the "הרכבים שלי" tab: bookings, approved earnings and rating for THIS car —
+  // injected after paint so the shared carCard stays untouched for the public site.
+  if (tab === 'cars') {
+    document.querySelectorAll('#app [data-car-open]').forEach(cardEl => {
+      if (cardEl.querySelector('.car-stats')) return;
+      const carId = cardEl.dataset.carOpen;
+      const carBookings = bookings.filter(b => b.carId === carId && !['cancelled', 'rejected', 'expired'].includes(b.status));
+      const earned = carBookings.reduce((sum, b) => { const p = store.payments[b.id]; return sum + (paymentApproved(p) ? Number(p.amount || 0) : 0); }, 0);
+      const rating = carRating(carId);
+      const strip = `<div class="car-stats"><span>📅 ${carBookings.length} הזמנות</span><span>💵 ${money(earned)}</span>${rating ? `<span>⭐ ${rating.toFixed(1)}</span>` : ''}</div>`;
+      cardEl.querySelector('.car-manage')?.insertAdjacentHTML('beforebegin', strip);
+    });
+  }
 }
 
 function adminDashboard(tab = 'overview') {
@@ -210,7 +234,7 @@ function adminDashboard(tab = 'overview') {
 function adminUsersTable(users) {
   if (!users.length) return '<div class="empty">אין משתמשים</div>';
   const rentalCount = uid => myBookings().filter(b => b.renterUid === uid || b.ownerUid === uid).length;
-  return `<div class="admin-cards">${users.map(user => {
+  return `<div class="admin-cards">${users.slice(0, pageOf('users')).map(user => {
     const count = rentalCount(user.id);
     const initial = esc(String(user.name || user.email || '?').trim().charAt(0) || '?');
     const vs = user.verification?.status;
@@ -227,7 +251,7 @@ function adminUsersTable(users) {
         <span class="auc-icons"><button class="icon-btn" title="שליחת הודעה" data-user-message="${esc(user.id)}">${ICON.chat}</button><button class="icon-btn" title="עריכה" data-user-edit="${esc(user.id)}">${ICON.edit}</button><button class="icon-btn ${user.blocked ? '' : 'danger'}" title="${user.blocked ? 'שחרור חסימה' : 'חסימה'}" data-user-block="${esc(user.id)}">${user.blocked ? ICON.check : ICON.block}</button><button class="icon-btn danger" title="מחיקה" data-user-delete="${esc(user.id)}">${ICON.trash}</button></span>
       </div>
     </div>`;
-  }).join('')}</div>`;
+  }).join('')}</div>${listMoreBtn('users', users.length)}`;
 }
 
 // Admin notifications feed (new car / booking / status / payment / chat / block).
@@ -342,15 +366,18 @@ function adminUserBookingsModal(uid) {
   });
   root.querySelectorAll('[data-view-handover]').forEach(button => button.onclick = () => viewHandoverModal(button.dataset.viewHandover));
   root.querySelectorAll('[data-chat]').forEach(button => button.onclick = () => { closeModal(); openChatThread(`b:${button.dataset.chat}`); });
+  // "פרטי הרכב" on a booking card → open the car's detail modal (data-car-open can't be used on a button —
+  // bindCarButtons deliberately ignores clicks that land on buttons).
+  root.querySelectorAll('[data-view-car]').forEach(button => button.onclick = () => openCar(button.dataset.viewCar));
 }
 function adminCarsTable(cars) {
   if (!cars.length) return '<div class="empty">אין רכבים</div>';
-  return `<div class="table-wrap"><table class="data"><thead><tr><th>רכב</th><th>בעל הרכב</th><th>מחיר/יום</th><th>סטטוס (לחצו)</th><th>ניהול</th></tr></thead><tbody>${featuredFirst(cars).map(car => `<tr><td class="t-main">${car.featured ? '★ ' : ''}${esc(car.make || '')} ${esc(car.model || '')} ${esc(car.year || '')}</td><td>${esc(car.ownerName || '—')}</td><td>${money(car.dailyPrice || 0)}</td><td><button type="button" class="pill-btn" data-car-avail="${esc(car.id)}" data-next="${car.status === 'rented' ? 'available' : 'rented'}" title="לחצו לשינוי תפוס / פנוי">${carStatusPill(car.status)}</button></td><td><div class="t-actions"><button class="icon-btn feat-btn ${car.featured ? 'feat-on' : ''}" title="${car.featured ? 'ביטול קידום לראש הרשימה' : 'קידום לראש הרשימה'}" data-car-feature="${esc(car.id)}" data-on="${car.featured ? '' : '1'}">★</button><button class="icon-btn" title="עריכת רכב" data-car-edit="${esc(car.id)}">${ICON.edit}</button><button class="icon-btn" title="${car.status === 'hidden' ? 'הצגת הרכב' : 'הסתרת הרכב'}" data-car-toggle="${esc(car.id)}">${ICON.eye}</button><button class="icon-btn danger" title="מחיקה" data-car-delete="${esc(car.id)}">${ICON.trash}</button></div></td></tr>`).join('')}</tbody></table></div>`;
+  return `<div class="table-wrap"><table class="data"><thead><tr><th>רכב</th><th>בעל הרכב</th><th>מחיר/יום</th><th>סטטוס (לחצו)</th><th>ניהול</th></tr></thead><tbody>${featuredFirst(cars).slice(0, pageOf('cars')).map(car => `<tr><td class="t-main">${car.featured ? '★ ' : ''}${esc(car.make || '')} ${esc(car.model || '')} ${esc(car.year || '')}</td><td>${esc(car.ownerName || '—')}</td><td>${money(car.dailyPrice || 0)}</td><td><button type="button" class="pill-btn" data-car-avail="${esc(car.id)}" data-next="${car.status === 'rented' ? 'available' : 'rented'}" title="לחצו לשינוי תפוס / פנוי">${carStatusPill(car.status)}</button></td><td><div class="t-actions"><button class="icon-btn feat-btn ${car.featured ? 'feat-on' : ''}" title="${car.featured ? 'ביטול קידום לראש הרשימה' : 'קידום לראש הרשימה'}" data-car-feature="${esc(car.id)}" data-on="${car.featured ? '' : '1'}">★</button><button class="icon-btn" title="עריכת רכב" data-car-edit="${esc(car.id)}">${ICON.edit}</button><button class="icon-btn" title="${car.status === 'hidden' ? 'הצגת הרכב' : 'הסתרת הרכב'}" data-car-toggle="${esc(car.id)}">${ICON.eye}</button><button class="icon-btn danger" title="מחיקה" data-car-delete="${esc(car.id)}">${ICON.trash}</button></div></td></tr>`).join('')}</tbody></table></div>${listMoreBtn('cars', cars.length)}`;
 }
 
 function bookingList(bookings, role) {
   const sorted = bookings.slice().sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
-  return `<div class="list">${sorted.length ? sorted.map(booking => {
+  return `<div class="list">${sorted.length ? sorted.slice(0, pageOf(`bookings-${role}`)).map(booking => {
     const car = store.cars[booking.carId] || {};
     const ratingButtons = booking.status === 'done' ? (role === 'renter' ? `<button class="btn outline" data-rate="${booking.id}" data-rate-type="car">דרג רכב</button><button class="btn outline" data-rate="${booking.id}" data-rate-type="user">דרג בעל רכב</button>` : role === 'owner' ? `<button class="btn outline" data-rate="${booking.id}" data-rate-type="user">דרג שוכר</button>` : '') : '';
     const evidence = booking.evidence || {};
@@ -360,11 +387,19 @@ function bookingList(bookings, role) {
       ? `${pmt.status === 'approved' ? '<span class="pill ok">תשלום אושר</span>' : pmt.status === 'rejected' ? '<span class="pill warn">תשלום נדחה</span>' : pmt.status === 'pending' ? '<span class="pill warn">ממתין לאישור</span>' : ''}<button class="btn outline" data-view-payment="${booking.id}">הוכחת תשלום</button>${pmt.status === 'pending' ? `<button class="btn primary" data-pay-approve="${booking.id}">אישור תשלום</button><button class="btn danger" data-pay-reject="${booking.id}">דחייה</button>` : ''}`
       : '';
     const renterPaymentNote = role === 'renter' && pmt ? `<p class="ev-note">${pmt.status === 'approved' ? '✓ התשלום שלך אושר על ידי בעל הרכב.' : pmt.status === 'rejected' ? '✗ התשלום נדחה — שלחו הוכחה מעודכנת בצ׳אט.' : '⏳ הוכחת התשלום ממתינה לאישור בעל הרכב.'}</p>` : '';
-    return `<article class="booking-card"><div class="booking-main"><div><small>הזמנה ${esc(booking.id.slice(-7))}</small><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3><p>${fmtDate(booking.startAt)} — ${fmtDate(booking.endAt)}</p></div><span class="status-badge ${esc(booking.status)}">${statusLabel(booking.status)}</span></div><div class="chips">${role === 'owner' && booking.status === 'pending' ? `<button class="btn primary" data-status="approved" data-booking="${booking.id}">אישור</button><button class="btn danger" data-status="rejected" data-booking="${booking.id}">דחייה</button>` : ''}${role === 'owner' && booking.status === 'approved' ? `<button class="btn gold ${evidenceDone ? '' : 'soft-disabled'}" data-status="active" data-booking="${booking.id}">התחלת השכרה</button>` : ''}${role === 'owner' && booking.status === 'active' ? `<button class="btn gold" data-status="done" data-booking="${booking.id}">סיום השכרה</button>` : ''}${role === 'owner' && ['pending','approved','active'].includes(booking.status) ? `<button class="btn outline" data-renter="${booking.renterUid}">פרטי שוכר</button>` : ''}${['approved','active'].includes(booking.status) ? `<button class="btn outline" data-address="${booking.id}">כתובת איסוף</button>` : ''}${['pending','approved','active'].includes(booking.status) ? `<button class="btn outline" data-chat="${booking.id}">צ׳אט</button>` : ''}${role === 'renter' && booking.status === 'approved' && (!pmt || pmt.status === 'rejected') ? `<button class="btn gold" data-payment="${booking.id}">💳 דיווח על תשלום</button>` : ''}${role === 'renter' && booking.status === 'active' ? `<button class="btn outline" data-handover="${booking.id}" data-stage="return">תיעוד החזרה</button>` : ''}${paymentSection}${['owner','admin'].includes(role) && booking.handover ? `<button class="btn outline" data-view-handover="${booking.id}">צפייה בתיעוד</button>` : ''}${role === 'admin' ? `<select class="admin-status-select" data-admin-status="${booking.id}"><option value="">שינוי סטטוס…</option><option value="approved">אישור</option><option value="rejected">דחייה</option><option value="active">התחלת השכרה</option><option value="done">סיום</option><option value="cancelled">ביטול</option></select><button class="btn outline" data-admin-note="${booking.id}">הערת מנהל</button>` : ''}${['renter', 'owner'].includes(role) && ['pending', 'approved'].includes(booking.status) ? `<button class="btn outline" data-cancel-booking="${booking.id}">ביטול הזמנה</button>` : ''}${ratingButtons}</div>${booking.adminNote || booking.adminAmount !== undefined ? `<p class="ev-note">הערת מנהל: ${esc(booking.adminNote || '')}${booking.adminAmount !== undefined ? ` · סכום מתוקן: ${money(booking.adminAmount)}` : ''}</p>` : ''}${renterPaymentNote}${role === 'renter' && booking.status === 'approved' ? `<p class="ev-note">לפני תחילת ההשכרה שלחו בצ׳אט: סרטון חוץ, תמונת דלק, קילומטראז׳ והוכחת תשלום.</p>` : ''}</article>`;
-  }).join('') : emptyState(ICON.calendar, role === 'renter' ? 'אין לך הזמנות עדיין' : 'אין הזמנות עדיין', role === 'renter' ? 'מצאו רכב מהצי שלנו והזמינו — זה מהיר ופשוט.' : 'כשתתקבל בקשת הזמנה היא תופיע כאן.', role === 'renter' ? '<button class="btn primary" data-route="cars">חיפוש רכב</button>' : '')}</div>`;
+    return `<article class="booking-card"><div class="booking-main"><div><small>הזמנה ${esc(booking.id.slice(-7))}</small><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3><p>${fmtDate(booking.startAt)} — ${fmtDate(booking.endAt)}</p>${booking.quote?.total ? `<p class="bk-total">${money(booking.quote.total)}</p>` : ''}${booking.status === 'pending' && booking.pendingExpiresAt ? `<p class="bk-expiry">ממתינה לאישור עד ${fmtDate(booking.pendingExpiresAt)}</p>` : ''}</div><span class="status-badge ${esc(booking.status)}">${statusLabel(booking.status)}</span></div><div class="chips">${role === 'renter' && booking.status === 'approved' && (!pmt || pmt.status === 'rejected') ? `<button class="btn gold" data-payment="${booking.id}">💳 דיווח על תשלום</button>` : ''}${role === 'owner' && booking.status === 'pending' ? `<button class="btn primary" data-status="approved" data-booking="${booking.id}">אישור</button><button class="btn danger" data-status="rejected" data-booking="${booking.id}">דחייה</button>` : ''}${role === 'owner' && booking.status === 'approved' ? `<button class="btn gold ${evidenceDone ? '' : 'soft-disabled'}" data-status="active" data-booking="${booking.id}">התחלת השכרה</button>` : ''}${role === 'owner' && booking.status === 'active' ? `<button class="btn gold" data-status="done" data-booking="${booking.id}">סיום השכרה</button>` : ''}${role === 'owner' && ['pending','approved','active'].includes(booking.status) ? `<button class="btn outline" data-renter="${booking.renterUid}">פרטי שוכר</button>` : ''}${['approved','active'].includes(booking.status) ? `<button class="btn outline" data-address="${booking.id}">כתובת איסוף</button>` : ''}${['pending','approved','active'].includes(booking.status) ? `<button class="btn outline" data-chat="${booking.id}">צ׳אט</button>` : ''}${car.id ? `<button class="btn outline" data-view-car="${esc(car.id)}">פרטי הרכב</button>` : ''}${role === 'renter' && booking.status === 'active' ? `<button class="btn outline" data-handover="${booking.id}" data-stage="return">תיעוד החזרה</button>` : ''}${paymentSection}${['owner','admin'].includes(role) && booking.handover ? `<button class="btn outline" data-view-handover="${booking.id}">צפייה בתיעוד</button>` : ''}${role === 'admin' ? `<select class="admin-status-select" data-admin-status="${booking.id}"><option value="">שינוי סטטוס…</option><option value="approved">אישור</option><option value="rejected">דחייה</option><option value="active">התחלת השכרה</option><option value="done">סיום</option><option value="cancelled">ביטול</option></select><button class="btn outline" data-admin-note="${booking.id}">הערת מנהל</button>` : ''}${['renter', 'owner'].includes(role) && ['pending', 'approved'].includes(booking.status) ? `<button class="btn outline" data-cancel-booking="${booking.id}">ביטול הזמנה</button>` : ''}${ratingButtons}</div>${booking.adminNote || booking.adminAmount !== undefined ? `<p class="ev-note">הערת מנהל: ${esc(booking.adminNote || '')}${booking.adminAmount !== undefined ? ` · סכום מתוקן: ${money(booking.adminAmount)}` : ''}</p>` : ''}${renterPaymentNote}${role === 'renter' && booking.status === 'approved' ? `<p class="ev-note">לפני תחילת ההשכרה שלחו בצ׳אט: סרטון חוץ, תמונת דלק, קילומטראז׳ והוכחת תשלום.</p>` : ''}</article>`;
+  }).join('') : emptyState(ICON.calendar, role === 'renter' ? 'אין לך הזמנות עדיין' : 'אין הזמנות עדיין', role === 'renter' ? 'מצאו רכב מהצי שלנו והזמינו — זה מהיר ופשוט.' : 'כשתתקבל בקשת הזמנה היא תופיע כאן.', role === 'renter' ? '<button class="btn primary" data-route="cars">חיפוש רכב</button>' : '')}</div>${listMoreBtn(`bookings-${role}`, sorted.length)}`;
 }
 
 function bindActions() {
+  // "פרטי הרכב" on a booking card → open the car's detail modal (data-car-open can't be used on a button —
+  // bindCarButtons deliberately ignores clicks landing on buttons).
+  document.querySelectorAll('[data-view-car]').forEach(button => button.onclick = () => openCar(button.dataset.viewCar));
+  // "הצגת עוד" on a long list grows that list by 50 and repaints the current dashboard in place.
+  document.querySelectorAll('[data-list-more]').forEach(button => button.onclick = () => {
+    listPages[button.dataset.listMore] = pageOf(button.dataset.listMore) + 50;
+    dashboard();
+  });
   document.querySelectorAll('[data-status]').forEach(button => button.onclick = async () => {
     const status = button.dataset.status;
     // Confirm the significant/irreversible transitions (reject denies the renter; done ends the rental) — the
@@ -452,7 +487,11 @@ function bindProfileActions() {
 // Round avatar cropper: drag to position, slider to zoom, canvas-crop, upload.
 function avatarCropper(file) {
   const objectUrl = URL.createObjectURL(file);
+  // One revoke for EVERY exit path (save / close / decode failure) — audit #63's small leak.
+  let revoked = false;
+  const revoke = () => { if (!revoked) { revoked = true; URL.revokeObjectURL(objectUrl); } };
   const source = new Image();
+  source.onerror = () => { revoke(); toast('לא ניתן לפתוח את התמונה — נסו קובץ אחר'); };
   source.onload = () => {
     const V = Math.min(280, Math.floor(window.innerWidth * 0.72));
     modal(`<div class="modal-head"><h2>מיקום התמונה בעיגול</h2><button class="close" data-close-modal>×</button></div>
@@ -460,6 +499,7 @@ function avatarCropper(file) {
       <div class="crop-zoom-row"><span>−</span><input type="range" id="crop-zoom" min="100" max="320" value="100"><span>+</span></div>
       <p class="mut crop-hint">גררו את התמונה למיקום · הסליידר מגדיל ומקטין</p>
       <button class="btn primary block" id="crop-save">שמירת תמונת פרופיל</button>`);
+    document.querySelector('[data-close-modal]')?.addEventListener('click', revoke, {once: true});
     const vp = document.querySelector('#crop-vp');
     const el = document.querySelector('#crop-img');
     const iw = source.naturalWidth, ih = source.naturalHeight;
@@ -495,7 +535,7 @@ function avatarCropper(file) {
         const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.9));
         const publicUrl = await uploadPublicMedia(new File([blob], 'avatar.jpg', {type: 'image/jpeg'}), 'avatar');
         await setOwnPhoto(publicUrl);
-        URL.revokeObjectURL(objectUrl);
+        revoke();
         closeModal(); toast('תמונת הפרופיל עודכנה ✓');
       } catch (error) { toast(error.message); button.disabled = false; button.textContent = 'שמירת תמונת פרופיל'; }
     };
@@ -685,12 +725,28 @@ function chatItems() {
     const guests = Object.keys(adminChatActivity)
       .filter(uid => !registeredIds.has(uid))
       .map(uid => ({id: uid, guest: true, name: `אורח · ${uid.slice(-5)}`}));
-    return [...registered, ...guests]
+    const supportThreads = [...registered, ...guests]
       .filter(u => !query || `${u.name || ''} ${u.email || ''}`.toLowerCase().includes(query) || (u.guest && 'אורח'.includes(query)))
       .sort((a, b) => (adminChatActivity[b.id] || 0) - (adminChatActivity[a.id] || 0) || String(a.name || a.email || '').localeCompare(String(b.name || b.email || ''), 'he'))
       .map(u => u.guest
         ? {key: `a:${u.id}`, emoji: ICON.chat, title: u.name, subtitle: `לקוח לא רשום${adminChatActivity[u.id] ? ' · ' + fmtDate(adminChatActivity[u.id]) : ''}`, live: true, unread: adminThreadUnread(u.id)}
         : {key: `a:${u.id}`, avatar: avatarHtml(u, 42), title: u.name || u.email || 'משתמש', subtitle: `${roleName(u.role)}${adminChatActivity[u.id] ? ' · ' + fmtDate(adminChatActivity[u.id]) : ''}`, live: true, unread: adminThreadUnread(u.id)});
+    // Inquiry (pre-booking) conversations — the admin could always READ them but had no way in from
+    // this screen (audit #48). store.inquiries is the FULL tree for admins; recent 100 is plenty.
+    const inquiryThreads = list(store.inquiries)
+      .filter(inq => {
+        const car = store.cars[inq.carId] || {};
+        const renter = store.users[inq.renterUid] || {};
+        return !query || `פנייה ${car.make || ''} ${car.model || ''} ${renter.name || ''} ${car.ownerName || ''}`.toLowerCase().includes(query);
+      })
+      .sort((a, b) => Number(b.updatedAt || b.createdAt || 0) - Number(a.updatedAt || a.createdAt || 0))
+      .slice(0, 100)
+      .map(inq => {
+        const car = store.cars[inq.carId] || {};
+        const renter = store.users[inq.renterUid] || {};
+        return {key: `i:${inq.id}`, emoji: ICON.car, title: `פנייה: ${`${car.make || 'רכב'} ${car.model || ''}`.trim()}`, subtitle: `${renter.name || 'שוכר'} ↔ ${car.ownerName || 'בעל הרכב'}`, live: true};
+      });
+    return [...supportThreads, ...inquiryThreads];
   }
   const role = myRole();
   const bookingItems = myBookings()
@@ -749,7 +805,7 @@ function selectThread(key) {
   const headActions = `${booking && isOwner
     ? (booking.status === 'approved' ? `<button class="btn gold ${evReady ? '' : 'soft-disabled'}" id="rental-start">התחלת השכרה</button>`
       : booking.status === 'active' ? `<button class="btn primary" id="rental-end">סיום השכרה</button>` : '')
-    : ''}${booking && (isOwner || store.isAdmin) && !convEnded ? '<button class="btn dark-out" id="chat-end" title="הצד השני לא יוכל לשלוח עוד הודעות">סיום שיחה</button>' : ''}${store.isAdmin ? '<button class="btn dark-out" id="chat-clear" title="מחיקת כל ההודעות">ניקוי</button>' : ''}`;
+    : ''}${booking && (isOwner || store.isAdmin) && !convEnded && ['done', 'cancelled', 'rejected', 'expired'].includes(booking.status) ? '<button class="btn dark-out" id="chat-end" title="הצד השני לא יוכל לשלוח עוד הודעות">סיום שיחה</button>' : ''}${booking && (isOwner || store.isAdmin) && convEnded ? '<button class="btn dark-out" id="chat-reopen" title="פתיחה מחדש של השיחה לשני הצדדים">פתיחת שיחה מחדש</button>' : ''}${store.isAdmin ? '<button class="btn dark-out" id="chat-clear" title="מחיקת כל ההודעות">ניקוי</button>' : ''}`;
   const checklist = booking && booking.status === 'approved'
     ? `<div class="ev-checklist">${[['video', 'סרטון חוץ'], ['fuel', 'דלק'], ['odometer', 'קילומטראז׳'], ['payment', 'תשלום']].map(([k, label]) => `<span class="ev-status ${ev[k] ? 'ok' : ''}">${ev[k] ? '✓' : '○'} ${label}</span>`).join('')}</div>` : '';
   const evidenceRow = booking && booking.status === 'approved' && isRenter
@@ -823,12 +879,16 @@ function selectThread(key) {
   });
   pane.querySelector('#chat-clear')?.addEventListener('click', async () => {
     if (!confirm('למחוק לצמיתות את כל ההודעות בשיחה זו?')) return;
-    try { await adminAction('chat-clear', isSupport ? {userUid: id} : {bookingId: id}); toast('הצ׳אט נוקה'); }
+    try { await adminAction('chat-clear', isSupport ? {userUid: id} : isInquiry ? {inquiryId: id} : {bookingId: id}); toast('הצ׳אט נוקה'); }
     catch (error) { toast(error.message); }
   });
   pane.querySelector('#chat-end')?.addEventListener('click', async () => {
     if (!confirm('לסיים את השיחה? הצד השני לא יוכל לשלוח יותר הודעות.')) return;
     try { await api('booking-action', {action: 'end-chat', bookingId: id}); toast('השיחה נסגרה'); }
+    catch (error) { toast(error.message); }
+  });
+  pane.querySelector('#chat-reopen')?.addEventListener('click', async () => {
+    try { await api('booking-action', {action: 'reopen-chat', bookingId: id}); toast('השיחה נפתחה מחדש'); }
     catch (error) { toast(error.message); }
   });
 
@@ -846,7 +906,9 @@ function selectThread(key) {
     // Guest gate: an unregistered visitor may send ONE message until the admin replies. Once they've
     // sent and no admin answer exists yet, lock the composer with a friendly "we'll get back to you" note.
     if (isSupport && store.user?.isAnonymous) {
-      const waiting = messages.some(m => m.senderUid === store.user.uid) && !messages.some(m => m.fromAdmin);
+      // The instant auto-ack carries auto:true — only a HUMAN admin reply unlocks the guest (audit #28),
+      // matching the server gate (otherwise the next guest message bounces with 429).
+      const waiting = messages.some(m => m.senderUid === store.user.uid) && !messages.some(m => m.fromAdmin && !m.auto);
       const composerForm = document.querySelector('#chat-composer');
       composerForm?.querySelectorAll('input,button').forEach(el => { el.disabled = waiting; });
       let note = document.querySelector('#guest-wait-note');
@@ -878,8 +940,11 @@ function renderChatMessage(message) {
 }
 
 function paymentModal(bookingId, onDone = null) {
-  const expected = Number(store.bookings?.[bookingId]?.quote?.total || 0);
-  modal(`<div class="modal-head"><h2>דיווח על תשלום</h2><button class="close" data-close-modal>×</button></div><p class="mut">הצילום יישלח לבדיקה. התשלום ייחשב מאושר רק לאחר אישור בעל הרכב.</p><form id="payment-form"><div class="field"><label>סכום ששולם</label><input name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" ${expected ? `value="${expected.toFixed(2)}" readonly` : ''} required>${expected ? `<small>הסכום נקבע לפי סיכום ההזמנה: ${money(expected)}</small>` : ''}</div><div class="field"><label>צילום הוכחה</label><input name="file" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" required></div><div class="upload-state" role="status" aria-live="polite"></div><button class="btn primary block">שליחת הדיווח</button></form>`);
+  // The admin's corrected amount wins over the original quote (audit #6) — same rule as the server.
+  const bk = store.bookings?.[bookingId];
+  const adminAmount = Number(bk?.adminAmount);
+  const expected = Number.isFinite(adminAmount) && adminAmount > 0 ? adminAmount : Number(bk?.quote?.total || 0);
+  modal(`<div class="modal-head"><h2>דיווח על תשלום</h2><button class="close" data-close-modal>×</button></div><p class="mut">הצילום יישלח לבדיקה. התשלום ייחשב מאושר רק לאחר אישור בעל הרכב.</p><form id="payment-form"><div class="field"><label>סכום ששולם</label><input name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" ${expected ? `value="${expected.toFixed(2)}" readonly` : ''} required>${expected ? `<small>${Number.isFinite(adminAmount) && adminAmount > 0 ? 'סכום מתוקן שנקבע על ידי המנהל' : 'הסכום נקבע לפי סיכום ההזמנה'}: ${money(expected)}</small>` : ''}</div><div class="field"><label>צילום הוכחה</label><input name="file" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" required></div><div class="upload-state" role="status" aria-live="polite"></div><button class="btn primary block">שליחת הדיווח</button></form>`);
   document.querySelector('#payment-form').onsubmit = async event => {
     event.preventDefault();
     const btn = event.submitter; if (btn) { btn.disabled = true; btn.textContent = 'מעלה…'; }
@@ -998,6 +1063,8 @@ export function carForm(car = null) {
   const knownMake = CAR_MAKES.includes(car?.make);
 
   modal(`<div class="modal-head"><h2>${editing ? 'עריכת רכב' : 'הוספת רכב'}</h2><button class="close" data-close-modal>×</button></div><form id="car-form">
+    <div class="wiz-head" aria-live="polite"><span>שלב <b id="wiz-num">1</b> מתוך 4 · <span id="wiz-title">פרטי הרכב</span></span><span class="wiz-bar"><i id="wiz-fill"></i></span></div>
+    <section class="wiz-step active" data-step="1">
     <p class="form-section-title">פרטי הרכב</p>
     <div class="form-grid">
       <div class="field"><label>יצרן <span class="req">*</span></label><select name="makeSelect" id="make-select">${selectOptions(CAR_MAKES, knownMake ? car.make : '')}<option value="__other" ${editing && !knownMake ? 'selected' : ''}>אחר…</option></select><input name="make" id="make-input" value="${esc(car?.make || '')}" placeholder="שם היצרן" style="${knownMake || !editing ? 'display:none' : ''};margin-top:6px"></div>
@@ -1010,7 +1077,8 @@ export function carForm(car = null) {
       <div class="field"><label>מספר מושבים</label><input name="seats" type="number" min="1" max="20" value="${esc(car?.seats || 5)}"></div>
       <div class="field"><label>גיל מינימלי</label><input name="minAge" type="number" min="18" max="99" value="${esc(car?.minAge || 21)}"></div>
     </div>
-
+    </section>
+    <section class="wiz-step" data-step="2">
     <p class="form-section-title">אופן ההשכרה <span class="req">*</span></p>
     <div class="mode-picker" id="mode-picker">
       ${RENTAL_MODES.map(m => `<label class="mode-opt"><input type="radio" name="rentalMode" value="${m.value}" ${((car?.rentalMode || 'hourly_daily') === m.value) ? 'checked' : ''}><span class="mode-opt-in"><b>${m.label}</b><small>${m.hint}</small></span></label>`).join('')}
@@ -1025,7 +1093,8 @@ export function carForm(car = null) {
     </div>
     <label class="price-request-toggle" id="weekend-toggle-row"><input type="checkbox" name="weekendEnabled" id="weekend-enabled" ${car?.weekendEnabled ? 'checked' : ''}> <span><b>זמין גם לסופ״ש (כולל שבת)</b> — גם רכב שמושכר לפי שעות יוכל להיות מושכר לסופ״ש במחיר קבוע. המחיר לא יופיע במודעה — הוא יוצג רק כשהשוכר בוחר תאריכים שכוללים שבת.</span></label>
     <div class="form-grid" id="weekend-price-grid"><div class="field"><label>מחיר קבוע לסופ״ש <span class="req">*</span></label><input name="weekendPrice" type="number" min="0" value="${esc(car?.weekendPrice || '')}"></div></div>
-
+    </section>
+    <section class="wiz-step" data-step="3">
     <p class="form-section-title">תמונות הרכב <span class="req">*</span> <span class="mut">(עד 6, בחרו תמונה ראשית)</span></p>
     <div id="photo-grid" class="photo-grid"></div>
     <div class="chips photo-actions">
@@ -1037,14 +1106,52 @@ export function carForm(car = null) {
 
     <p class="form-section-title">סרטון קצר <span class="mut">(רשות)</span></p>
     <div class="chips"><label class="btn outline">העלאת סרטון<input hidden type="file" id="video-file" accept="video/*"></label><span id="video-status" class="mut">${videoUrl ? 'סרטון קיים' : 'לא הועלה סרטון'}</span></div>
-
+    </section>
+    <section class="wiz-step" data-step="4">
     <p class="form-section-title">מיקום</p>
     <div class="field"><label>אזור ציבורי</label><input name="area" value="${esc(car?.area || 'Crown Heights')}"></div>
     <div class="field"><label>כתובת מלאה — תיחשף לשוכר רק לאחר אישור</label><input name="fullAddress"></div>
+    </section>
+    <div class="wiz-nav"><button type="button" class="btn outline" id="wiz-prev">חזרה</button><button type="button" class="btn primary" id="wiz-next">המשך</button></div>
     <button class="btn primary block" id="car-submit">${editing ? 'שמירת שינויים' : 'פרסום הרכב'}</button>
   </form>`);
 
   const form = document.querySelector('#car-form');
+
+  // Mobile step-wizard (design spec §11): phones see one short step at a time with "שלב X מתוך 4";
+  // desktop shows the whole form at once (the wizard chrome is CSS-hidden above 820px, every step
+  // stays in the DOM so drafts/formData keep working). Each "המשך" validates its own step first.
+  const wizSteps = [...form.querySelectorAll('.wiz-step')];
+  const wizTitles = ['פרטי הרכב', 'מחיר ואופן ההשכרה', 'תמונות וסרטון', 'מיקום ופרסום'];
+  const isPhone = () => window.matchMedia('(max-width:820px)').matches;
+  let wizAt = 0, wizSettled = false;
+  const showStep = index => {
+    wizAt = Math.max(0, Math.min(wizSteps.length - 1, index));
+    wizSteps.forEach((step, i) => step.classList.toggle('active', i === wizAt));
+    form.querySelector('#wiz-num').textContent = wizAt + 1;
+    form.querySelector('#wiz-title').textContent = wizTitles[wizAt];
+    form.querySelector('#wiz-fill').style.width = `${((wizAt + 1) / wizSteps.length) * 100}%`;
+    form.querySelector('#wiz-prev').disabled = wizAt === 0;
+    form.querySelector('#wiz-next').style.display = wizAt === wizSteps.length - 1 ? 'none' : '';
+    form.querySelector('#car-submit').classList.toggle('wiz-hidden', wizAt !== wizSteps.length - 1);
+    if (wizSettled && isPhone()) form.querySelector('.wiz-head')?.scrollIntoView({block: 'start', behavior: 'smooth'});
+    wizSettled = true;
+  };
+  form.querySelector('#wiz-prev').onclick = () => showStep(wizAt - 1);
+  form.querySelector('#wiz-next').onclick = () => {
+    // The current step must be valid before moving on — the error shows under the offending field.
+    const invalid = wizSteps[wizAt].querySelector(':invalid');
+    if (invalid && isPhone()) { invalid.reportValidity(); return; }
+    showStep(wizAt + 1);
+  };
+  // Safety net: if the browser flags a field on a HIDDEN step at submit time, jump to that step so
+  // the message can actually be shown (a display:none control is "not focusable").
+  form.addEventListener('invalid', event => {
+    const step = event.target.closest('.wiz-step');
+    if (step && isPhone() && !step.classList.contains('active')) showStep(wizSteps.indexOf(step));
+  }, true);
+  showStep(0);
+
   const grid = document.querySelector('#photo-grid');
   const note = document.querySelector('#car-image-note');
   const makeSelect = document.querySelector('#make-select');
@@ -1147,9 +1254,8 @@ export function carForm(car = null) {
     lastSuggest = key;
     box.innerHTML = '<div class="suggest-bubble typing"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>';
     try {
-      const response = await fetch('/api/car-image-search', {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({make, model, year: form.year.value})});
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok || !result.url) { box.innerHTML = ''; return; }
+      const result = await api('car-image-search', {make, model, year: form.year.value}).catch(() => null);
+      if (!result?.url) { box.innerHTML = ''; return; }
       box.innerHTML = `<div class="suggest-bubble"><img class="suggest-img" src="${esc(result.url)}" alt=""><div class="suggest-text"><b>מצאתי תמונה של ${esc(make)} ${esc(model)}</b><small>רוצים שאוסיף אותה לגלריה?</small><div class="chips"><button type="button" class="btn primary" id="suggest-yes">כן, הוסף</button><button type="button" class="btn outline" id="suggest-no">לא תודה</button></div></div></div>`;
       box.querySelector('#suggest-yes').onclick = () => { addPhoto(result.url); box.innerHTML = ''; toast('התמונה נוספה לגלריה'); };
       box.querySelector('#suggest-no').onclick = () => { box.innerHTML = ''; };
@@ -1173,9 +1279,8 @@ export function carForm(car = null) {
     if (!make || !model) return toast('בחרו יצרן ודגם קודם');
     try {
       note.textContent = 'מחפש תמונה רשמית…';
-      const response = await fetch('/api/car-image-search', {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify({make, model, year: form.year.value, trim: form.trim.value})});
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok || !result.url) throw new Error(result.error || 'לא נמצאה תמונה מתאימה — אפשר להעלות תמונה מהגלריה');
+      const result = await api('car-image-search', {make, model, year: form.year.value, trim: form.trim.value});
+      if (!result?.url) throw new Error('לא נמצאה תמונה מתאימה — אפשר להעלות תמונה מהגלריה');
       addPhoto(result.url);
       note.textContent = `${result.title || 'תמונה'} ${result.license ? '· ' + result.license : ''}`;
     } catch (error) { toast(error.message); note.textContent = error.message; }
@@ -1190,10 +1295,10 @@ export function carForm(car = null) {
 
   form.onsubmit = async event => {
     event.preventDefault();
-    if (!photos.length) return toast('יש להוסיף לפחות תמונה אחת של הרכב');
+    if (!photos.length) { showStep(2); return toast('יש להוסיף לפחות תמונה אחת של הרכב'); }
     const make = currentMake();
     const model = modelSelect.value === '__other' ? modelInput.value.trim() : modelSelect.value;
-    if (!make || !model) return toast('יש לבחור יצרן ודגם');
+    if (!make || !model) { showStep(0); return toast('יש לבחור יצרן ודגם'); }
     const data = formData(event.target);
     const onRequest = !!priceOnReq?.checked;
     data.priceOnRequest = onRequest;
@@ -1202,14 +1307,14 @@ export function carForm(car = null) {
       const required = MODE_PRICES[mode] || MODE_PRICES.hourly_daily;
       const priceName = {hourly: 'priceHourly', daily: 'dailyPrice', weekly: 'priceWeekly'};
       for (const key of Object.keys(required)) {
-        if (!(Number(data[priceName[key]]) > 0)) return toast('יש להזין את כל המחירים הנדרשים לאופן ההשכרה שנבחר');
+        if (!(Number(data[priceName[key]]) > 0)) { showStep(1); return toast('יש להזין את כל המחירים הנדרשים לאופן ההשכרה שנבחר'); }
       }
     }
     // Weekend rental: only kept for hourly / hourly-daily cars (not long-term / price-on-request), and
     // a weekend price is then required.
     const weekendOn = weekendAllowed() && !!weekendCheck?.checked;
     data.weekendEnabled = weekendOn;
-    if (weekendOn && !(Number(data.weekendPrice) > 0)) return toast('יש להזין מחיר קבוע לסופ״ש, או לבטל את האפשרות');
+    if (weekendOn && !(Number(data.weekendPrice) > 0)) { showStep(1); return toast('יש להזין מחיר קבוע לסופ״ש, או לבטל את האפשרות'); }
     if (!weekendOn) data.weekendPrice = 0;
     data.make = make; data.model = model;
     data.photos = photos;

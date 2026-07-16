@@ -17,6 +17,7 @@ export const store = {
   verificationStatuses: {},
   adminNotifications: {},
   config: {},
+  reservations: {},
   route: 'home',
   dashTab: 'overview',  // which personal-area tab is active (shared: bottomNav in views.js + dashboard in views-app.js)
   publicUnsubs: [],
@@ -43,6 +44,9 @@ export async function startPublic() {
   // node (with authorUid + bookingId) is no longer public (audit #3).
   store.publicUnsubs.push(listen(refs.publicRatings, v => { store.ratings = v; }, 'ratings'));
   store.publicUnsubs.push(listen(refs.config, v => { store.config = v; }, 'config'));
+  // Occupied date ranges per car (carId → bookingId → {startAt, endAt}; no personal data). Lets the
+  // search mark a car as taken for the chosen dates instead of failing at booking time (audit #42).
+  store.publicUnsubs.push(listen(refs.reservations, v => { store.reservations = v; }, 'reservations'));
 }
 
 export async function startPrivate(user) {

@@ -19,6 +19,8 @@ export async function handler(event) {
     const db = getAdmin().database();
     const car = (await db.ref(`cars/${carId}`).once('value')).val();
     if (!car) return json(404, {error: 'הרכב לא נמצא'});
+    // A hidden car is out of the catalog — knowing its id must not reopen a contact channel (audit #47).
+    if (car.status === 'hidden') return json(409, {error: 'הרכב אינו זמין לפניות כרגע'});
     const ownerUid = car.ownerUid;
     if (!ownerUid) return json(409, {error: 'לרכב הזה אין בעל רכב משויך — פנו לתמיכה.'});
     if (ownerUid === token.uid) return json(400, {error: 'זה הרכב שלך — אי אפשר לפנות לעצמך.'});
@@ -36,6 +38,6 @@ export async function handler(event) {
     return json(200, {ok: true, inquiryId});
   } catch (error) {
     console.error(error);
-    return json(error.status || 500, {error: error.message});
+    return json(error.status || 500, {error: error.status ? error.message : 'שגיאת שרת — נסו שוב בעוד רגע'});
   }
 }

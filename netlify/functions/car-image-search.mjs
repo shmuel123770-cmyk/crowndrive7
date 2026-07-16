@@ -1,4 +1,5 @@
-import {json, cleanText, parseBody} from './_firebase-admin.mjs';
+import {verify, json, cleanText, parseBody} from './_firebase-admin.mjs';
+import {rateLimit, tooMany} from './_ratelimit.mjs';
 
 // Junk that is not a clean, current exterior studio/press shot of the whole car.
 const BAD = /logo|badge|emblem|icon|\bmap\b|wheel|rim|tyre|tire|interior|dashboard|cockpit|engine|seat|gauge|detail|headlamp|taillight|tail.?light|grille|mirror|\bdoor\b|assembly|gearbox|boot|trunk|sticker|wash|dirty|dirt|mud|snow|rust|rusty|damaged|crash|accident|wreck|abandoned|junk|scrap|police|taxi|toy|model.?car|diecast/i;
@@ -62,6 +63,10 @@ async function fromCommons(mk, md, yr, trim) {
 export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
+    // Only signed-in users (the car form is owner-only anyway), capped per user — the search proxies
+    // an external API, so an open endpoint could burn its quota (audit #33).
+    const token = await verify(event);
+    if (!(await rateLimit(token.uid, 'image-search', 30, 10 * 60 * 1000))) throw tooMany();
     const body = parseBody(event);
     if (!body) return json(400, {error: 'בקשה לא תקינה — נסו שוב'});
     const {make, model, year, trim} = body;

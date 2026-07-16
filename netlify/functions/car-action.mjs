@@ -63,9 +63,13 @@ export async function handler(event) {
       const car = publicCar(body.data || {}, token.uid, {}, userProfile?.name || '');
       if (!car.make || !car.model) return json(400, {error: 'יצרן ודגם הם חובה'});
       if (!car.photos.length) return json(400, {error: 'יש להוסיף לפחות תמונה אחת של הרכב'});
+      // Pricing and address stay flexible by the owner's choice (user decision) — no server-side
+      // minimum price or required address here.
       const fullAddress = cleanText(body.data?.fullAddress, 500);
+      const record = {...car, status: 'available', createdAt: Date.now()};
       await db.ref().update({
-        [`cars/${id}`]: {...car, status: 'available', createdAt: Date.now()},
+        [`cars/${id}`]: record,
+        [`publicCars/${id}`]: record,  // public mirror (audit #45)
         [`privateCarDetails/${id}`]: {ownerUid: token.uid, fullAddress, updatedAt: Date.now()},
       });
       await audit(token.uid, 'car_create', 'car', id);
@@ -80,7 +84,7 @@ export async function handler(event) {
     if (body.action === 'update') {
       const car = publicCar(body.patch || {}, existing.ownerUid, existing);
       car.updatedAt = Date.now();
-      const updates = {[`cars/${id}`]: car};
+      const updates = {[`cars/${id}`]: car, [`publicCars/${id}`]: car.status !== 'hidden' ? car : null};
       if ('fullAddress' in (body.patch || {})) updates[`privateCarDetails/${id}`] = {ownerUid: existing.ownerUid, fullAddress: cleanText(body.patch.fullAddress, 500), updatedAt: Date.now()};
       await db.ref().update(updates);
       await audit(token.uid, 'car_update', 'car', id, {fields: Object.keys(body.patch || {})});
@@ -90,20 +94,41 @@ export async function handler(event) {
       const active = await db.ref('bookings').orderByChild('carId').equalTo(id).once('value');
       const blocked = Object.values(active.val() || {}).some(b => ['pending', 'approved', 'active'].includes(b.status));
       if (blocked && !admin) return json(409, {error: 'לא ניתן למחוק רכב עם הזמנה פתוחה'});
-      await db.ref().update({[`cars/${id}`]: null, [`privateCarDetails/${id}`]: null});
+      await db.ref().update({[`cars/${id}`]: null, [`publicCars/${id}`]: null, [`privateCarDetails/${id}`]: null});
       await audit(token.uid, 'car_delete', 'car', id);
       return json(200, {ok: true});
     }
     if (body.action === 'status') {
       const status = ['available', 'rented', 'hidden'].includes(body.status) ? body.status : null;
       if (!status) return json(400, {error: 'סטטוס לא תקין'});
-      await db.ref(`cars/${id}`).update({status, updatedAt: Date.now()});
+      const stamped = {...existing, status, updatedAt: Date.now()};
+      await db.ref().update({
+        [`cars/${id}/status`]: status,
+        [`cars/${id}/updatedAt`]: stamped.updatedAt,
+        // Hiding removes the car from the public mirror entirely (audit #45); unhiding restores it.
+        [`publicCars/${id}`]: status !== 'hidden' ? stamped : null,
+      });
       await audit(token.uid, 'car_status', 'car', id, {status});
+      return json(200, {ok: true});
+    }
+    // Admin pin/unpin to the top of the listings — was a direct client write, which would have let the
+    // public mirror drift; now it flows through here and keeps both copies in step.
+    if (body.action === 'feature') {
+      if (!admin) return json(403, {error: 'מנהל בלבד'});
+      const featured = body.featured ? Date.now() : null;
+      const stamped = {...existing, featured, updatedAt: Date.now()};
+      if (featured === null) delete stamped.featured;
+      await db.ref().update({
+        [`cars/${id}/featured`]: featured,
+        [`cars/${id}/updatedAt`]: stamped.updatedAt,
+        [`publicCars/${id}`]: existing.status !== 'hidden' ? stamped : null,
+      });
+      await audit(token.uid, 'car_feature', 'car', id, {featured: !!featured});
       return json(200, {ok: true});
     }
     return json(400, {error: 'פעולה לא מוכרת'});
   } catch (error) {
     console.error(error);
-    return json(error.status || 500, {error: error.message});
+    return json(error.status || 500, {error: error.status ? error.message : 'שגיאת שרת — נסו שוב בעוד רגע'});
   }
 }

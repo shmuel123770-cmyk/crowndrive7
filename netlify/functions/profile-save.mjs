@@ -1,8 +1,9 @@
-import {getAdmin, verify, json, profile, cleanText, audit, isAdmin, parseBody} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, profile, cleanText, audit, isAdmin, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
 export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const token = await verify(event);
+    if (await maintenanceBlocked(token.uid)) return json(503, {error: 'האתר בתחזוקה כרגע — נסו שוב בעוד מספר דקות'});  // audit #23
     const body = parseBody(event);
     if (!body) return json(400, {error: 'הבקשה גדולה או פגומה — נסו תמונה קטנה יותר'});
     const db = getAdmin().database();
@@ -69,6 +70,6 @@ export async function handler(event) {
     return json(400, {error: 'פעולה לא תקינה'});
   } catch (error) {
     console.error(error);
-    return json(error.status || 500, {error: error.message});
+    return json(error.status || 500, {error: error.status ? error.message : 'שגיאת שרת — נסו שוב בעוד רגע'});
   }
 }

@@ -132,11 +132,13 @@ export function paintApp(html) {
 // later skip a repaint when we return to a memoized page.
 export function resetPaint() { _paintedHTML = null; }
 export function formData(form) { return Object.fromEntries(new FormData(form).entries()); }
+// Unknown statuses map to a NEUTRAL label — never echoed back raw, since several screens interpolate
+// the label into HTML (audit #19 stored-XSS defense; the server also whitelists on write).
 export function statusLabel(status) {
-  return ({pending:'ממתינה', approved:'אושרה', active:'פעילה', done:'הסתיימה', rejected:'נדחתה', cancelled:'בוטלה', expired:'פג תוקף'}[status] || (typeof status === 'string' && status) || '—');
+  return ({pending:'ממתינה', approved:'אושרה', active:'פעילה', done:'הסתיימה', rejected:'נדחתה', cancelled:'בוטלה', expired:'פג תוקף'}[status] || '—');
 }
 export function verificationLabel(status) {
-  return ({missing:'חסר', pending:'ממתין לבדיקה', approved:'מאומת', rejected:'נדחה', needs_resubmission:'נדרש צילום מחדש'}[status] || (typeof status === 'string' && status) || 'חסר');
+  return ({missing:'חסר', pending:'ממתין לבדיקה', approved:'מאומת', rejected:'נדחה', needs_resubmission:'נדרש צילום מחדש'}[status] || 'חסר');
 }
 export function validPassword(value) { return String(value || '').length >= 6; }
 // A real email: something@something.tld, no spaces, a dot in the domain.

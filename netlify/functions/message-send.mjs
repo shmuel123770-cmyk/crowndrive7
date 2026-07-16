@@ -1,4 +1,4 @@
-import {getAdmin, verify, json, booking, isAdmin, cleanText, audit, notifyAdmin, parseBody} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, booking, isAdmin, cleanText, audit, notifyAdmin, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
 import {smsUser, smsAdmin, onceGuard} from './_sms.mjs';
 import {rateLimit, tooMany} from './_ratelimit.mjs';
 import {validateImageDataUrl} from './_media.mjs';
@@ -16,6 +16,7 @@ export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const token = await verify(event);
+    if (await maintenanceBlocked(token.uid)) return json(503, {error: 'האתר בתחזוקה כרגע — נסו שוב בעוד מספר דקות'});  // audit #23
     if (!(await rateLimit(token.uid, 'message', 20, 60 * 1000))) throw tooMany();
     const body = parseBody(event);
     if (!body) return json(400, {error: 'הבקשה גדולה או פגומה — נסו תמונה קטנה יותר'});
@@ -132,6 +133,6 @@ export async function handler(event) {
     return json(200, {ok: true, id: ref.key});
   } catch (error) {
     console.error(error);
-    return json(error.status || 500, {error: error.message});
+    return json(error.status || 500, {error: error.status ? error.message : 'שגיאת שרת — נסו שוב בעוד רגע'});
   }
 }

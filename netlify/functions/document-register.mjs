@@ -17,6 +17,12 @@ export async function handler(event) {
     const isImage = /^data:image\//i.test(value);
     const expected = `users/${token.uid}/documents/`;
     if (!isImage && (!value.startsWith(expected) || value.includes('..'))) return json(400, {error: 'נתיב קובץ לא תקין'});
+    // A legacy storage path must point at a REAL object (audit #7) — a fabricated path can no longer be
+    // registered as a license/selfie. (Data-URLs are content-validated below instead.)
+    if (!isImage) {
+      const {storageObjectExists} = await import('./_storage.mjs');
+      if ((await storageObjectExists(value)) === false) return json(400, {error: 'קובץ המסמך לא נמצא באחסון — צלמו והעלו שוב'});
+    }
     const stored = isImage ? validateImageDataUrl(value) : cleanText(path, 500);  // real image bytes, not just the prefix
     const db = getAdmin().database();
     // Once all three documents were submitted the verification is locked —
@@ -25,6 +31,13 @@ export async function handler(event) {
     const currentStatus = (await db.ref(`verificationStatus/${token.uid}`).once('value')).val();
     if (currentVer.licenseFront && currentVer.licenseBack && currentVer.selfie && !['needs_resubmission', 'rejected'].includes(currentStatus)) {
       return json(409, {error: 'האימות הושלם ונעול — לשינוי יש לפנות למנהל האתר'});
+    }
+    // A re-shot document replaces the record — delete the PREVIOUS file if it lived in Storage, so an
+    // old license photo doesn't linger forever (audit #21; best-effort, data-URLs have no file).
+    const previous = (await db.ref(`privateUserDocuments/${token.uid}/${documentType}`).once('value')).val();
+    if (typeof previous === 'string' && previous && !previous.startsWith('data:') && previous !== stored) {
+      const {deleteStorageObject} = await import('./_storage.mjs');
+      await deleteStorageObject(previous);
     }
     const updates = {};
     updates[`privateUserDocuments/${token.uid}/${documentType}`] = stored;
@@ -40,6 +53,6 @@ export async function handler(event) {
     return json(200, {ok: true});
   } catch (error) {
     console.error(error);
-    return json(error.status || 500, {error: error.message});
+    return json(error.status || 500, {error: error.status ? error.message : 'שגיאת שרת — נסו שוב בעוד רגע'});
   }
 }

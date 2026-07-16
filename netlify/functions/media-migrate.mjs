@@ -1,5 +1,7 @@
 import {getAdmin, verify, json, isAdmin, audit} from './_firebase-admin.mjs';
 import {putStorageObject} from './_storage.mjs';
+import {detectedImageType} from './_media.mjs';
+import {syncPublicCar} from './_public-cars.mjs';
 
 // Admin-only, idempotent migration: move existing INLINE data:URL car images (the ones that make the
 // world-readable /cars payload heavy) to Storage/CDN and replace them with tiny URLs. It runs in a
@@ -12,8 +14,14 @@ const IMAGES_PER_CALL = 6;
 function decode(dataUrl) {
   const match = dataUrlRe.exec(String(dataUrl || ''));
   if (!match) return null;
-  try { const buffer = Buffer.from(match[2], 'base64'); return buffer.length ? {contentType: match[1], buffer} : null; }
-  catch { return null; }
+  try {
+    const buffer = Buffer.from(match[2], 'base64');
+    if (!buffer.length) return null;
+    // The magic bytes decide (audit #59) — a legacy record can't turn arbitrary content into a PUBLIC
+    // file by declaring image/*: non-images are skipped, and the stored type is the DETECTED one.
+    const contentType = detectedImageType(buffer);
+    return contentType ? {contentType, buffer} : null;
+  } catch { return null; }
 }
 
 export async function handler(event) {
@@ -47,7 +55,11 @@ export async function handler(event) {
         } else remaining++;
       }
 
-      if (changed) { updates.photos = photos; await db.ref(`cars/${carId}`).update(updates); }
+      if (changed) {
+        updates.photos = photos;
+        await db.ref(`cars/${carId}`).update(updates);
+        await syncPublicCar(db, carId);  // keep the public mirror's photo URLs in step (audit #45)
+      }
     }
 
     await audit(token.uid, 'media_migrate', 'cars', '', {migrated, remaining});

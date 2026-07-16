@@ -20,7 +20,9 @@ function overlaps(aStart, aEnd, bStart, bEnd) {
 const DAY = 86400000;
 const TERMS_VERSION = '2026-07-14-rev101';
 const MODE_BUCKETS = {hourly: ['hours'], hourly_daily: ['hours', 'days'], long_term: ['weeks']};
-function periodBucket(ms) { return ms < 24 * 3600000 ? 'hours' : ms < 7 * DAY ? 'days' : 'weeks'; }
+// One hour of DST tolerance at each boundary (audit #40) — mirrors js/views.js: a 23-real-hour "day"
+// across the spring switch still prices as a day, and a 167-hour week as a week.
+function periodBucket(ms) { return ms < 23 * 3600000 ? 'hours' : ms < 7 * DAY - 3600000 ? 'days' : 'weeks'; }
 function carBuckets(car) {
   if (car.rentalMode && MODE_BUCKETS[car.rentalMode]) return MODE_BUCKETS[car.rentalMode];
   const b = [];
@@ -32,8 +34,11 @@ function carBuckets(car) {
 function rangeIncludesSaturday(startRaw, endRaw) {
   // Work on the calendar dates at noon UTC so day-of-week is unambiguous regardless of timezone.
   let d = new Date(String(startRaw).slice(0, 10) + 'T12:00:00Z');
-  const end = new Date(String(endRaw).slice(0, 10) + 'T12:00:00Z');
+  let end = new Date(String(endRaw).slice(0, 10) + 'T12:00:00Z');
   if (Number.isNaN(d.getTime()) || Number.isNaN(end.getTime())) return false;
+  // A rental that ends at midnight SHARP occupies zero time on that calendar day (audit #41) — the
+  // end date itself doesn't count, so ending Saturday 00:00 is not a weekend stay. Mirrors views.js.
+  if (/T00:00/.test(String(endRaw))) end = new Date(end.getTime() - DAY);
   while (d <= end) { if (d.getUTCDay() === 6) return true; d = new Date(d.getTime() + DAY); }
   return false;
 }
@@ -72,6 +77,11 @@ export async function handler(event) {
     const db = getAdmin().database();
     const userProfile = await profile(token.uid);
     if (userProfile?.role !== 'renter') return json(403, {error: 'רק שוכר יכול לבצע הזמנה'});
+    // A user whose registration skipped the consent record (old client / tampered call) gets it
+    // backfilled here — the checkbox above IS an explicit acceptance of the current terms (audit #9).
+    if (!userProfile.legalAcceptance) {
+      await db.ref(`users/${token.uid}/legalAcceptance`).set({termsVersion: TERMS_VERSION, privacyVersion: TERMS_VERSION, acceptedAt: Date.now(), source: 'booking-create'});
+    }
     if (token.email_verified !== true) return json(403, {error: 'יש לאמת את כתובת המייל לפני הזמנה'});
     const verification = userProfile.verification || {};
     const status = (await db.ref(`verificationStatus/${token.uid}`).once('value')).val();
@@ -145,6 +155,6 @@ export async function handler(event) {
     return json(200, {ok: true, id});
   } catch (error) {
     console.error(error);
-    return json(error.status || 500, {error: error.message});
+    return json(error.status || 500, {error: error.status ? error.message : 'שגיאת שרת — נסו שוב בעוד רגע'});
   }
 }

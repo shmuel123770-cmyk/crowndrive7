@@ -1,4 +1,4 @@
-CrownDrive — FINAL build (2026-07-14, rev.116)
+CrownDrive — FINAL build (2026-07-14, rev.118)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
 rev.82 (2026-07-14) — personal-area bar SOLID+FIXED + home shows 4 cars on phones. Cumulative.
@@ -1378,3 +1378,24 @@ Base = my rev.107; imported from Codex (their fork of ~rev.100), after full revi
 - FLAKY TEST FIX (Codex): scenarios built booking ranges with TWO Date.now() calls — a 1ms difference made the
   range 2d+1ms, the server correctly rounds UP to 3 days → quote 600≠400, failing 14 chained scenarios ~20%
   of runs. Single clock read now (both call sites); 27/27 consecutive green runs.
+
+=== rev.117 (2026-07-15) — personal-area booking cards, mobile-first pass ===
+- Booking cards now show the PRICE (server quote total, bold) and — on pending bookings — the approval
+  deadline ("ממתינה לאישור עד <date>", from pendingExpiresAt). Renters finally see what they.re paying and
+  how long the request lives.
+- The renter.s "💳 דיווח על תשלום" action moved to the FRONT of the actions row and spans full width on
+  phones (≤430px) — the single most important next step is now the most prominent. All chips ≥44px tall.
+- New "פרטי הרכב" button on every booking card → opens the car.s detail modal (openCar now exported from
+  views.js; bound via data-view-car in bindActions — data-car-open can.t sit on a button by design).
+- FIX during dev: the first binding landed inside adminUserBookingsModal.s scoped binder (root-based) and
+  never attached on dashboards — moved to bindActions. Verified live: handler attached, modal opens.
+
+=== rev.118 (2026-07-15) — OWNER dashboard: real earnings + per-car performance ===
+- Owner overview KPI "תשלומים מדווחים" (which summed ALL payment amounts, incl. pending/rejected proofs)
+  replaced with "הכנסות שאושרו" — only paymentApproved() rows count, so the number never overstates income.
+  A notice appears when payment proofs await the owner.s review ("💳 N הוכחות תשלום ממתינות לאישורך").
+- "הרכבים שלי": every car card now carries a performance strip — 📅 bookings (cancelled/rejected/expired
+  excluded) · 💵 approved earnings for THAT car (payment→booking→car join) · ⭐ rating when rated. Injected
+  after paint so the shared public carCard is untouched.
+- Verified live with mixed data: approved-only totals ($150 shown, pending $225 excluded), cancelled bookings
+  not counted, per-car strips correct (2 הזמנות/$150/⭐4.5 vs 1 הזמנות/$0).

@@ -181,12 +181,16 @@ function newYorkIso(dateValue, timeValue) {
   const [, y, mo, d, h, mi] = match.map((value, index) => index ? Number(value) : value);
   const wallUtc = Date.UTC(y, mo - 1, d, h, mi, 0);
   const formatter = new Intl.DateTimeFormat('en-US', {timeZone: 'America/New_York', hour12: false, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit'});
+  const nyWallUtc = instant => {
+    const parts = Object.fromEntries(formatter.formatToParts(new Date(instant)).filter(p => p.type !== 'literal').map(p => [p.type, p.value]));
+    return Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(parts.hour) % 24, Number(parts.minute), Number(parts.second));
+  };
   let guess = wallUtc;
-  for (let i = 0; i < 3; i++) {
-    const parts = Object.fromEntries(formatter.formatToParts(new Date(guess)).filter(p => p.type !== 'literal').map(p => [p.type, p.value]));
-    const asUtc = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(parts.hour) % 24, Number(parts.minute), Number(parts.second));
-    guess = wallUtc - (asUtc - guess);
-  }
+  for (let i = 0; i < 3; i++) guess = wallUtc - (nyWallUtc(guess) - guess);
+  // Spring-forward gap (audit #39): if the requested wall time doesn't exist (e.g. 02:30 on the
+  // switch night), converge deterministically FORWARD over the 1-hour gap instead of silently
+  // landing on either side depending on rounding.
+  if (nyWallUtc(guess) < wallUtc) guess += 3600000;
   return new Date(guess).toISOString();
 }
 const dateField = (name, label, value = '') => `<div class="date-field"><span class="df-label">${label}</span><button type="button" class="date-btn ${value ? 'has-val' : ''}" data-date-btn aria-expanded="false"><span>${fmtHe(value)}</span><i class="date-ic" aria-hidden="true">${ICON.cal}</i></button><input type="hidden" name="${name}" value="${value}"></div>`;
@@ -203,7 +207,11 @@ function openCalendar(button) {
   pop.setAttribute('role', 'dialog');
   pop.setAttribute('aria-label', 'בחירת תאריך');
   button.setAttribute('aria-expanded', 'true');
-  button.parentElement.appendChild(pop);
+  // On phones the calendar is a FIXED bottom sheet (design spec §12) — parent it to <body> so no
+  // animated/transformed ancestor (hero, modal) can become its containing block and drag it around.
+  // On desktop it stays a popover anchored inside the field.
+  const phoneSheet = window.matchMedia('(max-width:820px)').matches;
+  (phoneSheet ? document.body : button.parentElement).appendChild(pop);
   const closePop = ({returnFocus = false} = {}) => {
     pop.remove();
     button.setAttribute('aria-expanded', 'false');
@@ -299,6 +307,18 @@ export function nav() {
   node.querySelector('#nav-add-car')?.addEventListener('click', () => carForm());
 }
 
+// The admin's "עוד" sheet — secondary destinations that don't earn a tab of their own (design spec §20).
+function adminMoreSheet() {
+  const MORE = [['cars', 'רכבים', ICON.car], ['notifications', 'התראות', ICON.bell], ['profile', 'פרופיל', ICON.selfie]];
+  modal(`<div class="modal-head"><h2>עוד</h2><button class="close" data-close-modal>×</button></div><div class="more-sheet">${MORE.map(([key, label, icon]) => `<button class="more-item" data-more-tab="${key}">${icon}<span>${esc(label)}</span></button>`).join('')}</div>`);
+  document.querySelectorAll('[data-more-tab]').forEach(button => button.onclick = () => {
+    store.dashTab = button.dataset.moreTab;
+    closeModal();
+    dashboard();
+    bottomNav();
+  });
+}
+
 // App-style fixed bottom tab bar (mobile only). Three tabs — בית / רכבים / אזור אישי — mirroring how a
 // polished car app is navigated on a phone. Hidden on desktop (top nav is used there) and on the full-screen
 // routes (chat / auth) + the blocked / maintenance screens, where a tab bar would fight the layout.
@@ -312,11 +332,30 @@ export function bottomNav() {
   document.body.dataset.dashRole = route === 'dashboard' ? (role || '') : '';
   const blocked = store.profile?.blocked === true && !store.isAdmin;
   const maintenance = store.config?.maintenance?.on && !store.isAdmin && route !== 'auth';
-  // Hidden on full-screen/edge routes, and on the ADMIN dashboard (the admin keeps its own fixed tab bar).
-  if (blocked || maintenance || ['chats', 'auth'].includes(route) || (route === 'dashboard' && role === 'admin')) {
+  // Hidden on the full-screen/edge routes, where a tab bar would fight the layout.
+  if (blocked || maintenance || ['chats', 'auth'].includes(route)) {
     node.classList.add('hide'); node.innerHTML = ''; return;
   }
   node.classList.remove('hide');
+
+  // ADMIN bar (design spec §20): five destinations — לוח בקרה / הזמנות / משתמשים / צ׳אטים / עוד.
+  // "עוד" opens a sheet with the secondary areas (רכבים, התראות, פרופיל) so there is never a sixth tab.
+  if (route === 'dashboard' && role === 'admin') {
+    const MORE_KEYS = ['cars', 'notifications', 'profile'];
+    const activeKey = MORE_KEYS.includes(store.dashTab) ? 'more' : store.dashTab;
+    const moreIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>';
+    const tabs = [['overview', 'לוח בקרה'], ['bookings', 'הזמנות'], ['users', 'משתמשים'], ['chats', 'צ׳אטים'], ['more', 'עוד']];
+    node.innerHTML = tabs.map(([key, label]) =>
+      `<button class="tab-item ${key === activeKey ? 'active' : ''}" data-admin-tab="${key}" aria-label="${esc(label)}"${key === activeKey ? ' aria-current="page"' : ''}>${key === 'more' ? moreIcon : (TAB_ICONS[key] || (() => ''))()}<span>${esc(label)}</span></button>`).join('');
+    node.querySelectorAll('[data-admin-tab]').forEach(button => button.onclick = event => {
+      event.stopPropagation();
+      const tab = button.dataset.adminTab;
+      if (tab === 'chats') { location.hash = 'chats'; return; }
+      if (tab === 'more') { adminMoreSheet(); return; }
+      store.dashTab = tab; dashboard(); bottomNav();
+    });
+    return;
+  }
 
   // DYNAMIC personal-area toolbar (renter/owner): the bar becomes the role's own dashboard sections, and a tap
   // switches the section in place instead of leaving the area.
@@ -448,15 +487,19 @@ function carBuckets(car) {
   return b.length ? b : ['hours'];
 }
 // Classify a chosen date-range into hours (same-day) / days (1–6) / weeks (7+).
+// One hour of DST tolerance at each boundary (audit #40): a 10:00→10:00 "day" across the spring
+// switch is only 23 real hours and must still price as a day, not 23 hourly units (same for a week).
 function periodBucket(ms) {
-  if (ms < 24 * 3600000) return 'hours';
-  if (ms < 7 * 86400000) return 'days';
+  if (ms < 23 * 3600000) return 'hours';
+  if (ms < 7 * 86400000 - 3600000) return 'days';
   return 'weeks';
 }
 // Does the chosen range cover a Saturday (Shabbat)? Weekend availability keys off this.
 function rangeIncludesSaturday(startMs, endMs) {
   const day = 86400000;
-  for (let t = new Date(startMs).setHours(0, 0, 0, 0); t <= endMs; t += day) {
+  // STRICTLY before endMs (audit #41): a rental that ends Saturday 00:00 sharp occupies zero time on
+  // Saturday and must not be priced as a weekend.
+  for (let t = new Date(startMs).setHours(0, 0, 0, 0); t < endMs; t += day) {
     if (new Date(t).getDay() === 6) return true;
   }
   return false;
@@ -524,7 +567,14 @@ function carCard(car, manage = false, period = null, index = 99) {
   let periodHtml = '';
   let notFit = false;
   if (period && car.status === 'available') {
-    if (onRequest) {
+    // Real availability in search results (audit #42): an approved/active booking already holds this
+    // range — say so on the card instead of letting the renter find out at submit time.
+    const taken = Object.values(store.reservations?.[car.id] || {}).some(r =>
+      period.startMs < new Date(r.endAt).getTime() && period.endMs > new Date(r.startAt).getTime());
+    if (taken) {
+      notFit = true;
+      periodHtml = '<div class="period-note">הרכב תפוס בתאריכים שבחרתם — נסו טווח אחר</div>';
+    } else if (onRequest) {
       periodHtml = '<div class="period-note contact">שלחו הודעה לבעל הרכב לקבלת מחיר — פתחו את המודעה</div>';
     } else if (carServesPeriod(car, period.startMs, period.endMs)) {
       const est = estimatePrice(car, period.startMs, period.endMs);
@@ -726,11 +776,11 @@ export function cars() {
   document.querySelector('#period-clear')?.addEventListener('click', () => { searchPeriod.startAt = ''; searchPeriod.endAt = ''; persistSearch(); rerender(); });
 }
 
-function openCar(id) {
+export function openCar(id) {
   const car = {id, ...store.cars[id]};
   if (!car.id) return toast('הרכב לא נמצא');
   const photos = carPhotoList(car);
-  const gallery = photos.length ? `<div class="gallery"><div class="gallery-main"><img id="gallery-img" ${carImgAttrs(photos[0], '(max-width:820px) 100vw, 780px')} alt="${esc(`${car.make || ''} ${car.model || ''}`)}"></div>${photos.length > 1 || car.videoUrl ? `<div class="gallery-thumbs">${photos.map((p, i) => `<button class="thumb ${i === 0 ? 'active' : ''}" data-photo="${esc(p)}"><img src="${esc(wikiThumb(p, 250) || p)}" alt="תמונה ${i + 1}"></button>`).join('')}${car.videoUrl ? `<button class="thumb thumb-video" data-video="${esc(car.videoUrl)}">▶</button>` : ''}</div>` : ''}</div>` : `<img class="modal-car-image" id="gallery-img" ${carImgAttrs(carImage(car), '(max-width:820px) 100vw, 780px')} alt="${esc(car.make || '')}">`;
+  const gallery = photos.length ? `<div class="gallery"><div class="gallery-main"><img id="gallery-img" ${carImgAttrs(photos[0], '(max-width:820px) 100vw, 780px')} alt="${esc(`${car.make || ''} ${car.model || ''}`)}">${photos.length > 1 ? `<span class="gallery-count" id="gallery-count" aria-live="polite">1 מתוך ${photos.length}</span>` : ''}</div>${photos.length > 1 || car.videoUrl ? `<div class="gallery-thumbs">${photos.map((p, i) => `<button class="thumb ${i === 0 ? 'active' : ''}" data-photo="${esc(p)}" data-idx="${i}"><img src="${esc(wikiThumb(p, 250) || p)}" alt="תמונה ${i + 1}"></button>`).join('')}${car.videoUrl ? `<button class="thumb thumb-video" data-video="${esc(car.videoUrl)}">▶</button>` : ''}</div>` : ''}</div>` : `<img class="modal-car-image" id="gallery-img" ${carImgAttrs(carImage(car), '(max-width:820px) 100vw, 780px')} alt="${esc(car.make || '')}">`;
   const reviews = carReviews(car.id);
   const canRate = store.user && myBookings().some(b => b.carId === car.id && b.renterUid === store.user.uid && b.status === 'done');
   const rateNote = store.user && !canRate ? '<p class="rate-note">רק משתמש ששכר את הרכב בפועל יכול לדרג אותו — הדירוג נפתח מההזמנה לאחר סיום ההשכרה.</p>' : '';
@@ -775,6 +825,8 @@ function openCar(id) {
     galleryImg.src = wikiThumb(button.dataset.photo, 960) || button.dataset.photo;
     galleryImg.dataset.orig = button.dataset.photo;
     document.querySelectorAll('.thumb').forEach(t => t.classList.toggle('active', t === button));
+    const counter = document.querySelector('#gallery-count');
+    if (counter) counter.textContent = `${Number(button.dataset.idx) + 1} מתוך ${document.querySelectorAll('[data-photo]').length}`;
   });
   document.querySelector('[data-video]')?.addEventListener('click', event => {
     const url = event.currentTarget.dataset.video;

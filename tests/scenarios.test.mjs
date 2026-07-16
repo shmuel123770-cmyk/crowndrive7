@@ -54,7 +54,7 @@ const usersByEmail = {};
 const fakeApp = {
   database: () => ({ref}),
   auth: () => ({
-    verifyIdToken: async token => ({uid: token, email: `${token}@x.com`, email_verified: true, firebase: {sign_in_provider: token.startsWith('guest') ? 'anonymous' : 'password'}}),
+    verifyIdToken: async token => ({uid: token, email: `${token}@x.com`, email_verified: true, auth_time: Math.floor(Date.now() / 1000), firebase: {sign_in_provider: token.startsWith('guest') ? 'anonymous' : 'password'}}),
     deleteUser: async () => {},
     getUserByEmail: async email => { const uid = usersByEmail[email]; if (!uid) throw new Error('not found'); return {uid}; },
   }),
@@ -101,11 +101,11 @@ check('פרסום רכב (2+ תמונות)', S(r) === 200);
 const carId = B(r).id;
 check('כתובת מלאה נשמרה בפרטי מעטים', get(`privateCarDetails/${carId}/fullAddress`) === '123 Kingston Ave');
 check('תמונה לא-תקינה סוננה', get(`cars/${carId}/photos`).length === 2);
-r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'Honda', model: 'Civic', dailyPrice: 120, photos: ['https://a/only.jpg']}});
+r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'Honda', model: 'Civic', dailyPrice: 120, photos: ['https://a/only.jpg'], fullAddress: '770 Eastern Pkwy'}});
 check('פרסום רכב עם תמונה אחת מתקבל (אין מינימום של 2)', S(r) === 200);
-r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'Mazda', model: '3', dailyPrice: 120, photos: []}});
+r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'Mazda', model: '3', dailyPrice: 120, photos: [], fullAddress: '770 Eastern Pkwy'}});
 check('פרסום רכב בלי אף תמונה נדחה (400)', S(r) === 400);
-r = await call(fn['car-action'], 'r1', {action: 'create', data: {make: 'BMW', model: 'X5', photos: ['https://a/1.jpg', 'https://b/2.jpg']}});
+r = await call(fn['car-action'], 'r1', {action: 'create', data: {make: 'BMW', model: 'X5', photos: ['https://a/1.jpg', 'https://b/2.jpg'], fullAddress: '770 Eastern Pkwy'}});
 check('שוכר לא יכול לפרסם רכב (403)', S(r) === 403);
 r = await call(fn['car-action'], 'r1', {action: 'update', id: carId, patch: {dailyPrice: 1}});
 check('לא-בעלים לא יכול לערוך רכב (403)', S(r) === 403);
@@ -149,7 +149,7 @@ check('בעל הרכב לא יכול להזמין את עצמו', S(r) !== 200);
 r = await call(fn['booking-create'], 'r1', {carId, startAt: 'bad', endAt: 'bad', termsAccepted: true});
 check('תאריכים לא תקינים נדחו (400)', S(r) === 400);
 // Fixed weekend price must win over the regular daily rate on both client and server.
-r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'Weekend', model: 'Special', dailyPrice: 999, weekendEnabled: true, weekendPrice: 250, photos: ['https://a/1.jpg']}});
+r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'Weekend', model: 'Special', dailyPrice: 999, weekendEnabled: true, weekendPrice: 250, photos: ['https://a/1.jpg'], fullAddress: '770 Eastern Pkwy'}});
 const weekendCar = B(r).id;
 const nextSaturday = new Date(Date.now() + 8 * 86400000);
 while (nextSaturday.getUTCDay() !== 6) nextSaturday.setUTCDate(nextSaturday.getUTCDate() + 1);
@@ -157,6 +157,12 @@ nextSaturday.setUTCHours(14, 0, 0, 0);
 const weekendEnd = new Date(nextSaturday.getTime() + 48 * 3600000);
 r = await call(fn['booking-create'], 'r1', {carId: weekendCar, startAt: nextSaturday.toISOString(), endAt: weekendEnd.toISOString(), startLocal: nextSaturday.toISOString(), endLocal: weekendEnd.toISOString(), termsAccepted: true, requestId: 'weekend-quote'});
 check('מחיר סופ״ש קבוע מחושב בשרת', S(r) === 200 && get(`bookings/${B(r).id}/quote/pricingMode`) === 'weekend' && get(`bookings/${B(r).id}/quote/total`) === 250);
+// audit #41: a rental ENDING Saturday 00:00 sharp occupies zero time on Saturday — daily price, not weekend.
+const satMidnight = new Date(nextSaturday); satMidnight.setUTCHours(0, 0, 0, 0);
+const thuStart = new Date(satMidnight.getTime() - 2 * 86400000);
+const fmtLocal = d => d.toISOString().slice(0, 16);
+r = await call(fn['booking-create'], 'r1', {carId: weekendCar, startAt: fmtLocal(thuStart), endAt: fmtLocal(satMidnight), termsAccepted: true, requestId: 'end-sat-midnight'});
+check('סיום בשבת 00:00 בדיוק אינו מתומחר כסופ״ש', S(r) === 200 && get(`bookings/${B(r).id}/quote/pricingMode`) !== 'weekend');
 // Owner↔renter chat is open already at PENDING, so they can coordinate before approval.
 r = await call(fn['message-send'], 'r1', {bookingId: bId, text: 'שלום, אפשר לאסוף מוקדם?'});
 check('צ׳אט הזמנה פתוח כבר בסטטוס ממתין (שוכר)', S(r) === 200);
@@ -268,9 +274,17 @@ r = await call(fn['admin-action'], 'a1', {action: 'user-block', uid: 'r1', block
 check('שחרור חסימה', S(r) === 200 && get('users/r1/blocked') === false);
 r = await call(fn['admin-action'], 'a1', {action: 'user-update', uid: 'r1', patch: {name: 'שם מנהל', phone: '+1 000'}});
 check('מנהל עורך משתמש', S(r) === 200 && get('users/r1/name') === 'שם מנהל');
+// audit #4: transfer to a RENTER is refused (role change stays a separate deliberate action)…
 r = await call(fn['admin-action'], 'a1', {action: 'car-owner', carId, uid: 'r1'});
-check('העברת בעלות רכב', S(r) === 200 && get(`cars/${carId}/ownerUid`) === 'r1');
-await call(fn['admin-action'], 'a1', {action: 'car-owner', carId, uid: 'o1'});
+check('העברת בעלות לשוכר נדחית (409)', S(r) === 409 && get(`cars/${carId}/ownerUid`) === 'o1');
+// …and a real transfer (fresh car, owner target) RESETS the private pickup address so the old
+// owner's address never leaks to the new one.
+await call(fn['profile-save'], 'o2', {action: 'create', name: 'בעל שני', phone: '+1 5550009999', role: 'owner'});
+r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'Transfer', model: 'Me', dailyPrice: 80, photos: ['https://a/t.jpg'], fullAddress: 'כתובת סודית של הבעלים הישן'}});
+const carXfer = B(r).id;
+r = await call(fn['admin-action'], 'a1', {action: 'car-owner', carId: carXfer, uid: 'o2'});
+check('העברת בעלות רכב לבעל רכב', S(r) === 200 && get(`cars/${carXfer}/ownerUid`) === 'o2');
+check('כתובת האיסוף של הבעלים הישן אופסה', !get(`privateCarDetails/${carXfer}/fullAddress`) && get(`privateCarDetails/${carXfer}/ownerUid`) === 'o2');
 r = await call(fn['admin-action'], 'a1', {action: 'booking-admin', bookingId: bId, note: 'שולם במזומן', amount: 500});
 check('הערת + סכום מנהל להזמנה', S(r) === 200 && get(`bookings/${bId}/adminNote`) === 'שולם במזומן');
 r = await call(fn['admin-action'], 'a1', {action: 'maintenance', on: true});
@@ -282,7 +296,7 @@ r = await call(fn['admin-action'], 'a1', {action: 'user-delete', uid: 'x9'});
 check('מחיקת משתמש', S(r) === 200);
 
 console.log('\nתרחיש I: מחיקת רכב + התראות');
-r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'Kia', model: 'Rio', dailyPrice: 90, priceHourly: 10, photos: ['https://a/1.jpg', 'https://b/2.jpg']}});
+r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'Kia', model: 'Rio', dailyPrice: 90, priceHourly: 10, photos: ['https://a/1.jpg', 'https://b/2.jpg'], fullAddress: '770 Eastern Pkwy'}});
 const car2 = B(r).id;
 r = await call(fn['car-action'], 'o1', {action: 'delete', id: car2});
 check('מחיקת רכב פנוי', S(r) === 200 && get(`cars/${car2}`) === undefined);
@@ -323,9 +337,9 @@ check('אחרי שנקבע תפקיד — לא ניתן לשנות ללא מנה
 
 console.log('\nתרחיש M: תמונות inline (data URL — נשמרות במסד, בלי Storage)');
 const dataImg = 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA==';
-r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'Kia', model: 'Niro', dailyPrice: 120, photos: [dataImg]}});
+r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'Kia', model: 'Niro', dailyPrice: 120, photos: [dataImg], fullAddress: '770 Eastern Pkwy'}});
 check('פרסום רכב עם תמונת data URL', S(r) === 200 && get(`cars/${B(r).id}/photos`)[0] === dataImg);
-r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'X', model: 'Y', photos: ['ftp://bad/x.png', 'javascript:evil']}});
+r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'X', model: 'Y', photos: ['ftp://bad/x.png', 'javascript:evil'], fullAddress: '770 Eastern Pkwy'}});
 check('תמונה לא-תקינה (לא https/לא data) נדחית', S(r) === 400);
 r = await call(fn['profile-save'], 'o1', {action: 'update', photoURL: dataImg});
 check('תמונת פרופיל data URL נשמרת', S(r) === 200 && get('users/o1/photoURL') === dataImg);
@@ -363,7 +377,7 @@ r = await call(fn['media-migrate'], 'a1', {});
 check('הרצה חוזרת בטוחה (idempotent) — אין מה להעביר', S(r) === 200 && B(r).migrated === 0 && B(r).done === true);
 
 console.log('\nתרחיש P: סיום שיחה (בעל רכב/מנהל מסיים → השוכר חסום, הם עדיין שולחים)');
-r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'End', model: 'Chat', dailyPrice: 100, photos: ['https://a/1.jpg', 'https://b/2.jpg']}});
+r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'End', model: 'Chat', dailyPrice: 100, photos: ['https://a/1.jpg', 'https://b/2.jpg'], fullAddress: '770 Eastern Pkwy'}});
 const carEnd = B(r).id;
 const now3 = Date.now();  // one clock read — two reads can differ by 1ms and flip the day-count rounding
 const s3 = new Date(now3 + 10 * 86400000).toISOString(), e3 = new Date(now3 + 12 * 86400000).toISOString();
@@ -375,15 +389,25 @@ r = await call(fn['message-send'], 'r1', {bookingId: bId3, text: 'שאלה'});
 check('שוכר שולח לפני סיום שיחה', S(r) === 200);
 r = await call(fn['booking-action'], 'r1', {action: 'end-chat', bookingId: bId3});
 check('שוכר לא יכול לסיים שיחה (403)', S(r) === 403);
+// audit #5: while the booking is live the owner may NOT close the chat — the renter still needs the
+// channel for evidence and payment proof. Closing becomes possible only after done/cancelled/rejected.
 r = await call(fn['booking-action'], 'o1', {action: 'end-chat', bookingId: bId3});
-check('בעל רכב מסיים שיחה', S(r) === 200);
+check('אי אפשר לסגור שיחה כשההזמנה חיה (409)', S(r) === 409);
+r = await call(fn['message-send'], 'r1', {bookingId: bId3, text: 'הערוץ נשאר פתוח'});
+check('השוכר עדיין שולח כל עוד ההזמנה חיה', S(r) === 200);
+r = await call(fn['booking-action'], 'o1', {action: 'status', bookingId: bId3, status: 'cancelled'});
+check('ביטול ההזמנה (לקראת סגירת השיחה)', S(r) === 200);
+r = await call(fn['booking-action'], 'o1', {action: 'end-chat', bookingId: bId3});
+check('בעל רכב מסיים שיחה אחרי ביטול', S(r) === 200);
 r = await call(fn['message-send'], 'r1', {bookingId: bId3, text: 'עוד'});
-check('אחרי סיום שיחה — שוכר חסום (403)', S(r) === 403);
-r = await call(fn['message-send'], 'o1', {bookingId: bId3, text: 'בעל רכב עדיין יכול'});
-check('אחרי סיום שיחה — בעל רכב עדיין שולח', S(r) === 200);
+check('אחרי סיום שיחה — שוכר חסום', [403, 409].includes(S(r)));
+r = await call(fn['booking-action'], 'r1', {action: 'reopen-chat', bookingId: bId3});
+check('שוכר לא יכול לפתוח שיחה מחדש (403)', S(r) === 403);
+r = await call(fn['booking-action'], 'o1', {action: 'reopen-chat', bookingId: bId3});
+check('בעל רכב פותח שיחה מחדש', S(r) === 200);
 
 console.log('\nתרחיש Q: פנייה מקדימה שוכר↔בעל רכב (inquiry-start + message-send)');
-r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'Inq', model: 'Car', dailyPrice: 90, photos: ['https://a/1.jpg', 'https://b/2.jpg']}});
+r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'Inq', model: 'Car', dailyPrice: 90, photos: ['https://a/1.jpg', 'https://b/2.jpg'], fullAddress: '770 Eastern Pkwy'}});
 const carInq = B(r).id;
 // A guest (anonymous) must sign up before contacting an owner.
 r = await call(fn['inquiry-start'], 'guest2', {carId: carInq});
@@ -394,6 +418,11 @@ check('בעל הרכב לא יכול לפנות לעצמו (400)', S(r) === 400)
 // Non-existent car.
 r = await call(fn['inquiry-start'], 'r1', {carId: 'no-such-car'});
 check('פנייה על רכב לא קיים (404)', S(r) === 404);
+// A hidden car is out of the catalog — knowing its id must not open a contact channel (audit #47).
+await call(fn['car-action'], 'o1', {action: 'status', id: carInq, status: 'hidden'});
+r = await call(fn['inquiry-start'], 'r1', {carId: carInq});
+check('פנייה לרכב מוסתר נדחית (409)', S(r) === 409);
+await call(fn['car-action'], 'o1', {action: 'status', id: carInq, status: 'available'});
 // A renter opens the inquiry → a thread is created pointing at the car's owner.
 r = await call(fn['inquiry-start'], 'r1', {carId: carInq});
 const inqId = B(r).inquiryId;
@@ -429,6 +458,23 @@ check('פג תוקף רק לבקשה שעברה את החלון', r.expired === 
 check('בקשה עתידית נשארת ממתינה', get('bookings/expFuture/status') === 'pending');
 check('בקשה ישנה בלי תוקף לא פגה (grandfathered)', get('bookings/expLegacy/status') === 'pending');
 check('הזמנה מאושרת לא מושפעת', get('bookings/expApproved/status') === 'approved');
+
+console.log('\nתרחיש S: מראה קטלוג ציבורי (publicCars — audit #45 שלב א)');
+r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'Mirror', model: 'Test', dailyPrice: 70, photos: ['https://a/m.jpg'], fullAddress: '770 Eastern Pkwy'}});
+const carMir = B(r).id;
+check('רכב חדש משתקף בקטלוג הציבורי', get(`publicCars/${carMir}/make`) === 'Mirror');
+r = await call(fn['car-action'], 'o1', {action: 'update', id: carMir, patch: {dailyPrice: 85}});
+check('עדכון רכב מעדכן את המראה', S(r) === 200 && get(`publicCars/${carMir}/dailyPrice`) === 85);
+r = await call(fn['car-action'], 'o1', {action: 'status', id: carMir, status: 'hidden'});
+check('הסתרה מסירה את הרכב מהקטלוג הציבורי', S(r) === 200 && get(`publicCars/${carMir}`) === undefined && get(`cars/${carMir}/status`) === 'hidden');
+r = await call(fn['car-action'], 'o1', {action: 'status', id: carMir, status: 'available'});
+check('החזרה לזמין משחזרת את המראה', S(r) === 200 && get(`publicCars/${carMir}/status`) === 'available');
+r = await call(fn['car-action'], 'a1', {action: 'feature', id: carMir, featured: true});
+check('קידום מנהל דרך השרת משתקף במראה', S(r) === 200 && !!get(`publicCars/${carMir}/featured`));
+r = await call(fn['car-action'], 'o1', {action: 'feature', id: carMir, featured: true});
+check('בעל רכב לא יכול לקדם רכב (403)', S(r) === 403);
+r = await call(fn['car-action'], 'o1', {action: 'delete', id: carMir});
+check('מחיקת רכב מסירה גם את המראה', S(r) === 200 && get(`publicCars/${carMir}`) === undefined);
 
 console.log(`\n========== ${passed} עברו · ${failed} נכשלו ==========`);
 process.exit(failed ? 1 : 0);

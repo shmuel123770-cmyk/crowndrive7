@@ -1,6 +1,7 @@
-import {verify, json, canAccessBooking, isAdmin, profile, cleanText, parseBody} from './_firebase-admin.mjs';
+import {verify, json, canAccessBooking, isAdmin, profile, cleanText, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
 import {putStorageObject} from './_storage.mjs';
 import {rateLimit, tooMany} from './_ratelimit.mjs';
+import {detectedImageType} from './_media.mjs';
 
 // Direct server-side image upload: the client POSTs base64 bytes to THIS same-origin function
 // and the Admin SDK writes them to Storage. This works inside in-app browsers (Telegram/IG
@@ -12,17 +13,14 @@ import {rateLimit, tooMany} from './_ratelimit.mjs';
 // bytes (well within Netlify's ~6MB request limit); any image type is accepted.
 const MAX_IMAGE = 4 * 1024 * 1024;
 const safe = value => String(value || 'file').replace(/[^a-zA-Z0-9._-]/g, '_').slice(-100);
-function detectedImageType(buffer) {
-  if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return 'image/jpeg';
-  if (buffer.length >= 8 && buffer.subarray(0, 8).equals(Buffer.from([0x89,0x50,0x4e,0x47,0x0d,0x0a,0x1a,0x0a]))) return 'image/png';
-  if (buffer.length >= 12 && buffer.subarray(0, 4).toString('ascii') === 'RIFF' && buffer.subarray(8, 12).toString('ascii') === 'WEBP') return 'image/webp';
-  return '';
-}
+// Shared magic-byte detector from _media.mjs; this endpoint stays stricter than the detector (no GIF).
+const ACCEPTED = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const user = await verify(event);
+    if (await maintenanceBlocked(user.uid)) return json(503, {error: 'האתר בתחזוקה כרגע — נסו שוב בעוד מספר דקות'});  // audit #23
     if (!(await rateLimit(user.uid, 'media-upload', 25, 10 * 60 * 1000))) throw tooMany();
     const reqBody = parseBody(event);
     if (!reqBody) return json(400, {error: 'בקשה לא תקינה — נסו שוב'});
@@ -34,7 +32,7 @@ export async function handler(event) {
     if (!buffer.length) return json(400, {error: 'קובץ ריק'});
     if (buffer.length > MAX_IMAGE) return json(400, {error: 'התמונה גדולה מדי גם אחרי אופטימיזציה — נסו תמונה אחרת'});
     const detectedType = detectedImageType(buffer);
-    if (!detectedType) return json(400, {error: 'תוכן הקובץ אינו תמונת JPG, PNG או WebP תקינה'});
+    if (!ACCEPTED.has(detectedType)) return json(400, {error: 'תוכן הקובץ אינו תמונת JPG, PNG או WebP תקינה'});
 
     let path;
     if (kind === 'user-document') {

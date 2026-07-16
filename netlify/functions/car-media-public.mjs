@@ -1,4 +1,4 @@
-import {getAdmin, verify, json, isAdmin, profile, cleanText, parseBody} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, isAdmin, profile, cleanText, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
 
 // Car listing media (gallery photos / demo video) is public by design — the
 // cars node itself is world-readable. Owners upload to their own cars/<uid>/
@@ -8,6 +8,7 @@ export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const token = await verify(event);
+    if (await maintenanceBlocked(token.uid)) return json(503, {error: 'האתר בתחזוקה כרגע — נסו שוב בעוד מספר דקות'});  // audit #23
     const body = parseBody(event);
     if (!body) return json(400, {error: 'בקשה לא תקינה — נסו שוב'});
     const path = cleanText(body.path, 500);
@@ -29,6 +30,6 @@ export async function handler(event) {
     return json(200, {url});
   } catch (error) {
     console.error(error);
-    return json(error.status || 500, {error: error.message});
+    return json(error.status || 500, {error: error.status ? error.message : 'שגיאת שרת — נסו שוב בעוד רגע'});
   }
 }

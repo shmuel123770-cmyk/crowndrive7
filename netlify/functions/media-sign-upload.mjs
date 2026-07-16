@@ -1,4 +1,4 @@
-import {getAdmin, verify, json, canAccessBooking, isAdmin, profile, cleanText, parseBody} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, canAccessBooking, isAdmin, profile, cleanText, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
 const max = {image: 12 * 1024 * 1024, video: 180 * 1024 * 1024};
 const imageTypes = new Set(['image/jpeg','image/png','image/webp','image/heic','image/heif']);
 const videoTypes = new Set(['video/mp4','video/quicktime','video/webm']);
@@ -7,6 +7,7 @@ export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
     const user = await verify(event);
+    if (await maintenanceBlocked(user.uid)) return json(503, {error: 'האתר בתחזוקה כרגע — נסו שוב בעוד מספר דקות'});  // audit #23
     const body = parseBody(event);
     if (!body) return json(400, {error: 'בקשה לא תקינה — נסו שוב'});
     const {name, type, size, kind, entityId} = body;
@@ -41,6 +42,6 @@ export async function handler(event) {
     return json(200, {path});
   } catch (error) {
     console.error(error);
-    return json(error.status || 500, {error: error.message});
+    return json(error.status || 500, {error: error.status ? error.message : 'שגיאת שרת — נסו שוב בעוד רגע'});
   }
 }
