@@ -1,4 +1,4 @@
-CrownDrive — FINAL build (2026-07-14, rev.114)
+CrownDrive — FINAL build (2026-07-14, rev.116)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
 
 rev.82 (2026-07-14) — personal-area bar SOLID+FIXED + home shows 4 cars on phones. Cumulative.
@@ -1347,3 +1347,34 @@ Base = my rev.107; imported from Codex (their fork of ~rev.100), after full revi
   filter change resets the page. Invisible today (15 cars) — future-proofs the list.
 - Verified live at 375px with 45 injected cars: button+bar swap ✓, sheet opens ✓, live count 45→30 on picking
   a make ✓, apply → 24 shown + badge "1 פעילים" ✓, show-more → 30 ✓. All suites green BEFORE packaging.
+
+=== rev.115 (2026-07-15) — checklist #36 inline field errors (+#66 verified already done) ===
+- #36: new core.js fieldError(control, message)/clearFieldError — shows the error UNDER the offending field
+  (.field-error note + red border), focuses + scrolls to it, sets aria-invalid/aria-describedby, and clears
+  automatically on input/change. Wired: register form (invalid email → under email; short password → under
+  password; mismatched confirm → under confirm) and the booking form (missing date → under the specific date
+  field). Other fields keep their values (nothing is wiped). Verified live: error text under the email field,
+  focus moved, cleared on typing, mismatch shown under confirm.
+- #66 (rate limiting) — VERIFIED ALREADY DONE by the Codex merge: netlify/functions/_ratelimit.mjs
+  (per-uid+action fixed-window via RTDB transaction, fails open, 429) used by 11 functions incl. booking-create,
+  message-send, media-upload, payment-submit. No work needed.
+- NOTE: a runaway perl substitution corrupted views.js mid-edit; restored from the rev.114 zip and re-applied
+  with precise Edits. Lesson: no perl for multi-line replacements with regex metacharacters.
+
+=== rev.116 (2026-07-15) — checklist #47 + #55 + #61 + #62, and a flaky-test fix ===
+- #47 RESPONSIVE IMAGES: wikiThumb()/carImgAttrs() rewrite full-size Wikimedia Commons car photos (one was
+  8.2MB!) to whitelisted thumb widths (Wikimedia now 400s on non-standard sizes — only 250/330/500/960/1280
+  work) and emit srcset (500w/960w) + sizes on card images, the car-detail gallery main image (960) and
+  thumbnails (250). Broken thumbs fall back to the ORIGINAL image before the placeholder (data-orig).
+  Storage/data-URL photos pass through (already ≤~1000px). Verified: browser picks the thumb per slot+DPR.
+- #55 DEFERRED INSTALL PROMPT: beforeinstallprompt is captured; an "הוסיפו את CrownDrive למסך הבית" tip only
+  appears after real engagement (2+ car opens), floats above the tab bar, "×" is remembered (localStorage).
+  Verified with a synthetic event: tip shows, prompt() called, tip dismissed.
+- #61 CONTRAST: automated sweep (WCAG ratio, computed styles) over home+cars found one REAL violation —
+  var(--muted) #6E6E73 on the --bg2 panel = 4.20 (<4.5). Darkened --muted to #5E5F66 → 5.26 on bg2, 6.35 on
+  white. (White-on-gradient "violations" were sweep false-positives — gradients have no computed bg color.)
+- #62: 320px sweep — no horizontal scroll on home/cars, grid 2-col, bottom nav fits. (True 200% text-scaling
+  needs a real device — part of the user.s device-test items #71-78.)
+- FLAKY TEST FIX (Codex): scenarios built booking ranges with TWO Date.now() calls — a 1ms difference made the
+  range 2d+1ms, the server correctly rounds UP to 3 days → quote 600≠400, failing 14 chained scenarios ~20%
+  of runs. Single clock read now (both call sites); 27/27 consecutive green runs.

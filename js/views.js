@@ -1,5 +1,5 @@
 import {store, list, myRole, myBookings, myCars, carRating, carRatingCount, userRating} from './store.js';
-import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail, paintApp, resetPaint} from './core.js';
+import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail, paintApp, resetPaint, fieldError} from './core.js';
 import {register, login, logout, sendVerify, refreshEmailStatus, sendPasswordReset, createOwnProfile, signInGuest} from './auth.js';
 import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, startInquiry, setBookingStatus, registerDocument, approveVerification, sendMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction, setMaintenance, setCarStatus, setCarFeatured, checkIsAdmin} from './db.js';
 import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './media.js';
@@ -20,6 +20,23 @@ const APP_BUILD = document.querySelector('meta[name="crowndrive-build"]')?.conte
 export const fallbackImage = 'data:image/svg+xml,' + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='400' height='240' viewBox='0 0 400 240'><rect width='400' height='240' fill='#D3DAE2'/><g transform='translate(152 72) scale(2)' fill='#9AA7B5'><path d='M37 22l-2.6-6.5A3 3 0 0 0 31.6 14H16.4a3 3 0 0 0-2.8 1.9L11 22a3 3 0 0 0-2 2.8V32a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-2h22v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-7.2A3 3 0 0 0 37 22zm-21.2-4.7a1 1 0 0 1 .9-.6h14.6a1 1 0 0 1 .9.6L34 22H14l1.8-4.7zM15 28a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm18 0a2 2 0 1 1 0-4 2 2 0 0 1 0 4z'/></g></svg>");
 const carPhotos = car => [...(Array.isArray(car.photos) ? car.photos : []), car.photoUrl].filter((url, i, arr) => url && arr.indexOf(url) === i);
 export const carImage = car => carPhotos(car)[0] || fallbackImage;
+// Responsive images (mobile audit #47): Wikimedia Commons renders on-the-fly thumbnails — rewrite a full-size
+// commons URL (often 4000-5000px!) to phone-sized thumbs and serve a srcset. Storage/data URLs are already
+// compressed to ≤~1000px on upload and pass through untouched.
+export const wikiThumb = (url, w) => {
+  const m = String(url || '').match(/^https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/([0-9a-f])\/([0-9a-f]{2})\/([^\/?#]+)$/i);
+  if (!m) return null;
+  const suffix = /\.svg$/i.test(m[3]) ? `${w}px-${m[3]}.png` : `${w}px-${m[3]}`;
+  return `https://upload.wikimedia.org/wikipedia/commons/thumb/${m[1]}/${m[2]}/${m[3]}/${suffix}`;
+};
+// src/srcset/sizes attribute string for an <img>. data-orig keeps the original so a failed thumb falls back
+// to the full image before giving up to the placeholder (see bindCarButtons).
+export const carImgAttrs = (url, sizes = '(max-width:820px) 50vw, 33vw') => {
+  // Wikimedia only renders WHITELISTED thumb widths (see w.wiki/GHai) — 500/960 are on the list.
+  const small = wikiThumb(url, 500), mid = wikiThumb(url, 960);
+  if (!small) return `src="${esc(url)}"`;
+  return `src="${esc(mid)}" srcset="${esc(small)} 500w, ${esc(mid)} 960w" sizes="${sizes}" data-orig="${esc(url)}"`;
+};
 export const roleName = role => ({renter:'שוכר', owner:'בעל רכב', admin:'מנהל'}[role] || 'משתמש');
 export const avatarHtml = (user, size = 42) => user?.photoURL
   ? `<img class="avatar" style="width:${size}px;height:${size}px" src="${esc(user.photoURL)}" alt="">`
@@ -526,7 +543,7 @@ function carCard(car, manage = false, period = null, index = 99) {
   // line, price + a subtle "פרטים ←" affordance — the whole card is the link (no heavy button). Public cards
   // get role=button + keyboard support; owner "manage" cards keep their own action buttons instead.
   const cardRole = manage ? '' : ' role="button" tabindex="0"';
-  return `<article class="card car car-clean${notFit ? ' car-nofit' : ''}" data-car-open="${esc(car.id)}"${cardRole} aria-label="${esc(`${car.make || ''} ${car.model || ''} — פתיחת פרטים`)}"><div class="car-photo"><img src="${esc(carImage(car))}" alt="${esc(`${car.make || ''} ${car.model || ''}`)}" loading="${eager ? 'eager' : 'lazy'}"${eager ? ' fetchpriority="high"' : ''} decoding="async" data-car-image><div class="car-badges">${availPill(car.status)}${newBadge(car)}</div>${modeBadge}${car.videoUrl ? '<span class="has-video">▶ וידאו</span>' : ''}</div><div class="car-body"><div class="car-title-row"><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3>${rating ? `<span class="car-rate">★ <b>${rating.toFixed(1)}</b>${reviewCount ? ` <small>(${reviewCount})</small>` : ''}</span>` : ''}</div><div class="car-specs"><span>${esc(car.year || '—')}</span><span>·</span><span>${esc(type)}</span>${car.fuel ? `<span>·</span><span>${esc(car.fuel)}</span>` : ''}</div>${periodHtml}<div class="car-foot"><div class="price-stack"><div class="price">${priceMain}</div>${priceAlt ? `<small class="price-alt">${priceAlt}</small>` : ''}</div><span class="car-go">${car.status === 'available' ? 'פרטים והזמנה' : 'צפייה'} ←</span></div>${manageRow}</div></article>`;
+  return `<article class="card car car-clean${notFit ? ' car-nofit' : ''}" data-car-open="${esc(car.id)}"${cardRole} aria-label="${esc(`${car.make || ''} ${car.model || ''} — פתיחת פרטים`)}"><div class="car-photo"><img ${carImgAttrs(carImage(car))} alt="${esc(`${car.make || ''} ${car.model || ''}`)}" loading="${eager ? 'eager' : 'lazy'}"${eager ? ' fetchpriority="high"' : ''} decoding="async" data-car-image><div class="car-badges">${availPill(car.status)}${newBadge(car)}</div>${modeBadge}${car.videoUrl ? '<span class="has-video">▶ וידאו</span>' : ''}</div><div class="car-body"><div class="car-title-row"><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3>${rating ? `<span class="car-rate">★ <b>${rating.toFixed(1)}</b>${reviewCount ? ` <small>(${reviewCount})</small>` : ''}</span>` : ''}</div><div class="car-specs"><span>${esc(car.year || '—')}</span><span>·</span><span>${esc(type)}</span>${car.fuel ? `<span>·</span><span>${esc(car.fuel)}</span>` : ''}</div>${periodHtml}<div class="car-foot"><div class="price-stack"><div class="price">${priceMain}</div>${priceAlt ? `<small class="price-alt">${priceAlt}</small>` : ''}</div><span class="car-go">${car.status === 'available' ? 'פרטים והזמנה' : 'צפייה'} ←</span></div>${manageRow}</div></article>`;
 }
 // Featured cars (pinned by the admin) always come first, newest-pin first.
 export function featuredFirst(cars) {
@@ -575,7 +592,13 @@ export function bindCarButtons() {
     const show = () => image.classList.add('loaded');
     if (image.complete && image.naturalWidth) show();
     else image.addEventListener('load', show, {once: true});
-    image.addEventListener('error', () => { image.src = fallbackImage; show(); }, {once: true});
+    image.addEventListener('error', () => {
+      // A broken Wikimedia THUMB falls back to the original full image first; only then the placeholder.
+      const orig = image.dataset.orig;
+      if (orig && image.src !== orig) { image.removeAttribute('srcset'); image.removeAttribute('sizes'); image.src = orig; image.addEventListener('error', () => { image.src = fallbackImage; show(); }, {once: true}); }
+      else { image.src = fallbackImage; }
+      show();
+    }, {once: true});
   });
   app().querySelectorAll('[data-car-status]').forEach(button => button.onclick = async () => {
     button.disabled = true;
@@ -707,7 +730,7 @@ function openCar(id) {
   const car = {id, ...store.cars[id]};
   if (!car.id) return toast('הרכב לא נמצא');
   const photos = carPhotoList(car);
-  const gallery = photos.length ? `<div class="gallery"><div class="gallery-main"><img id="gallery-img" src="${esc(photos[0])}" alt="${esc(`${car.make || ''} ${car.model || ''}`)}"></div>${photos.length > 1 || car.videoUrl ? `<div class="gallery-thumbs">${photos.map((p, i) => `<button class="thumb ${i === 0 ? 'active' : ''}" data-photo="${esc(p)}"><img src="${esc(p)}" alt="תמונה ${i + 1}"></button>`).join('')}${car.videoUrl ? `<button class="thumb thumb-video" data-video="${esc(car.videoUrl)}">▶</button>` : ''}</div>` : ''}</div>` : `<img class="modal-car-image" id="gallery-img" src="${esc(carImage(car))}" alt="${esc(car.make || '')}">`;
+  const gallery = photos.length ? `<div class="gallery"><div class="gallery-main"><img id="gallery-img" ${carImgAttrs(photos[0], '(max-width:820px) 100vw, 780px')} alt="${esc(`${car.make || ''} ${car.model || ''}`)}"></div>${photos.length > 1 || car.videoUrl ? `<div class="gallery-thumbs">${photos.map((p, i) => `<button class="thumb ${i === 0 ? 'active' : ''}" data-photo="${esc(p)}"><img src="${esc(wikiThumb(p, 250) || p)}" alt="תמונה ${i + 1}"></button>`).join('')}${car.videoUrl ? `<button class="thumb thumb-video" data-video="${esc(car.videoUrl)}">▶</button>` : ''}</div>` : ''}</div>` : `<img class="modal-car-image" id="gallery-img" ${carImgAttrs(carImage(car), '(max-width:820px) 100vw, 780px')} alt="${esc(car.make || '')}">`;
   const reviews = carReviews(car.id);
   const canRate = store.user && myBookings().some(b => b.carId === car.id && b.renterUid === store.user.uid && b.status === 'done');
   const rateNote = store.user && !canRate ? '<p class="rate-note">רק משתמש ששכר את הרכב בפועל יכול לדרג אותו — הדירוג נפתח מההזמנה לאחר סיום ההשכרה.</p>' : '';
@@ -747,7 +770,10 @@ function openCar(id) {
   const galleryImg = document.querySelector('#gallery-img');
   galleryImg?.addEventListener('error', event => { event.currentTarget.src = fallbackImage; }, {once: true});
   document.querySelectorAll('[data-photo]').forEach(button => button.onclick = () => {
-    galleryImg.src = button.dataset.photo;
+    // Clear the previous photo's srcset (it would override the new src), then prefer a 960px thumb.
+    galleryImg.removeAttribute('srcset'); galleryImg.removeAttribute('sizes');
+    galleryImg.src = wikiThumb(button.dataset.photo, 960) || button.dataset.photo;
+    galleryImg.dataset.orig = button.dataset.photo;
     document.querySelectorAll('.thumb').forEach(t => t.classList.toggle('active', t === button));
   });
   document.querySelector('[data-video]')?.addEventListener('click', event => {
@@ -807,7 +833,10 @@ function openCar(id) {
       // store.user, so `!store.user` alone let them fall through to createBooking, which then failed.)
       if (!store.user || store.user.isAnonymous) { saveAuthReturn({carId: car.id}); toast('התחברו או הירשמו כדי להזמין רכב'); closeModal(); location.hash = 'auth'; return; }
       const data = formData(event.target);
-      if (!data.startDate || !data.endDate) return toast('בחרו תאריך איסוף והחזרה');
+      if (!data.startDate || !data.endDate) {
+        const missing = event.target.querySelectorAll('.date-field')[!data.startDate ? 0 : 1];
+        return fieldError(missing?.querySelector('[data-date-btn]'), 'בחרו תאריך כדי להמשיך');
+      }
       if (!event.target.reportValidity()) return;
       data.startLocal = `${data.startDate}T${data.startHour}`;
       data.endLocal = `${data.endDate}T${data.endHour}`;
@@ -911,8 +940,9 @@ export function authView() {
       const button = event.target.querySelector('button[type=submit], .btn.primary');
       const data = composePhone(formData(event.target));
       const reset = () => { if (button) { button.disabled = false; button.textContent = `הרשמה כ${label}`; } };
-      if (!validEmail(data.email)) return toast('כתובת המייל אינה תקינה — בדקו שהיא בפורמט name@example.com');
-      if (data.password !== data.passwordConfirm) return toast('הסיסמאות אינן תואמות');
+      if (!validEmail(data.email)) return fieldError(event.target.email, 'כתובת המייל אינה תקינה — בדקו שהיא בפורמט name@example.com');
+      if (String(data.password || '').length < 6) return fieldError(event.target.password, 'הסיסמה קצרה מדי — לפחות 6 תווים');
+      if (data.password !== data.passwordConfirm) return fieldError(event.target.passwordConfirm, 'הסיסמאות אינן תואמות — הקלידו שוב את אותה הסיסמה');
       delete data.passwordConfirm;
       data.legalAccepted = data.legalAccepted === 'on';
       data.termsVersion = '2026-07-14-rev101';

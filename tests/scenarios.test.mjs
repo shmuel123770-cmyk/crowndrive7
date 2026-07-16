@@ -133,7 +133,10 @@ r = await call(fn['profile-save'], 'r1', {action: 'update', phone: '+1 555777000
 check('טלפון נשאר ניתן לעדכון לאחר אימות', S(r) === 200 && get('users/r1/phone') === '+1 5557770000');
 
 console.log('\nתרחיש D: הזמנה מלאה (booking-create → action)');
-const start = new Date(Date.now() + 86400000).toISOString(), end = new Date(Date.now() + 3 * 86400000).toISOString();
+// ONE Date.now() for both ends — two separate calls can land on different milliseconds, making the range
+// 2 days + 1ms, which the server (correctly) rounds UP to 3 days → the quote assertion flaked ~20% of runs.
+const bookNow = Date.now();
+const start = new Date(bookNow + 86400000).toISOString(), end = new Date(bookNow + 3 * 86400000).toISOString();
 r = await call(fn['booking-create'], 'r1', {carId, startAt: start, endAt: end, termsAccepted: false, requestId: 'no-terms'});
 check('הזמנה ללא אישור תנאים נדחית (400)', S(r) === 400);
 r = await call(fn['booking-create'], 'r1', {carId, startAt: start, endAt: end, termsAccepted: true, requestId: 'test-booking-1'});
@@ -362,7 +365,8 @@ check('הרצה חוזרת בטוחה (idempotent) — אין מה להעביר'
 console.log('\nתרחיש P: סיום שיחה (בעל רכב/מנהל מסיים → השוכר חסום, הם עדיין שולחים)');
 r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'End', model: 'Chat', dailyPrice: 100, photos: ['https://a/1.jpg', 'https://b/2.jpg']}});
 const carEnd = B(r).id;
-const s3 = new Date(Date.now() + 10 * 86400000).toISOString(), e3 = new Date(Date.now() + 12 * 86400000).toISOString();
+const now3 = Date.now();  // one clock read — two reads can differ by 1ms and flip the day-count rounding
+const s3 = new Date(now3 + 10 * 86400000).toISOString(), e3 = new Date(now3 + 12 * 86400000).toISOString();
 r = await call(fn['booking-create'], 'r1', {carId: carEnd, startAt: s3, endAt: e3, termsAccepted: true, requestId: 'end-chat-test'});
 const bId3 = B(r).id;
 r = await call(fn['booking-action'], 'o1', {action: 'status', bookingId: bId3, status: 'approved'});

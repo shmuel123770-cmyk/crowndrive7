@@ -5,7 +5,7 @@
   --dark:#1B222B; --dark-2:#232C37;
   --brand:#3F6B8E; --brand-l:#557FA1; --brand-d:#31567A;
   --gold:#3F6B8E; --gold-l:#557FA1; --gold-d:#31567A;
-  --text:#1D1D1F; --muted:#6E6E73; --muted-2:#A1A1A6;
+  --text:#1D1D1F; --muted:#5E5F66; --muted-2:#A1A1A6;
   --line:rgba(0,0,0,.12); --line-2:rgba(0,0,0,.2); --hair:rgba(0,0,0,.08);
   --ok:#1C7C4F; --ok-bg:rgba(28,124,79,.08);
   --danger:#D70015; --danger-bg:rgba(215,0,21,.06);
@@ -1353,3 +1353,14 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 .filter-sheet select{width:100%}
 .sheet-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:6px}
 .sheet-actions .btn{min-height:48px}
+
+/* Inline field errors (audit #36) */
+.field.has-error input,.field.has-error select,.field.has-error textarea{border-color:var(--danger);box-shadow:0 0 0 3px var(--danger-bg)}
+.date-field.has-error .date-btn{border-color:var(--danger)}
+.field-error{color:var(--danger);font-size:.84rem;font-weight:600;margin:6px 2px 0;line-height:1.4}
+
+/* Deferred install tip (audit #55) — floats above the bottom tab bar, dismissible. */
+.install-tip{position:fixed;inset-inline:12px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:70;display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--hair);border-radius:16px;padding:10px 12px;box-shadow:0 14px 40px rgba(15,22,30,.18);font-size:.9rem;font-weight:600}
+.install-tip span{flex:1;min-width:0}
+.install-tip .btn{padding:9px 16px;min-height:44px}
+.install-tip .install-x{border:0;background:var(--bg2);border-radius:10px;width:34px;height:34px;font-size:1.1rem;color:var(--muted);cursor:pointer}

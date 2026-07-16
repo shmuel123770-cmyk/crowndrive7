@@ -180,3 +180,29 @@ document.querySelector('.brand')?.addEventListener('click', event => {
   else location.hash = 'home';
 });
 render();
+
+// Deferred install prompt (mobile audit #55): capture beforeinstallprompt, and only offer installation after
+// the visitor showed real interest (opened 2+ cars) — never on first paint. "לא עכשיו" is remembered.
+let deferredInstall = null;
+const bumpEngagement = () => {
+  try { sessionStorage.setItem('cd-engaged', String(Number(sessionStorage.getItem('cd-engaged') || 0) + 1)); } catch {}
+  maybeShowInstallTip();
+};
+document.addEventListener('click', event => { if (event.target.closest('[data-car-open]')) bumpEngagement(); });
+window.addEventListener('beforeinstallprompt', event => { event.preventDefault(); deferredInstall = event; maybeShowInstallTip(); });
+function maybeShowInstallTip() {
+  if (!deferredInstall || document.querySelector('#install-tip')) return;
+  try { if (localStorage.getItem('cd-install-dismissed')) return; } catch {}
+  try { if (Number(sessionStorage.getItem('cd-engaged') || 0) < 2) return; } catch { return; }
+  document.body.insertAdjacentHTML('beforeend',
+    `<div id="install-tip" class="install-tip" role="region" aria-label="התקנת האפליקציה"><span>📲 הוסיפו את CrownDrive למסך הבית</span><button type="button" class="btn primary" id="install-yes">התקנה</button><button type="button" class="install-x" id="install-no" aria-label="לא עכשיו">×</button></div>`);
+  document.querySelector('#install-yes').onclick = async () => {
+    try { deferredInstall.prompt(); await deferredInstall.userChoice; } catch {}
+    deferredInstall = null;
+    document.querySelector('#install-tip')?.remove();
+  };
+  document.querySelector('#install-no').onclick = () => {
+    try { localStorage.setItem('cd-install-dismissed', '1'); } catch {}
+    document.querySelector('#install-tip')?.remove();
+  };
+}

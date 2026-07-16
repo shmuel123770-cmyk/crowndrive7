@@ -47,6 +47,31 @@ export function enhanceUI(root = document) {
     button.setAttribute('aria-haspopup', 'dialog');
   });
 }
+// Inline field errors (mobile audit #36): show the message UNDER the offending field, mark it, focus it,
+// and clear automatically once the user edits it. `control` may be an input/select or a date-field button.
+export function fieldError(control, message) {
+  if (!control) { toast(message); return; }
+  const holder = control.closest('.field, .date-field') || control.parentElement;
+  clearFieldError(control);
+  holder.classList.add('has-error');
+  const note = document.createElement('p');
+  note.className = 'field-error';
+  note.id = `cd-err-${++_autoControlId}`;
+  note.textContent = message;
+  holder.appendChild(note);
+  control.setAttribute('aria-invalid', 'true');
+  control.setAttribute('aria-describedby', note.id);
+  try { control.scrollIntoView({block: 'center', behavior: 'smooth'}); control.focus({preventScroll: true}); } catch {}
+  const clear = () => { clearFieldError(control); control.removeEventListener('input', clear); control.removeEventListener('change', clear); };
+  control.addEventListener('input', clear);
+  control.addEventListener('change', clear);
+}
+export function clearFieldError(control) {
+  const holder = control?.closest?.('.field, .date-field') || control?.parentElement;
+  holder?.classList?.remove('has-error');
+  holder?.querySelectorAll?.('.field-error').forEach(n => n.remove());
+  control?.removeAttribute?.('aria-invalid');
+}
 // Accessible modal (audit #41): role="dialog" + aria-modal, focus moves into the dialog and is trapped,
 // Escape closes, focus returns to the trigger, and icon-only close buttons get an aria-label.
 let _modalReturnFocus = null;
