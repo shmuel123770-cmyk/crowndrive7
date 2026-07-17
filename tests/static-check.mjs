@@ -20,7 +20,7 @@ if (/RT_REF\.set/.test(allClient)) throw new Error('unsafe legacy full-state wri
 // Direct client DB writes are forbidden EXCEPT the intentional, rules-guarded ones:
 //  - "client-write:own-profile"      self-profile create on registration
 //  - "client-write:admin-maintenance" admin toggling config/maintenance (admin-only rule)
-const allowedClientWrites = ['client-write:own-profile', 'client-write:admin-maintenance', 'client-write:own-car', 'client-write:admin-chat', 'client-write:own-role'];
+const allowedClientWrites = ['client-write:own-profile', 'client-write:admin-maintenance', 'client-write:own-car', 'client-write:admin-chat', 'client-write:own-role', 'client-write:own-external-rentals'];
 const writeLines = allClient.split('\n').filter(line => /\.ref\([^)]*\)\.(set|update|remove|push)\(/.test(line) && !allowedClientWrites.some(tag => line.includes(tag)));
 if (writeLines.length) throw new Error(`direct client database write found: ${writeLines[0].trim()}`);
 const rules = JSON.parse(read('FIREBASE_DATABASE_RULES_V2.json'));

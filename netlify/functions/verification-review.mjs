@@ -11,18 +11,19 @@ export async function handler(event) {
     const {uid, status, note} = body;
     if (!uid || !['approved', 'rejected', 'needs_resubmission', 'pending'].includes(status)) return json(400, {error: 'נתונים לא תקינים'});
     const db = getAdmin().database();
+    const heal = {};
     if (status === 'approved') {
-      const [profileSnap, docsSnap] = await Promise.all([
-        db.ref(`users/${uid}`).once('value'), db.ref(`privateUserDocuments/${uid}`).once('value'),
-      ]);
-      const userProfile = profileSnap.val() || {};
-      const docs = docsSnap.val() || {};
-      const verification = userProfile.verification || {};
-      if (verification.email !== true) return json(409, {error: 'יש לאמת את כתובת המייל לפני אישור המשתמש'});
-      if (!verification.licenseFront || !verification.licenseBack || !verification.selfie
-        || !docs.licenseFront || !docs.licenseBack || !docs.selfie) return json(409, {error: 'אי אפשר לאשר לפני שכל שלושת המסמכים הוגשו'});
+      // NO email gate (user decision: registration stays simple — email verification never blocks the
+      // admin's approval). The uploaded documents themselves are the only requirement; the per-document
+      // flags are just the wizard's progress markers and can lag, so they're healed on approval.
+      const docs = (await db.ref(`privateUserDocuments/${uid}`).once('value')).val() || {};
+      if (!docs.licenseFront || !docs.licenseBack || !docs.selfie) return json(409, {error: 'אי אפשר לאשר לפני שכל שלושת המסמכים הוגשו'});
+      heal[`users/${uid}/verification/licenseFront`] = true;
+      heal[`users/${uid}/verification/licenseBack`] = true;
+      heal[`users/${uid}/verification/selfie`] = true;
     }
     const updates = {
+      ...heal,
       [`verificationStatus/${uid}`]: status,
       [`users/${uid}/verification/reviewNote`]: cleanText(note, 500),
       [`users/${uid}/verification/reviewedAt`]: Date.now(),

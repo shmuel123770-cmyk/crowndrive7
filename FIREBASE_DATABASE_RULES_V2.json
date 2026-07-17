@@ -200,6 +200,25 @@
       "$uid": {
         ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)"
       }
+    },
+    "externalRentals": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || root.child('admins').child(auth.uid).val() === true)",
+        "$rid": {
+          ".write": "auth != null && auth.uid === $uid && root.child('users').child(auth.uid).child('blocked').val() !== true",
+          ".validate": "newData.hasChildren(['startAt', 'endAt', 'amount', 'createdAt'])",
+          "carId": { ".validate": "newData.isString() && newData.val().length <= 120" },
+          "carLabel": { ".validate": "newData.isString() && newData.val().length <= 120" },
+          "renterName": { ".validate": "newData.isString() && newData.val().length <= 120" },
+          "renterPhone": { ".validate": "newData.isString() && newData.val().length <= 40" },
+          "startAt": { ".validate": "newData.isString() && newData.val().length <= 30" },
+          "endAt": { ".validate": "newData.isString() && newData.val().length <= 30" },
+          "amount": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000000" },
+          "notes": { ".validate": "newData.isString() && newData.val().length <= 1000" },
+          "createdAt": { ".validate": "newData.isNumber()" },
+          "$other": { ".validate": false }
+        }
+      }
     }
   }
 }

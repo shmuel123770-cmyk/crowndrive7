@@ -82,7 +82,8 @@ export async function handler(event) {
     if (!userProfile.legalAcceptance) {
       await db.ref(`users/${token.uid}/legalAcceptance`).set({termsVersion: TERMS_VERSION, privacyVersion: TERMS_VERSION, acceptedAt: Date.now(), source: 'booking-create'});
     }
-    if (token.email_verified !== true) return json(403, {error: 'יש לאמת את כתובת המייל לפני הזמנה'});
+    // NO email-verification gate (user decision: registration stays simple; email verification is
+    // optional). The real human gates remain: license+selfie approval below and the owner's approval.
     const verification = userProfile.verification || {};
     const status = (await db.ref(`verificationStatus/${token.uid}`).once('value')).val();
     if (!(verification.licenseFront && verification.licenseBack && verification.selfie && status === 'approved')) {

@@ -57,6 +57,8 @@ const fakeApp = {
     verifyIdToken: async token => ({uid: token, email: `${token}@x.com`, email_verified: true, auth_time: Math.floor(Date.now() / 1000), firebase: {sign_in_provider: token.startsWith('guest') ? 'anonymous' : 'password'}}),
     deleteUser: async () => {},
     getUserByEmail: async email => { const uid = usersByEmail[email]; if (!uid) throw new Error('not found'); return {uid}; },
+    // Auth-truth email check (verification-review): uids starting with 'noemail' are NOT verified.
+    getUser: async uid => ({uid, emailVerified: !uid.startsWith('noemail')}),
   }),
   storage: () => ({bucket: () => ({name: 'test-bucket', file: p => ({getSignedUrl: async () => [`https://signed/${p}`], exists: async () => [true], makePublic: async () => {}, save: async () => {}})})}),
   options: {credential: {getAccessToken: async () => ({access_token: 'test-token', expires_in: 3600})}},
@@ -131,6 +133,15 @@ r = await call(fn['verification-review'], 'r1', {uid: 'r1', status: 'approved'})
 check('לא-מנהל לא יכול לאשר אימות (403)', S(r) === 403);
 r = await call(fn['verification-review'], 'a1', {uid: 'r1', status: 'approved', note: 'אושר'});
 check('מנהל מאשר אימות', S(r) === 200 && get('verificationStatus/r1') === 'approved');
+// User decision (rev.154): registration stays SIMPLE — email verification never blocks approval.
+// Only the three uploaded documents are required; their progress flags self-heal on approval.
+set('users/r1/verification/email', false);
+set('users/r1/verification/licenseFront', false);
+set('verificationStatus/r1', 'pending');
+r = await call(fn['verification-review'], 'a1', {uid: 'r1', status: 'approved'});
+check('אישור עובר גם בלי מייל מאומת (הרשמה פשוטה) + דגלי מסמכים מתרפאים', S(r) === 200 && get('users/r1/verification/licenseFront') === true);
+r = await call(fn['verification-review'], 'a1', {uid: 'nodocs1', status: 'approved'});
+check('בלי שלושת המסמכים — האישור נחסם (409)', S(r) === 409);
 r = await call(fn['profile-save'], 'r1', {action: 'update', name: 'שם אחר'});
 check('שם חוקי נעול לאחר אימות (409)', S(r) === 409 && get('users/r1/name') === 'יוסי כהן');
 r = await call(fn['profile-save'], 'r1', {action: 'update', phone: '+1 5557770000'});

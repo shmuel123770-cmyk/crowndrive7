@@ -14,6 +14,7 @@
   --radius:16px;
   --shadow:0 24px 60px rgba(0,0,0,.1);
   --accent:#E9A93D; --accent-soft:#FBF3E1;
+  --surface:#FFFFFF;
   --ease:cubic-bezier(.22,.9,.26,1);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -69,7 +70,7 @@ main:focus,main:focus-visible{outline:none}
 .btn:active{transform:scale(.965)}
 .btn.primary,.btn.gold{background:linear-gradient(180deg,#5A86AA,#3F6B8E);color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.32),0 4px 12px rgba(63,107,142,.25)}
 .btn.primary:hover,.btn.gold:hover{background:var(--brand-l);box-shadow:0 10px 26px rgba(63,107,142,.35)}
-.btn.outline{background:#fff;border-color:var(--line-2);color:var(--text)}
+.btn.outline{background:var(--surface);border-color:var(--line-2);color:var(--text)}
 .btn.outline:hover{border-color:var(--text)}
 .btn.dark-out{background:transparent;color:#fff;border-color:rgba(255,255,255,.45)}
 .btn.dark-out:hover{background:rgba(255,255,255,.12);border-color:#fff}
@@ -115,11 +116,11 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
   max-width:980px;margin:0 auto;backdrop-filter:blur(14px)}
 .quick-search label{display:grid;gap:6px;text-align:right;margin:0}
 .quick-search label span{font-size:.74rem;font-weight:800;color:rgba(255,255,255,.78);letter-spacing:.04em}
-.quick-search input,.quick-search select,.quick-search .date-btn{width:100%;height:56px;border:1px solid rgba(255,255,255,.16);border-radius:13px;padding:0 14px;background:#fff;color:#182631;font-size:1.05rem;font-weight:600}
+.quick-search input,.quick-search select,.quick-search .date-btn{width:100%;height:56px;border:1px solid rgba(255,255,255,.16);border-radius:13px;padding:0 14px;background:var(--surface);color:#182631;font-size:1.05rem;font-weight:600}
 .quick-search select{line-height:normal;text-align:center;text-align-last:center;font-size:1rem;padding:0 8px}
 .quick-search .df-label{font-size:.74rem;font-weight:800;color:rgba(255,255,255,.78);letter-spacing:.04em;display:block;margin-bottom:6px;text-align:right}
 .quick-search .btn{height:56px;white-space:nowrap;font-size:1.05rem;padding-block:0}
-.hero-stats{display:flex;justify-content:center;gap:0;margin:44px auto 0;background:#fff;border-radius:18px;overflow:hidden;max-width:640px;box-shadow:0 22px 54px rgba(0,0,0,.26);position:relative;z-index:2}
+.hero-stats{display:flex;justify-content:center;gap:0;margin:44px auto 0;background:var(--surface);border-radius:18px;overflow:hidden;max-width:640px;box-shadow:0 22px 54px rgba(0,0,0,.26);position:relative;z-index:2}
 .hstat{flex:1;padding:20px 10px;border-inline-start:1px solid var(--hair)}
 .hstat:first-child{border:none}
 .hstat b{font-weight:800;font-size:1.7rem;color:var(--text);display:block;font-variant-numeric:tabular-nums;line-height:1.2}
@@ -162,7 +163,7 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
 .field{display:grid;gap:7px;margin:0 0 4px}
 .field label{font-weight:500;font-size:.8rem;letter-spacing:.06em;color:var(--text)}
 .req{color:#D70015;font-weight:700;font-size:.95em;margin-inline-start:1px}
-.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:11px 14px;background:#fff;color:var(--text);
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);border-radius:12px;padding:11px 14px;background:var(--surface);color:var(--text);
   transition:border-color .2s,box-shadow .2s}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--brand);outline:none;box-shadow:0 0 0 4px rgba(63,107,142,.13)}
 .field input::placeholder{color:var(--muted-2)}
@@ -231,7 +232,7 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
 .car-manage .btn{margin-top:0;flex:1 1 0;min-width:130px;background:none}
 .car-manage .btn.gold{background:linear-gradient(135deg,#E9A93D,#C6902E);color:#2A1F08;border:none}
 .car-manage .btn.gold:hover{filter:brightness(1.06)}
-.car-manage .btn.outline{background:#fff;color:var(--brand-d);border:1px solid var(--line)}
+.car-manage .btn.outline{background:var(--surface);color:var(--brand-d);border:1px solid var(--line)}
 .car-manage .btn.outline:hover{background:rgba(63,107,142,.06);border-color:var(--brand)}
 .car-body{padding:15px 18px 17px;display:flex;flex-direction:column;gap:8px;flex:1}
 /* Clean/premium card: name + compact rating on one row */
@@ -262,7 +263,7 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
 .role-pill{background:rgba(255,255,255,.14);color:#fff;font-weight:600;border-radius:99px;padding:6px 14px;font-size:.8rem}
 .empty{padding:44px 30px;text-align:center;color:var(--muted);background:var(--bg2);border-radius:18px}
 .empty-state{text-align:center;padding:46px 26px;background:var(--bg2);border-radius:18px;display:flex;flex-direction:column;align-items:center;gap:5px}
-.empty-state .empty-ic{width:56px;height:56px;display:grid;place-items:center;border-radius:16px;background:#fff;box-shadow:0 6px 18px rgba(20,28,40,.08);margin-bottom:8px}
+.empty-state .empty-ic{width:56px;height:56px;display:grid;place-items:center;border-radius:16px;background:var(--surface);box-shadow:0 6px 18px rgba(20,28,40,.08);margin-bottom:8px}
 .empty-state .empty-ic svg{width:27px;height:27px;stroke:var(--brand);fill:none}
 .empty-state b{font-size:1.08rem;color:var(--text)}
 .empty-state p{margin:0;color:var(--muted);font-size:.88rem;line-height:1.5;max-width:290px}
@@ -303,7 +304,7 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
 .step-card h3{margin:0 0 7px;font-size:1rem;letter-spacing:.02em}
 .step-card p{margin:0;font-size:.86rem;color:var(--muted);font-weight:300}
 .trust-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-.trust-card{background:#fff;border:1px solid var(--hair);border-radius:18px;padding:20px;text-align:right;transition:transform .18s var(--ease),box-shadow .22s}
+.trust-card{background:var(--surface);border:1px solid var(--hair);border-radius:18px;padding:20px;text-align:right;transition:transform .18s var(--ease),box-shadow .22s}
 .trust-card:hover{transform:translateY(-3px);box-shadow:0 18px 42px rgba(27,34,43,.09)}
 .trust-icon{display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:#EEF6F3;font-size:1.25rem;margin-bottom:12px}
 .trust-card:nth-child(1) .trust-icon{background:#EAF3EE}
@@ -340,7 +341,7 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
 .filter-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;
   background:rgba(255,255,255,.62);backdrop-filter:saturate(1.5) blur(16px);-webkit-backdrop-filter:saturate(1.5) blur(16px);border:1px solid rgba(255,255,255,.7);border-radius:18px;padding:14px;
   box-shadow:0 14px 36px rgba(25,35,45,.1);position:sticky;top:78px;z-index:5}
-.filter-bar select,.filter-bar input{border:1px solid rgba(31,41,53,.14);border-radius:12px;padding:10px 12px;background:#fff;min-height:43px;
+.filter-bar select,.filter-bar input{border:1px solid rgba(31,41,53,.14);border-radius:12px;padding:10px 12px;background:var(--surface);min-height:43px;
   box-shadow:0 3px 10px rgba(10,14,19,.03);transition:border-color .2s,box-shadow .2s}
 .filter-bar select:focus,.filter-bar input:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 4px rgba(63,107,142,.12)}
 .filter-bar .f-search{flex:1 1 200px;min-width:140px}
@@ -354,7 +355,7 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
 .role-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .role-card{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:26px 20px;
   background:var(--bg2);border:1.5px solid transparent;border-radius:18px;transition:all .2s}
-.role-card:hover{border-color:var(--brand);background:#fff;box-shadow:0 10px 30px rgba(0,0,0,.08);transform:translateY(-2px)}
+.role-card:hover{border-color:var(--brand);background:var(--surface);box-shadow:0 10px 30px rgba(0,0,0,.08);transform:translateY(-2px)}
 .role-card b{font-size:1rem;font-weight:600}
 .role-card small{color:var(--muted);line-height:1.5;font-weight:300}
 .role-emoji{font-size:2.1rem;line-height:1;margin-bottom:6px}
@@ -387,7 +388,7 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
 .inset{padding:20px;box-shadow:none;margin-bottom:18px;border:1px solid var(--line)}
 .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:26px}
 .kpis.two{grid-template-columns:repeat(2,minmax(0,1fr));margin:0}
-.kpi{padding:20px;background:#fff;border:1px solid var(--hair);border-radius:18px;box-shadow:0 10px 26px rgba(20,28,40,.05);transition:transform .18s var(--ease),box-shadow .22s}
+.kpi{padding:20px;background:var(--surface);border:1px solid var(--hair);border-radius:18px;box-shadow:0 10px 26px rgba(20,28,40,.05);transition:transform .18s var(--ease),box-shadow .22s}
 .kpi:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(27,34,43,.1)}
 .kpi-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
 .kpi-head .kpi-label{color:var(--muted);font-weight:500;font-size:.78rem;letter-spacing:.06em}
@@ -400,7 +401,7 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
 .kpi span{color:var(--muted);font-size:.76rem;letter-spacing:.05em}
 
 /* ---------- data tables ---------- */
-.table-wrap{overflow-x:auto;border:1px solid var(--hair);border-radius:18px;background:#fff}
+.table-wrap{overflow-x:auto;border:1px solid var(--hair);border-radius:18px;background:var(--surface)}
 table.data{width:100%;border-collapse:collapse;font-size:.86rem;min-width:560px}
 table.data th{text-align:right;color:var(--brand-d);font-weight:600;font-size:.72rem;letter-spacing:.12em;padding:12px 14px;border-bottom:1px solid var(--line);white-space:nowrap;background:#F2F5F8;position:sticky;top:0;z-index:1}
 table.data td{padding:13px 14px;border-bottom:1px solid var(--hair);vertical-align:middle;font-weight:300}
@@ -408,7 +409,7 @@ table.data tr:last-child td{border-bottom:0}
 table.data tbody tr:hover{background:rgba(63,107,142,.03)}
 table.data .t-main{font-weight:600}
 table.data .t-actions{display:flex;gap:8px;justify-content:flex-start;flex-wrap:wrap}
-.icon-btn{border:1px solid var(--line);background:#fff;border-radius:99px;width:36px;height:36px;display:grid;place-items:center;cursor:pointer;color:var(--muted);transition:all .18s}
+.icon-btn{border:1px solid var(--line);background:var(--surface);border-radius:99px;width:36px;height:36px;display:grid;place-items:center;cursor:pointer;color:var(--muted);transition:all .18s}
 .icon-btn:hover{border-color:var(--text);color:var(--text)}
 .icon-btn.danger{color:var(--danger);border-color:rgba(215,0,21,.3)}
 .icon-btn.danger:hover{background:var(--danger-bg)}
@@ -426,7 +427,7 @@ table.data .t-actions{display:flex;gap:8px;justify-content:flex-start;flex-wrap:
 
 /* ---------- overview two-panel ---------- */
 .overview-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;margin-top:6px}
-.mini-panel{border:1px solid var(--hair);border-radius:18px;background:#fff;overflow:hidden;box-shadow:0 14px 36px rgba(20,28,40,.06)}
+.mini-panel{border:1px solid var(--hair);border-radius:18px;background:var(--surface);overflow:hidden;box-shadow:0 14px 36px rgba(20,28,40,.06)}
 .mini-panel-head{display:flex;justify-content:space-between;align-items:center;padding:15px 18px;border-bottom:1px solid var(--hair)}
 .mini-panel-head h3{margin:0;font-size:1rem}
 .mini-panel-head span{color:var(--muted);font-size:.78rem}
@@ -436,7 +437,7 @@ table.data .t-actions{display:flex;gap:8px;justify-content:flex-start;flex-wrap:
 .mini-row .mut{color:var(--muted);font-size:.82rem}
 .panel-head-actions{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
 .panel-head-actions h2{margin:0}
-.admin-tools{margin-top:22px;border:1px solid var(--hair);border-radius:14px;background:#fff}
+.admin-tools{margin-top:22px;border:1px solid var(--hair);border-radius:14px;background:var(--surface)}
 .admin-tools summary{cursor:pointer;padding:13px 16px;font-weight:600;font-size:.88rem;color:var(--muted);list-style:none;display:flex;align-items:center;gap:8px;user-select:none}
 .admin-tools summary::-webkit-details-marker{display:none}
 .admin-tools summary::before{content:"⚙";font-size:1.05rem}
@@ -457,7 +458,7 @@ table.data .t-actions{display:flex;gap:8px;justify-content:flex-start;flex-wrap:
 .status-badge.pending{background:var(--warn-bg);color:var(--warn);border-color:rgba(217,190,128,.4)}
 .status-badge.rejected,.status-badge.cancelled{background:var(--danger-bg);color:var(--danger);border-color:rgba(217,138,128,.4)}
 .status-badge.expired{background:var(--bg2);color:var(--muted);border-color:var(--line)}
-.booking-card{border:1px solid var(--hair);border-radius:18px;padding:18px;background:#fff;box-shadow:0 10px 26px rgba(20,28,40,.04);transition:transform .18s var(--ease),box-shadow .22s}
+.booking-card{border:1px solid var(--hair);border-radius:18px;padding:18px;background:var(--surface);box-shadow:0 10px 26px rgba(20,28,40,.04);transition:transform .18s var(--ease),box-shadow .22s}
 .booking-card:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(27,34,43,.08)}
 .booking-main{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:12px}
 .booking-main h3{margin:5px 0}
@@ -469,7 +470,7 @@ table.data .t-actions{display:flex;gap:8px;justify-content:flex-start;flex-wrap:
 /* While a modal is open, lock the page behind it so it can't scroll (esp. on mobile). */
 html.modal-open, html.modal-open body{overflow:hidden}
 .modal-backdrop{position:fixed;inset:0;background:rgba(5,5,7,.82);backdrop-filter:blur(6px);z-index:100;display:grid;place-items:center;padding:18px;animation:fadeIn .2s ease both;overscroll-behavior:contain}
-.modal{width:min(820px,96vw);max-height:92vh;max-height:92dvh;overflow:auto;overflow-x:hidden;background:#fff;border-radius:18px;padding:0 26px 26px;box-shadow:0 30px 80px rgba(0,0,0,.25);animation:up .45s var(--ease)}
+.modal{width:min(820px,96vw);max-height:92vh;max-height:92dvh;overflow:auto;overflow-x:hidden;background:var(--surface);border-radius:18px;padding:0 26px 26px;box-shadow:0 30px 80px rgba(0,0,0,.25);animation:up .45s var(--ease)}
 @keyframes up{0%{transform:translateY(26px) scale(.97);opacity:0}60%{transform:translateY(-4px) scale(1.004);opacity:1}100%{transform:none;opacity:1}}
 .modal-head{display:flex;justify-content:space-between;align-items:center;gap:15px;margin:0 -26px 16px;padding:18px 26px;
   border-bottom:1px solid var(--hair);position:sticky;top:0;background:rgba(255,255,255,.9);backdrop-filter:blur(14px);z-index:3}
@@ -510,7 +511,7 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
 .car:nth-child(4){animation-delay:.21s}
 
 .type-chips{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;margin-top:4px}
-.type-chip{border:1px solid rgba(63,107,142,.18);background:#fff;color:#263342;border-radius:14px;padding:12px 6px;font-weight:800;font-size:.85rem;box-shadow:0 5px 14px rgba(25,35,45,.05);transition:transform .18s var(--ease),background .2s,border-color .2s,color .2s}
+.type-chip{border:1px solid rgba(63,107,142,.18);background:var(--surface);color:#263342;border-radius:14px;padding:12px 6px;font-weight:800;font-size:.85rem;box-shadow:0 5px 14px rgba(25,35,45,.05);transition:transform .18s var(--ease),background .2s,border-color .2s,color .2s}
 .type-chip:hover{transform:translateY(-2px);border-color:var(--brand)}
 .type-chip.on{background:#1B222B;color:#fff;border-color:#1B222B;box-shadow:0 10px 24px rgba(27,34,43,.18)}
 
@@ -567,7 +568,7 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
 .wizard-btn{display:grid;gap:6px;place-items:center;padding:22px 12px;font-size:1.6rem;cursor:pointer;
   background:var(--bg2);border:1.5px solid transparent;border-radius:16px;transition:all .2s}
 .wizard-btn b{font-size:.9rem}
-.wizard-btn:hover{border-color:var(--brand);background:#fff;transform:translateY(-2px)}
+.wizard-btn:hover{border-color:var(--brand);background:var(--surface);transform:translateY(-2px)}
 .wizard-note{min-height:1.2em;margin:12px 0 0;font-size:.82rem}
 .wizard-done{text-align:center;padding:16px 6px}
 .wizard-done span{font-size:3rem;display:block;margin-bottom:10px}
@@ -591,7 +592,7 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
 .blocked-screen .blocked-ic{font-size:4.6rem;line-height:1;margin-bottom:12px}
 .blocked-screen h1{font-size:clamp(1.9rem,5.4vw,2.7rem);color:#b71c1c;margin:0 0 12px}
 .blocked-screen p{color:var(--muted);font-size:1.05rem;margin:0}
-.boot-failure{max-width:520px;margin:12vh auto;padding:40px 28px;text-align:center;background:#fff;border:1px solid var(--hair);border-radius:20px;box-shadow:0 20px 60px rgba(10,14,19,.12)}
+.boot-failure{max-width:520px;margin:12vh auto;padding:40px 28px;text-align:center;background:var(--surface);border:1px solid var(--hair);border-radius:20px;box-shadow:0 20px 60px rgba(10,14,19,.12)}
 .boot-failure h1{margin:0 0 12px;font-size:1.45rem;color:var(--dark)}
 .boot-failure p{margin:0 0 22px;color:var(--muted);line-height:1.6}
 .boot-failure button{background:var(--brand);color:#fff;border:none;border-radius:99px;padding:12px 32px;font-size:1rem;font-weight:700;cursor:pointer;font-family:inherit;transition:background .18s}
@@ -605,7 +606,7 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
 .maint-gears .g2 .gear{fill:#E9C46A}
 @keyframes gearspin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.maint-gears .g1,.maint-gears .g2{animation-duration:18s}}
-.notif-row{display:flex;gap:13px;align-items:center;background:#fff;border:1px solid var(--hair);border-radius:14px;padding:13px 16px}
+.notif-row{display:flex;gap:13px;align-items:center;background:var(--surface);border:1px solid var(--hair);border-radius:14px;padding:13px 16px}
 .notif-row.unread{border-inline-start:4px solid var(--brand);background:rgba(63,107,142,.05)}
 .notif-icon{font-size:1.3rem;width:40px;height:40px;display:grid;place-items:center;background:var(--bg2);border-radius:50%;flex:none}
 .notif-main{display:grid;gap:2px;flex:1;min-width:0}
@@ -624,7 +625,7 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
 .search-group{margin:12px 0 6px;font-weight:800;font-size:.74rem;letter-spacing:.18em;color:var(--brand-d)}
 .search-hit{display:block;width:100%;text-align:right;background:var(--bg2);border:none;border-radius:11px;padding:11px 14px;margin-bottom:6px;cursor:pointer;font-size:.88rem;transition:background .15s}
 .search-hit:hover{background:rgba(63,107,142,.12)}
-.admin-status-select{border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:#fff;font-size:.85rem}
+.admin-status-select{border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--surface);font-size:.85rem}
 .row-blocked{opacity:.55}
 .rate-note{font-size:.8rem;color:var(--warn);background:var(--warn-bg);border-radius:10px;padding:9px 12px;margin:0 0 14px}
 
@@ -654,8 +655,8 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
   /* Cap the minimum so a SHORT / non-maximized desktop window can never push the composer below the fold
      (min-height:470 used to force the shell taller than the viewport → the reply box went off-screen). */
   min-height:340px;min-height:min(470px, calc(100dvh - 120px));margin-top:26px;
-  background:#fff;border:1px solid var(--hair);border-radius:18px;overflow:hidden;box-shadow:0 34px 90px rgba(10,14,19,.14)}
-.chat-list{border-inline-start:1px solid var(--hair);display:flex;flex-direction:column;background:#fff;min-width:0}
+  background:var(--surface);border:1px solid var(--hair);border-radius:18px;overflow:hidden;box-shadow:0 34px 90px rgba(10,14,19,.14)}
+.chat-list{border-inline-start:1px solid var(--hair);display:flex;flex-direction:column;background:var(--surface);min-width:0}
 .chat-list-head{padding:16px;border-bottom:1px solid var(--hair);background:var(--dark);color:#fff}
 .chat-list-head h2{margin:0 0 8px;font-size:1.05rem;color:#fff;letter-spacing:.02em}
 #chat-search{width:100%;border:1px solid rgba(255,255,255,.18);border-radius:99px;padding:9px 14px;background:rgba(255,255,255,.1);color:#fff}
@@ -672,7 +673,7 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
 .chat-item-main{min-width:0;flex:1;display:grid}
 .chat-item-main b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.88rem;font-weight:600}
 .chat-item-main small{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:.76rem}
-.chat-pane{display:flex;flex-direction:column;min-width:0;min-height:0;background:#fff}
+.chat-pane{display:flex;flex-direction:column;min-width:0;min-height:0;background:var(--surface)}
 .chat-empty{margin:auto;text-align:center;color:var(--muted)}
 .chat-empty span{font-size:2.4rem;display:block;margin-bottom:8px}
 .chat-head{display:flex;align-items:center;gap:10px;padding:13px 16px;background:var(--dark);color:#fff}
@@ -684,22 +685,22 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
 .ev-status.ok{color:var(--ok)}
 .chat-msgs{flex:1;min-height:0;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:9px;background:var(--bg)}
 .chat-msgs .message,.messages .message{max-width:78%;padding:9px 13px;border-radius:15px;font-size:.86rem;line-height:1.5;word-wrap:break-word;animation:fadeUp .25s var(--ease);border:none;box-shadow:none}
-.chat-msgs .message{align-self:flex-end;background:#fff;border:1px solid var(--hair);border-end-end-radius:5px}
+.chat-msgs .message{align-self:flex-end;background:var(--surface);border:1px solid var(--hair);border-end-end-radius:5px}
 .chat-msgs .message.mine{align-self:flex-start;margin:0;background:var(--dark);color:#fff;border:none;border-end-end-radius:15px;border-end-start-radius:5px}
 .chat-msgs .message p{margin:0}
 .chat-msgs .message small{display:block;margin-top:4px;font-size:.62rem;opacity:.55;color:inherit;text-align:left}
 .msg-att{display:inline-block;margin-top:7px;background:rgba(63,107,142,.12);color:var(--brand-d);border:1px solid rgba(63,107,142,.25);border-radius:10px;padding:7px 12px;font-size:.78rem;font-weight:600;cursor:pointer;transition:background .2s}
 .message.mine .msg-att{background:rgba(255,255,255,.14);color:#fff;border-color:rgba(255,255,255,.25)}
 .msg-att:hover{background:rgba(63,107,142,.2)}
-.evidence-row{display:flex;gap:8px;flex-wrap:wrap;padding:10px 14px;border-top:1px solid var(--hair);background:#fff}
-.ev-chip{display:inline-flex;align-items:center;gap:5px;border:1px solid rgba(63,107,142,.18);background:#fff;border-radius:14px;padding:9px 14px;font-size:.8rem;font-weight:700;color:#263342;cursor:pointer;box-shadow:0 5px 14px rgba(25,35,45,.05);transition:transform .18s var(--ease),background .2s,border-color .2s}
+.evidence-row{display:flex;gap:8px;flex-wrap:wrap;padding:10px 14px;border-top:1px solid var(--hair);background:var(--surface)}
+.ev-chip{display:inline-flex;align-items:center;gap:5px;border:1px solid rgba(63,107,142,.18);background:var(--surface);border-radius:14px;padding:9px 14px;font-size:.8rem;font-weight:700;color:#263342;cursor:pointer;box-shadow:0 5px 14px rgba(25,35,45,.05);transition:transform .18s var(--ease),background .2s,border-color .2s}
 .ev-chip:hover{transform:translateY(-2px);border-color:var(--brand)}
 .ev-chip.ok{background:var(--ok-bg);color:var(--ok);border-color:rgba(127,191,158,.4)}
-.chat-composer{display:flex;gap:9px;padding:11px 14px;flex-shrink:0;border-top:1px solid var(--hair);background:#fff;box-shadow:0 -6px 16px rgba(20,26,33,.06)}
-.chat-composer input{flex:1;border:1px solid var(--line);border-radius:99px;padding:10px 16px;background:#fff}
+.chat-composer{display:flex;gap:9px;padding:11px 14px;flex-shrink:0;border-top:1px solid var(--hair);background:var(--surface);box-shadow:0 -6px 16px rgba(20,26,33,.06)}
+.chat-composer input{flex:1;border:1px solid var(--line);border-radius:99px;padding:10px 16px;background:var(--surface)}
 .chat-composer input:focus{outline:none;border-color:var(--brand)}
 .chat-composer .btn{border-radius:99px;padding:10px 22px}
-.chat-attach{display:grid;place-items:center;width:42px;min-width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--brand-d);transition:all .18s}
+.chat-attach{display:grid;place-items:center;width:42px;min-width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--surface);cursor:pointer;color:var(--brand-d);transition:all .18s}
 .chat-attach svg{width:20px;height:20px}
 .chat-attach:hover{border-color:var(--brand);background:var(--bg2)}
 .msg-img{display:block;margin-top:7px;max-width:230px;width:100%;border-radius:12px;cursor:pointer}
@@ -720,7 +721,7 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
 /* App-style fixed bottom tab bar — mobile only (the top nav serves desktop). */
 .bottom-nav{display:none}
 @media(max-width:820px){
-  .bottom-nav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:60;background:#fff;border-top:1px solid var(--hair);box-shadow:0 -6px 22px rgba(20,26,33,.09);padding-bottom:env(safe-area-inset-bottom)}
+  .bottom-nav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:60;background:var(--surface);border-top:1px solid var(--hair);box-shadow:0 -6px 22px rgba(20,26,33,.09);padding-bottom:env(safe-area-inset-bottom)}
   .bottom-nav.hide{display:none}
   .tab-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 4px 7px;border:none;background:none;cursor:pointer;color:var(--muted);font-family:inherit;font-size:.66rem;font-weight:600;letter-spacing:.01em;position:relative;transition:color .18s,transform .12s;-webkit-tap-highlight-color:transparent}
   .tab-item svg{width:23px;height:23px;stroke-width:2}
@@ -771,7 +772,7 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
   .filter-bar select,.filter-bar .f-search{flex:0 0 auto}
   .filter-bar .f-search{flex:1 0 60%}
   .chat-shell{grid-template-columns:1fr;height:calc(100vh - 140px);height:calc(100dvh - 140px);position:relative;margin-top:14px}
-  .chat-pane{position:absolute;inset:0;transform:translateX(-100%);transition:transform .25s var(--ease);z-index:2;background:#fff}
+  .chat-pane{position:absolute;inset:0;transform:translateX(-100%);transition:transform .25s var(--ease);z-index:2;background:var(--surface)}
   .chat-shell.show-pane .chat-pane{transform:translateX(0)}
   .chat-back{display:grid;place-items:center}
   .fleet-zone::after{top:130px;font-size:2.8rem;letter-spacing:.04em}
@@ -826,12 +827,12 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
 
 /* ---------- custom big calendar picker ---------- */
 .date-field{position:relative;display:grid;gap:0;text-align:right}
-.date-btn{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--muted-2);padding:11px 14px;font-weight:600;min-height:48px;transition:border-color .2s,box-shadow .2s}
+.date-btn{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--muted-2);padding:11px 14px;font-weight:600;min-height:48px;transition:border-color .2s,box-shadow .2s}
 .date-btn.has-val{color:var(--text)}
 .date-btn:hover{border-color:var(--brand)}
 .field .date-btn,.modal .date-btn{width:100%}
 .modal .df-label,.field .df-label{font-weight:500;font-size:.8rem;letter-spacing:.06em;display:block;margin-bottom:7px}
-.cal-pop{position:absolute;top:calc(100% + 8px);inset-inline-end:0;z-index:120;width:min(340px,92vw);background:#fff;border:1px solid var(--hair);border-radius:18px;box-shadow:0 30px 80px rgba(10,14,19,.3);padding:16px;animation:pop .18s var(--ease)}
+.cal-pop{position:absolute;top:calc(100% + 8px);inset-inline-end:0;z-index:120;width:min(340px,92vw);background:var(--surface);border:1px solid var(--hair);border-radius:18px;box-shadow:0 30px 80px rgba(10,14,19,.3);padding:16px;animation:pop .18s var(--ease)}
 @keyframes pop{from{opacity:0;transform:translateY(8px) scale(.98)}to{opacity:1;transform:none}}
 .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .cal-head b{font-size:1.05rem}
@@ -903,9 +904,9 @@ body[data-page="dashboard"]::before,body[data-page="chats"]::before{background:
 /* iOS segmented control for tabs */
 .dashboard-tabs{background:rgba(118,118,128,.14);border:none;padding:5px;border-radius:14px;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
 .dashboard-tabs .tab{color:#4A4A52;font-weight:600;border-radius:10px;padding:10px 16px;letter-spacing:-.01em}
-.dashboard-tabs .tab.active{background:#fff;color:var(--text);box-shadow:0 3px 8px rgba(0,0,0,.12),0 1px 1px rgba(0,0,0,.05)}
+.dashboard-tabs .tab.active{background:var(--surface);color:var(--text);box-shadow:0 3px 8px rgba(0,0,0,.12),0 1px 1px rgba(0,0,0,.05)}
 .tabs{background:rgba(118,118,128,.14)}
-.tabs .tab.active{background:#fff;color:var(--text);box-shadow:0 3px 8px rgba(0,0,0,.12)}
+.tabs .tab.active{background:var(--surface);color:var(--text);box-shadow:0 3px 8px rgba(0,0,0,.12)}
 /* hairline separators + generous radii */
 .card{border-radius:18px}
 table.data td{border-bottom:.5px solid rgba(60,60,67,.18)}
@@ -916,7 +917,7 @@ h1,h2{letter-spacing:-.03em}
 .dashboard-panel{border-radius:18px}
 .btn{border-radius:12px}
 .field input,.field select,.field textarea{border-radius:12px;background:rgba(118,118,128,.07);border-color:transparent}
-.field input:focus,.field select:focus,.field textarea:focus{background:#fff}
+.field input:focus,.field select:focus,.field textarea:focus{background:var(--surface)}
 /* phone: country + dial code picker */
 .phone-row{display:flex;gap:8px}
 .phone-row select{flex:0 0 168px;max-width:46%;direction:ltr;text-align:left}
@@ -944,7 +945,7 @@ body[data-page="dashboard"] .dashboard-head,body[data-page="chats"] .dashboard-h
 body[data-page="dashboard"] .nav-actions{display:none}
 body[data-page="dashboard"] .dashboard-tabs{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08)}
 body[data-page="dashboard"] .dashboard-tabs .tab{color:#AEB6C0}
-body[data-page="dashboard"] .dashboard-tabs .tab.active{background:#fff;color:var(--text)}
+body[data-page="dashboard"] .dashboard-tabs .tab.active{background:var(--surface);color:var(--text)}
 body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 14px 34px rgba(0,0,0,.5)}
 /* Fixed in the top-right corner so it never scrolls away on long dashboards. */
 .dash-close{position:fixed;top:74px;inset-inline-start:14px;z-index:61;width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:rgba(20,26,34,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;font-size:1rem;display:grid;place-items:center;cursor:pointer;transition:background .15s;box-shadow:0 6px 20px rgba(0,0,0,.32)}
@@ -954,7 +955,7 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 .avatar-btn:hover .avatar,.avatar-btn:hover .avatar-fallback{filter:brightness(.9)}
 /* In-flow (not floating) so it never overlaps the page title; sits cleanly above it. */
 .page-back{display:inline-flex;align-items:center;gap:7px;margin:20px 0 6px;
-  background:#fff;border:1px solid var(--line);border-radius:99px;padding:10px 20px;
+  background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:10px 20px;
   font-weight:700;font-size:.9rem;color:var(--brand-d);cursor:pointer;box-shadow:0 3px 10px rgba(27,34,43,.08);
   transition:border-color .18s,background .18s,transform .12s}
 .page-back:hover{border-color:var(--brand);background:rgba(63,107,142,.06)}
@@ -1028,7 +1029,7 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 }
 .wizard-btn svg{width:30px;height:30px;stroke:var(--brand-d)}
 
-.role-selected{border-color:var(--brand)!important;background:#fff!important;box-shadow:0 10px 30px rgba(63,107,142,.18)!important}
+.role-selected{border-color:var(--brand)!important;background:var(--surface)!important;box-shadow:0 10px 30px rgba(63,107,142,.18)!important}
 #cp-form{margin-top:16px}
 
 .forgot-pw{display:block;margin:12px auto 0;padding:4px;border:none;background:none;color:var(--brand);font-size:.84rem;font-weight:600;cursor:pointer}
@@ -1116,7 +1117,7 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
   .table-wrap{overflow:visible;-webkit-overflow-scrolling:auto;border:0;background:transparent}
   table.data,table.data tbody,table.data tr,table.data td{display:block;width:auto;min-width:0;max-width:100%}
   table.data thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}  /* hide header row */
-  table.data tr{background:#fff;border:1px solid var(--line);border-radius:16px;padding:6px 16px;margin-bottom:14px;box-shadow:0 6px 16px rgba(12,20,32,.06)}
+  table.data tr{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:6px 16px;margin-bottom:14px;box-shadow:0 6px 16px rgba(12,20,32,.06)}
   table.data tr.row-blocked{border-color:rgba(217,120,40,.5)}
   table.data td{display:flex;justify-content:space-between;align-items:center;gap:14px;border:0;border-bottom:1px solid var(--hair);padding:11px 0;min-height:44px;text-align:start;white-space:normal;word-break:break-word}
   table.data tr td:last-child{border-bottom:0}
@@ -1129,7 +1130,7 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 /* Admin USERS list as compact cards in a responsive grid — no wide table, no horizontal scroll at any
    width (1 card/row on a phone, 2–3 across on the dashboard). Same info as the desktop table. */
 .admin-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
-.auc{background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px 15px;box-shadow:0 6px 16px rgba(12,20,32,.06)}
+.auc{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 15px;box-shadow:0 6px 16px rgba(12,20,32,.06)}
 .auc.auc-blocked{border-color:rgba(217,120,40,.55)}
 .auc-head{display:flex;align-items:center;gap:11px}
 .auc-ava{flex:0 0 42px;width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#3F6B8E,#28455c);color:#fff;display:grid;place-items:center;font-weight:800;font-size:1rem;text-transform:uppercase}
@@ -1173,10 +1174,10 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 .period-note{background:rgba(200,110,30,.1);border:1px solid rgba(200,110,30,.32);color:#8f5410;border-radius:12px;padding:9px 13px;margin:8px 0;font-size:.82rem;font-weight:600;line-height:1.4}
 .car-nofit{opacity:.74}
 .car-nofit .car-photo img{filter:grayscale(.35)}
-.period-search{display:grid;grid-template-columns:1.6fr .8fr 1.6fr .8fr auto;gap:10px;align-items:end;background:#fff;border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px;box-shadow:0 6px 16px rgba(12,20,32,.05)}
+.period-search{display:grid;grid-template-columns:1.6fr .8fr 1.6fr .8fr auto;gap:10px;align-items:end;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px;box-shadow:0 6px 16px rgba(12,20,32,.05)}
 .period-search .hour-field{display:grid;gap:6px;text-align:right;margin:0}
 .period-search .hour-field span{font-size:.74rem;font-weight:800;color:var(--muted);letter-spacing:.02em}
-.period-search select,.period-search .date-btn{width:100%;height:50px;border:1px solid var(--line);border-radius:12px;padding:0 12px;background:#fff;color:#182631;font-size:1rem;font-weight:600}
+.period-search select,.period-search .date-btn{width:100%;height:50px;border:1px solid var(--line);border-radius:12px;padding:0 12px;background:var(--surface);color:#182631;font-size:1rem;font-weight:600}
 .period-search .df-label{font-size:.74rem;font-weight:800;color:var(--muted);display:block;margin-bottom:6px;text-align:right}
 .period-search .date-field{margin:0}
 .period-search .btn{height:50px;white-space:nowrap}
@@ -1186,7 +1187,7 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 .mode-picker{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:6px}
 .mode-opt{position:relative;cursor:pointer}
 .mode-opt input{position:absolute;opacity:0;inset:0;cursor:pointer;margin:0}
-.mode-opt-in{display:flex;flex-direction:column;gap:4px;height:100%;border:1.5px solid var(--line);border-radius:14px;padding:14px 12px;background:#fff;transition:border-color .16s,box-shadow .16s,background .16s}
+.mode-opt-in{display:flex;flex-direction:column;gap:4px;height:100%;border:1.5px solid var(--line);border-radius:14px;padding:14px 12px;background:var(--surface);transition:border-color .16s,box-shadow .16s,background .16s}
 .mode-opt-in b{font-size:.9rem;font-weight:700;color:var(--text)}
 .mode-opt-in small{font-size:.76rem;color:var(--muted);line-height:1.35}
 .mode-opt input:checked + .mode-opt-in{border-color:var(--brand);background:rgba(63,107,142,.06);box-shadow:0 0 0 3px rgba(63,107,142,.12)}
@@ -1261,12 +1262,12 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 }
 
 /* ================= REV101 MOBILE READINESS ================= */
-.skip-link{position:fixed;top:max(8px,env(safe-area-inset-top));inset-inline-start:12px;z-index:500;background:#fff;color:var(--dark);padding:10px 16px;border-radius:10px;font-weight:800;box-shadow:0 8px 24px rgba(0,0,0,.25);transform:translateY(-180%);transition:transform .18s}
+.skip-link{position:fixed;top:max(8px,env(safe-area-inset-top));inset-inline-start:12px;z-index:500;background:var(--surface);color:var(--dark);padding:10px 16px;border-radius:10px;font-weight:800;box-shadow:0 8px 24px rgba(0,0,0,.25);transform:translateY(-180%);transition:transform .18s}
 .skip-link:focus{transform:translateY(0)}
 .network-status{position:fixed;z-index:95;top:calc(max(14px,env(safe-area-inset-top)) + 58px);left:50%;transform:translateX(-50%);width:min(92vw,680px);padding:9px 14px;border-radius:12px;background:#7A3100;color:#fff;text-align:center;font-size:.82rem;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.24)}
 .network-status[hidden]{display:none}
 .password-field{display:flex;align-items:stretch;border-radius:12px;background:rgba(118,118,128,.07);overflow:hidden;border:1px solid transparent}
-.password-field:focus-within{background:#fff;border-color:var(--brand);box-shadow:0 0 0 4px rgba(63,107,142,.13)}
+.password-field:focus-within{background:var(--surface);border-color:var(--brand);box-shadow:0 0 0 4px rgba(63,107,142,.13)}
 .password-field input{flex:1;min-width:0;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
 .password-field button{border:0;border-inline-start:1px solid var(--hair);background:transparent;color:var(--brand-d);font-weight:800;padding:0 14px;min-width:68px}
 .booking-form-head{margin:24px 0 14px}
@@ -1283,7 +1284,7 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 .camera-hint{text-align:center;color:var(--muted);font-size:.82rem;margin:10px 0}
 .camera-actions{display:grid;grid-template-columns:1fr 78px 1fr;align-items:center;gap:12px;margin-top:12px}
 .camera-shot{width:72px;height:72px;border-radius:50%;border:4px solid #fff;background:transparent;padding:5px;box-shadow:0 0 0 2px var(--dark);justify-self:center}
-.camera-shot span{display:block;width:100%;height:100%;border-radius:50%;background:#fff;transition:transform .12s,background .12s}
+.camera-shot span{display:block;width:100%;height:100%;border-radius:50%;background:var(--surface);transition:transform .12s,background .12s}
 .camera-shot:active span{transform:scale(.88);background:#E9C46A}
 
 @media(max-width:820px){
@@ -1364,7 +1365,7 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 .field-error{color:var(--danger);font-size:.84rem;font-weight:600;margin:6px 2px 0;line-height:1.4}
 
 /* Deferred install tip (audit #55) — floats above the bottom tab bar, dismissible. */
-.install-tip{position:fixed;inset-inline:12px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:70;display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--hair);border-radius:16px;padding:10px 12px;box-shadow:0 14px 40px rgba(15,22,30,.18);font-size:.9rem;font-weight:600}
+.install-tip{position:fixed;inset-inline:12px;bottom:calc(76px + env(safe-area-inset-bottom));z-index:70;display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--hair);border-radius:16px;padding:10px 12px;box-shadow:0 14px 40px rgba(15,22,30,.18);font-size:.9rem;font-weight:600}
 .install-tip span{flex:1;min-width:0}
 .install-tip .btn{padding:9px 16px;min-height:44px}
 .install-tip .install-x{border:0;background:var(--bg2);border-radius:10px;width:34px;height:34px;font-size:1.1rem;color:var(--muted);cursor:pointer}
@@ -1425,8 +1426,8 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
   table.data{min-width:0;display:block;border:none}
   table.data thead{display:none}
   table.data tbody{display:grid;gap:10px}
-  table.data tr{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;background:#fff;border:1px solid var(--hair);border-radius:18px;padding:12px;min-height:96px;box-shadow:0 10px 26px rgba(20,28,40,.05)}
-  table.data tr:hover{background:#fff}
+  table.data tr{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;background:var(--surface);border:1px solid var(--hair);border-radius:18px;padding:12px;min-height:96px;box-shadow:0 10px 26px rgba(20,28,40,.05)}
+  table.data tr:hover{background:var(--surface)}
   table.data td{display:block;border:none;padding:2px 0;font-weight:400}
   table.data td.t-main{grid-column:1 / -1;font-size:1.02rem;font-weight:700}
   table.data td:last-child{grid-column:1 / -1}
@@ -1463,7 +1464,7 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 }
 /* Admin "עוד" sheet items — large, thumb-friendly rows in the existing card language */
 .more-sheet{display:grid;gap:10px;padding-bottom:4px}
-.more-item{display:flex;align-items:center;gap:14px;width:100%;min-height:56px;padding:12px 16px;background:#fff;border:1px solid var(--line);border-radius:14px;font:inherit;font-weight:600;font-size:1rem;color:var(--text);cursor:pointer;transition:background .15s,transform .12s}
+.more-item{display:flex;align-items:center;gap:14px;width:100%;min-height:56px;padding:12px 16px;background:var(--surface);border:1px solid var(--line);border-radius:14px;font:inherit;font-weight:600;font-size:1rem;color:var(--text);cursor:pointer;transition:background .15s,transform .12s}
 .more-item:hover{background:var(--bg-soft)}
 .more-item:active{transform:scale(.98)}
 .more-item svg{width:22px;height:22px;color:var(--brand-d);flex:0 0 22px}
@@ -1603,7 +1604,7 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
    nav, deeper chat bubbles, avatar rings, and a floating empty-state icon. CSS only. */
 /* Form options become iOS-style switches (the legal consent checkbox stays a checkbox on purpose) */
 .price-request-toggle input{appearance:none;-webkit-appearance:none;width:44px;height:26px;flex:0 0 44px;margin-top:1px;border-radius:99px;background:var(--bg3);position:relative;cursor:pointer;transition:background .2s;border:none}
-.price-request-toggle input::after{content:"";position:absolute;top:3px;inset-inline-start:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(16,24,40,.28);transition:transform .22s var(--ease)}
+.price-request-toggle input::after{content:"";position:absolute;top:3px;inset-inline-start:3px;width:20px;height:20px;border-radius:50%;background:var(--surface);box-shadow:0 2px 6px rgba(16,24,40,.28);transition:transform .22s var(--ease)}
 .price-request-toggle input:checked{background:var(--brand)}
 .price-request-toggle input:checked::after{transform:translateX(-18px)}
 .price-request-toggle{align-items:center}
@@ -1637,7 +1638,7 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 .auth-shell::before{content:"";position:absolute;inset:-40% -20% auto;height:220px;background:radial-gradient(closest-side,rgba(63,107,142,.14),transparent 70%);pointer-events:none}
 .auth-head h2{font-size:1.5rem;font-weight:800}
 /* Role/mode cards: icon on a tinted disc, ring on hover, press feedback */
-.role-emoji{width:56px;height:56px;display:grid;place-items:center;background:#fff;border-radius:18px;margin-bottom:8px;box-shadow:inset 0 0 0 1.5px rgba(63,107,142,.22), 0 6px 16px rgba(16,24,40,.1);transition:background .18s,box-shadow .18s}
+.role-emoji{width:56px;height:56px;display:grid;place-items:center;background:var(--surface);border-radius:18px;margin-bottom:8px;box-shadow:inset 0 0 0 1.5px rgba(63,107,142,.22), 0 6px 16px rgba(16,24,40,.1);transition:background .18s,box-shadow .18s}
 .role-emoji svg{width:26px;height:26px;color:var(--brand-d)}
 .role-card{box-shadow:inset 0 1px 0 rgba(255,255,255,.8)}
 .role-card:hover .role-emoji{background:var(--brand);}
@@ -1674,7 +1675,7 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 .upload-tile:active{transform:scale(.99)}
 .upload-tile b{color:var(--brand-d)}
 .upload-tile small{color:var(--muted);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.upload-tile .tile-ic{width:46px;height:46px;display:grid;place-items:center;background:#fff;border-radius:14px;box-shadow:inset 0 0 0 1.5px rgba(63,107,142,.22), 0 6px 14px rgba(16,24,40,.08)}
+.upload-tile .tile-ic{width:46px;height:46px;display:grid;place-items:center;background:var(--surface);border-radius:14px;box-shadow:inset 0 0 0 1.5px rgba(63,107,142,.22), 0 6px 14px rgba(16,24,40,.08)}
 .upload-tile .tile-ic svg{width:22px;height:22px;color:var(--brand-d)}
 .upload-tile.has-file{border-style:solid;border-color:var(--ok);background:var(--ok-bg)}
 .upload-tile.has-file b,.upload-tile.has-file small{color:var(--ok)}
@@ -1709,7 +1710,7 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 .bk-step::before{content:"";position:absolute;top:5px;inset-inline-start:-50%;width:100%;height:2px;background:var(--bg3)}
 .bk-step:first-child::before{display:none}
 .bk-step.done::before{background:var(--brand)}
-.bk-dot{width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid var(--bg3);z-index:1;transition:background .2s,border-color .2s}
+.bk-dot{width:12px;height:12px;border-radius:50%;background:var(--surface);border:2px solid var(--bg3);z-index:1;transition:background .2s,border-color .2s}
 .bk-step.done .bk-dot{background:var(--brand);border-color:var(--brand)}
 .bk-step.now .bk-dot{border-color:var(--brand);animation:pulseStep 1.8s ease-in-out infinite}
 @keyframes pulseStep{0%,100%{box-shadow:0 0 0 3px rgba(63,107,142,.14)}50%{box-shadow:0 0 0 6px rgba(63,107,142,.2)}}
@@ -1785,4 +1786,179 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
   /* Help block */
   .foot-cta{padding:16px}
   .foot-cta h2{font-size:1.15rem}
+}
+
+/* ================= DASH COMPACT (rev146) =================
+   The same "less scrolling" treatment for the PERSONAL AREA + ADMIN on phones: slimmer dark header,
+   half-height KPI tiles, tighter booking cards / notifications / chat rows. Desktop untouched. */
+@media(max-width:820px){
+  /* Dark header: one compact band instead of a hero-sized panel */
+  .dashboard-head{padding:14px 16px;gap:10px;border-radius:16px}
+  .dashboard-head h1{font-size:1.25rem}
+  .dashboard-head .eyebrow{font-size:.66rem;margin-bottom:2px}
+  .dash-head-controls .avatar-btn .avatar{width:44px!important;height:44px!important}
+  .dash-bell{width:40px;height:40px;font-size:1rem}
+  .dash-head-actions .btn{min-height:44px;padding-block:8px}
+  /* KPI tiles: 2×2 stays, half the height, numbers still lead */
+  .kpis{gap:8px;margin-bottom:16px}
+  .kpi{padding:12px 14px;min-height:76px;border-radius:14px}
+  .kpi b{font-size:1.22rem}
+  .kpi-head{margin-bottom:4px}
+  .kpi-head .kpi-label{font-size:.68rem}
+  /* Booking cards: tighter frame, timeline and chips closer */
+  .booking-card{padding:12px 14px;border-radius:16px}
+  .booking-main{margin-bottom:8px;gap:10px}
+  .booking-card h3{font-size:1.02rem;margin:2px 0}
+  .bk-timeline{margin:8px 0 2px}
+  .list{gap:10px}
+  /* Panel + section headers */
+  .dashboard-panel{padding:14px}
+  .dashboard-panel h2{font-size:1.15rem;margin-bottom:10px}
+  .mini-panel{padding:12px}
+  /* Feeds + chat rows */
+  .notif-row{padding:10px 12px;border-radius:12px}
+  .chat-item{padding:10px}
+  .auc-head{gap:8px}
+}
+
+/* ================= DARK MODE (rev147) =================
+   Follows the phone's system setting (prefers-color-scheme) — no toggle, exactly like a native app.
+   The palette flips through the :root tokens; every former literal white now rides var(--surface).
+   The dark hero/topbar/chat-header were dark already and simply deepen. */
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#0F141B; --bg2:#19212B; --bg3:#232E3A; --bg-soft:#131A22; --card:#1A222C;
+    --surface:#1A222C;
+    --dark:#0B0F14; --dark-2:#111823;
+    --text:#E9EDF2; --muted:#9AA6B2; --muted-2:#66707C;
+    --line:rgba(255,255,255,.14); --line-2:rgba(255,255,255,.26); --hair:rgba(255,255,255,.09);
+    --brand-l:#6E95B5; --brand-d:#8FB4D4;
+    --ok:#3FBF87; --ok-bg:rgba(63,191,135,.14);
+    --danger:#FF6B72; --danger-bg:rgba(255,107,114,.14);
+    --warn:#E5A94F; --warn-bg:rgba(229,169,79,.16);
+    --accent-soft:#2A2416;
+    --shadow:0 24px 60px rgba(0,0,0,.55);
+  }
+  /* Elevation reads differently on dark: shadows deepen, top-lights soften */
+  .card{box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 1px 2px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.45)}
+  .kpi,.auc{box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 1px 2px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.4)}
+  .car:hover{box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 3px 8px rgba(0,0,0,.4), 0 24px 56px rgba(0,0,0,.55)}
+  /* Sticky glass bars turn dark-glass */
+  .modal-head{background:rgba(20,27,36,.92)}
+  .mobile-booking-bar,.wiz-nav{background:rgba(15,20,27,.96)}
+  /* Intentional whites STAY white on dark (switch knob, floating hearts) */
+  .price-request-toggle input::after{background:#fff}
+  .fav-btn{background:rgba(255,255,255,.92)}
+  /* The compact hero stat chips were light glass — flip to dark glass */
+  .hstat{background:rgba(255,255,255,.08)}
+  .hstat b{color:#fff}
+  /* Inputs: readable dark fields with visible borders */
+  .field input,.field select,.field textarea,.filter-bar select,.filter-bar input{color:var(--text)}
+  .quick-search input,.quick-search select,.quick-search .date-btn{background:#F2F5F8;color:#182631}
+  /* Bottom nav top-light softened */
+  .bottom-nav{box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 -10px 30px rgba(0,0,0,.5)}
+  /* Status pills inner light softened */
+  .pill,.status-badge{box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 1px 2px rgba(0,0,0,.3)}
+  /* Own chat bubble keeps its deep gradient; the other side rides --surface automatically */
+}
+
+/* ================= PERSONAL AREA PRO (rev148) =================
+   User: "האזור האישי נראה עדיין חובבני". The document look (one huge white panel + bare text
+   headings) becomes an APP look on phones: content cards float directly on the page background,
+   the KPI tiles overlap the dark header like a banking app, section titles turn into refined
+   small labels, and each booking card gets a clear action hierarchy. Desktop keeps the panel. */
+@media(max-width:820px){
+  /* 1. Kill the mega-panel on CARD-BASED tabs: content floats on the dark canvas. Form-based tabs
+     (profile) keep their solid panel so labels/text stay on a proper surface. */
+  .dashboard-panel[data-tab="overview"],.dashboard-panel[data-tab="bookings"],.dashboard-panel[data-tab="cars"],.dashboard-panel[data-tab="myCars"],.dashboard-panel[data-tab="external"],.dashboard-panel[data-tab="notifications"],.dashboard-panel[data-tab="users"]{background:none;border:none;box-shadow:none;border-radius:0;padding:2px;min-height:60vh;animation:none}
+  .dashboard-panel[data-tab="external"] .ext-sub{color:#8FA3B8}
+  /* Bare text that now sits ON the dark canvas gets a canvas-friendly tone (works in BOTH schemes) */
+  .dashboard-panel[data-tab] > h2,.dashboard-panel .panel-head-actions h2,.dashboard-panel .section-head h2{color:#8FA3B8}
+  .dashboard-shell{gap:10px;margin-top:10px}
+  /* 2. The header hands off to floating KPI tiles (overview tabs start with .kpis) */
+  .dashboard-head{padding-bottom:40px;border-radius:18px}
+  .dashboard-panel > .kpis:first-child{margin-top:-44px;position:relative;z-index:2;padding:0 4px}
+  .dashboard-panel > .kpis:first-child .kpi{box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 10px 30px rgba(0,0,0,.28)}
+  /* 3. Section titles: small refined labels instead of naked h2 headlines */
+  .dashboard-panel h2{font-size:.78rem;font-weight:800;letter-spacing:.08em;color:var(--muted);margin:18px 4px 10px}
+  .panel-head-actions{margin-bottom:12px}
+  .section-head{margin:18px 0 10px}
+  /* 4. Booking cards: the money action gets its own full row; the rest are quiet ghosts */
+  .booking-card .chips .btn.primary,.booking-card .chips .btn.gold{flex:1 1 100%}
+  .booking-card .chips .btn.outline,.booking-card .chips .btn.dark-out{background:var(--bg-soft);border-color:transparent;color:var(--text);font-size:.82rem}
+  .booking-card .chips .btn.danger{font-size:.82rem}
+  .booking-card small{color:var(--muted)}
+  /* 5. Notices ride as cards of their own on the open background */
+  .dashboard-panel .notice{border-radius:14px}
+  /* 6. Empty states breathe on the open background */
+  .dashboard-panel .empty,.dashboard-panel .empty-state{background:var(--surface);border:1px dashed var(--line);border-radius:16px;padding:22px 16px}
+}
+/* Dark mode: the floating KPI seam needs a touch more separation */
+@media(max-width:820px) and (prefers-color-scheme: dark){
+  .dashboard-panel > .kpis:first-child .kpi{box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 12px 32px rgba(0,0,0,.55)}
+}
+
+/* ================= PROFILE PRO (rev149) =================
+   The profile tab joins the pro look: centered identity header, soft inset form, quiet logout. */
+@media(max-width:820px){
+  .avatar-row{flex-direction:column;align-items:center;text-align:center;gap:10px;margin:4px 0 16px}
+  .avatar-click .avatar{box-shadow:0 0 0 3px var(--surface), 0 0 0 5px rgba(63,107,142,.4), 0 14px 34px rgba(16,24,40,.28)}
+  .avatar-actions{display:flex;flex-direction:column;align-items:center;gap:6px}
+  .avatar-actions b{font-size:.84rem;color:var(--muted);font-weight:600}
+  .avatar-actions .btn{min-height:40px;font-size:.82rem;padding:8px 14px;background:var(--bg-soft);border-color:transparent}
+  #profile-form.card.inset{background:var(--bg-soft);border:1px solid var(--hair);box-shadow:none;border-radius:16px;padding:14px}
+  .ver-card{border-radius:16px}
+  #logout-profile{margin-top:16px;background:none;border-color:transparent;color:var(--danger);font-weight:700}
+}
+
+/* ================= MOBILE RICHNESS (rev150) =================
+   User: "שהאתר בנייד יראה טוב כמו במחשב". The compact pass (rev145) over-stripped the glamour —
+   this restores the desktop's richness at phone scale WITHOUT re-inflating the page: the copy line
+   returns small, the road with the car silhouettes returns short, section subtitles return tight,
+   and the headline grows a step. Net cost ≈ +160px on a page that was cut by ~670px. */
+@media(max-width:820px){
+  .hero h1{font-size:1.6rem}
+  .hero-copy{display:block;font-size:.88rem;line-height:1.5;margin:6px auto 12px;max-width:34ch;color:#B7C4D1}
+  .road{display:block;height:104px}  /* the silhouettes collapse below ~100px */
+  .hero-in{padding-bottom:100px}
+  .cat-row{position:relative;z-index:3}
+  body[data-page="home"] .sec-head .sec-sub{display:block;font-size:.82rem;color:var(--muted);max-width:42ch;margin:4px auto 0}
+  body[data-page="home"] .sec-head h2{font-size:1.32rem}
+  .cat-tile{min-height:72px}
+  .cat-ic svg{width:38px;height:21px}
+}
+
+/* ===== EXTERNAL RENTALS (rev153): off-site rental log — summary + list rows ===== */
+.ext-sub{margin:-6px 0 14px;font-size:.9rem}
+.ext-bycar{margin-bottom:14px}
+.ext-row{display:flex;flex-direction:column;gap:8px;padding:14px 16px}
+.ext-row-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.ext-row-head .ext-amount{color:var(--brand-d);font-size:1.05rem}
+.ext-row-sub{display:flex;flex-direction:column;gap:2px;color:var(--muted);font-size:.86rem}
+.ext-notes{margin:0;font-size:.85rem}
+.ext-row .chips{margin-top:2px}
+@media (min-width:700px){.ext-row-sub{flex-direction:row;justify-content:space-between;gap:14px}}
+
+/* ===== ADMIN AREA REORG (rev154): two labeled zones — site management / personal owner area ===== */
+/* Desktop tab bar: small separator labels between the zones */
+.dashboard-tabs .tab-group-label{align-self:center;font-size:.66rem;font-weight:800;letter-spacing:.09em;color:var(--muted);white-space:nowrap;padding:0 12px 0 6px;border-right:1px solid rgba(0,0,0,.1)}
+.dashboard-tabs .tab-group-label:first-child{border-right:none;padding-right:4px}
+body[data-page="dashboard"] .dashboard-tabs .tab-group-label{color:#8FA3B8;border-right-color:rgba(255,255,255,.14)}
+body[data-page="dashboard"] .dashboard-tabs .tab-group-label:first-child{border-right:none}
+/* "עוד" sheet: zone headers */
+.more-sheet .sheet-label{font-size:.68rem;font-weight:800;letter-spacing:.09em;color:var(--muted);margin:6px 4px -2px}
+.more-sheet .sheet-label:first-child{margin-top:0}
+/* Overview "האזור שלי" strip: two calm quick-cards (unlike the orange attention cards) */
+.my-zone{margin:14px 0}
+.my-zone-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px}
+.zone-card{display:flex;flex-direction:column;align-items:flex-start;gap:4px;background:var(--bg-soft);border:1px solid var(--line);border-radius:14px;padding:12px 14px;cursor:pointer;font:inherit;color:var(--text);transition:transform .18s var(--ease),box-shadow .2s,border-color .2s}
+.zone-card b{font-size:1.35rem;font-weight:800;line-height:1.1;color:var(--brand-d)}
+.zone-card span{font-size:.82rem;font-weight:600;color:var(--muted)}
+.zone-card:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(12,20,32,.1);border-color:var(--brand-l)}
+/* Vertical sidebar (desktop ≥1000px): zone labels become full-width section headers with a top rule */
+@media(min-width:1000px){
+  .dashboard-tabs .tab-group-label{align-self:stretch;border-right:none;border-top:1px solid rgba(0,0,0,.1);margin-top:8px;padding:12px 6px 2px;text-align:right}
+  .dashboard-tabs .tab-group-label:first-child{border-top:none;margin-top:0;padding-top:2px}
+  body[data-page="dashboard"] .dashboard-tabs .tab-group-label{border-right:none;border-top-color:rgba(255,255,255,.14)}
+  body[data-page="dashboard"] .dashboard-tabs .tab-group-label:first-child{border-top:none}
 }

@@ -1,7 +1,7 @@
 import {store, list, myRole, myBookings, myCars, carRating, carRatingCount, userRating} from './store.js';
 import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail, paintApp, resetPaint, TERMS_VERSION} from './core.js';
 import {register, login, logout, sendVerify, refreshEmailStatus, sendPasswordReset, createOwnProfile, signInGuest} from './auth.js';
-import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, startInquiry, setBookingStatus, registerDocument, approveVerification, sendMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction, setMaintenance, setCarStatus, setCarFeatured, checkIsAdmin} from './db.js';
+import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, startInquiry, setBookingStatus, registerDocument, approveVerification, sendMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction, setMaintenance, setCarStatus, setCarFeatured, checkIsAdmin, saveExternalRental, deleteExternalRental} from './db.js';
 import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './media.js';
 import {legacyStatus, migrateLegacy} from './migrate.js';
 import {api} from './api.js';
@@ -23,7 +23,9 @@ function dashboardLayout(title, tabs, active, content, actions = '', navFooter =
         <div class="dash-head-controls"><button type="button" class="dash-bell" data-goto-notifications aria-label="התראות">🔔${userUnreadNotifs() ? `<span class="tab-badge">${userUnreadNotifs()}</span>` : ''}</button><button type="button" class="avatar-btn" data-goto-profile title="לפרופיל שלי">${avatarHtml(store.profile, 60)}</button><button type="button" class="dash-close" data-route="home" aria-label="סגירת האזור האישי">✕</button></div>
       </div>
       ${actions ? `<div class="dash-head-actions">${actions}</div>` : ''}
-    </header><nav class="dashboard-tabs" aria-label="תפריט אזור אישי">${tabs.map(([key, label]) => `<button class="tab ${key === active ? 'active' : ''}" data-dashboard-tab="${key}"><i class="tab-ic">${(TAB_ICONS[key] || (() => ''))()}</i><span>${label}</span></button>`).join('')}${navFooter ? `<div class="nav-footer">${navFooter}</div>` : ''}</nav><section class="card panel dashboard-panel">${content}</section></div>`;
+    </header><nav class="dashboard-tabs" aria-label="תפריט אזור אישי">${tabs.map(([key, label]) => key === '#'
+      ? `<span class="tab-group-label">${esc(label)}</span>`
+      : `<button class="tab ${key === active ? 'active' : ''}" data-dashboard-tab="${key}"><i class="tab-ic">${(TAB_ICONS[key] || (() => ''))()}</i><span>${label}</span></button>`).join('')}${navFooter ? `<div class="nav-footer">${navFooter}</div>` : ''}</nav><section class="card panel dashboard-panel" data-tab="${esc(active)}">${content}</section></div>`;
 }
 // The dashboard tab the user is currently on. Kept across re-renders so a data event (new message,
 // booking update…) no longer resets the personal area to "overview" and bounces the user to the main page.
@@ -121,6 +123,82 @@ function userNotificationsView() {
     : '<div class="empty">אין התראות עדיין — עדכונים על הזמנות ותשלומים יופיעו כאן</div>'}</div>`;
 }
 
+// ---- Off-site rentals (השכרות חוץ): rentals the owner closed OUTSIDE the site, logged manually ----
+// Pure owner bookkeeping: a list + a summary of total hours and total income, computed only from what
+// the owner entered. Stored under externalRentals/<ownerUid> (own node; admins can read for support).
+const extHours = r => {
+  const ms = new Date(r.endAt).getTime() - new Date(r.startAt).getTime();
+  return Number.isFinite(ms) && ms > 0 ? ms / 3600000 : 0;
+};
+const fmtHours = h => {
+  if (!h) return '0 שעות';
+  const days = Math.floor(h / 24), rest = Math.round(h % 24);
+  if (!days) return `${Math.round(h * 10) / 10} שעות`;
+  return rest ? `${days} ימ׳ ${rest} שע׳` : `${days} ימים`;
+};
+const extDT = iso => { const d = new Date(iso); return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString('he-IL', {day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'}); };
+function externalRentalsView(cars) {
+  const rows = list(store.externalRentals).sort((a, b) => String(b.startAt).localeCompare(String(a.startAt)));
+  const totalHours = rows.reduce((sum, r) => sum + extHours(r), 0);
+  const totalAmount = rows.reduce((sum, r) => sum + Number(r.amount || 0), 0);
+  const carName = r => { const c = r.carId && store.cars[r.carId]; return c ? `${c.make || ''} ${c.model || ''}`.trim() : (r.carLabel || 'רכב'); };
+  // Per-car breakdown — only worth showing when the records span more than one car.
+  const byCar = {};
+  for (const r of rows) { const k = carName(r); byCar[k] = byCar[k] || {hours: 0, amount: 0, count: 0}; byCar[k].hours += extHours(r); byCar[k].amount += Number(r.amount || 0); byCar[k].count++; }
+  const carKeys = Object.keys(byCar);
+  return `<div class="section-head"><h2>השכרות חוץ</h2><button class="btn gold" id="ext-add">+ הוספת השכרה</button></div>
+    <p class="mut ext-sub">השכרות שסגרתם מחוץ לאתר — נרשמות כאן לניהול שלכם בלבד, והסיכום מחושב לפי מה שהזנתם.</p>
+    <div class="kpis">${kpi('calendar', rows.length, 'השכרות חוץ')}${kpi('check', fmtHours(totalHours), 'סה״כ שעות השכרה')}${kpi('money', money(totalAmount), 'סה״כ הכנסה')}</div>
+    ${carKeys.length > 1 ? `<div class="mini-panel ext-bycar"><div class="mini-panel-head"><h3>לפי רכב</h3><span>${carKeys.length} רכבים</span></div>${carKeys.map(k => `<div class="mini-row"><b>${esc(k)}</b><span class="mut">${byCar[k].count} · ${fmtHours(byCar[k].hours)} · ${money(byCar[k].amount)}</span></div>`).join('')}</div>` : ''}
+    <div class="list">${rows.length ? rows.map(r => `<div class="card inset ext-row">
+      <div class="ext-row-head"><b>${esc(carName(r))}</b><b class="ext-amount">${money(r.amount)}</b></div>
+      <div class="ext-row-sub"><span>${esc(r.renterName || 'שוכר')}${r.renterPhone ? ` · ${esc(r.renterPhone)}` : ''}</span><span>${extDT(r.startAt)} ← ${extDT(r.endAt)} · ${fmtHours(extHours(r))}</span></div>
+      ${r.notes ? `<p class="mut ext-notes">${esc(r.notes)}</p>` : ''}
+      <div class="chips"><button class="btn outline" data-ext-edit="${esc(r.id)}">עריכה</button><button class="btn outline" data-ext-del="${esc(r.id)}">מחיקה</button></div>
+    </div>`).join('') : emptyState(ICON.calendar, 'עוד לא נרשמו השכרות חוץ', 'השכרתם רכב שלא דרך האתר? הוסיפו אותה כאן ותקבלו סיכום שעות והכנסות מסודר.')}</div>`;
+}
+function bindExternalRentals(cars, renderer) {
+  document.querySelector('#ext-add')?.addEventListener('click', () => externalRentalModal(cars, null, renderer));
+  document.querySelectorAll('[data-ext-edit]').forEach(btn => btn.onclick = () => {
+    const r = store.externalRentals[btn.dataset.extEdit];
+    if (r) externalRentalModal(cars, {id: btn.dataset.extEdit, ...r}, renderer);
+  });
+  document.querySelectorAll('[data-ext-del]').forEach(btn => btn.onclick = async () => {
+    if (!confirm('למחוק את רישום ההשכרה?')) return;
+    try { await deleteExternalRental(btn.dataset.extDel); toast('הרישום נמחק'); renderer('external'); }
+    catch (error) { toast(error.message); }
+  });
+}
+function externalRentalModal(cars, existing, renderer) {
+  const toLocal = iso => { const d = iso ? new Date(iso) : null; return d && !Number.isNaN(d.getTime()) ? new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ''; };
+  modal(`<div class="modal-head"><h2>${existing ? 'עריכת השכרת חוץ' : 'הוספת השכרת חוץ'}</h2><button class="close" data-close-modal>×</button></div>
+    <form id="ext-form">
+      <div class="field"><label>רכב</label><select name="carId">${cars.map(c => `<option value="${esc(c.id)}" ${existing?.carId === c.id ? 'selected' : ''}>${esc(`${c.make || ''} ${c.model || ''}`.trim() || 'רכב')}</option>`).join('')}<option value="" ${existing && !existing.carId ? 'selected' : ''}>רכב אחר (שם חופשי)</option></select></div>
+      <div class="field" id="ext-freecar" style="${existing && !existing.carId ? '' : 'display:none'}"><label>שם הרכב</label><input name="carLabel" value="${esc(existing?.carLabel || '')}" maxlength="120" placeholder="למשל: Toyota Sienna 2022"></div>
+      <div class="form-grid"><div class="field"><label>שם השוכר</label><input name="renterName" value="${esc(existing?.renterName || '')}" maxlength="120" required></div><div class="field"><label>טלפון (לא חובה)</label><input name="renterPhone" value="${esc(existing?.renterPhone || '')}" maxlength="40" inputmode="tel"></div></div>
+      <div class="form-grid"><div class="field"><label>תחילת השכרה</label><input name="startAt" type="datetime-local" value="${toLocal(existing?.startAt)}" required></div><div class="field"><label>סיום השכרה</label><input name="endAt" type="datetime-local" value="${toLocal(existing?.endAt)}" required></div></div>
+      <div class="field"><label>סכום שנגבה ($)</label><input name="amount" type="number" inputmode="decimal" min="0" step="0.01" value="${existing ? esc(existing.amount) : ''}" required></div>
+      <div class="field"><label>הערות</label><textarea name="notes" maxlength="1000" placeholder="תנאים מיוחדים, פיקדון, דלק…">${esc(existing?.notes || '')}</textarea></div>
+      <button class="btn primary block">${existing ? 'שמירת השינויים' : 'הוספה לרשימה'}</button>
+    </form>`);
+  const form = document.querySelector('#ext-form');
+  form.carId.onchange = () => { document.querySelector('#ext-freecar').style.display = form.carId.value ? 'none' : ''; };
+  form.onsubmit = async event => {
+    event.preventDefault();
+    const data = formData(form);
+    const start = new Date(data.startAt), end = new Date(data.endAt);
+    if (!(end > start)) return toast('שעת הסיום חייבת להיות אחרי שעת ההתחלה');
+    const btn = event.submitter; if (btn) btn.disabled = true;
+    try {
+      await saveExternalRental(existing?.id || null, {...data, startAt: start.toISOString(), endAt: end.toISOString(), createdAt: existing?.createdAt});
+      closeModal(); toast(existing ? 'הרישום עודכן' : 'ההשכרה נוספה'); renderer('external');
+    } catch (error) {
+      toast(/permission_denied|PERMISSION/i.test(String(error?.message)) ? 'אין הרשאה — יש לפרסם את חוקי ה-Firebase המעודכנים (externalRentals)' : error.message);
+      if (btn) btn.disabled = false;
+    }
+  };
+}
+
 function renterDashboard(tab = 'overview') {
 
   const bookings = myBookings();
@@ -147,27 +225,33 @@ function ownerDashboard(tab = 'overview') {
   const contents = {
     overview: `<div class="kpis">${kpi('car', cars.length, 'רכבים')}${kpi('check', cars.filter(c => c.status === 'available').length, 'זמינים')}${kpi('calendar', bookings.filter(b => b.status === 'pending').length, 'ממתינות לאישור')}${kpi('money', money(approvedTotal), 'הכנסות שאושרו')}</div>${pendingPayments ? `<div class="notice">💳 ${pendingPayments} הוכחות תשלום ממתינות לאישורך — בדקו בכרטיסי ההזמנות.</div>` : ''}<h2>הזמנות פעילות</h2>${bookingList(bookings.filter(b => ['pending','approved','active'].includes(b.status)), 'owner')}`,
     bookings: `<h2>הזמנות</h2>${bookingList(bookings, 'owner')}`,
-    cars: `<div class="section-head"><h2>הרכבים שלי</h2><button class="btn gold" id="add-car">הוספת רכב</button></div>${carGrid(cars, true)}`,
+    cars: `<div class="section-head"><h2>הרכבים שלי</h2><div class="chips"><button class="btn outline" id="goto-external">📒 השכרות חוץ</button><button class="btn gold" id="add-car">הוספת רכב</button></div></div>${carGrid(cars, true)}`,
+    external: externalRentalsView(cars),
     notifications: userNotificationsView(),
     profile: ownerProfileView(),
   };
-  app().innerHTML = dashboardLayout('לוח בעל רכב', [['overview','סקירה'],['bookings','הזמנות'],['cars','רכבים'],['chats','צ׳אטים'],['notifications',`התראות${userUnreadNotifs() ? ` (${userUnreadNotifs()})` : ''}`],['profile','פרופיל']], tab, contents[tab] || contents.overview, '<button class="btn gold" id="add-car-head">+ הוספת רכב</button>');
+  app().innerHTML = dashboardLayout('לוח בעל רכב', [['overview','סקירה'],['bookings','הזמנות'],['cars','רכבים'],['external','השכרות חוץ'],['chats','צ׳אטים'],['notifications',`התראות${userUnreadNotifs() ? ` (${userUnreadNotifs()})` : ''}`],['profile','פרופיל']], tab, contents[tab] || contents.overview, '<button class="btn gold" id="add-car-head">+ הוספת רכב</button>');
   bindDashboardTabs(ownerDashboard); bindActions(); bindCarButtons(); bindProfileActions();
   document.querySelector('#add-car')?.addEventListener('click', () => carForm());
   document.querySelector('#add-car-head')?.addEventListener('click', () => carForm());
-  // Per-car performance strip on the "הרכבים שלי" tab: bookings, approved earnings and rating for THIS car —
-  // injected after paint so the shared carCard stays untouched for the public site.
-  if (tab === 'cars') {
-    document.querySelectorAll('#app [data-car-open]').forEach(cardEl => {
-      if (cardEl.querySelector('.car-stats')) return;
-      const carId = cardEl.dataset.carOpen;
-      const carBookings = bookings.filter(b => b.carId === carId && !['cancelled', 'rejected', 'expired'].includes(b.status));
-      const earned = carBookings.reduce((sum, b) => { const p = store.payments[b.id]; return sum + (paymentApproved(p) ? Number(p.amount || 0) : 0); }, 0);
-      const rating = carRating(carId);
-      const strip = `<div class="car-stats"><span>📅 ${carBookings.length} הזמנות</span><span>💵 ${money(earned)}</span>${rating ? `<span>⭐ ${rating.toFixed(1)}</span>` : ''}</div>`;
-      cardEl.querySelector('.car-manage')?.insertAdjacentHTML('beforebegin', strip);
-    });
-  }
+  document.querySelector('#goto-external')?.addEventListener('click', () => { store.dashTab = 'external'; ownerDashboard('external'); });
+  if (tab === 'external') bindExternalRentals(cars, ownerDashboard);
+  if (tab === 'cars') injectCarStats(bookings);
+}
+
+// Per-car performance strip on the "הרכבים שלי" tab: bookings, approved earnings and rating for THIS car —
+// injected after paint so the shared carCard stays untouched for the public site. Shared by the owner
+// dashboard and the admin's personal "הרכבים שלי" tab.
+function injectCarStats(bookings) {
+  document.querySelectorAll('#app [data-car-open]').forEach(cardEl => {
+    if (cardEl.querySelector('.car-stats')) return;
+    const carId = cardEl.dataset.carOpen;
+    const carBookings = bookings.filter(b => b.carId === carId && !['cancelled', 'rejected', 'expired'].includes(b.status));
+    const earned = carBookings.reduce((sum, b) => { const p = store.payments[b.id]; return sum + (paymentApproved(p) ? Number(p.amount || 0) : 0); }, 0);
+    const rating = carRating(carId);
+    const strip = `<div class="car-stats"><span>📅 ${carBookings.length} הזמנות</span><span>💵 ${money(earned)}</span>${rating ? `<span>⭐ ${rating.toFixed(1)}</span>` : ''}</div>`;
+    cardEl.querySelector('.car-manage')?.insertAdjacentHTML('beforebegin', strip);
+  });
 }
 
 function adminDashboard(tab = 'overview') {
@@ -176,6 +260,9 @@ function adminDashboard(tab = 'overview') {
     .sort((a, b) => ((a.verification.status === 'pending' ? 0 : 1) - (b.verification.status === 'pending' ? 0 : 1)) || Number(b.createdAt || 0) - Number(a.createdAt || 0));
   const bookings = myBookings();
   const cars = list(store.cars);
+  // The admin's PERSONAL cars (they're an owner too) — strictly ownerUid === self, unlike myCars()
+  // which gives an admin the whole fleet.
+  const adminOwnCars = cars.filter(car => car.ownerUid === store.user?.uid);
   const total = Object.values(store.payments).reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
   const recentCars = cars.slice().sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0)).slice(0, 5);
   const recentBookings = bookings.slice().sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0)).slice(0, 5);
@@ -190,6 +277,7 @@ function adminDashboard(tab = 'overview') {
       ${attnHtml}
       <div class="field admin-search-wrap"><input id="admin-search" placeholder="🔎 חיפוש: שם, מייל, טלפון, רכב, בעל רכב, סטטוס…" autocomplete="off"></div><div id="admin-search-results"></div>
       <div class="kpis">${kpi('money', money(total), 'תשלומים מדווחים')}${kpi('calendar', bookings.length, 'הזמנות')}${kpi('car', cars.length, 'רכבים')}${kpi('users', users.length, 'משתמשים')}</div>
+      <div class="mini-panel my-zone"><div class="mini-panel-head"><h3>האזור שלי — בעל רכב</h3><span>הניהול האישי שלך</span></div><div class="my-zone-grid"><button class="zone-card" data-attn-tab="myCars"><b>${adminOwnCars.length}</b><span>הרכבים שלי</span></button><button class="zone-card" data-attn-tab="external"><b>${money(list(store.externalRentals).reduce((s, r) => s + Number(r.amount || 0), 0))}</b><span>השכרות חוץ</span></button></div></div>
       <div class="overview-grid">
         <div class="mini-panel"><div class="mini-panel-head"><h3>רכבים חדשים</h3><span>${recentCars.length} אחרונים</span></div>${recentCars.length ? recentCars.map(c => `<div class="mini-row"><b>${esc(c.make || '')} ${esc(c.model || '')}</b><span class="mut">${money(c.dailyPrice || 0)}/יום</span></div>`).join('') : '<div class="mini-row"><span class="mut">אין רכבים</span></div>'}</div>
         <div class="mini-panel"><div class="mini-panel-head"><h3>הזמנות אחרונות</h3><span>${recentBookings.length} אחרונות</span></div>${recentBookings.length ? recentBookings.map(b => { const c = store.cars[b.carId] || {}; return `<div class="mini-row"><b>${esc(c.make || 'רכב')} ${esc(c.model || '')}</b><span class="mut">${statusLabel(b.status)}</span></div>`; }).join('') : '<div class="mini-row"><span class="mut">אין הזמנות</span></div>'}</div>
@@ -197,13 +285,28 @@ function adminDashboard(tab = 'overview') {
       <details class="admin-tools"><summary>כלים מתקדמים</summary><div class="admin-tools-grid"><button class="btn outline" id="export-json">ייצוא JSON</button><button class="btn outline" id="legacy-migrate">העברת נתונים ישנים</button><button class="btn outline" id="media-migrate" title="מעביר תמונות רכב ישנות מהמסד לאחסון CDN — מאיץ את טעינת האתר">⚡ האצת טעינה (תמונות)</button></div></details>`,
     users: `<h2 style="margin-bottom:16px">משתמשים ואימותים</h2>${adminUsersTable(users)}`,
     cars: `<h2 style="margin-bottom:16px">רכבים</h2>${adminCarsTable(cars)}`,
+    // The admin is ALSO a car owner: a personal "הרכבים שלי" tab (strictly their own cars, with the
+    // owner's per-car stats strip) and the off-site rentals log — same tools an owner gets.
+    myCars: `<div class="section-head"><h2>הרכבים שלי</h2><div class="chips"><button class="btn outline" id="goto-external">📒 השכרות חוץ</button><button class="btn gold" id="add-car">הוספת רכב</button></div></div>${carGrid(adminOwnCars, true)}`,
+    external: externalRentalsView(adminOwnCars),
     bookings: `<h2 style="margin-bottom:16px">הזמנות</h2>${bookingList(bookings, 'admin')}`,
     notifications: adminNotificationsView(),
     profile: ownerProfileView(),
   };
   const unread = adminUnreadCount();
-  app().innerHTML = dashboardLayout('לוח ניהול מנהל', [['overview','סקירה'],['chats','צ׳אטים'],['users','משתמשים'],['cars','רכבים'],['bookings','הזמנות'],['notifications', `התראות${unread ? ` (${unread})` : ''}`]], tab, contents[tab] || contents.overview, '<button class="btn gold" id="admin-add-car">+ הוספת רכב</button>', '<button class="btn dark-out block" id="admin-refresh" title="רענון נתונים">רענון</button><button class="btn dark-out block" id="admin-logout">יציאה</button>');
+  // Two clear zones (user: "האזור האישי של המנהל חייב סידור מחדש"): site management first,
+  // then the admin's own owner-side area — mirrored in the desktop tab bar and the mobile "עוד" sheet.
+  app().innerHTML = dashboardLayout('לוח ניהול מנהל', [
+    ['#', 'ניהול האתר'],
+    ['overview','סקירה'],['users','משתמשים'],['cars','רכבים'],['bookings','הזמנות'],['chats','צ׳אטים'],['notifications', `התראות${unread ? ` (${unread})` : ''}`],
+    ['#', 'האזור שלי'],
+    ['myCars','הרכבים שלי'],['external','השכרות חוץ'],['profile','פרופיל'],
+  ], tab, contents[tab] || contents.overview, '<button class="btn gold" id="admin-add-car">+ הוספת רכב</button>', '<button class="btn dark-out block" id="admin-refresh" title="רענון נתונים">רענון</button><button class="btn dark-out block" id="admin-logout">יציאה</button>');
   document.querySelector('#admin-add-car')?.addEventListener('click', () => carForm());
+  document.querySelector('#add-car')?.addEventListener('click', () => carForm());
+  document.querySelector('#goto-external')?.addEventListener('click', () => { store.dashTab = 'external'; adminDashboard('external'); });
+  if (tab === 'external') bindExternalRentals(adminOwnCars, adminDashboard);
+  if (tab === 'myCars') injectCarStats(bookings.filter(b => adminOwnCars.some(c => c.id === b.carId)));
   document.querySelector('#admin-refresh')?.addEventListener('click', () => window.location.reload());
   document.querySelector('#admin-logout')?.addEventListener('click', async () => { try { await logout(); location.hash = 'home'; } catch (error) { toast(error.message); } });
   bindDashboardTabs(adminDashboard); bindActions(); bindCarButtons(); bindProfileActions();

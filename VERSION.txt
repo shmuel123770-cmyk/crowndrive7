@@ -1,5 +1,88 @@
-CrownDrive — FINAL build (2026-07-16, rev.145)
+CrownDrive — FINAL build (2026-07-17, rev.154)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+rev.154 (2026-07-17) — simple signup (email never blocks) + admin area reorganized. Cumulative.
+- אימות מייל לא חוסם יותר שום דבר (החלטת משתמש: "להירשם לאתר יהיה פשוט"):
+  * booking-create — הוסר ה-403 על מייל לא מאומת; השערים האמיתיים נשארים (רישיון+סלפי
+    מאושרים ואישור בעל הרכב).
+  * verification-review — האישור דורש רק את שלושת המסמכים; אין שער מייל בכלל.
+- האזור האישי של המנהל סודר מחדש לשני אזורים ברורים:
+  * "ניהול האתר": סקירה, משתמשים, רכבים, הזמנות, צ׳אטים, התראות.
+  * "האזור שלי": הרכבים שלי, השכרות חוץ, פרופיל.
+  בדסקטופ — הסיידבר עם כותרות קבוצה וקו מפריד; בנייד — גיליון "עוד" עם אותן שתי קבוצות;
+  ובסקירה — רצועת "האזור שלי — בעל רכב" עם שתי קוביות קפיצה (מס׳ רכבים / הכנסות חוץ).
+- dashboardLayout תומך ברשומות תווית ['#', 'כותרת'] בניווט הטאבים.
+- בדיקות: 158 ירוקות (עודכנו 2 לתרחיש האישור החדש).
+
+
+rev.153 (2026-07-17) — verification-approval FIX + off-site rentals + the admin is an owner too. Cumulative.
+- FIX אישור אימות: המנהל לא הצליח לאשר משתמשים כי דגל אימות-המייל נכתב רק כשהמשתמש חוזר לאתר
+  אחרי הקליק במייל. עכשיו verification-review שואל את Firebase Auth (מקור האמת), מרפא את הדגל
+  הישן ומאשר; מייל שבאמת לא אומת עדיין נחסם (409). גם דגלי המסמכים מתרפאים באישור.
+- השכרות חוץ (בעל רכב + מנהל): טאב חדש באזור האישי לרישום השכרות שנסגרו מחוץ לאתר —
+  רכב (מהרשימה או שם חופשי), שוכר, טלפון, טווח תאריכים+שעות, סכום והערות; עריכה ומחיקה;
+  סיכום חי: מס׳ השכרות, סה״כ שעות (ימים+שעות) וסה״כ הכנסה + פירוט לפי רכב.
+  נשמר ב-externalRentals/<uid> בכתיבה ישירה מוגנת-חוקים (client-write:own-external-rentals).
+  ⚠ דורש פרסום חוקי DB מעודכנים — עד אז מוצגת הודעת הרשאה ידידותית.
+- המנהל גם בעל רכב: טאב "הרכבים שלי" (רק הרכבים בבעלותו, עם רצועת ביצועים לכל רכב) +
+  "השכרות חוץ" משלו; שניהם בגיליון "עוד" בסרגל התחתון. בעל רכב מגיע להשכרות חוץ מכפתור
+  בטאב הרכבים (בנייד) או מהטאב-בר (בדסקטופ). פאנלים שקופים על הקנבס הכהה.
+- בדיקות: 158 תרחישים (2 חדשים לאישור-אימות) + 11 core/stress ירוקים; static-check עודכן
+  לתייג client-write:own-external-rentals.
+
+
+rev.152 (2026-07-17) — honest empty state + a third app shortcut. Cumulative.
+- When active filters leave ZERO results, the catalog no longer claims "אין כרגע רכבים זמינים"
+  (the site has cars — the filters hid them). It now says so honestly and offers a one-tap
+  "ניקוי הסינון והצגת כל הרכבים" button that resets every filter (incl. מועדפים) and repaints.
+- PWA: a third long-press shortcut on the installed icon — "הצ׳אטים שלי" (#chats) — joins
+  רכבים and אזור אישי.
+- Verified against LIVE production data (15 mirrored cars): catalog, car modal (share/calendar/
+  price/booking), deep link #car=, auth, home — at 320/375/820px, light+dark, no H-scroll.
+
+
+
+rev.151 (2026-07-17) — favorites reach the FILTER SHEET. Cumulative.
+- The mobile "סינון ומיון" bottom sheet gained the "♥ מועדפים (N)" chip, fully live: toggling it
+  updates the "הצגת X רכבים" count together with every other filter, נקה resets it, and the applied
+  state shows in the filter button's active count.
+
+
+rev.150 (2026-07-17) — MOBILE RICHNESS ("שהאתר בנייד יראה טוב כמו במחשב"). Cumulative. Phones.
+- The compact pass had over-stripped the glamour; the desktop's richness returns at phone scale:
+  the headline grows to 1.6rem, the value line returns (one tight sentence), the ROAD with the car
+  silhouettes returns at 104px (silhouettes collapse below ~100px), section subtitles return small,
+  category tiles back to 72px. Net +227px on a page that had been cut by 667px — still far more
+  compact than before, now with the desktop's atmosphere.
+
+
+rev.149 (2026-07-17) — PROFILE PRO. Cumulative. Phones.
+- Centered identity header (big ringed avatar + quiet gallery button), the details form as a soft
+  inset surface, the verification card rounder, and logout demoted to a quiet red text action.
+
+
+rev.148 (2026-07-17) — PERSONAL AREA PRO (user: "נראה עדיין חובבני"). Cumulative. Phones.
+- The document look (one huge white panel + naked h2 headlines) became a fintech-app look: on the
+  card-based tabs (overview/bookings/cars/notifications/users) the panel is GONE — white cards float
+  directly on the personal area's dark canvas, the KPI tiles overlap the header seam by ~32px,
+  section titles are refined small labels (canvas-safe color for both schemes), and each booking
+  card leads with a full-width money action while secondary actions become quiet ghost buttons.
+- Form tabs (profile) keep their solid panel so labels always sit on a proper surface.
+
+
+rev.147 (2026-07-17) — DARK MODE. Cumulative.
+- Follows the phone's system setting (prefers-color-scheme), exactly like a native app — no toggle.
+- All 56 hardcoded white backgrounds now ride a single --surface token; the dark palette flips the
+  :root tokens (bg/card/text/lines/ok/danger/warn all re-tuned for dark), elevation shadows deepen,
+  sticky glass bars turn dark-glass, the switch knob and floating hearts intentionally stay white,
+  and the browser chrome color follows via a second theme-color meta.
+- Light mode verified pixel-identical to before (zero regression).
+
+
+rev.146 (2026-07-16) — DASH COMPACT: the "less scrolling" pass for the personal area + admin. Phones.
+- Dark header shrank to a slim band (14px padding, 1.25rem title, 44px avatar); KPI tiles at ~76px
+  (was 112+) with the numbers still leading; booking cards, timeline, notification and chat rows all
+  tightened; panel paddings 14px. A renter's dashboard now fits roughly one screen more content.
+
 
 rev.145 (2026-07-16) — HOME COMPACT ("כמה שפחות גלילה במסך הבית"). Cumulative. Phones only.
 - Every home widget shrank: tighter hero (copy line hidden, road decoration removed), 46px search

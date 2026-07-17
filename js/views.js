@@ -69,7 +69,7 @@ export const ICON = {
   image: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>',
 };
 
-export const TAB_ICONS = {overview: () => ICON.grid, bookings: () => ICON.calendar, cars: () => ICON.car, profile: () => ICON.selfie, messages: () => ICON.chat, chats: () => ICON.chat, users: () => ICON.users, notifications: () => ICON.bell};
+export const TAB_ICONS = {overview: () => ICON.grid, bookings: () => ICON.calendar, cars: () => ICON.car, myCars: () => ICON.car, external: () => ICON.money, profile: () => ICON.selfie, messages: () => ICON.chat, chats: () => ICON.chat, users: () => ICON.users, notifications: () => ICON.bell};
 export const kpi = (icon, value, label) => `<div class="kpi"><div class="kpi-head"><span class="kpi-label">${label}</span><i class="kpi-icon">${ICON[icon] || ''}</i></div><b>${value}</b></div>`;
 // Friendly empty state — an icon, a line, and (optionally) an action button — instead of a dead-end.
 export const emptyState = (icon, title, subtitle = '', cta = '') => `<div class="empty-state"><span class="empty-ic">${icon || ''}</span><b>${esc(title)}</b>${subtitle ? `<p>${esc(subtitle)}</p>` : ''}${cta}</div>`;
@@ -309,8 +309,13 @@ export function nav() {
 
 // The admin's "עוד" sheet — secondary destinations that don't earn a tab of their own (design spec §20).
 function adminMoreSheet() {
-  const MORE = [['cars', 'רכבים', ICON.car], ['notifications', 'התראות', ICON.bell], ['profile', 'פרופיל', ICON.selfie]];
-  modal(`<div class="modal-head"><h2>עוד</h2><button class="close" data-close-modal>×</button></div><div class="more-sheet">${MORE.map(([key, label, icon]) => `<button class="more-item" data-more-tab="${key}">${icon}<span>${esc(label)}</span></button>`).join('')}</div>`);
+  // Two zones (matches the desktop tab bar): site management vs. the admin's own owner-side area.
+  const GROUPS = [
+    ['ניהול האתר', [['cars', 'רכבים', ICON.car], ['notifications', 'התראות', ICON.bell]]],
+    ['האזור שלי — בעל רכב', [['myCars', 'הרכבים שלי', ICON.car], ['external', 'השכרות חוץ', ICON.money], ['profile', 'פרופיל', ICON.selfie]]],
+  ];
+  modal(`<div class="modal-head"><h2>עוד</h2><button class="close" data-close-modal>×</button></div><div class="more-sheet">${GROUPS.map(([title, items]) =>
+    `<div class="sheet-label">${esc(title)}</div>${items.map(([key, label, icon]) => `<button class="more-item" data-more-tab="${key}">${icon}<span>${esc(label)}</span></button>`).join('')}`).join('')}</div>`);
   document.querySelectorAll('[data-more-tab]').forEach(button => button.onclick = () => {
     store.dashTab = button.dataset.moreTab;
     closeModal();
@@ -341,7 +346,7 @@ export function bottomNav() {
   // ADMIN bar (design spec §20): five destinations — לוח בקרה / הזמנות / משתמשים / צ׳אטים / עוד.
   // "עוד" opens a sheet with the secondary areas (רכבים, התראות, פרופיל) so there is never a sixth tab.
   if (route === 'dashboard' && role === 'admin') {
-    const MORE_KEYS = ['cars', 'notifications', 'profile'];
+    const MORE_KEYS = ['cars', 'myCars', 'external', 'notifications', 'profile'];
     const activeKey = MORE_KEYS.includes(store.dashTab) ? 'more' : store.dashTab;
     const moreIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>';
     const tabs = [['overview', 'לוח בקרה'], ['bookings', 'הזמנות'], ['users', 'משתמשים'], ['chats', 'צ׳אטים'], ['more', 'עוד']];
@@ -758,7 +763,7 @@ function openFilterSheet(all, rerender, persistFilters) {
       <div class="field"><label>שנה</label><select id="fs-year"><option value="">כל השנים</option>${years.map(t => opt(t, t, temp.year)).join('')}</select></div>
       <div class="field"><label>זמינות</label><select id="fs-availability">${opt('all', 'כל הרכבים', temp.availability)}${opt('available', 'זמינים כעת', temp.availability)}</select></div>
       <div class="field"><label>מיון</label><select id="fs-sort">${opt('new', 'החדשים ביותר', temp.sort)}${opt('priceLow', 'מהזול ליקר', temp.sort)}${opt('priceHigh', 'מהיקר לזול', temp.sort)}</select></div>
-      <div class="field"><label>סוג רכב</label><div class="type-chips">${['סדאן', 'SUV', 'פיקאפ', 'מיניוואן'].map(t => `<button type="button" class="type-chip ${temp.category === t ? 'on' : ''}" data-fs-chip="${t}">${t}</button>`).join('')}</div></div>
+      <div class="field"><label>סוג רכב</label><div class="type-chips">${['סדאן', 'SUV', 'פיקאפ', 'מיניוואן'].map(t => `<button type="button" class="type-chip ${temp.category === t ? 'on' : ''}" data-fs-chip="${t}">${t}</button>`).join('')}<button type="button" class="type-chip fav-chip ${temp.favorites ? 'on' : ''}" id="fs-favs">♥ מועדפים${favList().size ? ` (${favList().size})` : ''}</button></div></div>
       <div class="sheet-actions"><button type="button" class="btn outline" id="fs-clear">נקה מסננים</button><button type="button" class="btn primary" id="fs-apply">הצגת ${count()} רכבים</button></div>
     </div>`);
   const sheet = document.querySelector('#modal-root .filter-sheet');
@@ -771,7 +776,8 @@ function openFilterSheet(all, rerender, persistFilters) {
     sheet.querySelector(id).onchange = e => { temp[key] = e.target.value; if (key === 'make') temp.model = ''; refresh(); };
   });
   sheet.querySelectorAll('[data-fs-chip]').forEach(chip => chip.onclick = () => { temp.category = temp.category === chip.dataset.fsChip ? '' : chip.dataset.fsChip; refresh(); });
-  sheet.querySelector('#fs-clear').onclick = () => { Object.assign(temp, {make: '', model: '', year: '', category: '', availability: 'all', sort: 'new'}); ['#fs-make', '#fs-year', '#fs-availability', '#fs-sort'].forEach(id => { const el = sheet.querySelector(id); el.value = temp[id.slice(4)] ?? ''; }); sheet.querySelector('#fs-availability').value = 'all'; sheet.querySelector('#fs-sort').value = 'new'; refresh(); };
+  sheet.querySelector('#fs-favs').onclick = () => { temp.favorites = !temp.favorites; sheet.querySelector('#fs-favs').classList.toggle('on', temp.favorites); refresh(); };
+  sheet.querySelector('#fs-clear').onclick = () => { Object.assign(temp, {make: '', model: '', year: '', category: '', availability: 'all', sort: 'new', favorites: false}); sheet.querySelector('#fs-favs').classList.remove('on'); ['#fs-make', '#fs-year', '#fs-availability', '#fs-sort'].forEach(id => { const el = sheet.querySelector(id); el.value = temp[id.slice(4)] ?? ''; }); sheet.querySelector('#fs-availability').value = 'all'; sheet.querySelector('#fs-sort').value = 'new'; refresh(); };
   sheet.querySelector('#fs-apply').onclick = () => { Object.assign(carFilters, temp); carsShown = CARS_PAGE; persistFilters(); closeModal(); rerender(); };
 }
 // Paged list (mobile audit #17): render at most this many cars, with a "show more" button for the rest.
@@ -808,7 +814,9 @@ export function cars() {
       ${(carFilters.make || carFilters.model || carFilters.year || carFilters.category || carFilters.availability !== 'all' || carFilters.sort !== 'new') ? '<button class="btn outline" id="f-clear">ניקוי</button>' : ''}
       <div class="type-chips"><button class="type-chip fav-chip ${carFilters.favorites ? 'on' : ''}" data-fav-filter aria-pressed="${!!carFilters.favorites}">♥ מועדפים${favList().size ? ` (${favList().size})` : ''}</button>${['סדאן', 'SUV', 'פיקאפ', 'מיניוואן'].map(t => `<button class="type-chip ${carFilters.category === t ? 'on' : ''}" data-type-chip="${t}">${t}</button>`).join('')}</div>
     </div>
-    ${carGrid(rows.slice(0, carsShown), false, period)}
+    ${all.length && !rows.length
+    ? `<div class="grid">${emptyState(ICON.car, 'לא נמצאו רכבים לסינון הזה', 'יש רכבים באתר — אבל אף אחד מהם לא עונה על הסינון שבחרתם.')}</div><div class="see-all"><button type="button" class="btn primary see-all-btn" id="cars-clear-empty">ניקוי הסינון והצגת כל הרכבים</button></div>`
+    : carGrid(rows.slice(0, carsShown), false, period)}
     ${rows.length > carsShown ? `<div class="see-all"><button type="button" class="btn primary see-all-btn" id="cars-more">הצגת עוד רכבים (${rows.length - carsShown})</button></div>` : ''}</div>`;
   if (!paintApp(html)) return;  // unchanged → keep DOM + handlers (avoids flicker + preserves open date-pickers)
   bindCarButtons();
@@ -826,6 +834,8 @@ export function cars() {
   document.querySelectorAll('[data-type-chip]').forEach(chip => chip.onclick = () => { carFilters.category = carFilters.category === chip.dataset.typeChip ? '' : chip.dataset.typeChip; persistFilters(); rerender(); });
   document.querySelectorAll('[data-fav-filter]').forEach(chip => chip.onclick = () => { carFilters.favorites = !carFilters.favorites; persistFilters(); rerender(); });
   document.querySelector('#f-clear')?.addEventListener('click', () => { Object.assign(carFilters, {make: '', model: '', year: '', category: '', availability: 'all', sort: 'new', favorites: false}); persistFilters(); rerender(); });
+  // Filtered-to-zero empty state: one tap clears every filter and shows the full catalog again.
+  document.querySelector('#cars-clear-empty')?.addEventListener('click', () => { Object.assign(carFilters, {make: '', model: '', year: '', category: '', availability: 'all', sort: 'new', favorites: false}); carsShown = CARS_PAGE; persistFilters(); rerender(); });
   // Date search: set the shared search period and re-render so cards show estimates + fit/no-fit notes.
   document.querySelector('#period-apply')?.addEventListener('click', () => {
     const sd = document.querySelector('input[name="carsStart"]')?.value || '';

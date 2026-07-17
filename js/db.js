@@ -21,6 +21,35 @@ export async function setMaintenance(on) {
   }
 }
 
+// Off-site rentals the owner logs manually (rentals that did NOT go through the site) — kept under
+// externalRentals/<ownerUid>/<id>, owner-writable by rules (client-write:own-external-rentals).
+// Pure bookkeeping for the owner's own summary; no public surface and no booking machinery.
+export async function saveExternalRental(id, data) {
+  const uid = store.user?.uid;
+  if (!uid) throw new Error('נדרשת התחברות');
+  const txt = (v, n) => String(v ?? '').replace(/[\u0000-\u001f\u007f]/g, '').trim().slice(0, n);
+  const record = {
+    carId: txt(data.carId, 120),
+    carLabel: txt(data.carLabel, 120),
+    renterName: txt(data.renterName, 120),
+    renterPhone: txt(data.renterPhone, 40),
+    startAt: txt(data.startAt, 30),
+    endAt: txt(data.endAt, 30),
+    amount: Math.max(0, Math.min(1000000, Number(data.amount) || 0)),
+    notes: txt(data.notes, 1000),
+    createdAt: Number(data.createdAt) || Date.now(),
+  };
+  const ref = id ? db.ref(`externalRentals/${uid}/${id}`) : db.ref(`externalRentals/${uid}`).push(); // client-write:own-external-rentals
+  await ref.set(record);
+  return {ok: true, id: id || ref.key};
+}
+export async function deleteExternalRental(id) {
+  const uid = store.user?.uid;
+  if (!uid || !id) throw new Error('נדרשת התחברות');
+  await db.ref(`externalRentals/${uid}/${id}`).remove(); // client-write:own-external-rentals
+  return {ok: true};
+}
+
 // Edit own profile fields (name/phone/birthDate) DIRECTLY — rules allow the user to write only their
 // own name/phone/birthDate. This is why "שמירת שינויים" now works reliably (it no longer goes through
 // the serverless function). Falls back to the server only if the new rules aren't published yet.

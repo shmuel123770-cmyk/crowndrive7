@@ -26,6 +26,7 @@ export const store = {
   config: {},
   reservations: {},
   userNotifications: {},
+  externalRentals: {},
   route: 'home',
   dashTab: 'overview',  // which personal-area tab is active (shared: bottomNav in views.js + dashboard in views-app.js)
   publicUnsubs: [],
@@ -137,6 +138,12 @@ export async function startPrivate(user) {
     // The listen() helper coerces empty snapshots to {} — keep status a string.
     store.profile.verification = {...(store.profile.verification || {}), status: typeof status === 'string' && status ? status : 'missing'};
   }, 'verification-status'));
+  // Off-site rentals the owner logged manually (rules: own node + admins). Renters just get an empty
+  // set; errors degrade gracefully until the externalRentals rules are published.
+  if (!user.isAnonymous) {
+    store.privateUnsubs.push(listen(refs.externalRentals.child(user.uid), v => { store.externalRentals = v; }, 'external-rentals',
+      () => { store.externalRentals = {}; }));
+  }
 
   if (store.isAdmin) {
     store.privateUnsubs.push(listen(refs.users, v => { store.users = v; }, 'users'));
@@ -182,6 +189,7 @@ export function stopPrivate() {
   store.ownCars = {};
   store.adminCars = {};
   store.userNotifications = {};
+  store.externalRentals = {};
   mergeCars();
   emit('private-stopped');
 }
