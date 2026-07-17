@@ -1,5 +1,26 @@
-CrownDrive — FINAL build (2026-07-16, rev.142)
+CrownDrive — FINAL build (2026-07-16, rev.145)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.145 (2026-07-16) — HOME COMPACT ("כמה שפחות גלילה במסך הבית"). Cumulative. Phones only.
+- Every home widget shrank: tighter hero (copy line hidden, road decoration removed), 46px search
+  fields, stats as slim chips (was two tall cards), 64px category tiles, section headers title-only,
+  home preview cards with 16:10 photos (catalog keeps 4:3), one-line numbers strip, the owner banner
+  collapsed to a single row with a button.
+- Home page height: 2,973px → 2,306px; the cars now START at ~551px — visible from the first screen.
+
+
+rev.144 (2026-07-16) — PREMIUM 6: category shortcuts, branded splash, living headline. Cumulative.
+- Home hero: four glass CATEGORY TILES (סדאן / SUV / פיקאפ / מיניוואן, ≥88px per design doc §7) with
+  gold car silhouettes — one tap lands on the catalog pre-filtered to that type.
+- Boot: a branded splash (app icon pulsing + CROWN DRIVE wordmark) replaces the naked spinner.
+- The hero headline's gold now shimmers slowly (background-position sweep; reduced-motion off).
+
+
+rev.143 (2026-07-16) — BOOKING TIMELINE (design doc §13, the last unimplemented section). Cumulative.
+- Every live booking card shows a 6-step progress strip — בקשה → אישור → תשלום → איסוף → החזרה →
+  הושלם: completed steps fill brand-blue, the CURRENT step pulses; both sides always know exactly
+  where the rental stands and what happens next. Cancelled/rejected/expired cards skip the strip.
+
 
 rev.142 (2026-07-16) — IN-APP NOTIFICATIONS (the user inbox). Cumulative. RULES CHANGED (userNotifications).
 - Server writes user-facing notifications (notifyUser in _firebase-admin) on: new booking request

@@ -418,6 +418,12 @@ export function home() {
         <div class="hstat"><b>${ready ? all.length : '·'}</b><span>רכבים באתר</span></div>
         <div class="hstat"><b>${ready ? available.length : '·'}</b><span>זמינים כעת</span></div>
       </div>
+      <div class="cat-row" aria-label="קיצורי דרך לפי סוג רכב">${[
+        ['סדאן', '<svg viewBox="0 0 48 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17h40M8 17c0-1 1-5 3-6l6-1 6-5h8l7 5 5 1c2 1 2 5 2 6"/><circle cx="14" cy="17" r="3"/><circle cx="35" cy="17" r="3"/></svg>'],
+        ['SUV', '<svg viewBox="0 0 48 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17h40M6 17v-6c0-2 1-3 3-3h5l5-4h12l6 4h5c2 0 2 2 2 3v6"/><circle cx="14" cy="17" r="3"/><circle cx="35" cy="17" r="3"/></svg>'],
+        ['פיקאפ', '<svg viewBox="0 0 48 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17h40M6 17v-5h18V6h8l5 6h6v5"/><circle cx="14" cy="17" r="3"/><circle cx="36" cy="17" r="3"/></svg>'],
+        ['מיניוואן', '<svg viewBox="0 0 48 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17h40M6 17V9c0-2 1-4 4-4h20l10 7 4 1v4"/><circle cx="14" cy="17" r="3"/><circle cx="35" cy="17" r="3"/></svg>'],
+      ].map(([label, icon]) => `<button type="button" class="cat-tile" data-cat-go="${label}"><span class="cat-ic">${icon}</span><span>${label}</span></button>`).join('')}</div>
     </div>
     <div class="road" aria-hidden="true"><div class="cars-far">${carSil('s1')}</div><div class="asphalt"></div><div class="cars-near">${carSil('s3')}</div></div>
   </section>
@@ -444,6 +450,12 @@ export function home() {
   <button type="button" class="search-pill" id="search-pill" hidden aria-label="חזרה לחיפוש">${ICON.search || '🔍'} חיפוש רכב</button>`;
   if (!paintApp(html)) return;  // nothing changed → keep DOM + handlers (no flicker on repeated data events)
   bindCarButtons();
+  // Category shortcuts (design doc §7): one tap lands on the catalog pre-filtered to that type.
+  document.querySelectorAll('[data-cat-go]').forEach(tile => tile.onclick = () => {
+    carFilters.category = tile.dataset.catGo;
+    try { sessionStorage.setItem('cd-car-filters', JSON.stringify(carFilters)); } catch {}
+    location.hash = 'cars';
+  });
   // Floating search pill (app-feel): once the hero search scrolls out of view, a fixed pill above the
   // bottom nav brings the user back to it with one tap. Phones only (CSS-gated).
   const searchPill = document.querySelector('#search-pill');

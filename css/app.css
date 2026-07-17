@@ -1702,3 +1702,87 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 .dash-bell{position:relative;width:44px;height:44px;border:none;border-radius:50%;background:rgba(255,255,255,.1);color:#fff;font-size:1.15rem;display:grid;place-items:center;cursor:pointer;transition:background .15s}
 .dash-bell:hover{background:rgba(255,255,255,.18)}
 .dash-bell .tab-badge{top:-2px;inset-inline-end:-2px}
+
+/* ---- Booking progress timeline (design doc §13, rev143) ---- */
+.bk-timeline{display:flex;margin:12px 0 4px}
+.bk-step{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;position:relative;min-width:0}
+.bk-step::before{content:"";position:absolute;top:5px;inset-inline-start:-50%;width:100%;height:2px;background:var(--bg3)}
+.bk-step:first-child::before{display:none}
+.bk-step.done::before{background:var(--brand)}
+.bk-dot{width:12px;height:12px;border-radius:50%;background:#fff;border:2px solid var(--bg3);z-index:1;transition:background .2s,border-color .2s}
+.bk-step.done .bk-dot{background:var(--brand);border-color:var(--brand)}
+.bk-step.now .bk-dot{border-color:var(--brand);animation:pulseStep 1.8s ease-in-out infinite}
+@keyframes pulseStep{0%,100%{box-shadow:0 0 0 3px rgba(63,107,142,.14)}50%{box-shadow:0 0 0 6px rgba(63,107,142,.2)}}
+.bk-step small{font-size:10px;font-weight:600;color:var(--muted);white-space:nowrap}
+.bk-step.done small{color:var(--brand-d)}
+.bk-step.now small{color:var(--text);font-weight:800}
+@media(prefers-reduced-motion:reduce){.bk-step.now .bk-dot{animation:none}}
+
+/* ================= PREMIUM 6 (rev144) =================
+   Category shortcut tiles on the home hero (design doc §7 — min 88×88), a BRANDED boot splash
+   instead of the generic spinner, and a living shimmer on the hero headline. */
+/* Shortcut tiles: glass chips on the dark hero, one tap → pre-filtered catalog */
+.cat-row{display:flex;gap:10px;justify-content:center;margin-top:18px}
+.cat-tile{flex:1;max-width:96px;min-height:88px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:10px 6px;border:1px solid rgba(255,255,255,.14);border-radius:16px;background:rgba(255,255,255,.07);color:#D9E3EC;font:inherit;font-size:.78rem;font-weight:600;cursor:pointer;transition:background .18s,transform .12s,border-color .18s;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px)}
+.cat-tile:hover{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.3)}
+.cat-tile:active{transform:scale(.95)}
+.cat-ic{display:grid;place-items:center}
+.cat-ic svg{width:44px;height:24px;color:#EFC66F}
+/* Branded boot splash: the first thing anyone sees is the crown, not a naked spinner */
+.boot-splash{min-height:72vh;gap:16px}
+.splash-logo{width:76px;height:76px;border-radius:22px;box-shadow:0 18px 44px rgba(0,0,0,.35);animation:splashPulse 1.6s ease-in-out infinite}
+.splash-name{letter-spacing:.32em;font-weight:800;font-size:.85rem;color:var(--brand-d)}
+.boot-splash .spinner{width:26px;height:26px;border-width:2.5px}
+@keyframes splashPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+/* The headline's gold lives: a slow shimmer sweeps the gradient */
+.hero h1 em{background:linear-gradient(100deg,#9FB6C9 15%,#EFC66F 40%,#FFE9B8 50%,#EFC66F 60%,#9FB6C9 85%);background-size:220% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:heroShimmer 7s linear infinite}
+@keyframes heroShimmer{0%{background-position:120% 0}100%{background-position:-120% 0}}
+@media(prefers-reduced-motion:reduce){.hero h1 em,.splash-logo{animation:none}}
+
+/* ================= HOME COMPACT (rev145) =================
+   User: "גודל ווידגטים — כמה שפחות גלילה במסך הבית". Every home widget shrinks on phones so the
+   first screens carry more: tighter hero, chip-sized stats, smaller tiles, no decorations, slimmer
+   cards and banners. Desktop untouched. */
+@media(max-width:820px){
+  /* Hero: title + search, nothing chatty */
+  .hero-in{padding:16px 14px 18px}
+  .hero .kicker{margin-bottom:5px;font-size:.68rem}
+  .hero h1{font-size:1.4rem}
+  .hero-copy{display:none}          /* the search form speaks for itself */
+  .road{display:none}               /* pure decoration — costs a whole screen-strip */
+  .quick-search{padding:11px;gap:8px;border-radius:18px}
+  .quick-search input,.quick-search select,.quick-search .date-btn{height:46px;font-size:.95rem;border-radius:11px}
+  .quick-search label span,.df-label{font-size:.7rem}
+  #home-search{min-height:46px}
+  /* Stats: two big white cards → one slim chip row */
+  .hero-stats{display:flex;gap:8px;margin-top:10px;background:none;border:none;box-shadow:none;padding:0}
+  .hstat{display:flex;align-items:baseline;justify-content:center;gap:6px;padding:9px 8px;background:rgba(255,255,255,.94);border:none;border-radius:12px}
+  .hstat b{font-size:1.05rem;display:inline}
+  .hstat span{font-size:.7rem}
+  /* Category tiles: still tappable, half the height */
+  .cat-row{margin-top:10px;gap:8px}
+  .cat-tile{min-height:64px;border-radius:13px;font-size:.7rem;gap:4px;max-width:none}
+  .cat-ic svg{width:32px;height:18px}
+  /* Section headers: title only */
+  body[data-page="home"] .sec-head .sec-sub{display:none}
+  body[data-page="home"] .sec-head{margin-bottom:10px}
+  body[data-page="home"] .sec-head h2{font-size:1.22rem}
+  body[data-page="home"] .sec-head .eyebrow{font-size:.68rem}
+  body[data-page="home"] .info-section{margin-top:16px}
+  /* Home preview cards: shorter photos, tighter body (the full catalog page keeps 4:3) */
+  body[data-page="home"] .car-photo{aspect-ratio:16/10}
+  body[data-page="home"] .car-body{padding:10px}
+  body[data-page="home"] .grid{gap:10px 8px}
+  body[data-page="home"] .see-all{margin-top:8px}
+  /* Numbers strip: one slim line */
+  .strip-in{padding:8px 12px;gap:16px;font-size:.72rem}
+  /* Owner banner: one line + button, no feature chips */
+  .owner-cta-rich{padding:12px 16px;gap:10px;flex-direction:row;align-items:center;text-align:right}
+  .owner-cta-features{display:none}
+  .owner-cta-copy h2{font-size:1.05rem;margin:0}
+  .owner-cta-copy .eyebrow{font-size:.64rem;margin:0}
+  .owner-cta-rich .btn{flex:0 0 auto;min-height:44px;padding-inline:16px}
+  /* Help block */
+  .foot-cta{padding:16px}
+  .foot-cta h2{font-size:1.15rem}
+}
