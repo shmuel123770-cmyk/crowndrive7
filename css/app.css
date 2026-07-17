@@ -1576,3 +1576,129 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
   #home-search::after,.booking-submit-main::after{animation:none}
   .car:hover .car-photo img,.car:active{transform:none}
 }
+/* "מתפנה בערך" on rented cars — the pre-reserve feature's expected free-up date */
+.frees-note{font-size:12px;font-weight:600;color:var(--warn);margin-top:4px}
+
+/* ---- Availability calendar on the car page (design doc §10, rev135) ---- */
+.avail-section{margin:16px 0 8px}
+.avail-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.avail-head h3{margin:0;font-size:1.02rem}
+.avail-nav{display:flex;align-items:center;gap:8px}
+.avail-nav b{min-width:112px;text-align:center;font-size:.9rem}
+.avail-cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.avail-day{height:38px;border:none;border-radius:10px;background:var(--ok-bg);color:var(--ok);font:inherit;font-size:.88rem;font-weight:600;cursor:pointer;transition:box-shadow .12s}
+.avail-day:hover:not(:disabled){box-shadow:inset 0 0 0 2px var(--ok)}
+.avail-day.busy{background:var(--danger-bg);color:var(--danger);cursor:default}
+.avail-day.past{background:var(--bg2);color:var(--muted-2);cursor:default}
+.avail-legend{display:flex;gap:16px;margin-top:8px;font-size:12px;color:var(--muted)}
+.avail-legend .lg{display:flex;align-items:center;gap:6px}
+.avail-legend .lg::before{content:"";width:12px;height:12px;border-radius:4px;flex:0 0 12px}
+.avail-legend .free::before{background:var(--ok-bg);box-shadow:inset 0 0 0 1.5px var(--ok)}
+.avail-legend .busy::before{background:var(--danger-bg);box-shadow:inset 0 0 0 1.5px var(--danger)}
+@media(max-width:820px){ .avail-day{height:44px;border-radius:12px} }
+
+/* ================= PREMIUM 2 (rev136) =================
+   Continuing the design-upgrade request: real SWITCHES instead of checkboxes on form options, a
+   colored status spine on booking cards, gradient KPI numbers, an active-tab pill in the bottom
+   nav, deeper chat bubbles, avatar rings, and a floating empty-state icon. CSS only. */
+/* Form options become iOS-style switches (the legal consent checkbox stays a checkbox on purpose) */
+.price-request-toggle input{appearance:none;-webkit-appearance:none;width:44px;height:26px;flex:0 0 44px;margin-top:1px;border-radius:99px;background:var(--bg3);position:relative;cursor:pointer;transition:background .2s;border:none}
+.price-request-toggle input::after{content:"";position:absolute;top:3px;inset-inline-start:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(16,24,40,.28);transition:transform .22s var(--ease)}
+.price-request-toggle input:checked{background:var(--brand)}
+.price-request-toggle input:checked::after{transform:translateX(-18px)}
+.price-request-toggle{align-items:center}
+/* Booking cards: a colored spine tells the status at a glance (graceful without :has support) */
+.booking-card{border-inline-start:4px solid var(--hair)}
+.booking-card:has(.status-badge.pending){border-inline-start-color:#E9A93D}
+.booking-card:has(.status-badge.approved){border-inline-start-color:var(--brand)}
+.booking-card:has(.status-badge.active){border-inline-start-color:var(--ok)}
+.booking-card:has(.status-badge.done){border-inline-start-color:var(--muted-2)}
+.booking-card:has(.status-badge.rejected),.booking-card:has(.status-badge.cancelled),.booking-card:has(.status-badge.expired){border-inline-start-color:var(--danger)}
+/* KPI numbers get a living gradient, echoing the hero headline */
+.kpi b{background:linear-gradient(135deg,var(--brand-d) 20%,#557FA1 80%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+/* Bottom nav: the active tab sits on a soft pill, not just a color change */
+.tab-item.active::after{content:"";position:absolute;inset:7px 10px;background:rgba(63,107,142,.1);border-radius:14px;z-index:-1;animation:fadeUp .18s var(--ease)}
+/* Chat: bubbles get depth; own messages get a rich dark gradient */
+.chat-msgs .message{box-shadow:0 2px 8px rgba(16,24,40,.07)}
+.chat-msgs .message.mine{background:linear-gradient(160deg,#26303C,#1B222B);box-shadow:0 4px 14px rgba(16,24,40,.2)}
+/* Avatars: a fine double ring lifts them off the card */
+.avatar{box-shadow:0 0 0 2px #fff,0 0 0 3.5px rgba(63,107,142,.35)}
+/* Empty states breathe */
+@keyframes gentleFloat{from{transform:translateY(0)}to{transform:translateY(-6px)}}
+.empty-state .empty-ic{display:inline-block;animation:gentleFloat 2.6s ease-in-out infinite alternate}
+/* Dialog titles per spec §16 (20–22px) on phones */
+@media(max-width:820px){ .modal-head h2{font-size:1.28rem} }
+@media(prefers-reduced-motion:reduce){ .empty-state .empty-ic,.tab-item.active::after{animation:none} }
+
+/* ================= PREMIUM 3 (rev137) =================
+   Auth screen, success screens, admin cards — the third design-upgrade pass. CSS + one markup line. */
+/* Auth shell: a soft brand glow crowns the card; screen title sized per spec §4 */
+.auth-shell{position:relative;overflow:hidden}
+.auth-shell::before{content:"";position:absolute;inset:-40% -20% auto;height:220px;background:radial-gradient(closest-side,rgba(63,107,142,.14),transparent 70%);pointer-events:none}
+.auth-head h2{font-size:1.5rem;font-weight:800}
+/* Role/mode cards: icon on a tinted disc, ring on hover, press feedback */
+.role-emoji{width:56px;height:56px;display:grid;place-items:center;background:#fff;border-radius:18px;margin-bottom:8px;box-shadow:inset 0 0 0 1.5px rgba(63,107,142,.22), 0 6px 16px rgba(16,24,40,.1);transition:background .18s,box-shadow .18s}
+.role-emoji svg{width:26px;height:26px;color:var(--brand-d)}
+.role-card{box-shadow:inset 0 1px 0 rgba(255,255,255,.8)}
+.role-card:hover .role-emoji{background:var(--brand);}
+.role-card:hover .role-emoji svg{color:#fff}
+.role-card:active{transform:scale(.97)}
+/* Login/register pill tabs: the active pill floats */
+.tabs .tab.active{box-shadow:0 4px 12px rgba(20,26,33,.28)}
+/* Success screens: an animated draw-on check crowns the summary */
+.success-check{display:grid;place-items:center;margin:4px 0 14px}
+.success-check svg{width:76px;height:76px;fill:none;stroke:var(--ok);stroke-width:3.4;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 10px 22px rgba(28,124,79,.3))}
+.success-check circle{stroke-dasharray:151;stroke-dashoffset:151;animation:drawRing .55s var(--ease) forwards}
+.success-check path{stroke-dasharray:40;stroke-dashoffset:40;animation:drawTick .35s .5s var(--ease) forwards}
+@keyframes drawRing{to{stroke-dashoffset:0}}
+@keyframes drawTick{to{stroke-dashoffset:0}}
+/* Admin record cards join the elevation system */
+.auc{box-shadow:inset 0 1px 0 rgba(255,255,255,.9), var(--elev-1);transition:transform .18s var(--ease),box-shadow .2s}
+.auc:hover{transform:translateY(-2px);box-shadow:inset 0 1px 0 rgba(255,255,255,.9), var(--elev-2)}
+@media(prefers-reduced-motion:reduce){.success-check circle,.success-check path{animation:none;stroke-dashoffset:0}}
+
+/* ================= PREMIUM 4 (rev138) =================
+   Chats list rows + the payment moment. */
+/* Chat rows: icon discs, tinted active row, pulsing unread dot */
+.chat-item{border:1px solid transparent}
+.chat-item:hover{background:var(--bg-soft)}
+.chat-item.active{background:rgba(63,107,142,.08);border-color:rgba(63,107,142,.25)}
+.chat-item-emoji{width:42px;height:42px;display:grid;place-items:center;background:rgba(63,107,142,.1);border-radius:14px;flex:0 0 42px}
+.chat-item-emoji svg{width:20px;height:20px;color:var(--brand-d)}
+.chat-item small{color:var(--muted)}
+.chat-unread-dot{width:10px;height:10px;border-radius:50%;background:var(--danger);flex:0 0 10px;box-shadow:0 0 0 3px var(--danger-bg);animation:pulseDot 1.6s ease-in-out infinite}
+@keyframes pulseDot{50%{box-shadow:0 0 0 6px var(--danger-bg)}}
+/* The payment moment: the amount is the hero, the proof upload is an inviting tile */
+.pay-amount-field input{font-size:1.55rem;font-weight:800;text-align:center;color:var(--brand-d);letter-spacing:.01em}
+.upload-tile{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;padding:22px 16px;margin-bottom:12px;border:2px dashed rgba(63,107,142,.35);border-radius:16px;background:rgba(63,107,142,.04);cursor:pointer;text-align:center;transition:border-color .18s,background .18s,transform .12s}
+.upload-tile:active{transform:scale(.99)}
+.upload-tile b{color:var(--brand-d)}
+.upload-tile small{color:var(--muted);max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.upload-tile .tile-ic{width:46px;height:46px;display:grid;place-items:center;background:#fff;border-radius:14px;box-shadow:inset 0 0 0 1.5px rgba(63,107,142,.22), 0 6px 14px rgba(16,24,40,.08)}
+.upload-tile .tile-ic svg{width:22px;height:22px;color:var(--brand-d)}
+.upload-tile.has-file{border-style:solid;border-color:var(--ok);background:var(--ok-bg)}
+.upload-tile.has-file b,.upload-tile.has-file small{color:var(--ok)}
+/* keep the input focusable for native "required" validation, but invisible */
+.upload-tile input{position:absolute;opacity:0;width:1px;height:1px;pointer-events:none}
+@media(prefers-reduced-motion:reduce){.chat-unread-dot{animation:none}}
+
+/* ---- Favorites (design doc §9, rev140): the 40×40 heart on every card + a favorites filter chip ---- */
+.fav-btn{position:absolute;top:8px;inset-inline-end:8px;width:40px;height:40px;border:none;border-radius:50%;background:rgba(255,255,255,.94);display:grid;place-items:center;cursor:pointer;z-index:2;box-shadow:0 4px 12px rgba(16,24,40,.2);transition:transform .12s}
+.fav-btn:active{transform:scale(.9)}
+.fav-btn svg{width:20px;height:20px;color:var(--danger);fill:none;transition:fill .15s}
+.fav-btn.on svg{fill:var(--danger)}
+@keyframes favPop{0%{transform:scale(1)}40%{transform:scale(1.4)}100%{transform:scale(1)}}
+.fav-btn.pop svg{animation:favPop .35s var(--ease)}
+.type-chip.fav-chip{color:var(--danger)}
+.type-chip.fav-chip.on{background:var(--danger-bg);border-color:var(--danger);color:var(--danger)}
+@media(prefers-reduced-motion:reduce){.fav-btn.pop svg{animation:none}}
+/* Share button on the car page (rev141) */
+.car-share-btn{display:flex;align-items:center;justify-content:center;gap:8px;margin:12px 0 2px}
+.car-share-btn svg{width:18px;height:18px}
+
+/* In-app inbox badges (rev142): red counter on the nav tabs */
+.tab-badge{position:absolute;top:4px;inset-inline-end:calc(50% - 22px);min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:var(--danger);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;line-height:1;box-shadow:0 2px 6px rgba(215,0,21,.4)}
+/* Notifications bell in the personal-area header (rev142) */
+.dash-bell{position:relative;width:44px;height:44px;border:none;border-radius:50%;background:rgba(255,255,255,.1);color:#fff;font-size:1.15rem;display:grid;place-items:center;cursor:pointer;transition:background .15s}
+.dash-bell:hover{background:rgba(255,255,255,.18)}
+.dash-bell .tab-badge{top:-2px;inset-inline-end:-2px}

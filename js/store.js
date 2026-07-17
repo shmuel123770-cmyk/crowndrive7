@@ -25,6 +25,7 @@ export const store = {
   adminNotifications: {},
   config: {},
   reservations: {},
+  userNotifications: {},
   route: 'home',
   dashTab: 'overview',  // which personal-area tab is active (shared: bottomNav in views.js + dashboard in views-app.js)
   publicUnsubs: [],
@@ -151,6 +152,8 @@ export async function startPrivate(user) {
     // to the public — the rules allow exactly this ownerUid query. Renters simply get an empty set.
     if (!user.isAnonymous) {
       store.privateUnsubs.push(listen(refs.cars.orderByChild('ownerUid').equalTo(user.uid), v => { store.ownCars = v; mergeCars(); }, 'cars'));
+      // The in-app inbox: booking/payment/reserve updates for this user (server-written).
+      store.privateUnsubs.push(listen(refs.userNotifications.child(user.uid).limitToLast(50), v => { store.userNotifications = v; }, 'user-notifications'));
     }
     try {
       const profile = (await refs.users.child(user.uid).once('value')).val() || {};
@@ -178,6 +181,7 @@ export function stopPrivate() {
   // Drop the signed-in-only car sources (own hidden cars / admin full tree) from the merged catalog.
   store.ownCars = {};
   store.adminCars = {};
+  store.userNotifications = {};
   mergeCars();
   emit('private-stopped');
 }

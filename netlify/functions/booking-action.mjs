@@ -1,4 +1,4 @@
-import {getAdmin, verify, json, isAdmin, booking, audit, cleanText, notifyAdmin, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, isAdmin, booking, audit, cleanText, notifyAdmin, notifyUser, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
 import {smsUser} from './_sms.mjs';
 import {rateLimit, tooMany} from './_ratelimit.mjs';
 import {storageObjectExists} from './_storage.mjs';
@@ -37,6 +37,7 @@ export async function handler(event) {
       if (!payment) return json(404, {error: 'לא נמצאה הוכחת תשלום'});
       if (payment.status !== 'pending') return json(409, {error: 'אפשר לבדוק רק תשלום שממתין לאישור'});
       await pref.update({status: decision, reviewedBy: token.uid, reviewedAt: Date.now()});
+      await notifyUser(current.renterUid, 'payment', decision === 'approved' ? `התשלום שלך על ההזמנה (${String(body.bookingId).slice(-7)}) אושר ✓` : `התשלום שלך על ההזמנה (${String(body.bookingId).slice(-7)}) נדחה — שלחו הוכחה מעודכנת`, {bookingId: body.bookingId});
       await audit(token.uid, 'payment_review', 'booking', body.bookingId, {decision});
       const ref7 = String(body.bookingId).slice(-7);
       await smsUser(current.renterUid, decision === 'approved'
@@ -122,11 +123,28 @@ export async function handler(event) {
       if (statusText) await notifyAdmin('status', `${statusText} (${body.bookingId.slice(-7)})`, {bookingId: body.bookingId, to: next, by: token.uid});
       // SMS: renter on approve/reject; BOTH sides when the rental ends. Best-effort.
       const ref7 = body.bookingId.slice(-7);
+      // In-app inbox (the default channel — SMS is optional): tell the party the action AFFECTS.
+      if (next === 'approved') await notifyUser(current.renterUid, 'status', `ההזמנה שלך (${ref7}) אושרה! היכנסו לצ׳אט להשלמת התיעוד`, {bookingId: body.bookingId});
+      else if (next === 'rejected') await notifyUser(current.renterUid, 'status', `ההזמנה שלך (${ref7}) נדחתה על ידי בעל הרכב`, {bookingId: body.bookingId});
+      else if (next === 'cancelled') await notifyUser(token.uid === current.renterUid ? current.ownerUid : current.renterUid, 'status', `הזמנה (${ref7}) בוטלה`, {bookingId: body.bookingId});
+      else if (next === 'done') await notifyUser(current.renterUid, 'status', `ההשכרה (${ref7}) הסתיימה — נשמח לדירוג!`, {bookingId: body.bookingId});
       if (next === 'approved') await smsUser(current.renterUid, `CrownDrive: ההזמנה שלך אושרה (${ref7})! היכנסו לצ׳אט להשלמת התיעוד ותחילת ההשכרה.`);
       else if (next === 'rejected') await smsUser(current.renterUid, `CrownDrive: לצערנו ההזמנה שלך (${ref7}) לא אושרה על ידי בעל הרכב.`);
       else if (next === 'done') {
         await smsUser(current.renterUid, `CrownDrive: ההשכרה (${ref7}) הסתיימה. תודה שנסעתם איתנו — נשמח לדירוג!`);
         await smsUser(current.ownerUid, `CrownDrive: ההשכרה (${ref7}) של הרכב שלך הסתיימה.`);
+        // Pre-reserve waitlist: renters with a PENDING request on this car hear the moment it frees up.
+        try {
+          const pendSnap = await db.ref('bookings').orderByChild('carId').equalTo(current.carId).once('value');
+          const waitingUids = [...new Set(Object.values(pendSnap.val() || {}).filter(b => b?.status === 'pending').map(b => b.renterUid).filter(Boolean))];
+          if (waitingUids.length) {
+            const carRec = (await db.ref(`cars/${current.carId}`).once('value')).val() || {};
+            for (const uid of waitingUids) {
+              await notifyUser(uid, 'reserve', `הרכב ששריינתם (${carRec.make || 'רכב'} ${carRec.model || ''}) התפנה! בעל הרכב יאשר בהתאם לתאריכים שבחרתם`);
+              await smsUser(uid, `CrownDrive: הרכב ששריינתם (${carRec.make || 'רכב'} ${carRec.model || ''}) התפנה! בעל הרכב יאשר את בקשתכם בהתאם לתאריכים שבחרתם.`);
+            }
+          }
+        } catch (error) { console.warn('waitlist sms skipped', error?.message); }
       }
       return json(200, {ok: true});
     }

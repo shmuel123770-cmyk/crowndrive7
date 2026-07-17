@@ -1,5 +1,107 @@
-CrownDrive — FINAL build (2026-07-14, rev.118)
+CrownDrive — FINAL build (2026-07-16, rev.142)
 Original CrownDrive design (Heebo, steel-blue #3F6B8E, dark #1B222B) on the secure V2 backend.
+
+rev.142 (2026-07-16) — IN-APP NOTIFICATIONS (the user inbox). Cumulative. RULES CHANGED (userNotifications).
+- Server writes user-facing notifications (notifyUser in _firebase-admin) on: new booking request
+  (owner), approve/reject/cancel/done (the affected party), payment proof submitted (owner), payment
+  approved/rejected (renter), and pre-reserve car freed (waiting renters) — the in-app channel now
+  covers everything SMS did, without Twilio.
+- New "התראות" tab in the renter+owner dashboards (reuses the admin feed design, unread rows
+  highlighted); red count badges on the bottom-nav personal-area tab and the dashboard bar; opening
+  the tab stamps "seen" (localStorage) and clears the badges.
+- DB rules: userNotifications/$uid readable by the owner (+admin), server-written only — REPUBLISH.
+
+
+rev.141 (2026-07-16) — SHARE A CAR with a real WhatsApp preview. Cumulative.
+- New /api/share?car=<id> endpoint: a tiny per-car HTML page whose OG tags carry the CAR'S photo,
+  name and price (crawlers don't run JS, so sharing the SPA link always previewed the generic site
+  image); real visitors are instantly forwarded to the car's deep link. Public mirror data only.
+- "שיתוף הרכב בוואטסאפ" button on the car page: native share sheet on phones (navigator.share),
+  copy-to-clipboard fallback on desktop.
+- Deep link #car=<id>: opens the catalog and pops that car's page once data arrives; a dead link
+  shows "הרכב מהקישור כבר אינו זמין".
+
+
+rev.140 (2026-07-16) — FAVORITES (design doc §9). Cumulative.
+- Every car card carries the spec's 40×40 heart (top corner over the photo, opposite the status
+  pills): tap to save/remove, with a pop animation and a toast. Device-level (localStorage) — works
+  for guests and members, no backend, survives sessions.
+- The cars page gained a "♥ מועדפים (N)" chip in the filter row: shows only hearted cars; counted in
+  the active-filter badge and reset by ניקוי.
+
+
+rev.139 (2026-07-16) — PREMIUM 5: handover uploads unified with the tile pattern. Cumulative.
+- The handover form's two raw file inputs (exterior video, dashboard photo) are now the same inviting
+  dashed UPLOAD TILES as the payment proof — icon disc, clear hint, green ✓ with the filename once
+  captured. One consistent upload language across payment, handover (and the verification wizard,
+  which already had its own designed flow).
+
+
+rev.138 (2026-07-16) — PREMIUM 4: chats list + payment moment. Cumulative.
+- Chat rows: icon discs, tinted active row with a fine ring, hover state, PULSING unread dot.
+- Payment modal: the amount renders as a large centered figure; the proof upload became an inviting
+  dashed TILE (icon disc, "לחצו לצילום או לבחירה מהגלריה") that turns green with the filename once a
+  photo is chosen; the input stays focusable so native required-validation still works.
+
+
+rev.137 (2026-07-16) — PREMIUM 3: auth screen, success check, admin cards. Cumulative.
+- Auth: soft radial brand glow atop the card, 24px screen title, role/mode cards with tinted icon
+  discs that fill brand-blue on hover, press feedback; active login/register pill floats.
+- Booking success: animated draw-on circle-check (SVG stroke) above the summary.
+- Admin user cards join the elevation system (top-light + two-layer shadow + hover lift).
+- Reduced-motion: check renders complete, no animation.
+
+
+rev.136 (2026-07-16) — PREMIUM 2 design pass (CSS only). Cumulative.
+- Form options (מחיר לפי פנייה / סופ"ש) are now real iOS-style SWITCHES; the legal consent checkbox
+  deliberately stays a checkbox. Booking cards carry a colored status spine (pending amber, approved
+  blue, active green, finished gray, cancelled red — via :has, graceful without). KPI numbers get a
+  brand gradient; the active bottom-nav tab sits on a soft pill; chat bubbles gained depth (own
+  messages: dark gradient); avatars get a fine double ring; empty-state icons float gently.
+- Dialog titles 20-22px on phones (design doc §16). Reduced-motion respected.
+
+
+rev.135 (2026-07-16) — AVAILABILITY CALENDAR on the car page + waitlist SMS. Cumulative.
+- "זמינות" month view above the booking form (design doc §10): green=free, red=busy (from the public
+  reservations map), gray=past; month prev/next; tapping a FREE day sets the pickup date and reprices.
+  44px day cells on phones.
+- Waitlist SMS (best-effort, needs Twilio env): when a rental ENDS (booking done) or the owner flips a
+  rented car back to available, every renter with a PENDING pre-reserve request on that car gets
+  "הרכב ששריינתם התפנה!".
+
+
+rev.134 (2026-07-16) — "מתפנה בערך ב־X" on rented cars. Cumulative.
+- carFreesAt(carId): the end of the reservation covering NOW (public reservations node) = when the
+  car is expected to free up. Shown on the card ("🕐 מתפנה בערך: <date>") and inside the pre-reserve
+  notice on the car page; the booking form's pickup date defaults to that free-up day (NY calendar).
+- 'reservations' added to the repaint keys — availability/frees notes appear as soon as the data lands.
+- Owner-flagged rentals with no booking behind them simply show no date (graceful).
+
+
+rev.133 (2026-07-16) — PRE-RESERVE (שריון מראש) + version footer fixed. Cumulative.
+- A RENTED car can now be pre-reserved: the booking form opens with a notice ("הרכב מושכר כרגע — אפשר
+  לשריין מראש"), the renter picks future dates, the request lands as pending and the owner approves per
+  the chosen dates. Server allows status available|rented (hidden stays closed); the existing overlap
+  check still rejects clashes with approved/active bookings. Card CTA on rented cars: "שריון מראש".
+- meta crowndrive-version was stuck on 118 since rev.118 → footer now shows the real version (133).
+- 152 scenario tests pass.
+
+rev.119–132 (2026-07-16) — summary of the whole day (each rev cumulative, see chat):
+- SECURITY: full 64-item audit executed — account-deletion cascade + auth failure surfaced, storage
+  rules (anonymous blocked, SVG excluded), booking/chat state machine (end-chat only after finish +
+  reopen-chat), ownership transfer cleanup, file-existence checks for proofs/evidence, adminAmount
+  precedence, transactions for payments/ratings/reservations, blocked-user rules, maintenance coverage,
+  rate-limits, generic 500 messages, HSTS, object-src 'none', fresh-auth gate on user-delete,
+  publicCars mirror (hidden cars truly invisible; cars node locked to owner-query+admin), reservations
+  public → real availability in search, DST fixes (23h day, Saturday-midnight weekend), inquiry fixes,
+  admin inquiry chats, wikimedia image REHOSTING to our CDN + attribution, re-consent mechanism,
+  cancellation records (who/when/why), TERMS_VERSION single-sourced (js/core.js + _terms.mjs).
+- MOBILE DESIGN (per the design doc): bottom sheets everywhere (24px, drag handle), 4-step car-form
+  wizard, calendar bottom-sheet (44px cells), admin bottom nav with "עוד", content-first home (cars
+  right after search), swipeable marketing rows, directional tab transitions, scroll memory per tab,
+  greeting for signed-in users, floating search pill, depth&shine layer (layered shadows, glass
+  gradients, CTA gleam), no hard caps on users/cars/threads, progressive "הצגת עוד" lists.
+
 
 rev.82 (2026-07-14) — personal-area bar SOLID+FIXED + home shows 4 cars on phones. Cumulative.
 - BOTTOM BAR (admin `.dashboard-tabs`, mobile) was `rgba(24,29,38,.82) + backdrop-filter:blur` — that made it

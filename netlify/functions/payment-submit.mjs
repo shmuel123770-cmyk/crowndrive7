@@ -1,4 +1,4 @@
-import {getAdmin, verify, json, booking, cleanText, audit, notifyAdmin, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, booking, cleanText, audit, notifyAdmin, notifyUser, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
 import {rateLimit, tooMany} from './_ratelimit.mjs';
 import {validateImageDataUrl} from './_media.mjs';
 import {storageObjectExists, deleteStorageObject} from './_storage.mjs';
@@ -56,6 +56,7 @@ export async function handler(event) {
     if (priorPath && !priorPath.startsWith('data:') && priorPath !== payload.mediaPath) await deleteStorageObject(priorPath);
     await audit(token.uid, 'payment_submit', 'booking', body.bookingId, {amount});
     await notifyAdmin('payment', `שוכר שלח הוכחת תשלום על $${amount} — ממתין לאישור`, {bookingId: body.bookingId, amount});
+    await notifyUser(value.ownerUid, 'payment', `הוכחת תשלום על $${amount} ממתינה לאישורך (${String(body.bookingId).slice(-7)})`, {bookingId: body.bookingId});
     return json(200, {ok: true});
   } catch (error) {
     console.error(error);

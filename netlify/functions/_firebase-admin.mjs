@@ -85,6 +85,13 @@ export async function canReadUserProfile(viewer, target) {
 export function cleanText(value, max = 500) {
   return String(value ?? '').trim().replace(/[\u0000-\u001f\u007f]/g, '').slice(0, max);
 }
+// In-app notification for a RENTER/OWNER (the site's inbox — the default channel now that SMS is
+// optional). Best-effort: a failed write never breaks the business action.
+export function notifyUser(uid, type, text, extra = {}) {
+  if (!uid) return Promise.resolve();
+  return getAdmin().database().ref(`userNotifications/${uid}`).push({type, text: cleanText(text, 300), ...extra, createdAt: Date.now()})
+    .catch(error => { console.warn('user notification skipped', error?.message); });
+}
 // Audit logging is best-effort — it must NEVER turn a successful business action into a 500 for the
 // user (audit #11). A failed audit write is swallowed + logged, so `await audit(...)` never rejects.
 export function audit(actorUid, action, entityType, entityId, details = {}) {

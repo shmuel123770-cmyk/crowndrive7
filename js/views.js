@@ -360,11 +360,12 @@ export function bottomNav() {
   // DYNAMIC personal-area toolbar (renter/owner): the bar becomes the role's own dashboard sections, and a tap
   // switches the section in place instead of leaving the area.
   if (route === 'dashboard') {
+    const unreadNotifs = userUnreadNotifs();
     const tabs = role === 'owner'
       ? [['overview', 'סקירה'], ['bookings', 'הזמנות'], ['cars', 'רכבים'], ['chats', 'צ׳אטים'], ['profile', 'פרופיל']]
-      : [['overview', 'סקירה'], ['bookings', 'הזמנות'], ['chats', 'צ׳אטים'], ['profile', 'פרופיל']];
+      : [['overview', 'סקירה'], ['bookings', 'הזמנות'], ['chats', 'צ׳אטים'], ['notifications', 'התראות'], ['profile', 'פרופיל']];
     node.innerHTML = tabs.map(([key, label]) =>
-      `<button class="tab-item ${key === store.dashTab ? 'active' : ''}" data-dash-tab="${key}" aria-label="${esc(label)}"${key === store.dashTab ? ' aria-current="page"' : ''}>${(TAB_ICONS[key] || (() => ''))()}<span>${esc(label)}</span></button>`).join('');
+      `<button class="tab-item ${key === store.dashTab ? 'active' : ''}" data-dash-tab="${key}" aria-label="${esc(label)}"${key === store.dashTab ? ' aria-current="page"' : ''}>${(TAB_ICONS[key] || (() => ''))()}<span>${esc(label)}</span>${key === 'notifications' && unreadNotifs ? `<span class="tab-badge">${unreadNotifs}</span>` : ''}</button>`).join('');
     node.querySelectorAll('[data-dash-tab]').forEach(button => button.onclick = event => {
       event.stopPropagation();
       const tab = button.dataset.dashTab;
@@ -380,10 +381,10 @@ export function bottomNav() {
     {route: 'home', label: 'בית', icon: ICON.home, active: route === 'home'},
     {route: 'cars', label: 'רכבים', icon: ICON.car, active: route === 'cars'},
     {route: area, dash: 'bookings', label: 'הזמנות', icon: ICON.calendar},
-    {route: area, dash: 'overview', label: 'אזור אישי', icon: ICON.selfie},
+    {route: area, dash: 'overview', label: 'אזור אישי', icon: ICON.selfie, badge: userUnreadNotifs()},
   ];
   node.innerHTML = items.map(it =>
-    `<button class="tab-item ${it.active ? 'active' : ''}" data-route="${it.route}"${it.dash ? ` data-dash="${it.dash}"` : ''} aria-label="${esc(it.label)}"${it.active ? ' aria-current="page"' : ''}>${it.icon}<span>${esc(it.label)}</span></button>`).join('');
+    `<button class="tab-item ${it.active ? 'active' : ''}" data-route="${it.route}"${it.dash ? ` data-dash="${it.dash}"` : ''} aria-label="${esc(it.label)}"${it.active ? ' aria-current="page"' : ''}>${it.icon}<span>${esc(it.label)}</span>${it.badge ? `<span class="tab-badge">${it.badge}</span>` : ''}</button>`).join('');
   node.querySelectorAll('[data-route]').forEach(button => button.onclick = event => {
     event.stopPropagation();
     const target = button.dataset.route;
@@ -557,6 +558,18 @@ function searchRange() {
   return {startMs: s, endMs: e, bucket: periodBucket(e - s)};
 }
 
+// When is a RENTED car expected to free up? The end of the reservation covering RIGHT NOW (public
+// reservations data). 0 when unknown — the owner flagged it rented manually, with no booking behind it.
+function carFreesAt(carId) {
+  const now = Date.now();
+  let current = 0;
+  for (const r of Object.values(store.reservations?.[carId] || {})) {
+    const start = new Date(r.startAt).getTime(), end = new Date(r.endAt).getTime();
+    if (Number.isFinite(start) && Number.isFinite(end) && start <= now && now < end && (!current || end < current)) current = end;
+  }
+  return current;
+}
+
 function carCard(car, manage = false, period = null, index = 99) {
   const rating = carRating(car.id);
   const reviewCount = carRatingCount(car.id);
@@ -578,7 +591,7 @@ function carCard(car, manage = false, period = null, index = 99) {
   // rental mode doesn't fit the chosen range still appear — with a clear "available only for X" note.
   let periodHtml = '';
   let notFit = false;
-  if (period && car.status === 'available') {
+  if (period && ['available', 'rented'].includes(car.status)) {
     // Real availability in search results (audit #42): an approved/active booking already holds this
     // range — say so on the card instead of letting the renter find out at submit time.
     const taken = Object.values(store.reservations?.[car.id] || {}).some(r =>
@@ -605,7 +618,7 @@ function carCard(car, manage = false, period = null, index = 99) {
   // line, price + a subtle "פרטים ←" affordance — the whole card is the link (no heavy button). Public cards
   // get role=button + keyboard support; owner "manage" cards keep their own action buttons instead.
   const cardRole = manage ? '' : ' role="button" tabindex="0"';
-  return `<article class="card car car-clean${notFit ? ' car-nofit' : ''}" data-car-open="${esc(car.id)}"${cardRole} aria-label="${esc(`${car.make || ''} ${car.model || ''} — פתיחת פרטים`)}"><div class="car-photo"><img ${carImgAttrs(carImage(car))} alt="${esc(`${car.make || ''} ${car.model || ''}`)}" loading="${eager ? 'eager' : 'lazy'}"${eager ? ' fetchpriority="high"' : ''} decoding="async" data-car-image><div class="car-badges">${availPill(car.status)}${newBadge(car)}</div>${modeBadge}${car.videoUrl ? '<span class="has-video">▶ וידאו</span>' : ''}</div><div class="car-body"><div class="car-title-row"><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3>${rating ? `<span class="car-rate">★ <b>${rating.toFixed(1)}</b>${reviewCount ? ` <small>(${reviewCount})</small>` : ''}</span>` : ''}</div><div class="car-specs"><span>${esc(car.year || '—')}</span><span>·</span><span>${esc(type)}</span>${car.fuel ? `<span>·</span><span>${esc(car.fuel)}</span>` : ''}</div>${periodHtml}<div class="car-foot"><div class="price-stack"><div class="price">${priceMain}</div>${priceAlt ? `<small class="price-alt">${priceAlt}</small>` : ''}</div><span class="car-go">${car.status === 'available' ? 'פרטים והזמנה' : 'צפייה'} ←</span></div>${manageRow}</div></article>`;
+  return `<article class="card car car-clean${notFit ? ' car-nofit' : ''}" data-car-open="${esc(car.id)}"${cardRole} aria-label="${esc(`${car.make || ''} ${car.model || ''} — פתיחת פרטים`)}"><div class="car-photo"><img ${carImgAttrs(carImage(car))} alt="${esc(`${car.make || ''} ${car.model || ''}`)}" loading="${eager ? 'eager' : 'lazy'}"${eager ? ' fetchpriority="high"' : ''} decoding="async" data-car-image><div class="car-badges">${availPill(car.status)}${newBadge(car)}</div>${modeBadge}${car.videoUrl ? '<span class="has-video">▶ וידאו</span>' : ''}<button type="button" class="fav-btn ${favList().has(car.id) ? 'on' : ''}" data-fav="${esc(car.id)}" aria-pressed="${favList().has(car.id)}" aria-label="שמירה במועדפים">${HEART_ICON}</button></div><div class="car-body"><div class="car-title-row"><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3>${rating ? `<span class="car-rate">★ <b>${rating.toFixed(1)}</b>${reviewCount ? ` <small>(${reviewCount})</small>` : ''}</span>` : ''}</div><div class="car-specs"><span>${esc(car.year || '—')}</span><span>·</span><span>${esc(type)}</span>${car.fuel ? `<span>·</span><span>${esc(car.fuel)}</span>` : ''}</div>${rented && carFreesAt(car.id) ? `<div class="frees-note">🕐 מתפנה בערך: ${fmtDate(carFreesAt(car.id))}</div>` : ''}${periodHtml}<div class="car-foot"><div class="price-stack"><div class="price">${priceMain}</div>${priceAlt ? `<small class="price-alt">${priceAlt}</small>` : ''}</div><span class="car-go">${car.status === 'available' ? 'פרטים והזמנה' : car.status === 'rented' ? 'שריון מראש' : 'צפייה'} ←</span></div>${manageRow}</div></article>`;
 }
 // Featured cars (pinned by the admin) always come first, newest-pin first.
 export function featuredFirst(cars) {
@@ -634,6 +647,15 @@ export function carGrid(cars, manage = false, period = null) {
 
 export function bindCarButtons() {
   app().querySelectorAll('[data-car]').forEach(button => button.onclick = () => openCar(button.dataset.car));
+  // Heart toggles (favorites) — the card-open handler already ignores clicks landing on buttons.
+  app().querySelectorAll('[data-fav]').forEach(button => button.onclick = event => {
+    event.stopPropagation();
+    const on = toggleFavorite(button.dataset.fav);
+    button.classList.toggle('on', on);
+    button.setAttribute('aria-pressed', String(on));
+    button.classList.remove('pop'); void button.offsetWidth; button.classList.add('pop');
+    toast(on ? '♥ נוסף למועדפים' : 'הוסר מהמועדפים');
+  });
   // The WHOLE card opens the detail — a click anywhere that isn't an inner control (buttons/links) counts.
   app().querySelectorAll('[data-car-open]').forEach(article => {
     article.addEventListener('click', event => {
@@ -675,9 +697,28 @@ export function bindCarButtons() {
 // home page. Filtering to 'available' only is opt-in via the "זמינים כעת" filter. (Was 'available', which hid
 // every rented car from the cars page entirely.)
 const carFilters = readSession('cd-car-filters', {make: '', model: '', year: '', category: '', availability: 'all', sort: 'new'});
+
+// Favorites (design doc §9: the 40×40 heart on every card) — a device-level list in localStorage:
+// works for guests and members alike, no backend, survives sessions on the same phone.
+const FAV_KEY = 'cd-favorites';
+function favList() { try { return new Set(JSON.parse(localStorage.getItem(FAV_KEY) || '[]')); } catch { return new Set(); } }
+function toggleFavorite(id) {
+  const favs = favList();
+  if (favs.has(id)) favs.delete(id); else favs.add(id);
+  try { localStorage.setItem(FAV_KEY, JSON.stringify([...favs])); } catch {}
+  return favs.has(id);
+}
+// Unread in-app notifications (badge on the nav bars + the dashboard tab). "Seen" is stamped when
+// the notifications tab opens.
+export function userUnreadNotifs() {
+  let seen = 0; try { seen = Number(localStorage.getItem('cd-notif-seen') || 0); } catch {}
+  return Object.values(store.userNotifications || {}).filter(n => Number(n?.createdAt || 0) > seen).length;
+}
+const HEART_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>';
 function applyCarFilters(all, filters = carFilters) {
   let rows = all.filter(car => car.status !== 'hidden');
   const f = filters;
+  if (f.favorites) { const favs = favList(); rows = rows.filter(car => favs.has(car.id)); }
   if (f.availability === 'available') rows = rows.filter(car => car.status === 'available');
   if (f.make) rows = rows.filter(car => car.make === f.make);
   if (f.model) rows = rows.filter(car => car.model === f.model);
@@ -725,7 +766,7 @@ function openFilterSheet(all, rerender, persistFilters) {
 const CARS_PAGE = 24;
 let carsShown = CARS_PAGE;
 // How many filters differ from the defaults — shown as a badge on the mobile filter button (audit #16).
-const activeFilterCount = f => ['make', 'model', 'year', 'category'].filter(k => f[k]).length + (f.availability !== 'all' ? 1 : 0) + (f.sort !== 'new' ? 1 : 0);
+const activeFilterCount = f => ['make', 'model', 'year', 'category'].filter(k => f[k]).length + (f.availability !== 'all' ? 1 : 0) + (f.sort !== 'new' ? 1 : 0) + (f.favorites ? 1 : 0);
 export function cars() {
   const all = list(store.cars);
   const rows = applyCarFilters(all);
@@ -753,7 +794,7 @@ export function cars() {
       <select id="f-availability" aria-label="סינון לפי זמינות">${opt('all', 'כל הרכבים', carFilters.availability)}${opt('available', 'זמינים כעת', carFilters.availability)}</select>
       <select id="f-sort" aria-label="מיון רכבים">${opt('new', 'מיון: החדשים ביותר', carFilters.sort)}${opt('priceLow', 'מיון: מהזול ליקר', carFilters.sort)}${opt('priceHigh', 'מיון: מהיקר לזול', carFilters.sort)}</select>
       ${(carFilters.make || carFilters.model || carFilters.year || carFilters.category || carFilters.availability !== 'all' || carFilters.sort !== 'new') ? '<button class="btn outline" id="f-clear">ניקוי</button>' : ''}
-      <div class="type-chips">${['סדאן', 'SUV', 'פיקאפ', 'מיניוואן'].map(t => `<button class="type-chip ${carFilters.category === t ? 'on' : ''}" data-type-chip="${t}">${t}</button>`).join('')}</div>
+      <div class="type-chips"><button class="type-chip fav-chip ${carFilters.favorites ? 'on' : ''}" data-fav-filter aria-pressed="${!!carFilters.favorites}">♥ מועדפים${favList().size ? ` (${favList().size})` : ''}</button>${['סדאן', 'SUV', 'פיקאפ', 'מיניוואן'].map(t => `<button class="type-chip ${carFilters.category === t ? 'on' : ''}" data-type-chip="${t}">${t}</button>`).join('')}</div>
     </div>
     ${carGrid(rows.slice(0, carsShown), false, period)}
     ${rows.length > carsShown ? `<div class="see-all"><button type="button" class="btn primary see-all-btn" id="cars-more">הצגת עוד רכבים (${rows.length - carsShown})</button></div>` : ''}</div>`;
@@ -771,7 +812,8 @@ export function cars() {
   bind('#f-availability', 'availability');
   bind('#f-sort', 'sort');
   document.querySelectorAll('[data-type-chip]').forEach(chip => chip.onclick = () => { carFilters.category = carFilters.category === chip.dataset.typeChip ? '' : chip.dataset.typeChip; persistFilters(); rerender(); });
-  document.querySelector('#f-clear')?.addEventListener('click', () => { Object.assign(carFilters, {make: '', model: '', year: '', category: '', availability: 'all', sort: 'new'}); persistFilters(); rerender(); });
+  document.querySelectorAll('[data-fav-filter]').forEach(chip => chip.onclick = () => { carFilters.favorites = !carFilters.favorites; persistFilters(); rerender(); });
+  document.querySelector('#f-clear')?.addEventListener('click', () => { Object.assign(carFilters, {make: '', model: '', year: '', category: '', availability: 'all', sort: 'new', favorites: false}); persistFilters(); rerender(); });
   // Date search: set the shared search period and re-render so cards show estimates + fit/no-fit notes.
   document.querySelector('#period-apply')?.addEventListener('click', () => {
     const sd = document.querySelector('input[name="carsStart"]')?.value || '';
@@ -807,7 +849,11 @@ export function openCar(id) {
   const draftKey = `cd-booking-draft-${car.id}`;
   const draft = readSession(draftKey, {});
   const requestId = draft.requestId || crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`;
-  const bStart = searchPeriod.startAt ? searchPeriod.startAt.slice(0, 10) : (draft.startDate || '');
+  // For a rented car, default the pickup date to the expected free-up day (NY calendar) — the renter
+  // lands on the first date that can actually work, and just adjusts if needed.
+  const freesAt = rented ? carFreesAt(car.id) : 0;
+  const freeIso = freesAt ? new Intl.DateTimeFormat('en-CA', {timeZone: 'America/New_York'}).format(freesAt) : '';
+  const bStart = searchPeriod.startAt ? searchPeriod.startAt.slice(0, 10) : (draft.startDate || freeIso || '');
   const bEnd = searchPeriod.endAt ? searchPeriod.endAt.slice(0, 10) : (draft.endDate || '');
   const bStartH = searchPeriod.startAt ? searchPeriod.startAt.slice(11, 16) : (draft.startHour || '10:00');
   const bEndH = searchPeriod.endAt ? searchPeriod.endAt.slice(11, 16) : (draft.endHour || '10:00');
@@ -828,7 +874,9 @@ export function openCar(id) {
     ${onRequest && canInquire ? '<div class="price-contact-cta"><div><b>שלחו הודעה לקבלת מחיר</b><small>המחיר נקבע מול בעל הרכב — שלחו הודעה כדי לקבל אותו.</small></div><button type="button" class="btn gold" id="price-contact">שליחת הודעה לקבלת מחיר</button></div>' : ''}
     ${canInquire && !onRequest ? `<div class="owner-contact-cta"><div><b>יש לכם שאלה על הרכב?</b><small>דברו ישירות עם בעל הרכב עוד לפני שליחת הבקשה.</small></div><button type="button" class="btn dark-out" id="contact-owner">${ICON.chat} צור קשר עם בעל הרכב</button></div>` : ''}
     ${reviewsHtml}
-    ${rented ? '<div class="chat-closed">הרכב אינו זמין להזמנה כרגע</div>' : `<form id="booking-form" autocomplete="on"><div class="booking-form-head"><span>בקשת הזמנה</span><h3>בחירת מועד וקבלת מחיר</h3><small>כל השעות לפי ניו יורק (ET)</small></div><div class="form-grid">${dateField('startDate', 'תאריך איסוף', bStart)}<div class="field"><label>שעת איסוף</label><select name="startHour">${hourOptions(bStartH)}</select></div>${dateField('endDate', 'תאריך החזרה', bEnd)}<div class="field"><label>שעת החזרה</label><select name="endHour">${hourOptions(bEndH)}</select></div></div><div class="booking-est" id="booking-est" aria-live="polite"></div><div class="field"><label>אופן קבלה</label><select name="fulfillment"><option value="pickup" ${draft.fulfillment !== 'delivery' ? 'selected' : ''}>איסוף עצמי</option>${car.deliveryEnabled ? `<option value="delivery" ${draft.fulfillment === 'delivery' ? 'selected' : ''}>מסירה</option>` : ''}</select></div><div class="field" id="delivery-address-field"><label>כתובת מסירה</label><input name="deliveryAddress" autocomplete="street-address" value="${esc(draft.deliveryAddress || '')}" placeholder="רחוב, מספר, עיר"></div><label class="booking-consent"><input type="checkbox" name="termsAccepted" required><span>קראתי ואני מסכים/ה ל<a href="terms.html" target="_blank" rel="noopener">תנאי השימוש</a>, כולל תנאי הביטול המפורטים בהם.</span></label><button type="submit" class="btn primary block booking-submit-main">שליחת בקשה</button></form><div class="mobile-booking-bar"><div><small>סיכום הזמנה</small><b id="mobile-booking-total">בחרו תאריכים</b></div><button type="submit" form="booking-form" class="btn primary">שליחת בקשה</button></div>`}`);
+    <button type="button" class="btn outline block car-share-btn" id="car-share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/></svg> שיתוף הרכב בוואטסאפ</button>
+    ${car.status !== 'hidden' ? `<div class="avail-section"><div class="avail-head"><h3>זמינות</h3><div class="avail-nav"><button type="button" class="cal-nav" id="avail-prev" aria-label="החודש הקודם">‹</button><b id="avail-month"></b><button type="button" class="cal-nav" id="avail-next" aria-label="החודש הבא">›</button></div></div><div class="avail-cal" id="avail-cal" aria-label="לוח זמינות"></div><div class="avail-legend"><span class="lg free">פנוי — לחיצה קובעת תאריך איסוף</span><span class="lg busy">תפוס</span></div></div>` : ''}
+    ${car.status === 'hidden' ? '<div class="chat-closed">הרכב אינו זמין להזמנה כרגע</div>' : `<form id="booking-form" autocomplete="on"><div class="booking-form-head"><span>${rented ? 'שריון מראש' : 'בקשת הזמנה'}</span><h3>בחירת מועד וקבלת מחיר</h3><small>כל השעות לפי ניו יורק (ET)</small></div>${rented ? `<div class="notice">🕐 הרכב מושכר כרגע — אפשר לשריין אותו מראש: בחרו תאריכים עתידיים, ובעל הרכב יאשר בהתאם לזמינות בתאריכים שבחרתם.${freesAt ? ` צפוי להתפנות בערך ב־${fmtDate(freesAt)}.` : ''}</div>` : ''}<div class="form-grid">${dateField('startDate', 'תאריך איסוף', bStart)}<div class="field"><label>שעת איסוף</label><select name="startHour">${hourOptions(bStartH)}</select></div>${dateField('endDate', 'תאריך החזרה', bEnd)}<div class="field"><label>שעת החזרה</label><select name="endHour">${hourOptions(bEndH)}</select></div></div><div class="booking-est" id="booking-est" aria-live="polite"></div><div class="field"><label>אופן קבלה</label><select name="fulfillment"><option value="pickup" ${draft.fulfillment !== 'delivery' ? 'selected' : ''}>איסוף עצמי</option>${car.deliveryEnabled ? `<option value="delivery" ${draft.fulfillment === 'delivery' ? 'selected' : ''}>מסירה</option>` : ''}</select></div><div class="field" id="delivery-address-field"><label>כתובת מסירה</label><input name="deliveryAddress" autocomplete="street-address" value="${esc(draft.deliveryAddress || '')}" placeholder="רחוב, מספר, עיר"></div><label class="booking-consent"><input type="checkbox" name="termsAccepted" required><span>קראתי ואני מסכים/ה ל<a href="terms.html" target="_blank" rel="noopener">תנאי השימוש</a>, כולל תנאי הביטול המפורטים בהם.</span></label><button type="submit" class="btn primary block booking-submit-main" data-label="${rented ? 'שליחת בקשת שריון' : 'שליחת בקשה'}">${rented ? 'שליחת בקשת שריון' : 'שליחת בקשה'}</button></form><div class="mobile-booking-bar"><div><small>${rented ? 'שריון מראש' : 'סיכום הזמנה'}</small><b id="mobile-booking-total">בחרו תאריכים</b></div><button type="submit" form="booking-form" class="btn primary" data-label="${rented ? 'שליחת בקשת שריון' : 'שליחת בקשה'}">${rented ? 'בקשת שריון' : 'שליחת בקשה'}</button></div>`}`);
   const galleryImg = document.querySelector('#gallery-img');
   galleryImg?.addEventListener('error', event => { event.currentTarget.src = fallbackImage; }, {once: true});
   document.querySelectorAll('[data-photo]').forEach(button => button.onclick = () => {
@@ -840,6 +888,57 @@ export function openCar(id) {
     const counter = document.querySelector('#gallery-count');
     if (counter) counter.textContent = `${Number(button.dataset.idx) + 1} מתוך ${document.querySelectorAll('[data-photo]').length}`;
   });
+  // Share: the link points at the share-card endpoint, so WhatsApp previews THIS car's photo and
+  // price (crawlers don't run JS); real visitors get forwarded straight to the car's deep link.
+  document.querySelector('#car-share')?.addEventListener('click', async () => {
+    const shareUrl = `${location.origin}/api/share?car=${encodeURIComponent(car.id)}`;
+    const text = `${car.make || ''} ${car.model || ''}${car.year ? ' ' + car.year : ''} להשכרה בקראון הייטס · Crown Drive`.trim();
+    try {
+      if (navigator.share) await navigator.share({title: 'Crown Drive', text, url: shareUrl});
+      else { await navigator.clipboard.writeText(`${text}\n${shareUrl}`); toast('הקישור הועתק — הדביקו בוואטסאפ'); }
+    } catch {}  // the user closed the share sheet — nothing to do
+  });
+
+  // --- Availability calendar (design doc §10 + the pre-reserve flow): busy days come from the PUBLIC
+  // reservations map (approved/active ranges only — no personal data). Tapping a FREE future day drops
+  // it straight into the pickup-date field and reprices. Booking validation stays authoritative.
+  const availCal = document.querySelector('#avail-cal');
+  if (availCal) {
+    let availView = new Date();
+    const availRanges = Object.values(store.reservations?.[car.id] || {})
+      .map(r => [new Date(r.startAt).getTime(), new Date(r.endAt).getTime()])
+      .filter(([s, e]) => Number.isFinite(s) && Number.isFinite(e));
+    const paintAvail = () => {
+      const y = availView.getFullYear(), mo = availView.getMonth();
+      document.querySelector('#avail-month').textContent = new Intl.DateTimeFormat('he-IL', {month: 'long', year: 'numeric'}).format(new Date(y, mo, 1));
+      const startDay = new Date(y, mo, 1).getDay();
+      const daysInMonth = new Date(y, mo + 1, 0).getDate();
+      const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+      let cells = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'].map(d => `<span class="cal-dow">${d}</span>`).join('');
+      for (let i = 0; i < startDay; i++) cells += '<span></span>';
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dayStart = new Date(y, mo, d).getTime(), dayEnd = dayStart + 86400000;
+        const busy = availRanges.some(([s, e]) => s < dayEnd && e > dayStart);
+        const past = dayStart < todayStart.getTime();
+        const iso = `${y}-${pad2(mo + 1)}-${pad2(d)}`;
+        cells += `<button type="button" class="avail-day${busy ? ' busy' : ''}${past ? ' past' : ''}" data-avail-day="${iso}" ${past || busy ? 'disabled' : ''} aria-label="${iso} ${busy ? 'תפוס' : 'פנוי'}">${d}</button>`;
+      }
+      availCal.innerHTML = cells;
+      availCal.querySelectorAll('[data-avail-day]:not(:disabled)').forEach(dayBtn => dayBtn.onclick = () => {
+        const hidden = document.querySelector('#booking-form input[name="startDate"]');
+        if (!hidden) return;
+        hidden.value = dayBtn.dataset.availDay;
+        const dateBtn = hidden.parentElement.querySelector('[data-date-btn]');
+        if (dateBtn) { dateBtn.classList.add('has-val'); const label = dateBtn.querySelector('span'); if (label) label.textContent = fmtHe(dayBtn.dataset.availDay); }
+        hidden.dispatchEvent(new Event('change', {bubbles: true}));
+        toast('תאריך האיסוף עודכן');
+      });
+    };
+    document.querySelector('#avail-prev').onclick = () => { availView = new Date(availView.getFullYear(), availView.getMonth() - 1, 1); paintAvail(); };
+    document.querySelector('#avail-next').onclick = () => { availView = new Date(availView.getFullYear(), availView.getMonth() + 1, 1); paintAvail(); };
+    paintAvail();
+  }
+
   document.querySelector('[data-video]')?.addEventListener('click', event => {
     const url = event.currentTarget.dataset.video;
     const main = document.querySelector('.gallery-main');
@@ -920,8 +1019,9 @@ export function openCar(id) {
       closeModal();
       // Clear success screen (mobile audit #26): booking number, status, what happens next, and a direct
       // link to the personal area — instead of a toast that vanishes before the renter reads it.
-      modal(`<div class="modal-head"><h2>✓ הבקשה נשלחה!</h2><button class="close" data-close-modal>×</button></div>
+      modal(`<div class="modal-head"><h2>הבקשה נשלחה!</h2><button class="close" data-close-modal>×</button></div>
         <div class="booking-success">
+          <div class="success-check" aria-hidden="true"><svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24"/><path d="M15 27l8 8 15-16"/></svg></div>
           <div class="summary"><span>מספר הזמנה</span><b dir="ltr">${esc(String(bookingId || '').slice(-7).toUpperCase())}</b></div>
           <div class="summary"><span>רכב</span><b>${esc(car.make || '')} ${esc(car.model || '')}</b></div>
           <div class="summary"><span>סטטוס</span><b><span class="status-badge pending">ממתינה לאישור</span></b></div>

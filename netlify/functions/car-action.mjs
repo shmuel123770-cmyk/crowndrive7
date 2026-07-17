@@ -1,5 +1,6 @@
-import {getAdmin, verify, json, isAdmin, profile, cleanText, audit, notifyAdmin, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, isAdmin, profile, cleanText, audit, notifyAdmin, notifyUser, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
 import {rateLimit, tooMany} from './_ratelimit.mjs';
+import {smsUser} from './_sms.mjs';
 // A photo is either an inline data-URL image (stored straight in the record — capped at ~1MB)
 // or an https link. Anything else is dropped.
 const httpsUrl = value => {
@@ -112,6 +113,18 @@ export async function handler(event) {
         // Hiding removes the car from the public mirror entirely (audit #45); unhiding restores it.
         [`publicCars/${id}`]: status !== 'hidden' ? stamped : null,
       });
+      // Pre-reserve waitlist: the owner flipped the car back to AVAILABLE — renters with a pending
+      // request hear about it right away (best-effort; requires Twilio env).
+      if (status === 'available' && existing.status === 'rented') {
+        try {
+          const pendSnap = await db.ref('bookings').orderByChild('carId').equalTo(id).once('value');
+          const waitingUids = [...new Set(Object.values(pendSnap.val() || {}).filter(b => b?.status === 'pending').map(b => b.renterUid).filter(Boolean))];
+          for (const uid of waitingUids) {
+            await notifyUser(uid, 'reserve', `הרכב ששריינתם (${existing.make || 'רכב'} ${existing.model || ''}) התפנה! בעל הרכב יאשר בהתאם לתאריכים שבחרתם`);
+            await smsUser(uid, `CrownDrive: הרכב ששריינתם (${existing.make || 'רכב'} ${existing.model || ''}) התפנה! בעל הרכב יאשר את בקשתכם בהתאם לתאריכים שבחרתם.`);
+          }
+        } catch (error) { console.warn('waitlist sms skipped', error?.message); }
+      }
       await audit(token.uid, 'car_status', 'car', id, {status});
       return json(200, {ok: true});
     }

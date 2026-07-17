@@ -1,4 +1,4 @@
-import {getAdmin, verify, json, profile, cleanText, audit, notifyAdmin, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, profile, cleanText, audit, notifyAdmin, notifyUser, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
 import {smsUser, smsAdmin} from './_sms.mjs';
 import {rateLimit, tooMany} from './_ratelimit.mjs';
 
@@ -90,7 +90,10 @@ export async function handler(event) {
     }
     const carId = cleanText(body.carId, 100);
     const car = (await db.ref(`cars/${carId}`).once('value')).val();
-    if (!car || car.status !== 'available') return json(409, {error: 'הרכב אינו זמין להזמנה כרגע'});  // audit #12: was only blocking 'hidden'
+    // A RENTED car can be pre-reserved for later dates (user feature "שריון מראש"): the request is
+    // created as pending and the owner approves it against the chosen dates. The overlap check below
+    // still rejects dates that clash with an approved/active booking. Only hidden cars are closed.
+    if (!car || !['available', 'rented'].includes(car.status)) return json(409, {error: 'הרכב אינו זמין להזמנה כרגע'});
     if (car.ownerUid === token.uid) return json(400, {error: 'אי אפשר להזמין את הרכב של עצמך'});
     const age = ageFromBirthDate(userProfile.birthDate);
     if (age === null) return json(400, {error: 'יש להזין תאריך לידה בפרופיל לפני הזמנה'});
@@ -149,6 +152,7 @@ export async function handler(event) {
     });
     await audit(token.uid, 'booking_create', 'booking', id, {carId});
     await notifyAdmin('booking', `הזמנה חדשה לרכב ${car.make} ${car.model}`, {bookingId: id, carId, renterUid: token.uid});
+    await notifyUser(car.ownerUid, 'booking', `בקשת הזמנה חדשה לרכב ${car.make} ${car.model} — ממתינה לאישורך`, {bookingId: id});
     // SMS: the owner gets told a booking came in (+ the admin). Best-effort — never blocks the response.
     await smsUser(car.ownerUid, `CrownDrive: התקבלה בקשת הזמנה חדשה לרכב ${car.make || ''} ${car.model || ''}. היכנסו לאזור האישי לאישור.`);
     await smsAdmin(`CrownDrive: הזמנה חדשה לרכב ${car.make || ''} ${car.model || ''}.`);

@@ -5,7 +5,7 @@ import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, s
 import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './media.js';
 import {legacyStatus, migrateLegacy} from './migrate.js';
 import {api} from './api.js';
-import {saveAuthReturn, afterAuthDestination, openCar, CAR_MAKES, CAR_TYPES, ICON, MODELS_BY_MAKE, RENTAL_MODES, TAB_ICONS, app, avatarHtml, carImage, carPhotoList, carStatusPill, carYears, composePhone, emptyState, fallbackImage, kpi, phoneField, roleName, selectOptions, bindCarButtons, carGrid, featuredFirst} from './views.js';
+import {saveAuthReturn, afterAuthDestination, openCar, CAR_MAKES, CAR_TYPES, ICON, MODELS_BY_MAKE, RENTAL_MODES, TAB_ICONS, app, avatarHtml, carImage, carPhotoList, carStatusPill, carYears, composePhone, emptyState, fallbackImage, kpi, phoneField, roleName, selectOptions, bindCarButtons, carGrid, featuredFirst, userUnreadNotifs} from './views.js';
 
 // Incremental list rendering (audit #30 / design spec §22): long admin lists paint the first 30
 // records and grow by 50 per tap, so the DOM stays light as the community grows. State survives
@@ -20,7 +20,7 @@ function dashboardLayout(title, tabs, active, content, actions = '', navFooter =
   return `<div class="dashboard-shell"><header class="dashboard-head">
       <div class="dash-head-top">
         <div class="dash-head-titles"><p class="eyebrow">${eyebrow}</p><h1>${esc(title)}</h1></div>
-        <div class="dash-head-controls"><button type="button" class="avatar-btn" data-goto-profile title="לפרופיל שלי">${avatarHtml(store.profile, 60)}</button><button type="button" class="dash-close" data-route="home" aria-label="סגירת האזור האישי">✕</button></div>
+        <div class="dash-head-controls"><button type="button" class="dash-bell" data-goto-notifications aria-label="התראות">🔔${userUnreadNotifs() ? `<span class="tab-badge">${userUnreadNotifs()}</span>` : ''}</button><button type="button" class="avatar-btn" data-goto-profile title="לפרופיל שלי">${avatarHtml(store.profile, 60)}</button><button type="button" class="dash-close" data-route="home" aria-label="סגירת האזור האישי">✕</button></div>
       </div>
       ${actions ? `<div class="dash-head-actions">${actions}</div>` : ''}
     </header><nav class="dashboard-tabs" aria-label="תפריט אזור אישי">${tabs.map(([key, label]) => `<button class="tab ${key === active ? 'active' : ''}" data-dashboard-tab="${key}"><i class="tab-ic">${(TAB_ICONS[key] || (() => ''))()}</i><span>${label}</span></button>`).join('')}${navFooter ? `<div class="nav-footer">${navFooter}</div>` : ''}</nav><section class="card panel dashboard-panel">${content}</section></div>`;
@@ -28,6 +28,7 @@ function dashboardLayout(title, tabs, active, content, actions = '', navFooter =
 // The dashboard tab the user is currently on. Kept across re-renders so a data event (new message,
 // booking update…) no longer resets the personal area to "overview" and bounces the user to the main page.
 function bindDashboardTabs(renderer) {
+  document.querySelector('[data-goto-notifications]')?.addEventListener('click', () => { store.dashTab = 'notifications'; renderer('notifications'); });
   document.querySelectorAll('[data-dashboard-tab]').forEach(button => button.onclick = () => {
     const tab = button.dataset.dashboardTab;
     if (tab === 'chats') { location.hash = 'chats'; return; }  // full-screen messaging page
@@ -108,16 +109,30 @@ function completeProfile() {
   };
 }
 
+// The user's in-app inbox (booking / payment / reserve updates written by the server). Opening the
+// tab stamps "seen", which clears the red badges in both nav bars.
+const NOTIF_EMOJI = {booking: '📅', payment: '💳', status: '🔔', reserve: '🚗'};
+function userNotificationsView() {
+  const rows = list(store.userNotifications).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+  const seen = Number(localStorage.getItem('cd-notif-seen') || 0);
+  try { localStorage.setItem('cd-notif-seen', String(Date.now())); } catch {}
+  return `<h2 style="margin-bottom:16px">התראות</h2><div class="list">${rows.length ? rows.map(n =>
+    `<div class="notif-row ${Number(n.createdAt || 0) > seen ? 'unread' : ''}"><span class="notif-icon">${NOTIF_EMOJI[n.type] || '🔔'}</span><div class="notif-main"><b>${esc(n.text || '')}</b><small>${fmtDate(n.createdAt)}</small></div></div>`).join('')
+    : '<div class="empty">אין התראות עדיין — עדכונים על הזמנות ותשלומים יופיעו כאן</div>'}</div>`;
+}
+
 function renterDashboard(tab = 'overview') {
+
   const bookings = myBookings();
   const verification = store.profile?.verification || {};
   const contents = {
     overview: `<div class="kpis">${kpi('calendar', bookings.filter(b => b.status === 'active').length, 'השכרות פעילות')}${kpi('check', bookings.filter(b => b.status === 'pending').length, 'ממתינות לאישור')}${kpi('car', bookings.filter(b => b.status === 'done').length, 'הושלמו')}${kpi('users', verification.status === 'approved' ? '✓' : verification.status === 'pending' ? 'בבדיקה' : 'ממתין', 'אימות רישיון')}</div><h2>הזמנות אחרונות</h2>${bookingList(bookings, 'renter')}`,
     bookings: `<h2>ההזמנות שלי</h2>${bookingList(bookings, 'renter')}`,
     profile: profileView(),
+    notifications: userNotificationsView(),
     messages: messagesView(),
   };
-  app().innerHTML = dashboardLayout('האזור האישי', [['overview','סקירה'],['bookings','הזמנות'],['chats','צ׳אטים'],['profile','פרופיל ואימות']], tab, contents[tab] || contents.overview);
+  app().innerHTML = dashboardLayout('האזור האישי', [['overview','סקירה'],['bookings','הזמנות'],['chats','צ׳אטים'],['notifications',`התראות${userUnreadNotifs() ? ` (${userUnreadNotifs()})` : ''}`],['profile','פרופיל ואימות']], tab, contents[tab] || contents.overview);
   bindDashboardTabs(renterDashboard); bindActions(); bindProfileActions();
 }
 
@@ -133,9 +148,10 @@ function ownerDashboard(tab = 'overview') {
     overview: `<div class="kpis">${kpi('car', cars.length, 'רכבים')}${kpi('check', cars.filter(c => c.status === 'available').length, 'זמינים')}${kpi('calendar', bookings.filter(b => b.status === 'pending').length, 'ממתינות לאישור')}${kpi('money', money(approvedTotal), 'הכנסות שאושרו')}</div>${pendingPayments ? `<div class="notice">💳 ${pendingPayments} הוכחות תשלום ממתינות לאישורך — בדקו בכרטיסי ההזמנות.</div>` : ''}<h2>הזמנות פעילות</h2>${bookingList(bookings.filter(b => ['pending','approved','active'].includes(b.status)), 'owner')}`,
     bookings: `<h2>הזמנות</h2>${bookingList(bookings, 'owner')}`,
     cars: `<div class="section-head"><h2>הרכבים שלי</h2><button class="btn gold" id="add-car">הוספת רכב</button></div>${carGrid(cars, true)}`,
+    notifications: userNotificationsView(),
     profile: ownerProfileView(),
   };
-  app().innerHTML = dashboardLayout('לוח בעל רכב', [['overview','סקירה'],['bookings','הזמנות'],['cars','רכבים'],['chats','צ׳אטים'],['profile','פרופיל']], tab, contents[tab] || contents.overview, '<button class="btn gold" id="add-car-head">+ הוספת רכב</button>');
+  app().innerHTML = dashboardLayout('לוח בעל רכב', [['overview','סקירה'],['bookings','הזמנות'],['cars','רכבים'],['chats','צ׳אטים'],['notifications',`התראות${userUnreadNotifs() ? ` (${userUnreadNotifs()})` : ''}`],['profile','פרופיל']], tab, contents[tab] || contents.overview, '<button class="btn gold" id="add-car-head">+ הוספת רכב</button>');
   bindDashboardTabs(ownerDashboard); bindActions(); bindCarButtons(); bindProfileActions();
   document.querySelector('#add-car')?.addEventListener('click', () => carForm());
   document.querySelector('#add-car-head')?.addEventListener('click', () => carForm());
@@ -969,7 +985,15 @@ function paymentModal(bookingId, onDone = null) {
   const bk = store.bookings?.[bookingId];
   const adminAmount = Number(bk?.adminAmount);
   const expected = Number.isFinite(adminAmount) && adminAmount > 0 ? adminAmount : Number(bk?.quote?.total || 0);
-  modal(`<div class="modal-head"><h2>דיווח על תשלום</h2><button class="close" data-close-modal>×</button></div><p class="mut">הצילום יישלח לבדיקה. התשלום ייחשב מאושר רק לאחר אישור בעל הרכב.</p><form id="payment-form"><div class="field"><label>סכום ששולם</label><input name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" ${expected ? `value="${expected.toFixed(2)}" readonly` : ''} required>${expected ? `<small>${Number.isFinite(adminAmount) && adminAmount > 0 ? 'סכום מתוקן שנקבע על ידי המנהל' : 'הסכום נקבע לפי סיכום ההזמנה'}: ${money(expected)}</small>` : ''}</div><div class="field"><label>צילום הוכחה</label><input name="file" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" required></div><div class="upload-state" role="status" aria-live="polite"></div><button class="btn primary block">שליחת הדיווח</button></form>`);
+  modal(`<div class="modal-head"><h2>דיווח על תשלום</h2><button class="close" data-close-modal>×</button></div><p class="mut">🔒 הצילום יישלח לבדיקה. התשלום ייחשב מאושר רק לאחר אישור בעל הרכב.</p><form id="payment-form"><div class="field pay-amount-field"><label>סכום ששולם</label><input name="amount" type="number" inputmode="decimal" min="0.01" step="0.01" ${expected ? `value="${expected.toFixed(2)}" readonly` : ''} required>${expected ? `<small>${Number.isFinite(adminAmount) && adminAmount > 0 ? 'סכום מתוקן שנקבע על ידי המנהל' : 'הסכום נקבע לפי סיכום ההזמנה'}: ${money(expected)}</small>` : ''}</div><label class="upload-tile" id="pay-upload-tile"><span class="tile-ic">${ICON.image}</span><b>צילום הוכחת תשלום</b><small id="pay-upload-hint">לחצו לצילום או לבחירה מהגלריה</small><input name="file" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" required></label><div class="upload-state" role="status" aria-live="polite"></div><button class="btn primary block">שליחת הדיווח</button></form>`);
+  const payFile = document.querySelector('#payment-form input[name="file"]');
+  payFile?.addEventListener('change', () => {
+    const tile = document.querySelector('#pay-upload-tile');
+    const hint = document.querySelector('#pay-upload-hint');
+    const name = payFile.files?.[0]?.name || '';
+    tile?.classList.toggle('has-file', !!name);
+    if (hint) hint.textContent = name ? `✓ ${name}` : 'לחצו לצילום או לבחירה מהגלריה';
+  });
   document.querySelector('#payment-form').onsubmit = async event => {
     event.preventDefault();
     const btn = event.submitter; if (btn) { btn.disabled = true; btn.textContent = 'מעלה…'; }
@@ -995,7 +1019,16 @@ async function viewPaymentModal(bookingId) {
 
 function handoverModal(bookingId, stage) {
   const title = stage === 'pickup' ? 'תיעוד לפני נסיעה' : 'תיעוד החזרה';
-  modal(`<div class="modal-head"><h2>${title}</h2><button class="close" data-close-modal>×</button></div><p class="mut">צלמו באור טוב והקיפו את הרכב לאט. אל תסגרו את החלון בזמן ההעלאה.</p><form id="handover-form"><div class="field"><label>סרטון הרכב מבחוץ</label><input name="video" type="file" accept="video/*" capture="environment" required></div><div class="field"><label>תמונה של הדלק והמיילים</label><input name="dash" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" required></div><div class="form-grid"><div class="field"><label>מיילים / קילומטראז׳</label><input name="mileage" type="number" inputmode="numeric" min="0" required></div><div class="field"><label>רמת דלק</label><select name="fuel"><option>מלא</option><option>3/4</option><option>1/2</option><option>1/4</option><option>ריק</option></select></div></div><div class="field"><label>נזקים והערות</label><textarea name="notes" maxlength="2000" placeholder="תארו שריטות, מכות או מידע שחשוב לתעד"></textarea></div><div class="upload-state" role="status" aria-live="polite"></div><button class="btn primary block">שמירת התיעוד</button></form>`);
+  modal(`<div class="modal-head"><h2>${title}</h2><button class="close" data-close-modal>×</button></div><p class="mut">צלמו באור טוב והקיפו את הרכב לאט. אל תסגרו את החלון בזמן ההעלאה.</p><form id="handover-form"><label class="upload-tile"><span class="tile-ic">${ICON.video}</span><b>סרטון הרכב מבחוץ</b><small data-tile-hint>הקיפו את הרכב לאט — לחצו לצילום</small><input name="video" type="file" accept="video/*" capture="environment" required></label><label class="upload-tile"><span class="tile-ic">${ICON.image}</span><b>תמונת הדלק והמיילים</b><small data-tile-hint>צלמו את לוח המחוונים</small><input name="dash" type="file" accept="image/jpeg,image/png,image/webp" capture="environment" required></label><div class="form-grid"><div class="field"><label>מיילים / קילומטראז׳</label><input name="mileage" type="number" inputmode="numeric" min="0" required></div><div class="field"><label>רמת דלק</label><select name="fuel"><option>מלא</option><option>3/4</option><option>1/2</option><option>1/4</option><option>ריק</option></select></div></div><div class="field"><label>נזקים והערות</label><textarea name="notes" maxlength="2000" placeholder="תארו שריטות, מכות או מידע שחשוב לתעד"></textarea></div><div class="upload-state" role="status" aria-live="polite"></div><button class="btn primary block">שמירת התיעוד</button></form>`);
+  // Shared tile feedback: chosen file → green tile + ✓ filename.
+  document.querySelectorAll('#handover-form .upload-tile input[type="file"]').forEach(input => input.addEventListener('change', () => {
+    const tile = input.closest('.upload-tile');
+    const hint = tile.querySelector('[data-tile-hint]');
+    const name = input.files?.[0]?.name || '';
+    if (hint && !hint.dataset.orig) hint.dataset.orig = hint.textContent;
+    tile.classList.toggle('has-file', !!name);
+    if (hint) hint.textContent = name ? `✓ ${name}` : hint.dataset.orig;
+  }));
   document.querySelector('#handover-form').onsubmit = async event => {
     event.preventDefault();
     const btn = event.submitter; if (btn) { btn.disabled = true; btn.textContent = 'מעלה…'; }

@@ -78,7 +78,7 @@ const S = r => r.statusCode;
 const B = r => JSON.parse(r.body);
 
 const fn = {};
-for (const f of ['profile-save', 'car-action', 'booking-create', 'booking-action', 'message-send', 'payment-submit', 'rating-submit', 'document-register', 'verification-review', 'private-car-details', 'user-private-profile', 'media-sign-upload', 'media-upload', 'media-migrate', 'media-sign-read', 'car-media-public', 'admin-action', 'migrate-legacy', 'car-image-search', 'inquiry-start', 'image-rehost'])
+for (const f of ['profile-save', 'car-action', 'booking-create', 'booking-action', 'message-send', 'payment-submit', 'rating-submit', 'document-register', 'verification-review', 'private-car-details', 'user-private-profile', 'media-sign-upload', 'media-upload', 'media-migrate', 'media-sign-read', 'car-media-public', 'admin-action', 'migrate-legacy', 'car-image-search', 'inquiry-start', 'image-rehost', 'share'])
   fn[f] = (await import(`../netlify/functions/${f}.mjs`)).handler;
 
 // ---------- seed ----------
@@ -491,6 +491,30 @@ r = await call(fn['image-rehost'], 'r1', {url: 'https://upload.wikimedia.org/wik
 check('שוכר לא יכול לאחסן תמונות רכב (403)', S(r) === 403);
 r = await call(fn['image-rehost'], 'o1', {url: 'https://upload.wikimedia.org/wikipedia/commons/a/ab/Car.png'});
 check('תמונת ויקימדיה מאוחסנת אצלנו', S(r) === 200 && /^https:/.test(B(r).url || ''));
+
+console.log('\nתרחיש U: שריון מראש לרכב מושכר');
+r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'Reserve', model: 'Ahead', dailyPrice: 100, photos: ['https://a/ra.jpg']}});
+const carRes = B(r).id;
+await call(fn['car-action'], 'o1', {action: 'status', id: carRes, status: 'rented'});
+const resStart = new Date(Date.now() + 20 * 86400000), resEnd = new Date(resStart.getTime() + 2 * 86400000);
+r = await call(fn['booking-create'], 'r1', {carId: carRes, startAt: resStart.toISOString().slice(0, 16), endAt: resEnd.toISOString().slice(0, 16), termsAccepted: true, requestId: 'pre-reserve-1'});
+check('רכב מושכר ניתן לשריון מראש (ממתין לאישור)', S(r) === 200 && get(`bookings/${B(r).id}/status`) === 'pending');
+const resBookingId = B(r).id;
+r = await call(fn['booking-action'], 'o1', {action: 'status', bookingId: resBookingId, status: 'approved'});
+check('בעל הרכב מאשר שריון לפי התאריכים', S(r) === 200 && get(`bookings/${resBookingId}/status`) === 'approved');
+await call(fn['car-action'], 'o1', {action: 'status', id: carRes, status: 'hidden'});
+r = await call(fn['booking-create'], 'r1', {carId: carRes, startAt: resStart.toISOString().slice(0, 16), endAt: resEnd.toISOString().slice(0, 16), termsAccepted: true, requestId: 'pre-reserve-2'});
+check('רכב מוסתר עדיין חסום להזמנה (409)', S(r) === 409);
+
+console.log('\nתרחיש W: כרטיס שיתוף לוואטסאפ (share)');
+r = await fn['share']({httpMethod: 'GET', queryStringParameters: {car: carId}});
+check('כרטיס השיתוף נושא את פרטי הרכב', S(r) === 200 && r.body.includes('Toyota') && r.body.includes('og:image'));
+r = await fn['share']({httpMethod: 'GET', queryStringParameters: {car: 'no-such-car'}});
+check('רכב לא קיים ← כרטיס כללי של האתר', S(r) === 200 && r.body.includes('Crown Drive') && !r.body.includes('Toyota'));
+
+console.log('\nתרחיש X: תיבת התראות למשתמש (userNotifications)');
+check('בעל הרכב קיבל התראה על בקשת הזמנה', Object.values(get('userNotifications/o1') || {}).some(n => n.type === 'booking'));
+check('השוכר קיבל התראה על אישור/דחייה', Object.values(get('userNotifications/r1') || {}).some(n => n.type === 'status'));
 
 console.log(`\n========== ${passed} עברו · ${failed} נכשלו ==========`);
 process.exit(failed ? 1 : 0);

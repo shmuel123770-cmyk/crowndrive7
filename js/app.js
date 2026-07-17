@@ -1,6 +1,6 @@
 import {startPublic, store} from './store.js';
 import {authReady} from './auth.js';
-import {nav, bottomNav, home, cars, authView, dashboard, chatsPage, openAdminLogin} from './views.js';
+import {nav, bottomNav, home, cars, authView, dashboard, chatsPage, openAdminLogin, openCar} from './views.js';
 import {toast, closeModal, resetPaint, enhanceUI} from './core.js';
 
 // Start data + auth in the background — do NOT block first paint on them.
@@ -50,12 +50,20 @@ function scheduleRender() {
 
 let rendering = false;
 let lastRoute = null;  // for the subtle enter-transition, fired only on a real route change (not re-renders)
+let pendingCarLink = null;  // #car=<id> deep link waiting for the catalog data to arrive
 const scrollMemory = {};  // per-route scroll position — switching tabs keeps your place (design spec §6)
 function render() {
   if (rendering) return;
   rendering = true;
   try {
-    const requestedRoute = location.hash.slice(1) || 'home';
+    let requestedRoute = location.hash.slice(1) || 'home';
+    // Deep link #car=<id> (share links / WhatsApp): land on the catalog and open that car once the
+    // public data is in. The hash is normalized to #cars so the rest of the router behaves as usual.
+    if (requestedRoute.startsWith('car=')) {
+      pendingCarLink = decodeURIComponent(requestedRoute.slice(4));
+      history.replaceState(null, '', '#cars');
+      requestedRoute = 'cars';
+    }
     const route = routes[requestedRoute] ? requestedRoute : 'home';
     if (route !== requestedRoute) history.replaceState(null, '', '#home');
     store.route = route;
@@ -82,6 +90,13 @@ function render() {
     // tabs must not lose your place) — captured before the new route repaints.
     if (route !== lastRoute && lastRoute) scrollMemory[lastRoute] = window.scrollY;
     (routes[route] || home)();
+    // The shared car opens as soon as its data has arrived (first render may be pre-data).
+    if (pendingCarLink && store.publicReady) {
+      const linkedCar = pendingCarLink;
+      pendingCarLink = null;
+      if (store.cars[linkedCar]) setTimeout(() => openCar(linkedCar), 80);
+      else toast('הרכב מהקישור כבר אינו זמין');
+    }
     // Subtle app-like enter transition — only when the route actually changed, so data-driven re-renders
     // (incoming messages, store updates) don't re-animate and flicker.
     if (route !== lastRoute) {
@@ -145,7 +160,7 @@ document.addEventListener('click', event => {
 window.addEventListener('hashchange', render);
 window.addEventListener('storechange', event => {
   const key = String(event.detail || '');
-  if (['cars','ratings','profile','verification-status','bookings','payments','users','admin-notifications','config','private-ready','private-stopped'].includes(key)) scheduleRender();
+  if (['cars','ratings','profile','verification-status','bookings','payments','users','admin-notifications','config','private-ready','private-stopped','reservations','user-notifications'].includes(key)) scheduleRender();
 });
 window.addEventListener('authchange', scheduleRender);
 window.addEventListener('unhandledrejection', event => {
@@ -161,7 +176,7 @@ window.addEventListener('error', event => {
   console.error('window error', event.error || event.message);
 });
 // Preserve valid deep links (cars, dashboard, chats, auth). Unknown routes alone return home.
-if (location.hash && !routes[location.hash.slice(1)]) history.replaceState(null, '', '#home');
+if (location.hash && !routes[location.hash.slice(1)] && !location.hash.startsWith('#car=')) history.replaceState(null, '', '#home');
 
 // Keep the app usable on weak mobile connections: show an explicit connection state and let forms remain
 // on screen instead of looking frozen. Firebase/API calls still provide their own retry/error handling.
