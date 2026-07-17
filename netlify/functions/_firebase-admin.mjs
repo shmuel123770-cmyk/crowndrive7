@@ -92,6 +92,37 @@ export function notifyUser(uid, type, text, extra = {}) {
   return getAdmin().database().ref(`userNotifications/${uid}`).push({type, text: cleanText(text, 300), ...extra, createdAt: Date.now()})
     .catch(error => { console.warn('user notification skipped', error?.message); });
 }
+// Web-Push (FCM) to a user across ALL their registered devices — reaches them even when the site is
+// CLOSED, so an owner never misses a rental request. Best-effort: a push failure never breaks the
+// business action. A DATA-less `notification` message is sent so the browser displays it on its own
+// (the SW only handles the click); dead tokens are pruned automatically.
+export async function sendPush(uid, title, body, url = '/') {
+  if (!uid) return;
+  try {
+    const db = getAdmin().database();
+    const snap = await db.ref(`users/${uid}/pushTokens`).once('value');
+    const entries = Object.entries(snap.val() || {});
+    const map = entries.map(([key, value]) => [key, typeof value === 'string' ? value : value?.token]).filter(([, t]) => !!t);
+    if (!map.length) return;
+    const message = {
+      tokens: map.map(([, t]) => t),
+      notification: {title: String(title || 'Crown Drive').slice(0, 120), body: String(body || '').slice(0, 300)},
+      data: {url: String(url || '/')},
+      webpush: {
+        fcmOptions: {link: String(url || '/')},
+        notification: {icon: '/icons/icon-192.png', badge: '/icons/icon-192.png', dir: 'rtl', lang: 'he'},
+        headers: {Urgency: 'high'},
+      },
+    };
+    const res = await getAdmin().messaging().sendEachForMulticast(message);
+    const updates = {};
+    res.responses.forEach((r, i) => {
+      const code = r.error?.code || '';
+      if (!r.success && /not-registered|invalid-registration-token|invalid-argument|mismatched-credential/.test(code)) updates[`users/${uid}/pushTokens/${map[i][0]}`] = null;
+    });
+    if (Object.keys(updates).length) await db.ref().update(updates).catch(() => {});
+  } catch (error) { console.warn('push send skipped', error?.message); }
+}
 // Audit logging is best-effort — it must NEVER turn a successful business action into a 500 for the
 // user (audit #11). A failed audit write is swallowed + logged, so `await audit(...)` never rejects.
 export function audit(actorUid, action, entityType, entityId, details = {}) {

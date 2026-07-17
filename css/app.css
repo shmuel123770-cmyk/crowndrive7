@@ -2073,3 +2073,79 @@ body[data-page="dashboard"] .dashboard-tabs .tab-group-label:first-child{border-
 /* Give the pill a positioned ancestor WITHOUT breaking the mobile slide-over (there .chat-pane is
    already position:absolute, which is itself a containing block). Only desktop's static pane needs this. */
 @media(min-width:821px){ .chat-pane{position:relative} }
+
+/* ===== OWNER REQUEST POPUP (rev162) — prominent incoming-rental-request modal ===== */
+.req-pop{display:flex;flex-direction:column;gap:14px}
+.req-pop-top{display:flex;align-items:center;gap:12px}
+.req-pop-bell{width:46px;height:46px;flex:0 0 auto;border-radius:50%;display:grid;place-items:center;font-size:1.4rem;background:var(--warn-bg);box-shadow:inset 0 0 0 1px rgba(229,169,79,.3);animation:reqBell 1.4s ease-in-out infinite}
+@keyframes reqBell{0%,100%{transform:rotate(0)}20%{transform:rotate(-12deg)}40%{transform:rotate(10deg)}60%{transform:rotate(-6deg)}80%{transform:rotate(3deg)}}
+@media(prefers-reduced-motion:reduce){.req-pop-bell{animation:none}}
+.req-pop-title{flex:1;min-width:0}
+.req-pop-title b{display:block;font-size:1.12rem;font-weight:800}
+.req-pop-title small{color:var(--muted)}
+.req-car{font-size:1.15rem;font-weight:800;color:var(--brand-d);padding:2px 2px 0}
+.req-rows{display:flex;flex-direction:column;gap:2px;background:var(--bg-soft);border:1px solid var(--line);border-radius:14px;padding:6px 4px}
+.req-row{display:flex;justify-content:space-between;gap:12px;padding:9px 12px;font-size:.9rem}
+.req-row+.req-row{border-top:1px solid var(--hair)}
+.req-row span{color:var(--muted)}
+.req-row b{font-weight:700;text-align:left}
+.req-row a{color:var(--brand-d)}
+.req-actions{display:flex;flex-direction:column;gap:9px}
+.req-links{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.req-links .btn{margin:0}
+/* Delete-message button — subtle, on the bubble corner (appears on hover on desktop; tappable on mobile) */
+.chat-msgs .message{position:relative}
+.msg-del{position:absolute;top:3px;inset-inline-start:3px;width:26px;height:26px;border:none;border-radius:8px;background:rgba(0,0,0,.12);color:inherit;font-size:.72rem;line-height:1;cursor:pointer;opacity:0;transition:opacity .15s,background .15s;display:grid;place-items:center;padding:0}
+.message:hover .msg-del,.message:focus-within .msg-del{opacity:.85}
+.msg-del:hover{background:rgba(215,0,21,.85);color:#fff;opacity:1}
+.message.mine .msg-del{background:rgba(255,255,255,.2)}
+@media(hover:none){.msg-del{opacity:.5}}
+
+/* ===== RENTER STATUS POPUP (rev163) — approval/rejection outcome ===== */
+.req-pop-bell.ok{background:var(--ok-bg);box-shadow:inset 0 0 0 1px rgba(63,191,135,.3);animation:none}
+.req-pop-bell.danger{background:var(--danger-bg);box-shadow:inset 0 0 0 1px rgba(255,107,114,.3);animation:none}
+.status-note{margin:0;font-size:.9rem;color:var(--muted);line-height:1.55;padding:0 2px}
+
+/* ===== RENTER NEXT-STEPS CHECKLIST (rev164) — what's left after approval ===== */
+.next-steps{margin:12px 0 4px;padding:13px 15px;border:1px solid var(--warn);border-radius:14px;background:var(--warn-bg)}
+.next-steps.complete{border-color:var(--ok);background:var(--ok-bg)}
+.next-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.next-head b{font-size:.92rem;font-weight:800;color:var(--text)}
+.next-count{flex:0 0 auto;background:var(--warn);color:#fff;font-size:.78rem;font-weight:800;padding:2px 10px;border-radius:99px}
+.next-items{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:11px}
+.next-item{font-size:.8rem;font-weight:700;padding:5px 11px;border-radius:99px;background:var(--surface);border:1px solid var(--line);color:var(--muted)}
+.next-item.ok{color:var(--ok);border-color:rgba(63,191,135,.4);background:var(--ok-bg)}
+.next-steps.complete .next-items{margin-bottom:0}
+.next-steps .btn.gold{margin:0}
+
+/* ===== RENTER PICKUP GUIDE (rev165) — numbered order: location+key → documentation → payment ===== */
+.next-flow{list-style:none;margin:6px 0 12px;padding:0;display:flex;flex-direction:column;gap:12px}
+.nf-step{display:flex;gap:11px;align-items:flex-start}
+.nf-num{flex:0 0 auto;width:26px;height:26px;border-radius:50%;background:var(--brand);color:#fff;font-weight:800;font-size:.86rem;display:grid;place-items:center;margin-top:1px}
+.nf-body{flex:1;min-width:0}
+.nf-body>b{display:block;font-size:.92rem;font-weight:800;color:var(--text)}
+.nf-body>small{display:block;color:var(--muted);font-size:.8rem;margin:2px 0 7px;line-height:1.45}
+.nf-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:2px}
+.nf-actions .btn{margin:0;padding:7px 13px;font-size:.8rem}
+.next-steps.owner-hint{border-color:var(--brand-l);background:rgba(63,107,142,.08)}
+.oh-note{display:block;color:var(--muted);font-size:.82rem;line-height:1.5;margin-bottom:10px}
+
+/* ===== OWNER SEES RENTER PROGRESS (rev166) ===== */
+.oh-progress{margin:10px 0 4px;padding:11px 13px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.oh-progress-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.oh-progress-head b{font-size:.86rem;font-weight:800}
+.next-count.ok{background:var(--ok)}
+.oh-ready{margin:8px 0 2px;color:var(--ok);font-weight:800;font-size:.9rem}
+.next-steps.owner-hint.complete{border-color:var(--ok);background:var(--ok-bg)}
+
+/* ===== WEB PUSH ENABLE BANNER (rev166) ===== */
+.push-banner{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,rgba(63,107,142,.12),rgba(63,107,142,.05));border:1px solid var(--brand-l);border-radius:16px;padding:13px 15px;margin-bottom:14px}
+.push-banner .pb-ic{font-size:1.5rem;flex:0 0 auto}
+.push-banner .pb-body{flex:1;min-width:0}
+.push-banner .pb-body b{display:block;font-size:.92rem;font-weight:800;color:var(--text)}
+.push-banner .pb-body small{color:var(--muted);font-size:.8rem}
+.push-banner .pb-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.push-banner .btn.primary{margin:0;padding:9px 16px;font-size:.85rem}
+.pb-close{background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;width:30px;height:30px;border-radius:8px;flex:0 0 auto}
+.pb-close:hover{background:rgba(0,0,0,.06)}
+@media(max-width:520px){.push-banner{flex-wrap:wrap}.push-banner .pb-actions{width:100%;justify-content:flex-end}}

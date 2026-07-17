@@ -1,4 +1,4 @@
-import {getAdmin, verify, json, profile, cleanText, audit, notifyAdmin, notifyUser, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, profile, cleanText, audit, notifyAdmin, notifyUser, sendPush, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
 import {smsUser, smsAdmin} from './_sms.mjs';
 import {rateLimit, tooMany} from './_ratelimit.mjs';
 
@@ -130,6 +130,10 @@ export async function handler(event) {
       carId,
       ownerUid: car.ownerUid,
       renterUid: token.uid,
+      // The owner is allowed to see who's asking from 'pending' (product decision) — store the renter's
+      // name + phone on the booking so the owner's request popup and cards show them instantly.
+      renterName: cleanText(userProfile?.name, 100),
+      renterPhone: cleanText(userProfile?.phone, 40),
       startAt: startRaw,
       endAt: endRaw,
       startLocal,
@@ -154,6 +158,8 @@ export async function handler(event) {
     await audit(token.uid, 'booking_create', 'booking', id, {carId});
     await notifyAdmin('booking', `הזמנה חדשה לרכב ${car.make} ${car.model}`, {bookingId: id, carId, renterUid: token.uid});
     await notifyUser(car.ownerUid, 'booking', `בקשת הזמנה חדשה לרכב ${car.make} ${car.model} — ממתינה לאישורך`, {bookingId: id});
+    // Web-Push reaches the owner even if the site is CLOSED — this is what stops missed requests.
+    await sendPush(car.ownerUid, '🔔 בקשת השכרה חדשה', `${car.make || 'רכב'} ${car.model || ''} — ${cleanText(userProfile?.name, 60) || 'שוכר'} · ${quote?.total ? '$' + quote.total : ''}`.trim(), '/#dashboard');
     // SMS: the owner gets told a booking came in (+ the admin). Best-effort — never blocks the response.
     await smsUser(car.ownerUid, `CrownDrive: התקבלה בקשת הזמנה חדשה לרכב ${car.make || ''} ${car.model || ''}. היכנסו לאזור האישי לאישור.`);
     await smsAdmin(`CrownDrive: הזמנה חדשה לרכב ${car.make || ''} ${car.model || ''}.`);

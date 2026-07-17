@@ -13,7 +13,7 @@ import {fileURLToPath} from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dist = path.join(root, 'dist');
 
-const runtimeFiles = ['index.html', 'privacy.html', 'terms.html', 'firebase-config.js', 'manifest.json', 'sw.js', '_headers'];
+const runtimeFiles = ['index.html', 'privacy.html', 'terms.html', 'firebase-config.js', 'manifest.json', 'sw.js', 'firebase-messaging-sw.js', '_headers'];
 const runtimeDirs = ['js', 'css', 'icons'];
 const optionalPublicFiles = ['googlef21d119a5e0daadb.html'];
 

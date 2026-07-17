@@ -208,6 +208,8 @@ export async function sendMessage(payload) {
   }
   return api('message-send', payload);
 }
+// Delete one chat message (server verifies you sent it, or that you're an admin).
+export async function deleteMessage(ref) { return api('message-send', ref); }
 export async function carMediaPublic(path) { return (await api('car-media-public', {path})).url; }
 export async function adminAction(action, payload = {}) { return api('admin-action', {action, ...payload}); }
 export async function saveHandover(id, stage, data) { return api('booking-action', {action: 'handover', bookingId: id, stage, data}); }

@@ -22,6 +22,21 @@ export async function handler(event) {
     if (!body) return json(400, {error: 'הבקשה גדולה או פגומה — נסו תמונה קטנה יותר'});
     const db = getAdmin().database();
     const admin = await isAdmin(token.uid);
+    // Delete a single message: the SENDER may delete their own; an admin may delete any. Verified by
+    // reading the message and matching senderUid (which also proves the caller was in that thread).
+    if (body.deleteId) {
+      const delId = cleanText(body.deleteId, 200);
+      const path = body.thread === 'admin' ? `messages/admin/${cleanText(body.userUid || token.uid, 128)}`
+        : body.inquiryId ? `messages/inquiry/${cleanText(body.inquiryId, 200)}`
+        : `messages/${cleanText(body.bookingId, 100)}`;
+      const mref = db.ref(`${path}/${delId}`);
+      const msg = (await mref.once('value')).val();
+      if (!msg) return json(200, {ok: true, deleted: true});
+      if (!admin && msg.senderUid !== token.uid) return json(403, {error: 'אפשר למחוק רק הודעות ששלחתם'});
+      await mref.remove();
+      await audit(token.uid, 'message_delete', 'message', delId, {path});
+      return json(200, {ok: true, deleted: true});
+    }
     const text = cleanText(body.text, 2000);
     const attachment = body.attachment && typeof body.attachment === 'object' ? body.attachment : null;
     if (!text && !attachment) return json(400, {error: 'הודעה ריקה'});

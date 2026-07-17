@@ -1,11 +1,123 @@
 import {store, list, myRole, myBookings, myCars, carRating, carRatingCount, userRating} from './store.js';
 import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail, paintApp, resetPaint, TERMS_VERSION} from './core.js';
 import {register, login, logout, sendVerify, refreshEmailStatus, sendPasswordReset, createOwnProfile, signInGuest} from './auth.js';
-import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, startInquiry, setBookingStatus, registerDocument, approveVerification, sendMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction, setMaintenance, setCarStatus, setCarFeatured, checkIsAdmin, saveExternalRental, deleteExternalRental} from './db.js';
+import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, startInquiry, setBookingStatus, registerDocument, approveVerification, sendMessage, deleteMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction, setMaintenance, setCarStatus, setCarFeatured, checkIsAdmin, saveExternalRental, deleteExternalRental} from './db.js';
 import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './media.js';
 import {legacyStatus, migrateLegacy} from './migrate.js';
 import {api} from './api.js';
+import {enablePush, pushPromptable, initPushForeground} from './push.js';
 import {saveAuthReturn, afterAuthDestination, openCar, CAR_MAKES, CAR_TYPES, ICON, MODELS_BY_MAKE, RENTAL_MODES, TAB_ICONS, app, avatarHtml, carImage, carPhotoList, carStatusPill, carYears, composePhone, emptyState, fallbackImage, kpi, phoneField, roleName, selectOptions, bindCarButtons, carGrid, featuredFirst, userUnreadNotifs, bottomNav} from './views.js';
+
+// ---------- New rental-request popup for owners (they were MISSING incoming requests) ----------
+// The moment a pending request for the owner's car arrives, a prominent modal pops with the renter's
+// name/phone/rating, the dates, the price and one-tap אישור/דחייה. Shown once per request (tracked
+// per-device) — dismissing keeps it in the bookings tab + badge but stops re-popping. Also clears a
+// BACKLOG: requests that came in while the owner was away pop one after another until handled.
+let reqSeen = (() => { try { return new Set(JSON.parse(localStorage.getItem('cd-req-seen') || '[]')); } catch { return new Set(); } })();
+let reqPopupOpen = false;
+const persistReqSeen = () => { try { localStorage.setItem('cd-req-seen', JSON.stringify([...reqSeen].slice(-300))); } catch {} };
+function pendingOwnerRequests() {
+  const me = store.user?.uid;
+  if (!me || store.user?.isAnonymous) return [];
+  return list(store.bookings).filter(b => b.ownerUid === me && b.status === 'pending' && !b.done);
+}
+export function maybeShowRequestPopup() {
+  if (reqPopupOpen || !store.user || store.user.isAnonymous) return;
+  if (document.querySelector('.modal-backdrop')) return;   // don't hijack another open modal
+  const fresh = pendingOwnerRequests().filter(b => !reqSeen.has(b.id)).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
+  if (fresh.length) showRequestModal(fresh[0]);
+}
+function showRequestModal(b) {
+  reqPopupOpen = true;
+  reqSeen.add(b.id); persistReqSeen();
+  const car = store.cars[b.carId] || b.carSnapshot || {};
+  const rating = userRating(b.renterUid);
+  const price = b.quote?.total ? money(b.quote.total) : '';
+  modal(`<div class="req-pop">
+    <div class="req-pop-top"><span class="req-pop-bell">🔔</span><div class="req-pop-title"><b>בקשת השכרה חדשה</b><small>ממתינה לאישורך</small></div><button class="close" data-close-modal aria-label="סגירה">×</button></div>
+    <div class="req-car">${esc(`${car.make || 'רכב'} ${car.model || ''}`.trim())}${car.year ? ` · ${esc(car.year)}` : ''}</div>
+    <div class="req-rows">
+      <div class="req-row"><span>שוכר</span><b>${esc(b.renterName || 'שוכר')}</b></div>
+      ${b.renterPhone ? `<div class="req-row"><span>טלפון</span><b><a href="tel:${esc(b.renterPhone)}">${esc(b.renterPhone)}</a></b></div>` : ''}
+      <div class="req-row"><span>דירוג שוכר</span><b>${rating ? `${stars(rating)} ${rating.toFixed(1)}` : 'חדש'}</b></div>
+      <div class="req-row"><span>תאריכים</span><b>${esc(fmtDate(b.startAt))} → ${esc(fmtDate(b.endAt))}</b></div>
+      ${price ? `<div class="req-row"><span>מחיר</span><b>${price}</b></div>` : ''}
+      ${b.fulfillment === 'delivery' && b.deliveryAddress ? `<div class="req-row"><span>מסירה</span><b>${esc(b.deliveryAddress)}</b></div>` : ''}
+    </div>
+    <div class="req-actions"><button class="btn primary block" id="req-approve">✓ אישור ההזמנה</button><button class="btn danger block" id="req-reject">דחייה</button></div>
+    <div class="req-links"><button class="btn outline" id="req-chat">💬 צ׳אט עם השוכר</button><button class="btn outline" id="req-later">אחר כך</button></div>
+  </div>`);
+  const done = () => { reqPopupOpen = false; closeModal(); refreshChatBadges(); setTimeout(() => { maybeShowRequestPopup(); maybeShowStatusPopup(); }, 350); };
+  document.querySelector('#req-approve').onclick = async event => { event.currentTarget.disabled = true; try { await setBookingStatus(b.id, 'approved'); toast('ההזמנה אושרה ✓ — מסרו לשוכר מיקום ומפתח בצ׳אט'); done(); } catch (error) { toast(error.message); event.currentTarget.disabled = false; } };
+  document.querySelector('#req-reject').onclick = async event => { if (!confirm('לדחות את הבקשה? השוכר יקבל הודעה שהבקשה נדחתה.')) return; event.currentTarget.disabled = true; try { await setBookingStatus(b.id, 'rejected'); toast('הבקשה נדחתה'); done(); } catch (error) { toast(error.message); event.currentTarget.disabled = false; } };
+  document.querySelector('#req-chat').onclick = () => { reqPopupOpen = false; closeModal(); openChatThread(`b:${b.id}`); };
+  document.querySelector('#req-later').onclick = () => done();
+}
+// ---------- Status popup for the RENTER (mirror of the owner's request popup) ----------
+// When the owner approves/rejects, the renter used to get only a quiet badge — now a clear popup with
+// the next step (approved → open the chat; rejected → find another car). Once per booking+status (device).
+let statusSeen = (() => { try { return new Set(JSON.parse(localStorage.getItem('cd-status-seen') || '[]')); } catch { return new Set(); } })();
+const persistStatusSeen = () => { try { localStorage.setItem('cd-status-seen', JSON.stringify([...statusSeen].slice(-400))); } catch {} };
+const RENTER_POP = {
+  approved: {emoji: '🎉', title: 'ההזמנה אושרה!', tone: 'ok'},
+  rejected: {emoji: '😔', title: 'ההזמנה נדחתה', tone: 'danger'},
+};
+export function maybeShowStatusPopup() {
+  if (reqPopupOpen || !store.user || store.user.isAnonymous) return;
+  if (document.querySelector('.modal-backdrop')) return;
+  const me = store.user.uid;
+  const hit = list(store.bookings)
+    .filter(b => b.renterUid === me && RENTER_POP[b.status] && !statusSeen.has(`${b.id}:${b.status}`))
+    .sort((a, b) => Number(b.updatedAt || b.createdAt || 0) - Number(a.updatedAt || a.createdAt || 0))[0];
+  if (hit) showStatusModal(hit);
+}
+function showStatusModal(b) {
+  reqPopupOpen = true;
+  statusSeen.add(`${b.id}:${b.status}`); persistStatusSeen();
+  const cfg = RENTER_POP[b.status];
+  const car = store.cars[b.carId] || b.carSnapshot || {};
+  const approved = b.status === 'approved';
+  modal(`<div class="req-pop status-pop ${cfg.tone}">
+    <div class="req-pop-top"><span class="req-pop-bell ${cfg.tone}">${cfg.emoji}</span><div class="req-pop-title"><b>${cfg.title}</b><small>${esc(`${car.make || 'רכב'} ${car.model || ''}`.trim())}</small></div><button class="close" data-close-modal aria-label="סגירה">×</button></div>
+    <div class="req-rows">
+      <div class="req-row"><span>תאריכים</span><b>${esc(fmtDate(b.startAt))} → ${esc(fmtDate(b.endAt))}</b></div>
+      ${b.quote?.total ? `<div class="req-row"><span>מחיר</span><b>${money(b.quote.total)}</b></div>` : ''}
+    </div>
+    <p class="status-note">${approved ? 'מעולה! היכנסו לצ׳אט עם בעל הרכב לתיאום איסוף, השלמת תיעוד ותשלום.' : 'בעל הרכב לא אישר את הבקשה הפעם — אפשר לחפש רכב אחר לאותם תאריכים.'}</p>
+    <div class="req-actions">${approved ? '<button class="btn primary block" id="status-chat">💬 לצ׳אט עם בעל הרכב</button>' : '<button class="btn primary block" id="status-cars">חיפוש רכב אחר</button>'}<button class="btn outline block" id="status-close">סגירה</button></div>
+  </div>`);
+  const close = () => { reqPopupOpen = false; closeModal(); setTimeout(() => { maybeShowStatusPopup(); maybeShowRequestPopup(); }, 300); };
+  document.querySelector('#status-chat')?.addEventListener('click', () => { reqPopupOpen = false; closeModal(); openChatThread(`b:${b.id}`); });
+  document.querySelector('#status-cars')?.addEventListener('click', () => { reqPopupOpen = false; closeModal(); location.hash = 'cars'; });
+  document.querySelector('#status-close')?.addEventListener('click', close);
+}
+
+// The bookings listener is live everywhere — pop the owner's incoming request AND the renter's
+// approval/rejection wherever they are (both share reqPopupOpen so they never stack).
+window.addEventListener('storechange', event => {
+  const k = String(event.detail || '');
+  if (k === 'bookings' || k === 'private-ready') setTimeout(() => { maybeShowRequestPopup(); maybeShowStatusPopup(); }, 80);
+});
+
+// Foreground push binding is a no-op unless notifications are already enabled.
+try { initPushForeground(); } catch {}
+
+// A gentle banner offering to turn on Web-Push so the user is notified when the site is CLOSED. Shown
+// only when the browser supports it, it isn't blocked/on already, and wasn't dismissed this session.
+function pushBanner() {
+  try {
+    if (!pushPromptable() || sessionStorage.getItem('cd-push-dismissed')) return '';
+    return `<div class="push-banner" id="push-banner"><span class="pb-ic">🔔</span><div class="pb-body"><b>אל תפספסו בקשות והודעות</b><small>הפעילו התראות כדי לקבל עדכון גם כשהאתר סגור</small></div><div class="pb-actions"><button class="btn primary" id="push-enable">הפעלה</button><button class="pb-close" id="push-dismiss" aria-label="סגירה">×</button></div></div>`;
+  } catch { return ''; }
+}
+function bindPushBanner() {
+  document.querySelector('#push-enable')?.addEventListener('click', async event => {
+    const btn = event.currentTarget; btn.disabled = true; btn.textContent = 'מפעיל…';
+    try { await enablePush(); toast('התראות הופעלו ✓ — תקבלו עדכון גם כשהאתר סגור'); document.querySelector('#push-banner')?.remove(); }
+    catch (error) { toast(error.message); btn.disabled = false; btn.textContent = 'הפעלה'; }
+  });
+  document.querySelector('#push-dismiss')?.addEventListener('click', () => { try { sessionStorage.setItem('cd-push-dismissed', '1'); } catch {} document.querySelector('#push-banner')?.remove(); });
+}
 
 // Incremental list rendering (audit #30 / design spec §22): long admin lists paint the first 30
 // records and grow by 50 per tap, so the DOM stays light as the community grows. State survives
@@ -124,9 +236,22 @@ function userNotificationsView() {
   const rows = list(store.userNotifications).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
   const seen = Number(localStorage.getItem('cd-notif-seen') || 0);
   try { localStorage.setItem('cd-notif-seen', String(Date.now())); } catch {}
-  return `<h2 style="margin-bottom:16px">התראות</h2><div class="list">${rows.length ? rows.map(n =>
-    `<div class="notif-row ${Number(n.createdAt || 0) > seen ? 'unread' : ''}"><span class="notif-icon">${NOTIF_EMOJI[n.type] || '🔔'}</span><div class="notif-main"><b>${esc(n.text || '')}</b><small>${fmtDate(n.createdAt)}</small></div></div>`).join('')
+  // A booking/status/payment notification jumps straight to that booking's chat (notifyUser spreads the
+  // extras at the TOP level, so it's n.bookingId — not n.meta).
+  const threadFor = n => (n.bookingId && ['status', 'payment', 'booking'].includes(n.type)) ? `b:${n.bookingId}` : '';
+  return `<h2 style="margin-bottom:16px">התראות</h2><div class="list">${rows.length ? rows.map(n => {
+    const thread = threadFor(n);
+    return `<div class="notif-row ${Number(n.createdAt || 0) > seen ? 'unread' : ''}${thread ? ' clickable' : ''}"${thread ? ` role="button" tabindex="0" data-notif-thread="${esc(thread)}"` : ''}><span class="notif-icon">${NOTIF_EMOJI[n.type] || '🔔'}</span><div class="notif-main"><b>${esc(n.text || '')}</b><small>${fmtDate(n.createdAt)}</small></div>${thread ? '<span class="notif-go">לשיחה ←</span>' : ''}</div>`;
+  }).join('')
     : '<div class="empty">אין התראות עדיין — עדכונים על הזמנות ותשלומים יופיעו כאן</div>'}</div>`;
+}
+// Wire notification rows that link to a conversation (shared by renter/owner/admin dashboards).
+function bindNotifThreads() {
+  document.querySelectorAll('[data-notif-thread]').forEach(row => {
+    const go = () => openChatThread(row.dataset.notifThread);
+    row.onclick = go;
+    row.onkeydown = event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); go(); } };
+  });
 }
 
 // ---- Off-site rentals (השכרות חוץ): rentals the owner closed OUTSIDE the site, logged manually ----
@@ -221,7 +346,7 @@ function renterDashboard(tab = 'overview') {
     ? `<div class="admin-todo">${renterTodo.map(([label, n, t]) => `<button class="todo-row" data-goto-tab="${t}"><span class="todo-count">${n}</span><span class="todo-label">${esc(label)}</span><span class="todo-go" aria-hidden="true">›</span></button>`).join('')}</div>`
     : '';
   const contents = {
-    overview: `${todoHtml}<div class="admin-stats-mini"><span><b>${active}</b> פעילות</span><span><b>${pending}</b> ממתינות</span><span><b>${done}</b> הושלמו</span><span><b>${verification.status === 'approved' ? '✓' : '—'}</b> אימות</span></div><h2>ההזמנות שלי</h2>${bookingList(bookings, 'renter')}`,
+    overview: `${pushBanner()}${todoHtml}<div class="admin-stats-mini"><span><b>${active}</b> פעילות</span><span><b>${pending}</b> ממתינות</span><span><b>${done}</b> הושלמו</span><span><b>${verification.status === 'approved' ? '✓' : '—'}</b> אימות</span></div><h2>ההזמנות שלי</h2>${bookingList(bookings, 'renter')}`,
     bookings: `<h2>ההזמנות שלי</h2>${bookingList(bookings, 'renter')}`,
     profile: profileView(),
     notifications: userNotificationsView(),
@@ -229,6 +354,8 @@ function renterDashboard(tab = 'overview') {
   };
   app().innerHTML = dashboardLayout('האזור האישי', [['overview','סקירה'],['bookings','הזמנות'],['chats','צ׳אטים'],['notifications',`התראות${userUnreadNotifs() ? ` (${userUnreadNotifs()})` : ''}`],['profile','פרופיל ואימות']], tab, contents[tab] || contents.overview);
   bindDashboardTabs(renterDashboard); bindActions(); bindProfileActions();
+  if (tab === 'notifications') bindNotifThreads();
+  if (tab === 'overview') bindPushBanner();
 }
 
 function ownerDashboard(tab = 'overview') {
@@ -250,7 +377,7 @@ function ownerDashboard(tab = 'overview') {
     ? `<div class="admin-todo"><div class="admin-sec-h">דורש טיפול</div>${ownerTodo.map(([label, n, t]) => `<button class="todo-row" data-goto-tab="${t}"><span class="todo-count">${n}</span><span class="todo-label">${esc(label)}</span><span class="todo-go" aria-hidden="true">›</span></button>`).join('')}</div>`
     : '';
   const contents = {
-    overview: `${todoHtml}<div class="admin-stats-mini"><span><b>${cars.length}</b> רכבים</span><span><b>${cars.filter(c => c.status === 'available').length}</b> זמינים</span><span><b>${money(approvedTotal)}</b> הכנסות</span><span><b>${bookings.filter(b => b.status === 'active').length}</b> פעילות</span></div><h2>הזמנות פעילות</h2>${bookingList(bookings.filter(b => ['pending','approved','active'].includes(b.status)), 'owner')}`,
+    overview: `${pushBanner()}${todoHtml}<div class="admin-stats-mini"><span><b>${cars.length}</b> רכבים</span><span><b>${cars.filter(c => c.status === 'available').length}</b> זמינים</span><span><b>${money(approvedTotal)}</b> הכנסות</span><span><b>${bookings.filter(b => b.status === 'active').length}</b> פעילות</span></div><h2>הזמנות פעילות</h2>${bookingList(bookings.filter(b => ['pending','approved','active'].includes(b.status)), 'owner')}`,
     bookings: `<h2>הזמנות</h2>${bookingList(bookings, 'owner')}`,
     cars: `<div class="section-head"><h2>הרכבים שלי</h2><div class="chips"><button class="btn outline" id="goto-external">📒 השכרות חוץ</button><button class="btn gold" id="add-car">הוספת רכב</button></div></div>${carGrid(cars, true)}`,
     external: externalRentalsView(cars),
@@ -259,6 +386,8 @@ function ownerDashboard(tab = 'overview') {
   };
   app().innerHTML = dashboardLayout('לוח בעל רכב', [['overview','סקירה'],['bookings','הזמנות'],['cars','רכבים'],['external','השכרות חוץ'],['chats','צ׳אטים'],['notifications',`התראות${userUnreadNotifs() ? ` (${userUnreadNotifs()})` : ''}`],['profile','פרופיל']], tab, contents[tab] || contents.overview, '<button class="btn gold" id="add-car-head">+ הוספת רכב</button>');
   bindDashboardTabs(ownerDashboard); bindActions(); bindCarButtons(); bindProfileActions();
+  if (tab === 'notifications') bindNotifThreads();
+  if (tab === 'overview') bindPushBanner();
   document.querySelector('#add-car')?.addEventListener('click', () => carForm());
   document.querySelector('#add-car-head')?.addEventListener('click', () => carForm());
   document.querySelector('#goto-external')?.addEventListener('click', () => { store.dashTab = 'external'; ownerDashboard('external'); });
@@ -310,7 +439,7 @@ function adminDashboard(tab = 'overview') {
     : `<div class="admin-allclear"><span class="ac-ic">✓</span><div><b>הכל מטופל</b><small>אין כרגע פעולות שממתינות לך</small></div></div>`;
   const navTile = (t, label, icon, tint, badge = 0) => `<button class="hub-tile" data-nav-tab="${t}"><span class="hub-ic tint-${tint}">${icon}</span><b>${esc(label)}</b>${badge ? `<span class="hub-badge">${badge}</span>` : ''}</button>`;
   const contents = {
-    overview: `${todoHtml}
+    overview: `${pushBanner()}${todoHtml}
       <div class="admin-sec-h">ניהול האתר</div>
       <div class="admin-hub">${navTile('users', 'משתמשים', ICON.users, 'purple', pendingVerif)}${navTile('bookings', 'הזמנות', ICON.calendar, 'blue', pendingPay + pendingBook)}${navTile('cars', 'רכבים', ICON.car, 'gold')}${navTile('chats', 'צ׳אטים', ICON.chat, 'green', unread)}</div>
       <div class="admin-sec-h">האזור שלי — בעל רכב</div>
@@ -405,14 +534,11 @@ function adminDashboard(tab = 'overview') {
   bindAdminSearch();
   if (tab === 'notifications') {
     localStorage.setItem('cd-admin-seen', String(Date.now()));
-    document.querySelectorAll('[data-notif-thread]').forEach(row => {
-      const go = () => openChatThread(row.dataset.notifThread);
-      row.onclick = go;
-      row.onkeydown = event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); go(); } };
-    });
+    bindNotifThreads();
   }
   if (tab === 'cars') bindAdminCarActions();
   if (tab === 'bookings') bindAdminBookingActions();
+  if (tab === 'overview') bindPushBanner();
   document.querySelector('#export-json')?.addEventListener('click', () => {
     const payload = {exportedAt: new Date().toISOString(), users: store.users, cars: store.cars, bookings: store.bookings, payments: store.payments};
     const blob = new Blob([JSON.stringify(payload, null, 2)], {type: 'application/json'});
@@ -586,6 +712,39 @@ function bookingTimeline(booking, pmt) {
   return `<div class="bk-timeline" aria-label="התקדמות ההזמנה">${steps.map(([label, done], i) =>
     `<div class="bk-step${done ? ' done' : ''}${i === currentIndex ? ' now' : ''}"><span class="bk-dot"></span><small>${label}</small></div>`).join('')}</div>`;
 }
+// After approval, the correct order (per the owner's real flow) is: 1) the owner hands over the car —
+// its LOCATION + the KEY (coordinated in chat) — THEN 2) the renter documents the car's condition at
+// pickup (video / fuel / odometer), and 3) payment. A numbered mini-guide makes that order unmistakable.
+function renterNextSteps(booking) {
+  const ev = evidenceState(booking, booking.id);
+  const docItems = [['סרטון חוץ', ev.video], ['תמונת דלק', ev.fuel], ['קילומטראז׳', ev.odometer]];
+  const docsDone = docItems.every(([, ok]) => ok);
+  if (docsDone && ev.payment) return `<div class="next-steps complete"><div class="next-head"><b>✓ הכל מוכן — ממתין שבעל הרכב יתחיל את ההשכרה</b></div></div>`;
+  return `<div class="next-steps">
+    <div class="next-head"><b>איך מקבלים את הרכב</b></div>
+    <ol class="next-flow">
+      <li class="nf-step"><span class="nf-num">1</span><div class="nf-body"><b>קבלת מיקום ומפתח</b><small>בעל הרכב מוסר לך את מיקום הרכב והמפתח בצ׳אט</small><div class="nf-actions"><button class="btn outline" data-address="${booking.id}">📍 כתובת איסוף</button><button class="btn outline" data-chat="${booking.id}">💬 צ׳אט עם בעל הרכב</button></div></div></li>
+      <li class="nf-step"><span class="nf-num">2</span><div class="nf-body"><b>תיעוד מצב הרכב — בעת האיסוף</b><small>אחרי שקיבלתם את הרכב, צלמו בצ׳אט:</small><div class="next-items">${docItems.map(([label, ok]) => `<span class="next-item${ok ? ' ok' : ''}">${ok ? '✓' : '○'} ${esc(label)}</span>`).join('')}</div></div></li>
+      <li class="nf-step"><span class="nf-num">3</span><div class="nf-body"><b>תשלום</b><div class="next-items"><span class="next-item${ev.payment ? ' ok' : ''}">${ev.payment ? '✓ שולם' : '○ ממתין לתשלום'}</span></div></div></li>
+    </ol>
+    <button class="btn gold block" data-chat="${booking.id}">המשך בצ׳אט →</button>
+  </div>`;
+}
+// The owner's counterpart on an approved booking: hand over the car's location + key in chat, and see
+// the renter's LIVE progress (each item they complete shows here) so the owner knows when to start.
+function ownerHandoverHint(booking) {
+  const ev = evidenceState(booking, booking.id);
+  const items = [['סרטון חוץ', ev.video], ['תמונת דלק', ev.fuel], ['קילומטראז׳', ev.odometer], ['תשלום', ev.payment]];
+  const done = items.filter(([, ok]) => ok).length;
+  const allDone = done === items.length;
+  return `<div class="next-steps owner-hint${allDone ? ' complete' : ''}">
+    <div class="next-head"><b>📍 מסרו לשוכר את מיקום הרכב והמפתח</b></div>
+    <small class="oh-note">תאמו מקום איסוף ומסירת מפתח בצ׳אט. לאחר שהשוכר יתעד את מצב הרכב וישלם — תוכלו להתחיל את ההשכרה.</small>
+    <div class="oh-progress"><div class="oh-progress-head"><b>התקדמות השוכר</b><span class="next-count${allDone ? ' ok' : ''}">${done}/${items.length}</span></div><div class="next-items">${items.map(([label, ok]) => `<span class="next-item${ok ? ' ok' : ''}">${ok ? '✓' : '○'} ${esc(label)}</span>`).join('')}</div></div>
+    ${allDone ? '<div class="oh-ready">✓ השוכר השלים הכל — אפשר להתחיל את ההשכרה</div>' : ''}
+    <div class="nf-actions"><button class="btn outline" data-chat="${booking.id}">💬 צ׳אט עם השוכר</button></div>
+  </div>`;
+}
 
 function bookingList(bookings, role) {
   const sorted = bookings.slice().sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
@@ -599,7 +758,7 @@ function bookingList(bookings, role) {
       ? `${pmt.status === 'approved' ? '<span class="pill ok">תשלום אושר</span>' : pmt.status === 'rejected' ? '<span class="pill warn">תשלום נדחה</span>' : pmt.status === 'pending' ? '<span class="pill warn">ממתין לאישור</span>' : ''}<button class="btn outline" data-view-payment="${booking.id}">הוכחת תשלום</button>${pmt.status === 'pending' ? `<button class="btn primary" data-pay-approve="${booking.id}">אישור תשלום</button><button class="btn danger" data-pay-reject="${booking.id}">דחייה</button>` : ''}`
       : '';
     const renterPaymentNote = role === 'renter' && pmt ? `<p class="ev-note">${pmt.status === 'approved' ? '✓ התשלום שלך אושר על ידי בעל הרכב.' : pmt.status === 'rejected' ? '✗ התשלום נדחה — שלחו הוכחה מעודכנת בצ׳אט.' : '⏳ הוכחת התשלום ממתינה לאישור בעל הרכב.'}</p>` : '';
-    return `<article class="booking-card"><div class="booking-main"><div><small>הזמנה ${esc(booking.id.slice(-7))}</small><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3><p>${fmtDate(booking.startAt)} — ${fmtDate(booking.endAt)}</p>${booking.quote?.total ? `<p class="bk-total">${money(booking.quote.total)}</p>` : ''}${booking.status === 'pending' && booking.pendingExpiresAt ? `<p class="bk-expiry">ממתינה לאישור עד ${fmtDate(booking.pendingExpiresAt)}</p>` : ''}</div><span class="status-badge ${esc(booking.status)}">${statusLabel(booking.status)}</span></div>${bookingTimeline(booking, pmt)}<div class="chips">${role === 'renter' && booking.status === 'approved' && (!pmt || pmt.status === 'rejected') ? `<button class="btn gold" data-payment="${booking.id}">💳 דיווח על תשלום</button>` : ''}${role === 'owner' && booking.status === 'pending' ? `<button class="btn primary" data-status="approved" data-booking="${booking.id}">אישור</button><button class="btn danger" data-status="rejected" data-booking="${booking.id}">דחייה</button>` : ''}${role === 'owner' && booking.status === 'approved' ? `<button class="btn gold ${evidenceDone ? '' : 'soft-disabled'}" data-status="active" data-booking="${booking.id}">התחלת השכרה</button>` : ''}${role === 'owner' && booking.status === 'active' ? `<button class="btn gold" data-status="done" data-booking="${booking.id}">סיום השכרה</button>` : ''}${role === 'owner' && ['pending','approved','active'].includes(booking.status) ? `<button class="btn outline" data-renter="${booking.renterUid}">פרטי שוכר</button>` : ''}${['approved','active'].includes(booking.status) ? `<button class="btn outline" data-address="${booking.id}">כתובת איסוף</button>` : ''}${['pending','approved','active'].includes(booking.status) ? `<button class="btn outline" data-chat="${booking.id}">צ׳אט</button>` : ''}${car.id ? `<button class="btn outline" data-view-car="${esc(car.id)}">פרטי הרכב</button>` : ''}${role === 'renter' && booking.status === 'active' ? `<button class="btn outline" data-handover="${booking.id}" data-stage="return">תיעוד החזרה</button>` : ''}${paymentSection}${['owner','admin'].includes(role) && booking.handover ? `<button class="btn outline" data-view-handover="${booking.id}">צפייה בתיעוד</button>` : ''}${role === 'admin' ? `<select class="admin-status-select" data-admin-status="${booking.id}"><option value="">שינוי סטטוס…</option><option value="approved">אישור</option><option value="rejected">דחייה</option><option value="active">התחלת השכרה</option><option value="done">סיום</option><option value="cancelled">ביטול</option></select><button class="btn outline" data-admin-note="${booking.id}">הערת מנהל</button>` : ''}${['renter', 'owner'].includes(role) && ['pending', 'approved'].includes(booking.status) ? `<button class="btn outline" data-cancel-booking="${booking.id}">ביטול הזמנה</button>` : ''}${ratingButtons}</div>${booking.adminNote || booking.adminAmount !== undefined ? `<p class="ev-note">הערת מנהל: ${esc(booking.adminNote || '')}${booking.adminAmount !== undefined ? ` · סכום מתוקן: ${money(booking.adminAmount)}` : ''}</p>` : ''}${booking.status === 'cancelled' && (booking.cancelledByRole || booking.cancelReason) ? `<p class="ev-note">בוטלה${booking.cancelledByRole ? ` על ידי ${({renter: 'השוכר', owner: 'בעל הרכב', admin: 'המנהל'})[booking.cancelledByRole] || ''}` : ''}${booking.cancelReason ? ` · סיבה: ${esc(booking.cancelReason)}` : ''}</p>` : ''}${renterPaymentNote}${role === 'renter' && booking.status === 'approved' ? `<p class="ev-note">לפני תחילת ההשכרה שלחו בצ׳אט: סרטון חוץ, תמונת דלק, קילומטראז׳ והוכחת תשלום.</p>` : ''}</article>`;
+    return `<article class="booking-card"><div class="booking-main"><div><small>הזמנה ${esc(booking.id.slice(-7))}</small><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3><p>${fmtDate(booking.startAt)} — ${fmtDate(booking.endAt)}</p>${booking.quote?.total ? `<p class="bk-total">${money(booking.quote.total)}</p>` : ''}${booking.status === 'pending' && booking.pendingExpiresAt ? `<p class="bk-expiry">ממתינה לאישור עד ${fmtDate(booking.pendingExpiresAt)}</p>` : ''}</div><span class="status-badge ${esc(booking.status)}">${statusLabel(booking.status)}</span></div>${bookingTimeline(booking, pmt)}${role === 'renter' && booking.status === 'approved' ? renterNextSteps(booking) : ''}${role === 'owner' && booking.status === 'approved' ? ownerHandoverHint(booking) : ''}<div class="chips">${role === 'renter' && booking.status === 'approved' && (!pmt || pmt.status === 'rejected') ? `<button class="btn gold" data-payment="${booking.id}">💳 דיווח על תשלום</button>` : ''}${role === 'owner' && booking.status === 'pending' ? `<button class="btn primary" data-status="approved" data-booking="${booking.id}">אישור</button><button class="btn danger" data-status="rejected" data-booking="${booking.id}">דחייה</button>` : ''}${role === 'owner' && booking.status === 'approved' ? `<button class="btn gold ${evidenceDone ? '' : 'soft-disabled'}" data-status="active" data-booking="${booking.id}">התחלת השכרה</button>` : ''}${role === 'owner' && booking.status === 'active' ? `<button class="btn gold" data-status="done" data-booking="${booking.id}">סיום השכרה</button>` : ''}${role === 'owner' && ['pending','approved','active'].includes(booking.status) ? `<button class="btn outline" data-renter="${booking.renterUid}">פרטי שוכר</button>` : ''}${['approved','active'].includes(booking.status) ? `<button class="btn outline" data-address="${booking.id}">כתובת איסוף</button>` : ''}${['pending','approved','active'].includes(booking.status) ? `<button class="btn outline" data-chat="${booking.id}">צ׳אט</button>` : ''}${car.id ? `<button class="btn outline" data-view-car="${esc(car.id)}">פרטי הרכב</button>` : ''}${role === 'renter' && booking.status === 'active' ? `<button class="btn outline" data-handover="${booking.id}" data-stage="return">תיעוד החזרה</button>` : ''}${paymentSection}${['owner','admin'].includes(role) && booking.handover ? `<button class="btn outline" data-view-handover="${booking.id}">צפייה בתיעוד</button>` : ''}${role === 'admin' ? `<select class="admin-status-select" data-admin-status="${booking.id}"><option value="">שינוי סטטוס…</option><option value="approved">אישור</option><option value="rejected">דחייה</option><option value="active">התחלת השכרה</option><option value="done">סיום</option><option value="cancelled">ביטול</option></select><button class="btn outline" data-admin-note="${booking.id}">הערת מנהל</button>` : ''}${['renter', 'owner'].includes(role) && ['pending', 'approved'].includes(booking.status) ? `<button class="btn outline" data-cancel-booking="${booking.id}">ביטול הזמנה</button>` : ''}${ratingButtons}</div>${booking.adminNote || booking.adminAmount !== undefined ? `<p class="ev-note">הערת מנהל: ${esc(booking.adminNote || '')}${booking.adminAmount !== undefined ? ` · סכום מתוקן: ${money(booking.adminAmount)}` : ''}</p>` : ''}${booking.status === 'cancelled' && (booking.cancelledByRole || booking.cancelReason) ? `<p class="ev-note">בוטלה${booking.cancelledByRole ? ` על ידי ${({renter: 'השוכר', owner: 'בעל הרכב', admin: 'המנהל'})[booking.cancelledByRole] || ''}` : ''}${booking.cancelReason ? ` · סיבה: ${esc(booking.cancelReason)}` : ''}</p>` : ''}${renterPaymentNote}</article>`;
   }).join('') : emptyState(ICON.calendar, role === 'renter' ? 'אין לך הזמנות עדיין' : 'אין הזמנות עדיין', role === 'renter' ? 'מצאו רכב מהצי שלנו והזמינו — זה מהיר ופשוט.' : 'כשתתקבל בקשת הזמנה היא תופיע כאן.', role === 'renter' ? '<button class="btn primary" data-route="cars">חיפוש רכב</button>' : '')}</div>${listMoreBtn(`bookings-${role}`, sorted.length)}`;
 }
 
@@ -1196,8 +1355,13 @@ function selectThread(key) {
     const box = document.querySelector('#chat-msgs');
     if (!box || store.route !== 'chats' || chatState.thread !== key) { ref.off('value', handler); return; }
     const messages = list(snap.val() || {}).sort((a, b) => Number(a.createdAt || 0) - Number(b.createdAt || 0));
-    if (!messages.length) { box.innerHTML = '<div class="empty">אין הודעות עדיין — כתבו הודעה כדי להתחיל 👋</div>'; return; }
+    if (!messages.length) { box.innerHTML = '<div class="empty">אין הודעות עדיין — כתבו הודעה כדי להתחיל 👋</div>'; seen.clear(); firstBatch = true; lastDay = ''; prevSender = ''; return; }
     const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 130;
+    // A message was DELETED (a previously-rendered id is gone) → clean rebuild (deletions are rare, so the
+    // full repaint is fine and keeps day dividers / grouping correct). New messages still just append.
+    const currentIds = new Set(messages.map(m => m.id));
+    let deleted = false; for (const sid of seen) if (!currentIds.has(sid)) { deleted = true; break; }
+    if (deleted) { seen.clear(); lastDay = ''; prevSender = ''; box.innerHTML = ''; firstBatch = true; }
     if (firstBatch) { box.innerHTML = ''; }
     let appended = false, newFromOther = false;
     for (const m of messages) {
@@ -1213,6 +1377,12 @@ function selectThread(key) {
     box.querySelectorAll('[data-att-path]:not([data-bound])').forEach(button => { button.dataset.bound = '1'; button.onclick = async () => {
       try { window.open(await signedRead(button.dataset.attPath), '_blank', 'noopener'); }
       catch (error) { toast(error.message); }
+    }; });
+    box.querySelectorAll('[data-del]:not([data-bound])').forEach(button => { button.dataset.bound = '1'; button.onclick = async event => {
+      event.stopPropagation();
+      if (!confirm('למחוק את ההודעה? הפעולה בלתי הפיכה.')) return;
+      const ref = isSupport ? {thread: 'admin', userUid: id, deleteId: button.dataset.del} : isInquiry ? {inquiryId: id, deleteId: button.dataset.del} : {bookingId: id, deleteId: button.dataset.del};
+      try { await deleteMessage(ref); } catch (error) { toast(error.message); }
     }; });
     const lastMine = messages[messages.length - 1].senderUid === store.user?.uid;
     if (firstBatch || lastMine || nearBottom) { scrollChatToEnd(box, !firstBatch); document.querySelector('#chat-newpill')?.remove(); }
@@ -1272,7 +1442,10 @@ function renderChatMessage(message, grouped = false) {
     : '';
   const time = (() => { const d = new Date(Number(message.createdAt) || 0); return Number.isNaN(d.getTime()) ? '' : d.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'}); })();
   const tick = mine && !sys ? '<span class="msg-tick" title="נשלח" aria-hidden="true">✓</span>' : '';
-  return `<div class="message ${mine ? 'mine' : ''} ${grouped ? 'grouped' : ''} ${sys ? 'sys' : ''}">${message.text ? `<p>${esc(message.text)}</p>` : ''}${attachment}<small>${time}${tick}</small></div>`;
+  // You can delete your OWN messages; the admin can delete any. (Server re-checks.)
+  const canDelete = (mine || store.isAdmin) && !sys && message.id;
+  const del = canDelete ? `<button class="msg-del" data-del="${esc(message.id)}" title="מחיקת הודעה" aria-label="מחיקת הודעה">🗑</button>` : '';
+  return `<div class="message ${mine ? 'mine' : ''} ${grouped ? 'grouped' : ''} ${sys ? 'sys' : ''}" data-mid="${esc(message.id || '')}">${del}${message.text ? `<p>${esc(message.text)}</p>` : ''}${attachment}<small>${time}${tick}</small></div>`;
 }
 
 function paymentModal(bookingId, onDone = null) {

@@ -20,3 +20,10 @@ window.CROWNDRIVE_FIREBASE_CONFIG = {
 // Get them from tawk.to → Administration → Chat Widget (the URL embed.tawk.to/PROPERTY_ID/WIDGET_ID).
 // Leave empty to keep the chat off. See js/tawk.js.
 window.CROWNDRIVE_TAWK = "";
+
+// Web Push notifications (owners/renters get notified even when the site is CLOSED).
+// To switch ON: Firebase Console → Project settings → Cloud Messaging → "Web Push certificates"
+// → Generate key pair → copy the "Key pair" value and paste it below. (It's a PUBLIC key — safe here.)
+// Leave empty to keep push OFF (the app still works; only closed-app notifications are disabled).
+// iPhone note: web push works only when the site is installed to the Home Screen (Add to Home Screen).
+window.CROWNDRIVE_VAPID_KEY = "BPyZMQL1-YesdBeYnLTmHVMGDhJAYFdOvtPPFdWBAOm0JNMkxwWqFnZxxzE7HbWRaYqhMfUi5mmwvpzAKFCVqbQ";

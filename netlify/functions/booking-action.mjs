@@ -1,4 +1,4 @@
-import {getAdmin, verify, json, isAdmin, booking, audit, cleanText, notifyAdmin, notifyUser, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, isAdmin, booking, audit, cleanText, notifyAdmin, notifyUser, sendPush, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
 import {smsUser} from './_sms.mjs';
 import {rateLimit, tooMany} from './_ratelimit.mjs';
 import {storageObjectExists} from './_storage.mjs';
@@ -128,6 +128,9 @@ export async function handler(event) {
       else if (next === 'rejected') await notifyUser(current.renterUid, 'status', `ההזמנה שלך (${ref7}) נדחתה על ידי בעל הרכב`, {bookingId: body.bookingId});
       else if (next === 'cancelled') await notifyUser(token.uid === current.renterUid ? current.ownerUid : current.renterUid, 'status', `הזמנה (${ref7}) בוטלה`, {bookingId: body.bookingId});
       else if (next === 'done') await notifyUser(current.renterUid, 'status', `ההשכרה (${ref7}) הסתיימה — נשמח לדירוג!`, {bookingId: body.bookingId});
+      // Web-Push the renter even when the app is closed (approve/reject are the moments they're waiting for).
+      if (next === 'approved') await sendPush(current.renterUid, '🎉 ההזמנה אושרה!', 'בעל הרכב אישר את ההזמנה שלך — היכנסו לתיאום איסוף והשלמת הפרטים.', '/#dashboard');
+      else if (next === 'rejected') await sendPush(current.renterUid, 'עדכון על ההזמנה', 'ההזמנה שלך לא אושרה הפעם — אפשר לחפש רכב אחר לאותם תאריכים.', '/#cars');
       if (next === 'approved') await smsUser(current.renterUid, `CrownDrive: ההזמנה שלך אושרה (${ref7})! היכנסו לצ׳אט להשלמת התיעוד ותחילת ההשכרה.`);
       else if (next === 'rejected') await smsUser(current.renterUid, `CrownDrive: לצערנו ההזמנה שלך (${ref7}) לא אושרה על ידי בעל הרכב.`);
       else if (next === 'done') {

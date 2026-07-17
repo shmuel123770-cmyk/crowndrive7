@@ -1186,6 +1186,9 @@ const APP_LOADER = '<div class="app-loader"><div class="spinner"></div><p>טוע
 // Unread chat count for the nav badges — safe to call anytime; returns 0 until the personal-area module
 // (which owns the chat state) has loaded, which it always has by the time a dashboard tab bar renders.
 function chatUnreadCount() { try { return __appMod?.chatUnreadTotal?.() || 0; } catch { return 0; } }
+// Preload the personal-area module (idempotent) — used to activate the owner's rental-request popup
+// watcher even when the owner is browsing public pages.
+export function ensureAppModule() { try { return loadApp(); } catch { return Promise.resolve(); } }
 export function dashboard() {
   resetPaint();
   if (store.user?.isAnonymous) { toast('הירשמו כדי לפתוח אזור אישי'); location.hash = 'auth'; return; }

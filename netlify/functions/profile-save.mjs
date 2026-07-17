@@ -1,5 +1,6 @@
 import {getAdmin, verify, json, profile, cleanText, audit, isAdmin, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
 import {TERMS_VERSION} from './_terms.mjs';
+import crypto from 'node:crypto';
 export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
@@ -13,6 +14,16 @@ export async function handler(event) {
     // Re-consent after a terms/privacy update (audit #10): the client shows the "התנאים עודכנו" dialog
     // when the stored version differs from the current one, and records the fresh acceptance here
     // (the legalAcceptance node is deliberately not client-writable after registration).
+    // Register this device's Web-Push (FCM) token so the server can notify the user when the app is
+    // CLOSED. Stored under users/<uid>/pushTokens/<hash> — key is a hash (tokens contain chars RTDB
+    // keys forbid), value is the token + timestamp. Dead tokens are pruned on send (see sendPush).
+    if (body.action === 'push-register') {
+      const t = cleanText(body.token, 4096);
+      if (!t || t.length < 20) return json(400, {error: 'אסימון התראות לא תקין'});
+      const key = crypto.createHash('sha1').update(t).digest('hex');
+      await db.ref(`users/${token.uid}/pushTokens/${key}`).set({token: t, at: Date.now()});
+      return json(200, {ok: true});
+    }
     if (body.action === 'accept-terms') {
       await db.ref(`users/${token.uid}/legalAcceptance`).set({termsVersion: TERMS_VERSION, privacyVersion: TERMS_VERSION, acceptedAt: Date.now(), source: 're-consent'});
       await audit(token.uid, 'terms_reconsent', 'user', token.uid, {version: TERMS_VERSION});

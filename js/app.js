@@ -1,6 +1,6 @@
 import {startPublic, store} from './store.js';
 import {authReady} from './auth.js';
-import {nav, bottomNav, home, cars, authView, dashboard, chatsPage, openAdminLogin, openCar} from './views.js';
+import {nav, bottomNav, home, cars, authView, dashboard, chatsPage, openAdminLogin, openCar, ensureAppModule} from './views.js';
 import {toast, closeModal, resetPaint, enhanceUI} from './core.js';
 
 // Start data + auth in the background — do NOT block first paint on them.
@@ -161,6 +161,10 @@ window.addEventListener('hashchange', render);
 window.addEventListener('storechange', event => {
   const key = String(event.detail || '');
   if (['cars','ratings','profile','verification-status','verification-statuses','bookings','payments','users','admin-notifications','config','private-ready','private-stopped','reservations','user-notifications','external-rentals'].includes(key)) scheduleRender();
+  // Load the personal-area module in the background for any signed-in member so the rental-request
+  // popup (owner) and the approval/rejection popup (renter) fire even while they browse public pages —
+  // the watchers self-subscribe to storechange when the module loads.
+  if (key === 'profile' && store.user && !store.user.isAnonymous) ensureAppModule();
 });
 window.addEventListener('authchange', scheduleRender);
 window.addEventListener('unhandledrejection', event => {
