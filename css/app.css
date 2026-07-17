@@ -656,7 +656,9 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
      (min-height:470 used to force the shell taller than the viewport → the reply box went off-screen). */
   min-height:340px;min-height:min(470px, calc(100dvh - 120px));margin-top:26px;
   background:var(--surface);border:1px solid var(--hair);border-radius:18px;overflow:hidden;box-shadow:0 34px 90px rgba(10,14,19,.14)}
-.chat-list{border-inline-start:1px solid var(--hair);display:flex;flex-direction:column;background:var(--surface);min-width:0}
+/* min-height:0 is CRITICAL: as a grid item the list defaults to min-height:auto, so it grew past the
+   shell (overflow:hidden) and .chat-items' own scroll never engaged — the list could not be scrolled. */
+.chat-list{border-inline-start:1px solid var(--hair);display:flex;flex-direction:column;background:var(--surface);min-width:0;min-height:0}
 .chat-list-head{padding:16px;border-bottom:1px solid var(--hair);background:var(--dark);color:#fff}
 .chat-list-head h2{margin:0 0 8px;font-size:1.05rem;color:#fff;letter-spacing:.02em}
 #chat-search{width:100%;border:1px solid rgba(255,255,255,.18);border-radius:99px;padding:9px 14px;background:rgba(255,255,255,.1);color:#fff}
@@ -1159,8 +1161,10 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
   .auc-contact .lab{display:none}   /* redundant at half-width — the @ / +1 make email vs phone obvious */
   .auc-actions{gap:6px;padding-top:9px}
   .auc-actions .btn.outline{padding:7px 6px;font-size:.68rem;flex:1 1 42%}
-  .auc-icons{width:100%;justify-content:space-between;margin:2px 0 0}
-  .auc-icons .icon-btn{width:34px;height:34px}
+  .auc-icons{width:100%;justify-content:space-between;margin:2px 0 0;flex-wrap:wrap}
+  /* min-width/height must be repeated: the global 44px touch-target minimum beats width alone,
+     and 4×44px cannot fit a half-width card — the delete button was clipped off the edge. */
+  .auc-icons .icon-btn{width:34px;height:34px;min-width:34px;min-height:34px}
 }
 
 /* ---------- Rental modes + date-search pricing ---------- */
@@ -1962,3 +1966,110 @@ body[data-page="dashboard"] .dashboard-tabs .tab-group-label:first-child{border-
   body[data-page="dashboard"] .dashboard-tabs .tab-group-label{border-right:none;border-top-color:rgba(255,255,255,.14)}
   body[data-page="dashboard"] .dashboard-tabs .tab-group-label:first-child{border-top:none}
 }
+
+/* ===== OWNER WHATSAPP SHARE (rev155): direct wa.me share on the owner's car cards ===== */
+.btn.wa-share{background:#25D366;border:1px solid #1eb457;color:#fff;display:inline-flex;align-items:center;justify-content:center;gap:7px;font-weight:700}
+.btn.wa-share:hover{background:#1eb457}
+.btn.wa-share svg{width:18px;height:18px;flex:0 0 18px}
+.car-manage{flex-wrap:wrap}
+.car-manage .wa-share{flex:1 1 100%}
+
+/* ===== ADMIN MAINTENANCE (rev155) ===== */
+/* The fixed ✕ (dash-close) sits at inline-start (RTL: right) and overlapped the greeting line —
+   give the eyebrow room so "שלום, <שם>" is never hidden under the button. */
+@media(max-width:820px){
+  .dashboard-head .eyebrow{padding-inline-start:40px}
+}
+/* Quick-approve on a pending user card: full-width primary row above the secondary actions */
+.auc-actions .auc-approve{flex:1 1 100%}
+
+/* ===== ADMIN DOC GALLERY (rev157): review license/selfie/payment as real image tiles ===== */
+.doc-h{margin:16px 0 8px;font-size:.95rem;font-weight:800}
+.doc-gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;margin-bottom:6px}
+.doc-tile{position:relative;display:flex;flex-direction:column;gap:0;padding:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--bg-soft);cursor:pointer;font:inherit;text-align:center;transition:transform .15s,box-shadow .2s,border-color .2s}
+.doc-tile:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(12,20,32,.14);border-color:var(--brand-l)}
+.doc-tile img{width:100%;aspect-ratio:1.4/1;object-fit:cover;display:block;background:#0c1118}
+.doc-tile span{padding:8px 6px;font-size:.76rem;font-weight:600;color:var(--text)}
+.doc-tile.doc-missing{cursor:default;min-height:96px;display:grid;place-items:center;background:repeating-linear-gradient(45deg,var(--bg-soft),var(--bg-soft) 8px,transparent 8px,transparent 16px);color:var(--muted)}
+.doc-tile.doc-missing:hover{transform:none;box-shadow:none;border-color:var(--line)}
+.doc-full{margin:6px 0 12px;border-radius:12px;overflow:hidden;background:#0c1118}
+.doc-full img{width:100%;max-height:70vh;object-fit:contain;display:block}
+
+/* ===== CONTROL HUB (rev158, polished rev160): task-first, premium personal-area overview ===== */
+.admin-sec-h{font-size:.72rem;font-weight:800;letter-spacing:.07em;color:#8FA3B8;margin:20px 4px 11px;display:flex;align-items:center;gap:8px}
+.admin-sec-h::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(143,163,184,.28),transparent)}
+.admin-todo{display:flex;flex-direction:column;gap:9px}
+.admin-todo .admin-sec-h{margin-top:2px}
+/* "דורש טיפול" rows — a warm amber action card; the whole row jumps to what needs handling */
+.todo-row{display:flex;align-items:center;gap:13px;width:100%;background:linear-gradient(180deg,var(--surface),var(--surface));border:1px solid var(--line);border-inline-start:4px solid var(--warn);border-radius:15px;padding:13px 15px;cursor:pointer;font:inherit;text-align:right;box-shadow:var(--elev-1);transition:transform .16s var(--ease),box-shadow .22s}
+.todo-row:hover{transform:translateY(-2px);box-shadow:var(--elev-2)}
+.todo-row:active{transform:translateY(0)}
+.todo-count{min-width:38px;height:38px;padding:0 8px;border-radius:11px;background:linear-gradient(145deg,#E9A93D,#C6902E);color:#2A1F08;font-weight:800;font-size:1.1rem;display:grid;place-items:center;flex:0 0 auto;box-shadow:0 4px 10px rgba(198,144,46,.35),inset 0 1px 0 rgba(255,255,255,.4)}
+.todo-label{flex:1;font-weight:600;color:var(--text);font-size:.95rem}
+.todo-go{color:var(--warn);font-size:1.5rem;font-weight:700;opacity:.8}
+/* all-clear — solid surface (readable on the always-dark admin canvas), gentle green glow */
+.admin-allclear{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--line);border-inline-start:4px solid var(--ok);border-radius:15px;padding:16px;box-shadow:var(--elev-1)}
+.admin-allclear .ac-ic{width:40px;height:40px;border-radius:50%;background:linear-gradient(145deg,var(--ok),var(--ok));color:#fff;display:grid;place-items:center;font-size:1.2rem;font-weight:800;flex:0 0 auto;box-shadow:0 4px 12px rgba(28,124,79,.35)}
+.admin-allclear b{display:block;font-size:1rem;color:var(--text)}
+.admin-allclear small{color:var(--muted)}
+/* quick-nav tiles — colored icon disc + label; every area one tap from the overview */
+.admin-hub{display:grid;grid-template-columns:repeat(2,1fr);gap:11px}
+.hub-tile{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:11px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;cursor:pointer;font:inherit;color:var(--text);box-shadow:var(--elev-1);transition:transform .16s var(--ease),box-shadow .22s,border-color .2s}
+.hub-tile:hover{transform:translateY(-3px);box-shadow:var(--elev-2);border-color:var(--brand-l)}
+.hub-tile:active{transform:translateY(-1px)}
+.hub-ic{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.04),inset 0 1px 0 rgba(255,255,255,.5)}
+.hub-ic svg{width:22px;height:22px;stroke-width:2}
+.hub-tile b{font-size:1rem;font-weight:700}
+.hub-ic.tint-blue{background:rgba(63,107,142,.12);color:var(--brand)}
+.hub-ic.tint-green{background:rgba(28,124,79,.12);color:var(--ok)}
+.hub-ic.tint-gold{background:rgba(233,169,61,.16);color:#B17F00}
+.hub-ic.tint-purple{background:#F1EFFA;color:#7A66C9}
+.hub-ic.tint-slate{background:rgba(94,110,130,.14);color:#5E6E82}
+.hub-badge{position:absolute;top:13px;inset-inline-start:13px;min-width:24px;height:24px;padding:0 7px;border-radius:12px;background:linear-gradient(145deg,#F0555C,var(--danger));color:#fff;font-size:.78rem;font-weight:800;display:grid;place-items:center;box-shadow:0 3px 8px rgba(215,0,21,.4)}
+/* compact stats — a quiet, refined strip instead of four big KPI cards */
+.admin-stats-mini{display:flex;flex-wrap:wrap;gap:9px;margin:18px 0 6px}
+.admin-stats-mini span{flex:1 1 40%;background:var(--bg-soft);border:1px solid var(--line);border-radius:13px;padding:11px 14px;font-size:.8rem;color:var(--muted)}
+.admin-stats-mini b{display:block;font-size:1.2rem;font-weight:800;color:var(--brand-d);margin-bottom:1px;font-variant-numeric:tabular-nums}
+
+/* Control-hub icon discs on the DARK scheme (tiles become dark surfaces) — brighten so they pop */
+@media (prefers-color-scheme: dark){
+  .hub-ic{box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
+  .hub-ic.tint-blue{background:rgba(143,180,212,.16);color:#8FB4D4}
+  .hub-ic.tint-green{background:rgba(63,191,135,.16);color:#3FBF87}
+  .hub-ic.tint-gold{background:rgba(233,169,79,.18);color:#E5A94F}
+  .hub-ic.tint-purple{background:rgba(160,144,224,.18);color:#B7A9EC}
+  .hub-ic.tint-slate{background:rgba(160,176,196,.16);color:#AEB6C0}
+}
+
+/* ===== CHAT PRO (rev161): WhatsApp-grade list + conversation ===== */
+/* Filter head: הכל / לא נקראו + סמן הכל כנקרא */
+.chat-filter{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px 4px;flex-wrap:wrap}
+.chat-filter-chips{display:flex;gap:6px}
+.chat-fchip{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:99px;padding:6px 14px;font-size:.8rem;font-weight:700;cursor:pointer;transition:all .15s}
+.chat-fchip.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.chat-markall{background:none;border:none;color:var(--brand-d);font-size:.78rem;font-weight:700;cursor:pointer;padding:4px 6px}
+.chat-markall:hover{text-decoration:underline}
+/* List rows: time + unread dot on one side; unread rows read bolder (like a messaging app) */
+.chat-item-meta{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:0 0 auto;margin-inline-start:2px}
+.chat-item-meta time{font-size:.68rem;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.chat-item.is-unread .chat-item-main b{font-weight:800}
+.chat-item.is-unread .chat-item-main small{color:var(--text);font-weight:600}
+.chat-item.is-unread .chat-item-meta time{color:var(--ok);font-weight:700}
+/* Day divider inside the conversation */
+.chat-day{align-self:center;margin:6px 0 2px}
+.chat-day span{background:rgba(20,26,33,.06);color:var(--muted);font-size:.7rem;font-weight:700;padding:4px 12px;border-radius:99px}
+/* Grouped consecutive bubbles hug closer; sender changes get the normal gap */
+.chat-msgs .message.grouped{margin-top:-5px}
+.chat-msgs .message.grouped.mine{border-end-start-radius:5px;border-start-start-radius:15px}
+/* System auto-reply bubble (support auto-ack) */
+.chat-msgs .message.sys{align-self:center;background:rgba(63,107,142,.1);color:var(--brand-d);border:1px dashed rgba(63,107,142,.3);font-size:.8rem;text-align:center;max-width:88%}
+/* Sent tick on my messages */
+.msg-tick{margin-inline-start:4px;font-size:.72rem;opacity:.8;letter-spacing:-2px}
+/* Friendlier "mine" bubble — a brand-blue gradient instead of near-black */
+.chat-msgs .message.mine{background:linear-gradient(160deg,#4A75A0,var(--brand));color:#fff}
+/* "↓ הודעות חדשות" pill floating above the composer */
+.chat-newpill{position:absolute;bottom:78px;inset-inline-start:50%;transform:translateX(50%);background:var(--brand);color:#fff;border:none;border-radius:99px;padding:9px 18px;font-size:.82rem;font-weight:700;cursor:pointer;box-shadow:0 8px 22px rgba(27,34,43,.28);z-index:4;animation:fadeUp .25s var(--ease)}
+.chat-newpill:hover{filter:brightness(1.07)}
+/* Give the pill a positioned ancestor WITHOUT breaking the mobile slide-over (there .chat-pane is
+   already position:absolute, which is itself a containing block). Only desktop's static pane needs this. */
+@media(min-width:821px){ .chat-pane{position:relative} }

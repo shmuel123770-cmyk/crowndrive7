@@ -49,6 +49,12 @@ export async function handler(event) {
       }
       const ref = db.ref(`messages/admin/${userUid}`).push();
       await ref.set({senderUid: token.uid, fromAdmin: admin, text, ...(stored ? {attachment: stored} : {}), createdAt: Date.now()});
+      // Cheap unread summary on the RECIPIENT user's own profile node (they already read it via their
+      // profile listener) — lets the client show an unread badge without loading any messages. Only for
+      // a REGISTERED user (guests have no profile; skip so we don't create a blank users row).
+      if (await db.ref(`users/${userUid}/role`).once('value').then(s => s.exists()).catch(() => false)) {
+        await db.ref(`users/${userUid}`).update({supportMsgAt: Date.now(), supportMsgFrom: token.uid}).catch(() => {});
+      }
       // Guest gate flags: an admin reply opens the guest to write freely; a guest message marks firstSent.
       if (admin) await db.ref(`supportGuestState/${userUid}/adminReplied`).set(true).catch(() => {});
       else if (isGuest) {
@@ -120,6 +126,9 @@ export async function handler(event) {
 
     const ref = db.ref(`messages/${bookingId}`).push();
     await ref.set({senderUid: token.uid, text, ...(stored ? {attachment: stored} : {}), createdAt: Date.now()});
+    // Cheap unread summary on the booking node (both participants already read their bookings) — a
+    // preview + who-sent + when, so the chat list shows unread + a last-message line with no message reads.
+    await db.ref(`bookings/${bookingId}`).update({lastMsgAt: Date.now(), lastMsgFrom: token.uid, lastMsgText: (text || '📷 תמונה').slice(0, 90)}).catch(() => {});
     if (stored && EVIDENCE_KEYS[stored.type]) {
       await db.ref(`bookings/${bookingId}/evidence/${EVIDENCE_KEYS[stored.type]}`).set({path: stored.path, by: token.uid, at: Date.now()});
     }

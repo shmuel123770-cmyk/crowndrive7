@@ -5,7 +5,7 @@ import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, s
 import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './media.js';
 import {legacyStatus, migrateLegacy} from './migrate.js';
 import {api} from './api.js';
-import {saveAuthReturn, afterAuthDestination, openCar, CAR_MAKES, CAR_TYPES, ICON, MODELS_BY_MAKE, RENTAL_MODES, TAB_ICONS, app, avatarHtml, carImage, carPhotoList, carStatusPill, carYears, composePhone, emptyState, fallbackImage, kpi, phoneField, roleName, selectOptions, bindCarButtons, carGrid, featuredFirst, userUnreadNotifs} from './views.js';
+import {saveAuthReturn, afterAuthDestination, openCar, CAR_MAKES, CAR_TYPES, ICON, MODELS_BY_MAKE, RENTAL_MODES, TAB_ICONS, app, avatarHtml, carImage, carPhotoList, carStatusPill, carYears, composePhone, emptyState, fallbackImage, kpi, phoneField, roleName, selectOptions, bindCarButtons, carGrid, featuredFirst, userUnreadNotifs, bottomNav} from './views.js';
 
 // Incremental list rendering (audit #30 / design spec §22): long admin lists paint the first 30
 // records and grow by 50 per tap, so the DOM stays light as the community grows. State survives
@@ -34,6 +34,12 @@ function bindDashboardTabs(renderer) {
   document.querySelectorAll('[data-dashboard-tab]').forEach(button => button.onclick = () => {
     const tab = button.dataset.dashboardTab;
     if (tab === 'chats') { location.hash = 'chats'; return; }  // full-screen messaging page
+    store.dashTab = tab; renderer(tab);
+  });
+  // "דורש טיפול" rows and quick links inside an overview jump straight to a tab (shared by renter/owner).
+  document.querySelectorAll('[data-goto-tab]').forEach(button => button.onclick = () => {
+    const tab = button.dataset.gotoTab;
+    if (tab === 'chats') { location.hash = 'chats'; return; }
     store.dashTab = tab; renderer(tab);
   });
   const headAvatar = document.querySelector('[data-goto-profile]');
@@ -203,8 +209,19 @@ function renterDashboard(tab = 'overview') {
 
   const bookings = myBookings();
   const verification = store.profile?.verification || {};
+  const active = bookings.filter(b => b.status === 'active').length;
+  const pending = bookings.filter(b => b.status === 'pending').length;
+  const done = bookings.filter(b => b.status === 'done').length;
+  // "דורש טיפול" for the renter: an unfinished license verification is the one thing that blocks them
+  // from booking — surface it as a tappable row that jumps to the profile/verification tab.
+  const renterTodo = [
+    verification.status !== 'approved' && [verification.status === 'pending' ? 'האימות שלך בבדיקה' : 'להשלים אימות רישיון', verification.status === 'pending' ? '⏳' : '!', 'profile'],
+  ].filter(Boolean);
+  const todoHtml = renterTodo.length
+    ? `<div class="admin-todo">${renterTodo.map(([label, n, t]) => `<button class="todo-row" data-goto-tab="${t}"><span class="todo-count">${n}</span><span class="todo-label">${esc(label)}</span><span class="todo-go" aria-hidden="true">›</span></button>`).join('')}</div>`
+    : '';
   const contents = {
-    overview: `<div class="kpis">${kpi('calendar', bookings.filter(b => b.status === 'active').length, 'השכרות פעילות')}${kpi('check', bookings.filter(b => b.status === 'pending').length, 'ממתינות לאישור')}${kpi('car', bookings.filter(b => b.status === 'done').length, 'הושלמו')}${kpi('users', verification.status === 'approved' ? '✓' : verification.status === 'pending' ? 'בבדיקה' : 'ממתין', 'אימות רישיון')}</div><h2>הזמנות אחרונות</h2>${bookingList(bookings, 'renter')}`,
+    overview: `${todoHtml}<div class="admin-stats-mini"><span><b>${active}</b> פעילות</span><span><b>${pending}</b> ממתינות</span><span><b>${done}</b> הושלמו</span><span><b>${verification.status === 'approved' ? '✓' : '—'}</b> אימות</span></div><h2>ההזמנות שלי</h2>${bookingList(bookings, 'renter')}`,
     bookings: `<h2>ההזמנות שלי</h2>${bookingList(bookings, 'renter')}`,
     profile: profileView(),
     notifications: userNotificationsView(),
@@ -222,8 +239,18 @@ function ownerDashboard(tab = 'overview') {
   const payments = Object.values(store.payments || {});
   const approvedTotal = payments.filter(paymentApproved).reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
   const pendingPayments = payments.filter(p => p && p.status === 'pending').length;
+  const pendingBook = bookings.filter(b => b.status === 'pending').length;
+  // "דורש טיפול" — the owner's action items (an approval waiting, a payment to check) as tappable rows
+  // that jump to the bookings tab, instead of a static notice the owner can't act on directly.
+  const ownerTodo = [
+    pendingBook && ['הזמנות ממתינות לאישורך', pendingBook, 'bookings'],
+    pendingPayments && ['תשלומים ממתינים לאישורך', pendingPayments, 'bookings'],
+  ].filter(Boolean);
+  const todoHtml = ownerTodo.length
+    ? `<div class="admin-todo"><div class="admin-sec-h">דורש טיפול</div>${ownerTodo.map(([label, n, t]) => `<button class="todo-row" data-goto-tab="${t}"><span class="todo-count">${n}</span><span class="todo-label">${esc(label)}</span><span class="todo-go" aria-hidden="true">›</span></button>`).join('')}</div>`
+    : '';
   const contents = {
-    overview: `<div class="kpis">${kpi('car', cars.length, 'רכבים')}${kpi('check', cars.filter(c => c.status === 'available').length, 'זמינים')}${kpi('calendar', bookings.filter(b => b.status === 'pending').length, 'ממתינות לאישור')}${kpi('money', money(approvedTotal), 'הכנסות שאושרו')}</div>${pendingPayments ? `<div class="notice">💳 ${pendingPayments} הוכחות תשלום ממתינות לאישורך — בדקו בכרטיסי ההזמנות.</div>` : ''}<h2>הזמנות פעילות</h2>${bookingList(bookings.filter(b => ['pending','approved','active'].includes(b.status)), 'owner')}`,
+    overview: `${todoHtml}<div class="admin-stats-mini"><span><b>${cars.length}</b> רכבים</span><span><b>${cars.filter(c => c.status === 'available').length}</b> זמינים</span><span><b>${money(approvedTotal)}</b> הכנסות</span><span><b>${bookings.filter(b => b.status === 'active').length}</b> פעילות</span></div><h2>הזמנות פעילות</h2>${bookingList(bookings.filter(b => ['pending','approved','active'].includes(b.status)), 'owner')}`,
     bookings: `<h2>הזמנות</h2>${bookingList(bookings, 'owner')}`,
     cars: `<div class="section-head"><h2>הרכבים שלי</h2><div class="chips"><button class="btn outline" id="goto-external">📒 השכרות חוץ</button><button class="btn gold" id="add-car">הוספת רכב</button></div></div>${carGrid(cars, true)}`,
     external: externalRentalsView(cars),
@@ -264,25 +291,33 @@ function adminDashboard(tab = 'overview') {
   // which gives an admin the whole fleet.
   const adminOwnCars = cars.filter(car => car.ownerUid === store.user?.uid);
   const total = Object.values(store.payments).reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
-  const recentCars = cars.slice().sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0)).slice(0, 5);
-  const recentBookings = bookings.slice().sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0)).slice(0, 5);
-  // "Needs attention" — the items the admin must act on, surfaced at the top of the overview so nothing is missed.
+  // "Needs attention" — the items the admin must act on, surfaced at the very top so nothing is missed.
   const pendingVerif = users.filter(u => u.verification?.status === 'pending').length;
   const pendingPay = Object.values(store.payments).filter(p => p && p.status === 'pending').length;
   const pendingBook = bookings.filter(b => b.status === 'pending').length;
-  const attnCards = [pendingVerif && ['users', pendingVerif, 'אימותים לבדיקה'], pendingPay && ['bookings', pendingPay, 'תשלומים לאישור'], pendingBook && ['bookings', pendingBook, 'הזמנות ממתינות']].filter(Boolean);
-  const attnHtml = `<div class="admin-attention">${attnCards.length ? attnCards.map(([t, n, label]) => `<button class="attn-card" data-attn-tab="${t}"><b>${n}</b><span>${esc(label)}</span></button>`).join('') : '<div class="attn-clear">✓ אין פעולות ממתינות — הכל מטופל</div>'}</div>`;
+  const unread = adminUnreadCount();
+  const todo = [
+    pendingVerif && ['users', pendingVerif, 'אימותים ממתינים לבדיקה'],
+    pendingPay && ['bookings', pendingPay, 'תשלומים ממתינים לאישור'],
+    pendingBook && ['bookings', pendingBook, 'הזמנות ממתינות לאישור'],
+    unread && ['chats', unread, 'הודעות צ׳אט שלא נקראו'],
+  ].filter(Boolean);
+  // A SIMPLE control hub (user: "האזור האישי של המנהל מאוד מאוד מסובך"): (1) a plain "what needs you"
+  // list where each row jumps straight to it, (2) big labeled tiles so every area is one tap away
+  // (no hunting in "עוד"), (3) a compact stats strip, (4) search + rare tools folded away at the bottom.
+  const todoHtml = todo.length
+    ? `<div class="admin-todo"><div class="admin-sec-h">דורש טיפול</div>${todo.map(([t, n, label]) => `<button class="todo-row" data-nav-tab="${t}"><span class="todo-count">${n}</span><span class="todo-label">${esc(label)}</span><span class="todo-go" aria-hidden="true">›</span></button>`).join('')}</div>`
+    : `<div class="admin-allclear"><span class="ac-ic">✓</span><div><b>הכל מטופל</b><small>אין כרגע פעולות שממתינות לך</small></div></div>`;
+  const navTile = (t, label, icon, tint, badge = 0) => `<button class="hub-tile" data-nav-tab="${t}"><span class="hub-ic tint-${tint}">${icon}</span><b>${esc(label)}</b>${badge ? `<span class="hub-badge">${badge}</span>` : ''}</button>`;
   const contents = {
-    overview: `<div class="panel-head-actions"><h2>סקירה</h2><div class="chips"><button class="btn ${store.config?.maintenance?.on ? 'danger' : 'outline'}" id="maintenance-toggle">${store.config?.maintenance?.on ? 'האתר בתחזוקה — לחצו לפתיחה' : 'מצב תחזוקה'}</button></div></div>
-      ${attnHtml}
-      <div class="field admin-search-wrap"><input id="admin-search" placeholder="🔎 חיפוש: שם, מייל, טלפון, רכב, בעל רכב, סטטוס…" autocomplete="off"></div><div id="admin-search-results"></div>
-      <div class="kpis">${kpi('money', money(total), 'תשלומים מדווחים')}${kpi('calendar', bookings.length, 'הזמנות')}${kpi('car', cars.length, 'רכבים')}${kpi('users', users.length, 'משתמשים')}</div>
-      <div class="mini-panel my-zone"><div class="mini-panel-head"><h3>האזור שלי — בעל רכב</h3><span>הניהול האישי שלך</span></div><div class="my-zone-grid"><button class="zone-card" data-attn-tab="myCars"><b>${adminOwnCars.length}</b><span>הרכבים שלי</span></button><button class="zone-card" data-attn-tab="external"><b>${money(list(store.externalRentals).reduce((s, r) => s + Number(r.amount || 0), 0))}</b><span>השכרות חוץ</span></button></div></div>
-      <div class="overview-grid">
-        <div class="mini-panel"><div class="mini-panel-head"><h3>רכבים חדשים</h3><span>${recentCars.length} אחרונים</span></div>${recentCars.length ? recentCars.map(c => `<div class="mini-row"><b>${esc(c.make || '')} ${esc(c.model || '')}</b><span class="mut">${money(c.dailyPrice || 0)}/יום</span></div>`).join('') : '<div class="mini-row"><span class="mut">אין רכבים</span></div>'}</div>
-        <div class="mini-panel"><div class="mini-panel-head"><h3>הזמנות אחרונות</h3><span>${recentBookings.length} אחרונות</span></div>${recentBookings.length ? recentBookings.map(b => { const c = store.cars[b.carId] || {}; return `<div class="mini-row"><b>${esc(c.make || 'רכב')} ${esc(c.model || '')}</b><span class="mut">${statusLabel(b.status)}</span></div>`; }).join('') : '<div class="mini-row"><span class="mut">אין הזמנות</span></div>'}</div>
-      </div>
-      <details class="admin-tools"><summary>כלים מתקדמים</summary><div class="admin-tools-grid"><button class="btn outline" id="export-json">ייצוא JSON</button><button class="btn outline" id="legacy-migrate">העברת נתונים ישנים</button><button class="btn outline" id="media-migrate" title="מעביר תמונות רכב ישנות מהמסד לאחסון CDN — מאיץ את טעינת האתר">⚡ האצת טעינה (תמונות)</button></div></details>`,
+    overview: `${todoHtml}
+      <div class="admin-sec-h">ניהול האתר</div>
+      <div class="admin-hub">${navTile('users', 'משתמשים', ICON.users, 'purple', pendingVerif)}${navTile('bookings', 'הזמנות', ICON.calendar, 'blue', pendingPay + pendingBook)}${navTile('cars', 'רכבים', ICON.car, 'gold')}${navTile('chats', 'צ׳אטים', ICON.chat, 'green', unread)}</div>
+      <div class="admin-sec-h">האזור שלי — בעל רכב</div>
+      <div class="admin-hub">${navTile('myCars', 'הרכבים שלי', ICON.car, 'blue')}${navTile('external', 'השכרות חוץ', ICON.money, 'gold')}${navTile('profile', 'פרופיל', ICON.selfie, 'slate')}</div>
+      <div class="admin-stats-mini"><span><b>${bookings.length}</b> הזמנות</span><span><b>${money(total)}</b> תשלומים</span><span><b>${users.length}</b> משתמשים</span><span><b>${cars.length}</b> רכבים</span></div>
+      <div class="field admin-search-wrap"><input id="admin-search" placeholder="🔎 חיפוש משתמש, רכב או הזמנה…" autocomplete="off"></div><div id="admin-search-results"></div>
+      <details class="admin-tools"><summary>הגדרות וכלים</summary><div class="admin-tools-grid"><button class="btn ${store.config?.maintenance?.on ? 'danger' : 'outline'}" id="maintenance-toggle">${store.config?.maintenance?.on ? 'האתר בתחזוקה — לחצו לפתיחה' : 'מצב תחזוקה'}</button><button class="btn outline" id="export-json">ייצוא JSON</button><button class="btn outline" id="legacy-migrate">העברת נתונים ישנים</button><button class="btn outline" id="media-migrate" title="מעביר תמונות רכב ישנות מהמסד לאחסון CDN — מאיץ את טעינת האתר">⚡ האצת טעינה (תמונות)</button></div></details>`,
     users: `<h2 style="margin-bottom:16px">משתמשים ואימותים</h2>${adminUsersTable(users)}`,
     cars: `<h2 style="margin-bottom:16px">רכבים</h2>${adminCarsTable(cars)}`,
     // The admin is ALSO a car owner: a personal "הרכבים שלי" tab (strictly their own cars, with the
@@ -293,7 +328,6 @@ function adminDashboard(tab = 'overview') {
     notifications: adminNotificationsView(),
     profile: ownerProfileView(),
   };
-  const unread = adminUnreadCount();
   // Two clear zones (user: "האזור האישי של המנהל חייב סידור מחדש"): site management first,
   // then the admin's own owner-side area — mirrored in the desktop tab bar and the mobile "עוד" sheet.
   app().innerHTML = dashboardLayout('לוח ניהול מנהל', [
@@ -310,8 +344,23 @@ function adminDashboard(tab = 'overview') {
   document.querySelector('#admin-refresh')?.addEventListener('click', () => window.location.reload());
   document.querySelector('#admin-logout')?.addEventListener('click', async () => { try { await logout(); location.hash = 'home'; } catch (error) { toast(error.message); } });
   bindDashboardTabs(adminDashboard); bindActions(); bindCarButtons(); bindProfileActions();
-  document.querySelectorAll('[data-attn-tab]').forEach(btn => btn.onclick = () => { store.dashTab = btn.dataset.attnTab; adminDashboard(btn.dataset.attnTab); });
+  // Overview hub tiles + "דורש טיפול" rows jump straight to an area; chats is a full-screen page.
+  document.querySelectorAll('[data-nav-tab]').forEach(btn => btn.onclick = () => {
+    const t = btn.dataset.navTab;
+    if (t === 'chats') { location.hash = 'chats'; return; }
+    store.dashTab = t; adminDashboard(t);
+  });
   document.querySelectorAll('[data-admin-user]').forEach(button => button.onclick = () => adminUserModal(button.dataset.adminUser));
+  // One-tap approval straight from a pending user's card (the modal path with the documents stays
+  // available via "מסמכים"; the server still refuses if the three documents are missing).
+  document.querySelectorAll('[data-quick-approve]').forEach(button => button.onclick = async () => {
+    const uid = button.dataset.quickApprove;
+    const name = store.users[uid]?.name || store.users[uid]?.email || 'המשתמש';
+    if (!confirm(`לאשר את האימות של ${name}? מומלץ לבדוק קודם את המסמכים (כפתור "מסמכים").`)) return;
+    button.disabled = true;
+    try { await approveVerification(uid, 'approved'); toast('האימות אושר ✓'); }
+    catch (error) { toast(error.message); button.disabled = false; }
+  });
   document.querySelectorAll('[data-admin-rentals]').forEach(button => button.onclick = () => adminUserBookingsModal(button.dataset.adminRentals));
   document.querySelectorAll('[data-user-message]').forEach(button => button.onclick = () => openChatThread(`a:${button.dataset.userMessage}`));
   document.querySelectorAll('[data-user-edit]').forEach(button => button.onclick = async () => {
@@ -389,6 +438,7 @@ function adminUsersTable(users) {
       </div>
       <div class="auc-contact"><span><span class="lab">מייל</span>${esc(user.email || '—')}</span><span><span class="lab">טלפון</span>${esc(user.phone || '—')}</span></div>
       <div class="auc-actions">
+        ${vs === 'pending' ? `<button class="btn primary auc-approve" data-quick-approve="${esc(user.id)}">✓ אישור אימות</button>` : ''}
         <button class="btn outline" data-admin-user="${esc(user.id)}">מסמכים</button>
         <button class="btn outline" data-admin-rentals="${esc(user.id)}">${count} השכרות</button>
         <span class="auc-icons"><button class="icon-btn" title="שליחת הודעה" data-user-message="${esc(user.id)}">${ICON.chat}</button><button class="icon-btn" title="עריכה" data-user-edit="${esc(user.id)}">${ICON.edit}</button><button class="icon-btn ${user.blocked ? '' : 'danger'}" title="${user.blocked ? 'שחרור חסימה' : 'חסימה'}" data-user-block="${esc(user.id)}">${user.blocked ? ICON.check : ICON.block}</button><button class="icon-btn danger" title="מחיקה" data-user-delete="${esc(user.id)}">${ICON.trash}</button></span>
@@ -769,6 +819,46 @@ let adminReadAt = {};   // uid -> ts the admin last opened the thread; clears th
 // and it re-lights only when a genuinely newer message arrives).
 const adminThreadUnread = id => !!adminUnread[id] && (adminChatActivity?.[id] || 0) > (adminReadAt[id] || 0);
 
+// ---------- Unread tracking for EVERY role (WhatsApp-style), computed from data already live in the
+// store — no extra Firebase listeners, no message reads. The server writes a cheap {at, from} summary
+// per thread: bookings→lastMsgAt/lastMsgFrom, inquiries→updatedAt/lastSender, support→the user's own
+// profile supportMsgAt/supportMsgFrom. "Read" is a per-device localStorage timestamp per thread. ----
+let chatRead = (() => { try { return JSON.parse(localStorage.getItem('cd-chat-read') || '{}'); } catch { return {}; } })();
+let chatFilterUnread = false;   // the "לא נקראו" filter toggle on the list head
+const chatReadAt = key => Number(chatRead[key] || 0);
+function markThreadRead(key, at = 0) {
+  const ts = Math.max(Number(at || 0), Date.now());
+  if (chatReadAt(key) >= ts) return false;
+  chatRead[key] = ts;
+  try { localStorage.setItem('cd-chat-read', JSON.stringify(chatRead)); } catch {}
+  return true;
+}
+// {at, from} for a thread, straight from the store (cheap). from === my uid means I sent it (→ read).
+function threadMeta(key) {
+  const id = key.slice(2);
+  if (key.startsWith('a:')) {
+    if (store.isAdmin) { const at = adminChatActivity?.[id] || 0; return at ? {at, from: adminUnread[id] ? id : store.user?.uid} : null; }
+    const at = Number(store.profile?.supportMsgAt || 0);
+    return at ? {at, from: store.profile?.supportMsgFrom || store.user?.uid} : null;
+  }
+  if (key.startsWith('b:')) { const b = store.bookings[id]; return b?.lastMsgAt ? {at: Number(b.lastMsgAt), from: b.lastMsgFrom, text: b.lastMsgText} : null; }
+  if (key.startsWith('i:')) { const q = store.inquiries[id]; return q?.updatedAt && q?.lastText ? {at: Number(q.updatedAt), from: q.lastSender, text: q.lastText} : null; }
+  return null;
+}
+function threadUnread(key) {
+  if (store.isAdmin && key.startsWith('a:')) return adminThreadUnread(key.slice(2));
+  const m = threadMeta(key);
+  return !!m && m.at > chatReadAt(key) && m.from !== store.user?.uid;
+}
+// Total unread threads — powers the badge shown on the "צ׳אטים" tab across every personal area.
+export function chatUnreadTotal() {
+  try {
+    if (store.isAdmin) { let n = 0; for (const uid in (adminChatActivity || {})) if (adminThreadUnread(uid)) n++; return n; }
+    if (!store.user || store.user.isAnonymous) return 0;
+    return chatItems().filter(it => it.unread).length;
+  } catch { return 0; }
+}
+
 export function openChatThread(threadKey) {
   pendingThread = threadKey;
   if (store.route === 'chats') chatsPage();
@@ -836,6 +926,7 @@ export function chatsPage() {
   app().innerHTML = `<div class="chat-shell" id="chat-shell">
     <aside class="chat-list">
       <div class="chat-list-head"><button type="button" class="chat-page-back" id="chat-page-back" title="חזרה לאזור האישי" aria-label="חזרה">→</button><h2>צ׳אטים</h2>${store.isAdmin ? '<input id="chat-search" placeholder="חיפוש משתמש…" autocomplete="off">' : ''}</div>
+      <div class="chat-filter" id="chat-filter"></div>
       <div class="chat-items" id="chat-items"></div>
     </aside>
     <section class="chat-pane" id="chat-pane"><div class="chat-empty"><span class="chat-empty-ic">${ICON.chat}</span><p>בחרו שיחה מהרשימה</p></div></section>
@@ -912,31 +1003,65 @@ function chatItems() {
     return [...supportThreads, ...inquiryThreads];
   }
   const role = myRole();
+  // A one-line preview like WhatsApp: prefer the last message text the server stored on the thread.
+  const preview = (key, fallback) => { const m = threadMeta(key); return m?.text ? `${m.from === store.user?.uid ? 'את/ה: ' : ''}${m.text}` : fallback; };
+  const timeOf = key => threadMeta(key)?.at || 0;
   const bookingItems = myBookings()
     .filter(b => ['pending', 'approved', 'active', 'done'].includes(b.status))
-    .sort((a, b) => Number(b.updatedAt || b.createdAt || 0) - Number(a.updatedAt || a.createdAt || 0))
     .map(b => {
       const car = store.cars[b.carId] || {};
-      return {key: `b:${b.id}`, emoji: ICON.car, title: `${car.make || 'רכב'} ${car.model || ''}`.trim(), subtitle: role === 'owner' ? 'שיחה עם השוכר' : 'שיחה עם בעל הרכב', status: b.status, live: ['pending', 'approved', 'active'].includes(b.status)};
+      const key = `b:${b.id}`;
+      return {key, at: timeOf(key) || Number(b.updatedAt || b.createdAt || 0), emoji: ICON.car, title: `${car.make || 'רכב'} ${car.model || ''}`.trim(), subtitle: preview(key, role === 'owner' ? 'שיחה עם השוכר' : 'שיחה עם בעל הרכב'), status: b.status, live: ['pending', 'approved', 'active'].includes(b.status), unread: threadUnread(key)};
     });
   // Pre-booking inquiry threads (store.inquiries is already role-filtered: a renter sees ones they opened,
   // an owner sees ones about their cars).
   const inquiryItems = list(store.inquiries)
-    .sort((a, b) => Number(b.updatedAt || b.createdAt || 0) - Number(a.updatedAt || a.createdAt || 0))
     .map(inq => {
       const car = store.cars[inq.carId] || {};
-      return {key: `i:${inq.id}`, emoji: ICON.chat, title: `${car.make || 'רכב'} ${car.model || ''}`.trim(), subtitle: role === 'owner' ? 'פנייה משוכר (טרם הזמנה)' : 'שיחה עם בעל הרכב (טרם הזמנה)', live: true};
+      const key = `i:${inq.id}`;
+      return {key, at: timeOf(key) || Number(inq.updatedAt || inq.createdAt || 0), emoji: ICON.chat, title: `${car.make || 'רכב'} ${car.model || ''}`.trim(), subtitle: preview(key, role === 'owner' ? 'פנייה משוכר (טרם הזמנה)' : 'שיחה עם בעל הרכב (טרם הזמנה)'), live: true, unread: threadUnread(key)};
     });
-  return [{key: `a:${store.user.uid}`, emoji: ICON.chat, title: 'שירות לקוחות', subtitle: 'תמיכה טכנית · מענה מהיר', live: true}, ...bookingItems, ...inquiryItems];
+  const supportKey = `a:${store.user.uid}`;
+  const support = {key: supportKey, at: timeOf(supportKey), emoji: ICON.chat, title: 'שירות לקוחות', subtitle: preview(supportKey, 'תמיכה טכנית · מענה מהיר'), live: true, unread: threadUnread(supportKey)};
+  // Newest-active conversations first (support pinned when it has recent activity, else near the top).
+  return [support, ...bookingItems, ...inquiryItems].sort((a, b) => Number(b.at || 0) - Number(a.at || 0));
 }
 
 function renderChatItems() {
   const box = document.querySelector('#chat-items');
   if (!box) return;
-  const items = chatItems();
-  box.innerHTML = items.length ? items.map(item => `<button class="chat-item ${item.key === chatState.thread ? 'active' : ''} ${item.live ? '' : 'ended'}" data-thread="${esc(item.key)}">${item.avatar || `<span class="chat-item-emoji">${item.emoji}</span>`}<span class="chat-item-main"><b>${esc(item.title)}</b><small>${esc(item.subtitle)}</small></span>${item.unread ? '<span class="chat-unread-dot" title="הודעה חדשה שלא נקראה" aria-label="הודעה חדשה שלא נקראה"></span>' : ''}${item.status ? `<span class="status-badge ${esc(item.status)}">${statusLabel(item.status)}</span>` : ''}</button>`).join('') : '<div class="empty">אין שיחות פעילות</div>';
+  const all = chatItems();
+  const unreadCount = all.filter(i => i.unread).length;
+  // Filter head: "הכל / לא נקראו (N)" + "סמן הכל כנקרא" (mirrors WhatsApp's unread filter).
+  const filterBar = document.querySelector('#chat-filter');
+  if (filterBar) {
+    filterBar.innerHTML = `<div class="chat-filter-chips"><button type="button" class="chat-fchip ${chatFilterUnread ? '' : 'on'}" data-chat-filter="all">הכל</button><button type="button" class="chat-fchip ${chatFilterUnread ? 'on' : ''}" data-chat-filter="unread">לא נקראו${unreadCount ? ` (${unreadCount})` : ''}</button></div>${unreadCount ? '<button type="button" class="chat-markall" id="chat-markall">סימון הכל כנקרא</button>' : ''}`;
+    filterBar.querySelectorAll('[data-chat-filter]').forEach(chip => chip.onclick = () => { chatFilterUnread = chip.dataset.chatFilter === 'unread'; renderChatItems(); });
+    filterBar.querySelector('#chat-markall')?.addEventListener('click', () => {
+      let changed = false;
+      for (const it of all) if (it.unread) { markThreadRead(it.key, threadMeta(it.key)?.at); if (store.isAdmin && it.key.startsWith('a:')) { const uid = it.key.slice(2); adminReadAt[uid] = Date.now(); adminUnread[uid] = false; } changed = true; }
+      if (changed) { renderChatItems(); refreshChatBadges(); }
+    });
+  }
+  const items = chatFilterUnread ? all.filter(i => i.unread) : all;
+  box.innerHTML = items.length
+    ? items.map(item => `<button class="chat-item ${item.key === chatState.thread ? 'active' : ''} ${item.live ? '' : 'ended'} ${item.unread ? 'is-unread' : ''}" data-thread="${esc(item.key)}">${item.avatar || `<span class="chat-item-emoji">${item.emoji}</span>`}<span class="chat-item-main"><b>${esc(item.title)}</b><small>${esc(item.subtitle)}</small></span><span class="chat-item-meta">${item.at ? `<time>${chatListTime(item.at)}</time>` : ''}${item.unread ? '<span class="chat-unread-dot" title="הודעה שלא נקראה" aria-label="הודעה שלא נקראה"></span>' : ''}${item.status ? `<span class="status-badge ${esc(item.status)}">${statusLabel(item.status)}</span>` : ''}</span></button>`).join('')
+    : `<div class="empty">${chatFilterUnread ? 'אין הודעות שלא נקראו 🎉' : 'אין שיחות עדיין'}</div>`;
   box.querySelectorAll('[data-thread]').forEach(button => button.onclick = () => selectThread(button.dataset.thread));
 }
+// Short relative time for the conversation list (today → HH:MM, else a short date), like a messaging app.
+function chatListTime(at) {
+  const d = new Date(Number(at) || 0);
+  if (Number.isNaN(d.getTime()) || !at) return '';
+  const now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  if (sameDay) return d.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'});
+  const yst = new Date(now); yst.setDate(now.getDate() - 1);
+  if (d.toDateString() === yst.toDateString()) return 'אתמול';
+  return d.toLocaleDateString('he-IL', {day: 'numeric', month: 'numeric'});
+}
+// Refresh the unread badge everywhere it appears (bottom nav + dashboard tab bar) after read-state changes.
+function refreshChatBadges() { try { bottomNav(); } catch {} }
 
 function selectThread(key) {
   chatState.unsub?.();
@@ -950,8 +1075,10 @@ function selectThread(key) {
   const isSupport = key.startsWith('a:');
   const isInquiry = key.startsWith('i:');   // pre-booking renter↔owner thread about a car
   const id = key.slice(2);
-  // The admin opened this thread → it's now read; drop the green unread light for it.
-  if (isSupport && store.isAdmin) { adminReadAt[id] = Date.now(); if (adminUnread[id]) { adminUnread[id] = false; renderChatItems(); } }
+  // Opening a thread marks it read (every role) → clears its unread dot and updates the badges.
+  if (isSupport && store.isAdmin) { adminReadAt[id] = Date.now(); adminUnread[id] = false; }
+  markThreadRead(key, threadMeta(key)?.at);
+  renderChatItems(); refreshChatBadges();
   const inquiry = isInquiry ? store.inquiries[id] : null;
   const booking = (isSupport || isInquiry) ? null : store.bookings[id];
   if (isInquiry && !inquiry) { pane.innerHTML = '<div class="chat-empty"><p>השיחה לא נמצאה</p></div>'; return; }
@@ -988,6 +1115,8 @@ function selectThread(key) {
       <div class="chips">${headActions}</div>
     </header>${checklist}<div class="chat-msgs" id="chat-msgs"><div class="empty">טוען הודעות…</div></div>${composer}`;
 
+  // Hide the "new messages" pill as soon as the reader scrolls down to the bottom themselves.
+  pane.querySelector('#chat-msgs')?.addEventListener('scroll', event => { const b = event.currentTarget; if (b.scrollHeight - b.scrollTop - b.clientHeight < 60) document.querySelector('#chat-newpill')?.remove(); });
   pane.querySelector('#chat-back').onclick = () => document.querySelector('#chat-shell')?.classList.remove('show-pane');
   pane.querySelector('#chat-close').onclick = () => { chatState.unsub?.(); chatState.unsub = null; chatState.thread = null; document.querySelector('#chat-shell')?.classList.remove('show-pane'); pane.innerHTML = '<div class="chat-empty"><span class="chat-empty-ic">${ICON.chat}</span><p>בחרו שיחה מהרשימה</p></div>'; document.querySelectorAll('[data-thread]').forEach(el => el.classList.remove('active')); };
   const form = pane.querySelector('#chat-composer');
@@ -1056,16 +1185,42 @@ function selectThread(key) {
   });
 
   const ref = firebase.database().ref(isSupport ? `messages/admin/${id}` : isInquiry ? `messages/inquiry/${id}` : `messages/${id}`).limitToLast(100);
+  // Smooth, WhatsApp-style rendering: APPEND only new bubbles instead of rebuilding the whole list on
+  // every snapshot (no flicker, images never reload, scroll position is kept), with day dividers, sender
+  // grouping, and a "↓ הודעות חדשות" pill when a message arrives while you're reading history above.
+  const seen = new Set();
+  let firstBatch = true, lastDay = '', prevSender = '';
+  const dayKey = ts => new Date(Number(ts) || 0).toDateString();
+  const dayLabel = ts => { const d = new Date(Number(ts) || 0); const now = new Date(); if (d.toDateString() === now.toDateString()) return 'היום'; const y = new Date(now); y.setDate(now.getDate() - 1); if (d.toDateString() === y.toDateString()) return 'אתמול'; return d.toLocaleDateString('he-IL', {day: 'numeric', month: 'long', year: d.getFullYear() === now.getFullYear() ? undefined : 'numeric'}); };
   const handler = snap => {
     const box = document.querySelector('#chat-msgs');
     if (!box || store.route !== 'chats' || chatState.thread !== key) { ref.off('value', handler); return; }
     const messages = list(snap.val() || {}).sort((a, b) => Number(a.createdAt || 0) - Number(b.createdAt || 0));
-    box.innerHTML = messages.length ? messages.map(renderChatMessage).join('') : '<div class="empty">אין הודעות עדיין</div>';
-    box.scrollTop = box.scrollHeight;
-    box.querySelectorAll('[data-att-path]').forEach(button => button.onclick = async () => {
+    if (!messages.length) { box.innerHTML = '<div class="empty">אין הודעות עדיין — כתבו הודעה כדי להתחיל 👋</div>'; return; }
+    const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 130;
+    if (firstBatch) { box.innerHTML = ''; }
+    let appended = false, newFromOther = false;
+    for (const m of messages) {
+      if (seen.has(m.id)) continue;
+      seen.add(m.id);
+      const dk = dayKey(m.createdAt);
+      if (dk !== lastDay) { box.insertAdjacentHTML('beforeend', `<div class="chat-day"><span>${esc(dayLabel(m.createdAt))}</span></div>`); lastDay = dk; prevSender = ''; }
+      box.insertAdjacentHTML('beforeend', renderChatMessage(m, m.senderUid === prevSender));
+      prevSender = m.senderUid;
+      appended = true;
+      if (m.senderUid !== store.user?.uid) newFromOther = true;
+    }
+    box.querySelectorAll('[data-att-path]:not([data-bound])').forEach(button => { button.dataset.bound = '1'; button.onclick = async () => {
       try { window.open(await signedRead(button.dataset.attPath), '_blank', 'noopener'); }
       catch (error) { toast(error.message); }
-    });
+    }; });
+    const lastMine = messages[messages.length - 1].senderUid === store.user?.uid;
+    if (firstBatch || lastMine || nearBottom) { scrollChatToEnd(box, !firstBatch); document.querySelector('#chat-newpill')?.remove(); }
+    else if (appended && newFromOther) showNewPill(box);
+    firstBatch = false;
+    // I'm looking at this thread → it's read. Update the stored read-mark + badges so the dot clears.
+    const lastAt = Number(messages[messages.length - 1].createdAt || 0);
+    if (markThreadRead(key, lastAt)) { renderChatItems(); refreshChatBadges(); }
     // Guest gate: an unregistered visitor may send ONE message until the admin replies. Once they've
     // sent and no admin answer exists yet, lock the composer with a friendly "we'll get back to you" note.
     if (isSupport && store.user?.isAnonymous) {
@@ -1088,8 +1243,24 @@ function selectThread(key) {
   chatState.unsub = () => ref.off('value', handler);
 }
 
-function renderChatMessage(message) {
+// Smoothly bring the conversation to the newest message (rAF so layout of the just-inserted node settles first).
+function scrollChatToEnd(box, smooth) {
+  requestAnimationFrame(() => { try { box.scrollTo({top: box.scrollHeight, behavior: smooth ? 'smooth' : 'auto'}); } catch { box.scrollTop = box.scrollHeight; } });
+}
+// A floating "↓ הודעות חדשות" pill (WhatsApp-style) shown when a new message lands while you're reading
+// older history — tap it to jump to the bottom. Auto-removed once you scroll down yourself.
+function showNewPill(box) {
+  const pane = box.closest('.chat-pane') || box.parentElement;
+  if (!pane || document.querySelector('#chat-newpill')) return;
+  const pill = document.createElement('button');
+  pill.id = 'chat-newpill'; pill.type = 'button'; pill.className = 'chat-newpill';
+  pill.textContent = '↓ הודעות חדשות';
+  pill.onclick = () => { scrollChatToEnd(box, true); pill.remove(); };
+  pane.appendChild(pill);
+}
+function renderChatMessage(message, grouped = false) {
   const mine = message.senderUid === store.user?.uid;
+  const sys = message.senderUid === 'system';
   const attLabels = {'evidence-video': 'סרטון הרכב מבחוץ', 'evidence-fuel': 'תמונת דלק', 'evidence-odometer': 'תמונת קילומטראז׳', photo: 'קובץ מצורף'};
   const att = message.attachment;
   // Inline images are already the picture (data URL) — show them directly. Videos / legacy
@@ -1099,7 +1270,9 @@ function renderChatMessage(message) {
         ? `<img class="msg-img" src="${esc(att.path)}" alt="${esc(attLabels[att.type] || 'תמונה')}" loading="lazy" data-att-img="${esc(att.path)}">`
         : `<button class="msg-att" data-att-path="${esc(att.path)}">${attLabels[att.type] || 'קובץ'} · צפייה</button>`)
     : '';
-  return `<div class="message ${mine ? 'mine' : ''}">${message.text ? `<p>${esc(message.text)}</p>` : ''}${attachment}<small>${fmtDate(message.createdAt)}</small></div>`;
+  const time = (() => { const d = new Date(Number(message.createdAt) || 0); return Number.isNaN(d.getTime()) ? '' : d.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'}); })();
+  const tick = mine && !sys ? '<span class="msg-tick" title="נשלח" aria-hidden="true">✓</span>' : '';
+  return `<div class="message ${mine ? 'mine' : ''} ${grouped ? 'grouped' : ''} ${sys ? 'sys' : ''}">${message.text ? `<p>${esc(message.text)}</p>` : ''}${attachment}<small>${time}${tick}</small></div>`;
 }
 
 function paymentModal(bookingId, onDone = null) {
@@ -1186,12 +1359,37 @@ async function addressModal(bookingId) {
   } catch (error) { toast(error.message); }
 }
 
+// Verification documents, shown as ACTUAL image tiles (not English-keyed links) so the admin can review
+// the license + selfie inline and decide. Order is fixed (front → back → selfie); a missing one shows a
+// clear placeholder. Tapping a tile opens the full image in a lightbox. Data URLs and signed URLs both work.
+const DOC_LABELS = {licenseFront: 'רישיון — צד קדמי', licenseBack: 'רישיון — צד אחורי', selfie: 'סלפי לאימות'};
+const DOC_ORDER = ['licenseFront', 'licenseBack', 'selfie'];
+function docGallery(documents) {
+  const docs = documents || {};
+  const keys = [...DOC_ORDER, ...Object.keys(docs).filter(k => !DOC_ORDER.includes(k))];
+  const present = keys.filter(k => k in docs);
+  if (!present.length) return '<div class="empty">המשתמש עדיין לא הגיש מסמכים</div>';
+  return `<div class="doc-gallery">${present.map(key => {
+    const url = docs[key], label = DOC_LABELS[key] || key;
+    return url
+      ? `<button type="button" class="doc-tile" data-doc-view="${esc(url)}" data-doc-label="${esc(label)}"><img src="${esc(url)}" alt="${esc(label)}" loading="lazy"><span>${esc(label)}</span></button>`
+      : `<div class="doc-tile doc-missing"><span>${esc(label)} · לא זמין</span></div>`;
+  }).join('')}</div>`;
+}
+// Wire the lightbox on any doc-gallery in the current modal.
+function bindDocGallery() {
+  document.querySelectorAll('[data-doc-view]').forEach(tile => tile.onclick = () => {
+    modal(`<div class="modal-head"><h2>${esc(tile.dataset.docLabel || 'מסמך')}</h2><button class="close" data-close-modal>×</button></div><div class="doc-full"><img src="${esc(tile.dataset.docView)}" alt="${esc(tile.dataset.docLabel || '')}"></div><a class="btn outline block" href="${esc(tile.dataset.docView)}" target="_blank" rel="noopener">פתיחה בכרטיסייה חדשה</a>`);
+  });
+}
+
 async function ownerRenterModal(uid) {
   try {
     const data = await api('user-private-profile', {uid});
     const rating = userRating(uid);
     const reviews = list(store.ratings).filter(r => r.type === 'user' && r.targetUid === uid && r.review).slice(0, 6);
-    modal(`<div class="modal-head"><h2 class="with-avatar">${avatarHtml(data.profile, 38)} ${esc(data.profile.name || data.profile.email || 'שוכר')}</h2><button class="close" data-close-modal>×</button></div><div class="summary"><span>מייל</span><b>${esc(data.profile.email || '—')}</b></div><div class="summary"><span>טלפון</span><b>${esc(data.profile.phone || '—')}</b></div><div class="summary"><span>דירוג</span><b>${stars(rating)} ${rating ? rating.toFixed(1) : 'חדש'}</b></div><div class="summary"><span>סטטוס אימות</span><b>${esc(verificationLabel(data.profile.verification?.status))}</b></div><div class="list">${Object.entries(data.documents || {}).map(([key, url]) => `<a class="btn outline" href="${esc(url)}" target="_blank" rel="noopener">${esc(key)}</a>`).join('') || '<div class="empty">אין מסמכים זמינים</div>'}</div>${reviews.length ? `<div class="reviews"><h3>ביקורות על המשתמש</h3>${reviews.map(r => `<div class="review"><div class="review-head"><span class="review-stars">${stars(r.score)}</span><small>${fmtDate(r.createdAt)}</small></div><p>${esc(r.review)}</p></div>`).join('')}</div>` : ''}`);
+    modal(`<div class="modal-head"><h2 class="with-avatar">${avatarHtml(data.profile, 38)} ${esc(data.profile.name || data.profile.email || 'שוכר')}</h2><button class="close" data-close-modal>×</button></div><div class="summary"><span>מייל</span><b>${esc(data.profile.email || '—')}</b></div><div class="summary"><span>טלפון</span><b>${esc(data.profile.phone || '—')}</b></div><div class="summary"><span>דירוג</span><b>${stars(rating)} ${rating ? rating.toFixed(1) : 'חדש'}</b></div><div class="summary"><span>סטטוס אימות</span><b>${esc(verificationLabel(data.profile.verification?.status))}</b></div><h3 class="doc-h">מסמכי אימות</h3>${docGallery(data.documents)}${reviews.length ? `<div class="reviews"><h3>ביקורות על המשתמש</h3>${reviews.map(r => `<div class="review"><div class="review-head"><span class="review-stars">${stars(r.score)}</span><small>${fmtDate(r.createdAt)}</small></div><p>${esc(r.review)}</p></div>`).join('')}</div>` : ''}`);
+    bindDocGallery();
   } catch (error) { toast(error.message); }
 }
 
@@ -1204,7 +1402,8 @@ async function adminUserModal(uid) {
     for (const payment of userPayments) {
       try { paymentLinks.push({payment, url: await signedRead(payment.mediaPath)}); } catch {}
     }
-    modal(`<div class="modal-head"><h2 class="with-avatar">${avatarHtml(data.profile, 38)} ${esc(data.profile.name || data.profile.email || 'משתמש')}</h2><button class="close" data-close-modal>×</button></div><div class="summary"><span>מייל</span><b>${esc(data.profile.email || '—')}</b></div><div class="summary"><span>טלפון</span><b>${esc(data.profile.phone || '—')}</b></div><div class="summary"><span>תפקיד</span><b>${esc(roleName(data.profile.role))}</b></div><div class="summary"><span>סך תשלומים מדווחים</span><b>${money(paymentTotal)}</b></div><div class="summary"><span>סטטוס</span><b>${esc(verificationLabel(data.profile.verification?.status))}</b></div><div class="list">${Object.entries(data.documents || {}).map(([key, url]) => `<a class="btn outline" href="${esc(url)}" target="_blank" rel="noopener">${esc(key)}</a>`).join('') || '<div class="empty">אין מסמכים</div>'}</div>${paymentLinks.length ? `<h3>הוכחות תשלום</h3><div class="list">${paymentLinks.map(({payment,url}) => `<a class="btn outline" href="${esc(url)}" target="_blank" rel="noopener">${money(payment.amount)} · ${fmtDate(payment.createdAt)}</a>`).join('')}</div>` : ''}<div class="summary"><span>סיסמה</span><b>מוצפנת · לא ניתנת לצפייה</b></div><button class="btn gold block" data-message-user="${esc(uid)}">💬 שליחת הודעה למשתמש</button><div class="chips"><button class="btn primary" data-review="approved">אישור אימות</button><button class="btn danger" data-review="rejected">דחייה</button><button class="btn outline" data-review="needs_resubmission">בקשת צילום מחדש</button><button class="btn outline" data-role-toggle="${data.profile.role === 'owner' ? 'renter' : 'owner'}">${data.profile.role === 'owner' ? 'הפיכה לשוכר' : 'הפיכה לבעל רכב'}</button><button class="btn outline" data-reset-pw="${esc(data.profile.email || '')}">שליחת קישור לאיפוס סיסמה</button></div>`);
+    modal(`<div class="modal-head"><h2 class="with-avatar">${avatarHtml(data.profile, 38)} ${esc(data.profile.name || data.profile.email || 'משתמש')}</h2><button class="close" data-close-modal>×</button></div><div class="summary"><span>מייל</span><b>${esc(data.profile.email || '—')}</b></div><div class="summary"><span>טלפון</span><b>${esc(data.profile.phone || '—')}</b></div><div class="summary"><span>תפקיד</span><b>${esc(roleName(data.profile.role))}</b></div><div class="summary"><span>סך תשלומים מדווחים</span><b>${money(paymentTotal)}</b></div><div class="summary"><span>סטטוס</span><b>${esc(verificationLabel(data.profile.verification?.status))}</b></div><h3 class="doc-h">מסמכי אימות</h3>${docGallery(data.documents)}${paymentLinks.length ? `<h3 class="doc-h">הוכחות תשלום</h3><div class="doc-gallery">${paymentLinks.map(({payment,url}) => `<button type="button" class="doc-tile" data-doc-view="${esc(url)}" data-doc-label="תשלום · ${esc(money(payment.amount))}"><img src="${esc(url)}" alt="הוכחת תשלום" loading="lazy"><span>${money(payment.amount)} · ${fmtDate(payment.createdAt)}</span></button>`).join('')}</div>` : ''}<div class="summary"><span>סיסמה</span><b>מוצפנת · לא ניתנת לצפייה</b></div><button class="btn gold block" data-message-user="${esc(uid)}">💬 שליחת הודעה למשתמש</button><div class="chips"><button class="btn primary" data-review="approved">אישור אימות</button><button class="btn danger" data-review="rejected">דחייה</button><button class="btn outline" data-review="needs_resubmission">בקשת צילום מחדש</button><button class="btn outline" data-role-toggle="${data.profile.role === 'owner' ? 'renter' : 'owner'}">${data.profile.role === 'owner' ? 'הפיכה לשוכר' : 'הפיכה לבעל רכב'}</button><button class="btn outline" data-reset-pw="${esc(data.profile.email || '')}">שליחת קישור לאיפוס סיסמה</button></div>`);
+    bindDocGallery();
     document.querySelector('[data-message-user]')?.addEventListener('click', () => { closeModal(); openChatThread(`a:${uid}`); });
     document.querySelectorAll('[data-review]').forEach(button => button.onclick = async () => {
       const note = button.dataset.review === 'approved' ? '' : prompt('הערה למשתמש:') || '';

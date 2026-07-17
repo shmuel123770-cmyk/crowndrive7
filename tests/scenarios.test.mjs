@@ -125,6 +125,7 @@ console.log('\nתרחיש C: אימות רישיון (document-register + verifi
 for (const doc of ['licenseFront', 'licenseBack']) await call(fn['document-register'], 'r1', {documentType: doc, path: `users/r1/documents/${doc}/x.jpg`});
 r = await call(fn['document-register'], 'r1', {documentType: 'selfie', path: 'users/r1/documents/selfie/x.jpg'});
 check('שלושת המסמכים → סטטוס pending', get('verificationStatus/r1') === 'pending');
+check('השלמת מסמכים יוצרת התראת מנהל (כל מה שזז)', Object.values(get('adminNotifications') || {}).some(n => n.type === 'user' && /מסמכים לאימות/.test(n.text || '')));
 r = await call(fn['document-register'], 'r1', {documentType: 'selfie', path: 'users/r1/documents/selfie/y.jpg'});
 check('אימות נעול אחרי השלמה (409)', S(r) === 409);
 r = await call(fn['document-register'], 'r1', {documentType: 'licenseFront', path: 'users/r2/documents/licenseFront/x.jpg'});

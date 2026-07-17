@@ -350,8 +350,9 @@ export function bottomNav() {
     const activeKey = MORE_KEYS.includes(store.dashTab) ? 'more' : store.dashTab;
     const moreIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>';
     const tabs = [['overview', 'לוח בקרה'], ['bookings', 'הזמנות'], ['users', 'משתמשים'], ['chats', 'צ׳אטים'], ['more', 'עוד']];
+    const chatUnread = chatUnreadCount();
     node.innerHTML = tabs.map(([key, label]) =>
-      `<button class="tab-item ${key === activeKey ? 'active' : ''}" data-admin-tab="${key}" aria-label="${esc(label)}"${key === activeKey ? ' aria-current="page"' : ''}>${key === 'more' ? moreIcon : (TAB_ICONS[key] || (() => ''))()}<span>${esc(label)}</span></button>`).join('');
+      `<button class="tab-item ${key === activeKey ? 'active' : ''}" data-admin-tab="${key}" aria-label="${esc(label)}"${key === activeKey ? ' aria-current="page"' : ''}>${key === 'more' ? moreIcon : (TAB_ICONS[key] || (() => ''))()}<span>${esc(label)}</span>${key === 'chats' && chatUnread ? `<span class="tab-badge">${chatUnread}</span>` : ''}</button>`).join('');
     node.querySelectorAll('[data-admin-tab]').forEach(button => button.onclick = event => {
       event.stopPropagation();
       const tab = button.dataset.adminTab;
@@ -366,11 +367,12 @@ export function bottomNav() {
   // switches the section in place instead of leaving the area.
   if (route === 'dashboard') {
     const unreadNotifs = userUnreadNotifs();
+    const chatUnread = chatUnreadCount();
     const tabs = role === 'owner'
       ? [['overview', 'סקירה'], ['bookings', 'הזמנות'], ['cars', 'רכבים'], ['chats', 'צ׳אטים'], ['profile', 'פרופיל']]
       : [['overview', 'סקירה'], ['bookings', 'הזמנות'], ['chats', 'צ׳אטים'], ['notifications', 'התראות'], ['profile', 'פרופיל']];
     node.innerHTML = tabs.map(([key, label]) =>
-      `<button class="tab-item ${key === store.dashTab ? 'active' : ''}" data-dash-tab="${key}" aria-label="${esc(label)}"${key === store.dashTab ? ' aria-current="page"' : ''}>${(TAB_ICONS[key] || (() => ''))()}<span>${esc(label)}</span>${key === 'notifications' && unreadNotifs ? `<span class="tab-badge">${unreadNotifs}</span>` : ''}</button>`).join('');
+      `<button class="tab-item ${key === store.dashTab ? 'active' : ''}" data-dash-tab="${key}" aria-label="${esc(label)}"${key === store.dashTab ? ' aria-current="page"' : ''}>${(TAB_ICONS[key] || (() => ''))()}<span>${esc(label)}</span>${key === 'notifications' && unreadNotifs ? `<span class="tab-badge">${unreadNotifs}</span>` : ''}${key === 'chats' && chatUnread ? `<span class="tab-badge">${chatUnread}</span>` : ''}</button>`).join('');
     node.querySelectorAll('[data-dash-tab]').forEach(button => button.onclick = event => {
       event.stopPropagation();
       const tab = button.dataset.dashTab;
@@ -603,7 +605,6 @@ function carCard(car, manage = false, period = null, index = 99) {
   if (car.priceWeekly) priceRows.push([money(car.priceWeekly), 'לשבוע']);
   const priceMain = onRequest ? 'שלחו הודעה<small> לקבלת מחיר</small>' : (priceRows.length ? `${priceRows[0][0]}<small> ${priceRows[0][1]}</small>` : '');
   const priceAlt = onRequest ? '' : priceRows.slice(1).map(([value, label]) => `${value} ${label}`).join(' · ');
-  const modeBadge = mode ? `<span class="mode-badge">${mode.short}</span>` : '';
   // Period-aware: when the visitor searched dates, matching cars show an estimated total and cars whose
   // rental mode doesn't fit the chosen range still appear — with a clear "available only for X" note.
   let periodHtml = '';
@@ -627,7 +628,7 @@ function carCard(car, manage = false, period = null, index = 99) {
       periodHtml = `<div class="period-note">רכב זה זמין להשכרה ${only} בלבד — לא מתאים לטווח שבחרתם</div>`;
     }
   }
-  const manageRow = manage ? `<div class="car-manage"><button type="button" class="btn ${rented ? 'gold' : 'outline'}" data-car-status="${esc(car.id)}" data-next="${rented ? 'available' : 'rented'}">${rented ? '↺ סמן כפנוי' : '⛔ סמן כתפוס'}</button><button type="button" class="btn outline" data-car-edit="${esc(car.id)}">✎ עריכת פרטים</button></div>` : '';
+  const manageRow = manage ? `<div class="car-manage"><button type="button" class="btn ${rented ? 'gold' : 'outline'}" data-car-status="${esc(car.id)}" data-next="${rented ? 'available' : 'rented'}">${rented ? '↺ סמן כפנוי' : '⛔ סמן כתפוס'}</button><button type="button" class="btn outline" data-car-edit="${esc(car.id)}">✎ עריכת פרטים</button><button type="button" class="btn wa-share" data-car-wa="${esc(car.id)}" title="שיתוף הרכב בוואטסאפ"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2c-5.46 0-9.9 4.44-9.9 9.9 0 1.75.46 3.45 1.33 4.95L2 22l5.3-1.39a9.87 9.87 0 0 0 4.74 1.21h.01c5.46 0 9.9-4.44 9.9-9.9 0-2.65-1.03-5.14-2.9-7.01A9.83 9.83 0 0 0 12.04 2zm0 18.06a8.2 8.2 0 0 1-4.18-1.15l-.3-.18-3.11.82.83-3.04-.2-.31a8.16 8.16 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24 2.2 0 4.27.86 5.82 2.42a8.18 8.18 0 0 1 2.41 5.83c0 4.54-3.7 8.23-8.25 8.23zm4.52-6.16c-.25-.12-1.47-.72-1.69-.81-.23-.08-.39-.12-.56.13-.17.24-.64.8-.78.97-.14.16-.29.18-.54.06-.25-.12-1.05-.39-1.99-1.23-.74-.66-1.23-1.47-1.38-1.72-.14-.25-.02-.38.11-.51.11-.11.25-.29.37-.43.12-.14.16-.25.25-.41.08-.17.04-.31-.02-.43-.06-.12-.56-1.34-.76-1.84-.2-.48-.41-.42-.56-.43h-.48c-.17 0-.43.06-.66.31-.22.25-.86.85-.86 2.07 0 1.22.89 2.4 1.01 2.56.12.17 1.75 2.67 4.23 3.74.59.26 1.05.41 1.41.52.59.19 1.13.16 1.56.1.48-.07 1.47-.6 1.67-1.18.21-.58.21-1.07.15-1.18-.06-.1-.23-.16-.48-.29z"/></svg> וואטסאפ</button></div>` : '';
   // NOTE: a "featured" car is pinned to the top of the list by the admin, but it carries NO visible mark
   // on the public card (no badge, no highlight ring) — visitors must not be able to tell the admin
   // promoted it. The admin still sees/toggles featured in the admin cars table.
@@ -635,7 +636,7 @@ function carCard(car, manage = false, period = null, index = 99) {
   // line, price + a subtle "פרטים ←" affordance — the whole card is the link (no heavy button). Public cards
   // get role=button + keyboard support; owner "manage" cards keep their own action buttons instead.
   const cardRole = manage ? '' : ' role="button" tabindex="0"';
-  return `<article class="card car car-clean${notFit ? ' car-nofit' : ''}" data-car-open="${esc(car.id)}"${cardRole} aria-label="${esc(`${car.make || ''} ${car.model || ''} — פתיחת פרטים`)}"><div class="car-photo"><img ${carImgAttrs(carImage(car))} alt="${esc(`${car.make || ''} ${car.model || ''}`)}" loading="${eager ? 'eager' : 'lazy'}"${eager ? ' fetchpriority="high"' : ''} decoding="async" data-car-image><div class="car-badges">${availPill(car.status)}${newBadge(car)}</div>${modeBadge}${car.videoUrl ? '<span class="has-video">▶ וידאו</span>' : ''}<button type="button" class="fav-btn ${favList().has(car.id) ? 'on' : ''}" data-fav="${esc(car.id)}" aria-pressed="${favList().has(car.id)}" aria-label="שמירה במועדפים">${HEART_ICON}</button></div><div class="car-body"><div class="car-title-row"><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3>${rating ? `<span class="car-rate">★ <b>${rating.toFixed(1)}</b>${reviewCount ? ` <small>(${reviewCount})</small>` : ''}</span>` : ''}</div><div class="car-specs"><span>${esc(car.year || '—')}</span><span>·</span><span>${esc(type)}</span>${car.fuel ? `<span>·</span><span>${esc(car.fuel)}</span>` : ''}</div>${rented && carFreesAt(car.id) ? `<div class="frees-note">🕐 מתפנה בערך: ${fmtDate(carFreesAt(car.id))}</div>` : ''}${periodHtml}<div class="car-foot"><div class="price-stack"><div class="price">${priceMain}</div>${priceAlt ? `<small class="price-alt">${priceAlt}</small>` : ''}</div><span class="car-go">${car.status === 'available' ? 'פרטים והזמנה' : car.status === 'rented' ? 'שריון מראש' : 'צפייה'} ←</span></div>${manageRow}</div></article>`;
+  return `<article class="card car car-clean${notFit ? ' car-nofit' : ''}" data-car-open="${esc(car.id)}"${cardRole} aria-label="${esc(`${car.make || ''} ${car.model || ''} — פתיחת פרטים`)}"><div class="car-photo"><img ${carImgAttrs(carImage(car))} alt="${esc(`${car.make || ''} ${car.model || ''}`)}" loading="${eager ? 'eager' : 'lazy'}"${eager ? ' fetchpriority="high"' : ''} decoding="async" data-car-image><div class="car-badges">${availPill(car.status)}${newBadge(car)}</div>${car.videoUrl ? '<span class="has-video">▶ וידאו</span>' : ''}<button type="button" class="fav-btn ${favList().has(car.id) ? 'on' : ''}" data-fav="${esc(car.id)}" aria-pressed="${favList().has(car.id)}" aria-label="שמירה במועדפים">${HEART_ICON}</button></div><div class="car-body"><div class="car-title-row"><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3>${rating ? `<span class="car-rate">★ <b>${rating.toFixed(1)}</b>${reviewCount ? ` <small>(${reviewCount})</small>` : ''}</span>` : ''}</div><div class="car-specs"><span>${esc(car.year || '—')}</span><span>·</span><span>${esc(type)}</span>${car.fuel ? `<span>·</span><span>${esc(car.fuel)}</span>` : ''}</div>${rented && carFreesAt(car.id) ? `<div class="frees-note">🕐 מתפנה בערך: ${fmtDate(carFreesAt(car.id))}</div>` : ''}${periodHtml}<div class="car-foot"><div class="price-stack"><div class="price">${priceMain}</div>${priceAlt ? `<small class="price-alt">${priceAlt}</small>` : ''}</div><span class="car-go">${car.status === 'available' ? 'פרטים והזמנה' : car.status === 'rented' ? 'שריון מראש' : 'צפייה'} ←</span></div>${manageRow}</div></article>`;
 }
 // Featured cars (pinned by the admin) always come first, newest-pin first.
 export function featuredFirst(cars) {
@@ -708,6 +709,14 @@ export function bindCarButtons() {
   });
   // Owner can edit a published car's details straight from its card in the personal area.
   app().querySelectorAll('[data-car-edit]').forEach(button => button.onclick = () => carForm({id: button.dataset.carEdit, ...store.cars[button.dataset.carEdit]}));
+  // Direct WhatsApp share on the owner's own car card: opens WhatsApp with the message prefilled.
+  // The link is the share-card endpoint, so the recipient sees THIS car's photo+price preview.
+  app().querySelectorAll('[data-car-wa]').forEach(button => button.onclick = () => {
+    const car = store.cars[button.dataset.carWa] || {};
+    const shareUrl = `${location.origin}/api/share?car=${encodeURIComponent(button.dataset.carWa)}`;
+    const text = `${car.make || ''} ${car.model || ''}${car.year ? ' ' + car.year : ''} להשכרה בקראון הייטס · Crown Drive`.trim();
+    window.open(`https://wa.me/?text=${encodeURIComponent(`${text}\n${shareUrl}`)}`, '_blank', 'noopener');
+  });
 }
 
 // Default to showing the WHOLE fleet — available AND rented (each carries its own status badge), matching the
@@ -1174,6 +1183,9 @@ const loadApp = () => __appMod
   ? Promise.resolve(__appMod)
   : import('./views-app.js').then(m => (__appMod = m)).catch(err => { console.error('views-app load failed', err); toast('שגיאה בטעינת האזור — נסו לרענן'); throw err; });
 const APP_LOADER = '<div class="app-loader"><div class="spinner"></div><p>טוען…</p></div>';
+// Unread chat count for the nav badges — safe to call anytime; returns 0 until the personal-area module
+// (which owns the chat state) has loaded, which it always has by the time a dashboard tab bar renders.
+function chatUnreadCount() { try { return __appMod?.chatUnreadTotal?.() || 0; } catch { return 0; } }
 export function dashboard() {
   resetPaint();
   if (store.user?.isAnonymous) { toast('הירשמו כדי לפתוח אזור אישי'); location.hash = 'auth'; return; }

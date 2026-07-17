@@ -1,4 +1,4 @@
-import {getAdmin, verify, json, cleanText, audit, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, cleanText, audit, notifyAdmin, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
 import {rateLimit, tooMany} from './_ratelimit.mjs';
 import {validateImageDataUrl} from './_media.mjs';
 const allowed = new Set(['licenseFront', 'licenseBack', 'selfie']);
@@ -45,11 +45,18 @@ export async function handler(event) {
     updates[`users/${token.uid}/verification/updatedAt`] = Date.now();
     const profileSnap = await db.ref(`users/${token.uid}/verification`).once('value');
     const verification = {...(profileSnap.val() || {}), [documentType]: true};
-    if (verification.licenseFront && verification.licenseBack && verification.selfie) {
+    const nowComplete = verification.licenseFront && verification.licenseBack && verification.selfie;
+    if (nowComplete) {
       updates[`verificationStatus/${token.uid}`] = 'pending';
     }
     await db.ref().update(updates);
     await audit(token.uid, 'document_register', 'user', token.uid, {documentType});
+    // Tell the admin activity feed the moment a user finishes submitting all three documents — this is a
+    // real action item ("כל מה שזז באתר"): a new verification is now waiting for the admin's review.
+    if (nowComplete) {
+      const name = (await db.ref(`users/${token.uid}/name`).once('value')).val() || 'משתמש';
+      await notifyAdmin('user', `${name} השלים/ה הגשת מסמכים לאימות — ממתין לבדיקתך`, {userUid: token.uid});
+    }
     return json(200, {ok: true});
   } catch (error) {
     console.error(error);

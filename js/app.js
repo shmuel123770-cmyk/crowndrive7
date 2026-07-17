@@ -160,7 +160,7 @@ document.addEventListener('click', event => {
 window.addEventListener('hashchange', render);
 window.addEventListener('storechange', event => {
   const key = String(event.detail || '');
-  if (['cars','ratings','profile','verification-status','bookings','payments','users','admin-notifications','config','private-ready','private-stopped','reservations','user-notifications','external-rentals'].includes(key)) scheduleRender();
+  if (['cars','ratings','profile','verification-status','verification-statuses','bookings','payments','users','admin-notifications','config','private-ready','private-stopped','reservations','user-notifications','external-rentals'].includes(key)) scheduleRender();
 });
 window.addEventListener('authchange', scheduleRender);
 window.addEventListener('unhandledrejection', event => {
