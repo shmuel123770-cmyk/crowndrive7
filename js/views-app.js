@@ -446,6 +446,7 @@ function renterDashboard(tab = 'overview') {
     ? `<div class="admin-todo">${renterTodo.map(([label, n, t]) => `<button class="todo-row" data-goto-tab="${t}"><span class="todo-count">${n}</span><span class="todo-label">${esc(label)}</span><span class="todo-go" aria-hidden="true">›</span></button>`).join('')}</div>`
     : '';
   const contents = {
+    reservation: reservationView(store.reservationId),
     overview: `${pushBanner()}${todoHtml}<div class="admin-stats-mini"><span><b>${active}</b> פעילות</span><span><b>${pending}</b> ממתינות</span><span><b>${done}</b> הושלמו</span><span><b>${verification.status === 'approved' ? '✓' : '—'}</b> אימות</span></div><h2>ההזמנות שלי</h2>${bookingList(bookings, 'renter')}`,
     bookings: `<h2>ההזמנות שלי</h2>${bookingList(bookings, 'renter')}`,
     profile: profileView(),
@@ -1029,6 +1030,67 @@ function ownerHandoverHint(booking) {
   </div>`;
 }
 
+// ---- Reservation page: the confirmation a renter expects after booking ----
+// Modelled on how a rental company shows a reservation: one confirmation number, the two ends of the
+// rental laid out side by side, an itemised price, and the actions for THIS booking. Previously a
+// booking was only ever a row in a list, so there was nowhere to see the full record.
+const RES_STEPS = [['pending', 'ממתינה לאישור'], ['approved', 'אושרה'], ['active', 'בהשכרה'], ['done', 'הסתיימה']];
+function resDateBlock(label, iso, note) {
+  const d = new Date(iso);
+  const ok = !Number.isNaN(d.getTime());
+  const day = ok ? d.toLocaleDateString('he-IL', {day: 'numeric', month: 'long', timeZone: 'America/New_York'}) : '—';
+  const wd = ok ? d.toLocaleDateString('he-IL', {weekday: 'long', timeZone: 'America/New_York'}) : '';
+  const time = ok ? d.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit', timeZone: 'America/New_York'}) : '';
+  return `<div class="res-when"><span class="res-when-lab">${esc(label)}</span>
+    <b class="res-when-day">${esc(day)}</b>
+    <span class="res-when-meta">${esc(wd)}${time ? ` · ${esc(time)}` : ''}</span>
+    ${note ? `<small class="res-when-note">${esc(note)}</small>` : ''}</div>`;
+}
+export function reservationView(id) {
+  const b = store.bookings[id];
+  if (!b) return `<button type="button" class="up-back" data-back-bookings>← חזרה להזמנות</button>${emptyState(ICON.calendar, 'ההזמנה לא נמצאה', 'ייתכן שהיא נמחקה.')}`;
+  const car = store.cars[b.carId] || b.carSnapshot || {};
+  const carName = `${car.make || ''} ${car.model || ''}`.trim() || 'רכב שאינו מוצג יותר באתר';
+  const q = b.quote || {};
+  const adminAmount = Number(b.adminAmount);
+  const total = Number.isFinite(adminAmount) && adminAmount > 0 ? adminAmount : Number(q.total || 0);
+  const pmt = store.payments[id];
+  const isDelivery = b.fulfillment === 'delivery';
+  const stepIdx = RES_STEPS.findIndex(([k]) => k === b.status);
+  const dead = ['cancelled', 'rejected', 'expired'].includes(b.status);
+  const modeLabel = {hourly: 'לפי שעות', daily: 'לפי ימים', weekly: 'לפי שבועות', weekend: 'מחיר סופ״ש'}[q.pricingMode] || '';
+  return `<button type="button" class="up-back" data-back-bookings>← חזרה להזמנות</button>
+    <div class="res-head">
+      <div class="res-head-top">
+        <span class="res-conf-lab">מספר הזמנה</span>
+        <b class="res-conf" dir="ltr">${esc(String(id).slice(-7).toUpperCase())}</b>
+      </div>
+      <div class="res-head-car"><b>${esc(carName)}</b><span>${esc(car.year || '')}${car.type ? ` · ${esc(car.type)}` : ''}</span></div>
+      <span class="status-badge ${esc(b.status)}">${statusLabel(b.status)}</span>
+    </div>
+    ${dead ? '' : `<ol class="res-track">${RES_STEPS.map(([k, label], i) =>
+      `<li class="res-step${i <= stepIdx ? ' done' : ''}${i === stepIdx ? ' now' : ''}"><span></span><small>${esc(label)}</small></li>`).join('')}</ol>`}
+    <div class="res-when-row">
+      ${resDateBlock('איסוף', b.startAt, isDelivery ? 'מסירה אליך' : 'איסוף עצמי')}
+      ${resDateBlock('החזרה', b.endAt, '')}
+    </div>
+    ${isDelivery && b.deliveryAddress ? `<div class="res-line"><span>כתובת מסירה</span><b><bdi>${esc(b.deliveryAddress)}</bdi></b></div>` : ''}
+    <div class="res-price">
+      <div class="res-price-head"><b>פירוט מחיר</b>${modeLabel ? `<span>${esc(modeLabel)}</span>` : ''}</div>
+      ${Number(q.baseAmount) ? `<div class="res-line"><span>מחיר ההשכרה</span><b>${money(q.baseAmount)}</b></div>` : ''}
+      ${Number(q.deliveryFee) ? `<div class="res-line"><span>מסירה</span><b>${money(q.deliveryFee)}</b></div>` : ''}
+      ${Number.isFinite(adminAmount) && adminAmount > 0 ? `<div class="res-line"><span>סכום מתוקן על ידי המנהל</span><b>${money(adminAmount)}</b></div>` : ''}
+      <div class="res-line res-total"><span>סה״כ</span><b>${total ? money(total) : 'בתיאום'}</b></div>
+      <small class="res-pay-note">${pmt ? (pmt.status === 'approved' ? '✓ התשלום אושר על ידי בעל הרכב' : pmt.status === 'rejected' ? '✗ התשלום נדחה — יש לשלוח הוכחה מעודכנת' : '⏳ הוכחת התשלום ממתינה לאישור') : 'התשלום מתבצע ישירות מול בעל הרכב. אחרי התשלום מדווחים עליו כאן.'}</small>
+    </div>
+    <div class="chips res-actions">
+      ${['pending', 'approved', 'active'].includes(b.status) || (b.status === 'cancelled' && pmt) ? `<button class="btn primary" data-chat="${esc(id)}">💬 צ׳אט</button>` : ''}
+      ${['approved', 'active'].includes(b.status) ? `<button class="btn outline" data-address="${esc(id)}">📍 פרטי איסוף</button>` : ''}
+      ${b.status === 'approved' && (!pmt || pmt.status === 'rejected') ? `<button class="btn gold" data-payment="${esc(id)}">💳 דיווח על תשלום</button>` : ''}
+      ${store.cars[b.carId] ? `<button class="btn outline" data-view-car="${esc(b.carId)}">פרטי הרכב</button>` : ''}
+      ${['pending', 'approved'].includes(b.status) ? `<button class="btn outline" data-cancel-booking="${esc(id)}">ביטול הזמנה</button>` : ''}
+    </div>`;
+}
 function bookingList(bookings, role) {
   const sorted = bookings.slice().sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
   return `<div class="list">${sorted.length ? sorted.slice(0, pageOf(`bookings-${role}`)).map(booking => {
@@ -1065,6 +1127,7 @@ function bookingList(bookings, role) {
       ['pending', 'approved', 'active'].includes(booking.status) || (booking.status === 'cancelled' && pmt) ? `<button class="btn outline" data-chat="${booking.id}">צ׳אט${booking.status === 'cancelled' ? ' — סגירת ההחזר' : ''}</button>` : '',
       // A request that died left the renter with a badge and nothing else — no chat, no action, no
       // explanation. The expiry SMS already tells them "אפשר לשלוח בקשה חדשה"; this is that path.
+      role === 'renter' ? `<button class="btn outline" data-reservation="${esc(booking.id)}">פרטי ההזמנה</button>` : '',
       role === 'renter' && ['expired', 'rejected', 'cancelled'].includes(booking.status) && booking.carId
         ? `<button class="btn primary" data-rebook="${esc(booking.carId)}" data-rebook-from="${esc(booking.id)}">בקשה חדשה לרכב הזה</button>` : '',
     ].filter(Boolean).join('');
@@ -1102,6 +1165,10 @@ function bookingList(bookings, role) {
 function bindActions() {
   // "פרטי הרכב" on a booking card → open the car's detail modal (data-car-open can't be used on a button —
   // bindCarButtons deliberately ignores clicks landing on buttons).
+  document.querySelectorAll('[data-reservation]').forEach(b => b.onclick = () => {
+    store.reservationId = b.dataset.reservation; store.dashTab = 'reservation'; renterDashboard('reservation');
+  });
+  document.querySelector('[data-back-bookings]')?.addEventListener('click', () => { store.dashTab = 'bookings'; renterDashboard('bookings'); });
   document.querySelectorAll('[data-view-car]').forEach(button => button.onclick = () => openCar(button.dataset.viewCar));
   // Re-open the car with the original dates already filled in — but only while they are still in the
   // future, and NEVER carrying the old requestId: booking-create treats a repeated requestId from the
@@ -1358,7 +1425,14 @@ let chatRead = (() => { try { return JSON.parse(localStorage.getItem('cd-chat-re
 let chatFilterUnread = false;   // the "לא נקראו" filter toggle on the list head
 const chatReadAt = key => Number(chatRead[key] || 0);
 function markThreadRead(key, at = 0) {
-  const ts = Math.max(Number(at || 0), Date.now());
+  // Compare like with like. threadUnread() tests against threadMeta().at — the SUMMARY timestamp the
+  // server writes (bookings.lastMsgAt / inquiries.updatedAt). Marking read with the message's own
+  // createdAt mixed sources: the server writes the summary in a SECOND update, so lastMsgAt is always
+  // a few ms LATER than createdAt, and mixing in the phone's Date.now() made it worse whenever the
+  // device clock ran behind the server. Either way the thread sprang back to unread on the next draw.
+  // Reading also means "I've seen everything up to now", so the wall clock still counts — but the
+  // summary timestamp is now always included, which is what the unread test actually compares to.
+  const ts = Math.max(Number(at || 0), Number(threadMeta(key)?.at || 0), Date.now());
   if (chatReadAt(key) >= ts) return false;
   chatRead[key] = ts;
   try { localStorage.setItem('cd-chat-read', JSON.stringify(chatRead)); } catch {}
@@ -1456,12 +1530,24 @@ export function chatsPage() {
   if (document.querySelector('#chat-shell')) { renderChatItems(); return; }
   app().innerHTML = `<div class="chat-shell" id="chat-shell">
     <aside class="chat-list">
-      <div class="chat-list-head"><button type="button" class="chat-page-back" id="chat-page-back" title="חזרה לאזור האישי" aria-label="חזרה">→</button><h2>צ׳אטים</h2>${store.isAdmin ? '<input id="chat-search" aria-label="חיפוש משתמש בצ׳אטים" placeholder="חיפוש משתמש…" autocomplete="off">' : ''}</div>
+      <div class="chat-list-head"><button type="button" class="chat-page-back" id="chat-page-back" title="חזרה לאזור האישי" aria-label="חזרה">→</button><h2>צ׳אטים</h2><button type="button" class="chat-refresh" id="chat-refresh" title="רענון השיחות" aria-label="רענון השיחות">⟳</button>${store.isAdmin ? '<input id="chat-search" aria-label="חיפוש משתמש בצ׳אטים" placeholder="חיפוש משתמש…" autocomplete="off">' : ''}</div>
       <div class="chat-filter" id="chat-filter"></div>
       <div class="chat-items" id="chat-items"></div>
     </aside>
     <section class="chat-pane" id="chat-pane"><div class="chat-empty"><span class="chat-empty-ic">${ICON.chat}</span><p>בחרו שיחה מהרשימה</p></div></section>
   </div>`;
+  document.querySelector('#chat-refresh')?.addEventListener('click', async event => {
+    // The list is driven by live listeners, so a refresh is really "re-read what the store has and
+    // repaint" — plus a spin so the tap visibly did something even when nothing changed.
+    const btn = event.currentTarget;
+    btn.classList.add('spinning');
+    renderChatItems();
+    refreshChatBadges();
+    if (store.isAdmin) ensureAdminChatFeed();
+    await new Promise(r => setTimeout(r, 420));
+    btn.classList.remove('spinning');
+    toast('השיחות עודכנו');
+  });
   if (store.isAdmin) ensureAdminChatFeed();
   renderChatItems();
   document.querySelector('#chat-page-back')?.addEventListener('click', () => { location.hash = (store.user && !store.user.isAnonymous) ? 'dashboard' : 'home'; });

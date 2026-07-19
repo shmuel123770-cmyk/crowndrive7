@@ -946,7 +946,7 @@ export function openCar(id) {
     <!-- Mobile declutter: the DECISION info (price + rating) stays visible; the rest of the spec sheet
          folds into "מפרט מלא" so the modal opens short and scannable. -->
     <div class="detail-summaries key-specs">
-      ${onRequest ? '<div class="summary"><span>מחיר</span><b>שלחו הודעה</b></div>' : `${car.priceHourly ? `<div class="summary"><span>מחיר לשעה</span><b>${money(car.priceHourly)}</b></div>` : ''}${car.dailyPrice ? `<div class="summary"><span>מחיר יומי</span><b>${money(car.dailyPrice)}</b></div>` : ''}${car.priceWeekly ? `<div class="summary"><span>מחיר לשבוע</span><b>${money(car.priceWeekly)}</b></div>` : ''}`}
+      ${onRequest ? '<div class="summary price-row"><span>מחיר</span><b>שלחו הודעה</b></div>' : `${car.priceHourly ? `<div class="summary price-row"><span>מחיר לשעה</span><b>${money(car.priceHourly)}</b></div>` : ''}${car.dailyPrice ? `<div class="summary"><span>מחיר יומי</span><b>${money(car.dailyPrice)}</b></div>` : ''}${car.priceWeekly ? `<div class="summary"><span>מחיר לשבוע</span><b>${money(car.priceWeekly)}</b></div>` : ''}`}
       <div class="summary"><span>דירוג</span><b>${carRating(car.id) ? `${stars(carRating(car.id))} ${carRating(car.id).toFixed(1)}` : '<span class="rate-new">חדש באתר — אין דירוגים עדיין</span>'}</b></div>
     </div>
     <details class="spec-more"><summary>מפרט מלא</summary>
@@ -961,11 +961,16 @@ export function openCar(id) {
       </div>
     </details>
     ${onRequest && canInquire ? '<div class="price-contact-cta"><div><b>שלחו הודעה לקבלת מחיר</b><small>המחיר נקבע מול בעל הרכב — שלחו הודעה כדי לקבל אותו.</small></div><button type="button" class="btn gold" id="price-contact">שליחת הודעה לקבלת מחיר</button></div>' : ''}
+    <!-- The booking form now sits directly under the price. It used to come after the contact CTA,
+         the reviews, the share button and the availability calendar — over 1000px of scrolling
+         before a renter could reach the thing they opened the car to do. Those four blocks are
+         reference material, so they follow the form instead of blocking it. -->
+    ${car.status === 'hidden' ? '<div class="chat-closed">הרכב אינו זמין להזמנה כרגע</div>' : `${gateHtml}<form id="booking-form" autocomplete="on"><div class="booking-form-head"><span>${rented ? 'שריון מראש' : 'בקשת הזמנה'}</span><h3>בחירת מועד וקבלת מחיר</h3><small>כל השעות לפי ניו יורק (ET)</small></div>${rented ? `<div class="notice">🕐 הרכב מושכר כרגע — אפשר לשריין אותו מראש: בחרו תאריכים עתידיים, ובעל הרכב יאשר בהתאם לזמינות בתאריכים שבחרתם.${freesAt ? ` צפוי להתפנות בערך ב־${fmtDate(freesAt)}.` : ''}</div>` : ''}<div class="form-grid">${dateField('startDate', 'תאריך איסוף', bStart)}<div class="field"><label>שעת איסוף</label><select name="startHour">${hourOptions(bStartH)}</select></div>${dateField('endDate', 'תאריך החזרה', bEnd)}<div class="field"><label>שעת החזרה</label><select name="endHour">${hourOptions(bEndH)}</select></div></div><div class="booking-est" id="booking-est" aria-live="polite"></div><div class="field"><label>אופן קבלה</label><select name="fulfillment"><option value="pickup" ${draft.fulfillment !== 'delivery' ? 'selected' : ''}>איסוף עצמי</option>${car.deliveryEnabled ? `<option value="delivery" ${draft.fulfillment === 'delivery' ? 'selected' : ''}>מסירה</option>` : ''}</select></div><div class="field" id="delivery-address-field"><label>כתובת מסירה</label><input name="deliveryAddress" autocomplete="street-address" value="${esc(draft.deliveryAddress || '')}" placeholder="רחוב, מספר, עיר"></div><label class="booking-consent"><input type="checkbox" name="termsAccepted" required><span>קראתי ואני מסכים/ה ל<a href="terms.html" target="_blank" rel="noopener">תנאי השימוש</a>, כולל תנאי הביטול המפורטים בהם.</span></label>${bookingGate ? '' : `<button type="submit" class="btn primary block booking-submit-main" data-label="${rented ? 'שליחת בקשת שריון' : 'שליחת בקשה'}">${rented ? 'שליחת בקשת שריון' : 'שליחת בקשה'}</button>`}</form><div class="mobile-booking-bar"><div><small>${rented ? 'שריון מראש' : 'סיכום הזמנה'}</small><b id="mobile-booking-total">בחרו תאריכים</b></div>${bookingGate ? `<button type="button" class="btn primary" data-gate-act="${bookingGate.act || 'none'}">${esc(bookingGate.cta || 'ממתין לאישור')}</button>` : `<button type="submit" form="booking-form" class="btn primary" data-label="${rented ? 'שליחת בקשת שריון' : 'שליחת בקשה'}">${rented ? 'בקשת שריון' : 'שליחת בקשה'}</button>`}</div>`}
     ${canInquire && !onRequest ? `<div class="owner-contact-cta"><div><b>יש לכם שאלה על הרכב?</b><small>דברו ישירות עם בעל הרכב עוד לפני שליחת הבקשה.</small></div><button type="button" class="btn dark-out" id="contact-owner">${ICON.chat} צור קשר עם בעל הרכב</button></div>` : ''}
     ${reviewsHtml}
     <button type="button" class="btn outline block car-share-btn" id="car-share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/></svg> שיתוף הרכב בוואטסאפ</button>
     ${car.status !== 'hidden' ? `<details class="avail-more"><summary>לוח זמינות — בדיקת תאריכים תפוסים</summary><div class="avail-section"><div class="avail-head"><h3>זמינות</h3><div class="avail-nav"><button type="button" class="cal-nav" id="avail-prev" aria-label="החודש הקודם">‹</button><b id="avail-month"></b><button type="button" class="cal-nav" id="avail-next" aria-label="החודש הבא">›</button></div></div><div class="avail-cal" id="avail-cal" aria-label="לוח זמינות"></div><div class="avail-legend"><span class="lg free">פנוי — לחיצה קובעת תאריך איסוף</span><span class="lg busy">תפוס</span></div></div></details>` : ''}
-    ${car.status === 'hidden' ? '<div class="chat-closed">הרכב אינו זמין להזמנה כרגע</div>' : `${gateHtml}<form id="booking-form" autocomplete="on"><div class="booking-form-head"><span>${rented ? 'שריון מראש' : 'בקשת הזמנה'}</span><h3>בחירת מועד וקבלת מחיר</h3><small>כל השעות לפי ניו יורק (ET)</small></div>${rented ? `<div class="notice">🕐 הרכב מושכר כרגע — אפשר לשריין אותו מראש: בחרו תאריכים עתידיים, ובעל הרכב יאשר בהתאם לזמינות בתאריכים שבחרתם.${freesAt ? ` צפוי להתפנות בערך ב־${fmtDate(freesAt)}.` : ''}</div>` : ''}<div class="form-grid">${dateField('startDate', 'תאריך איסוף', bStart)}<div class="field"><label>שעת איסוף</label><select name="startHour">${hourOptions(bStartH)}</select></div>${dateField('endDate', 'תאריך החזרה', bEnd)}<div class="field"><label>שעת החזרה</label><select name="endHour">${hourOptions(bEndH)}</select></div></div><div class="booking-est" id="booking-est" aria-live="polite"></div><div class="field"><label>אופן קבלה</label><select name="fulfillment"><option value="pickup" ${draft.fulfillment !== 'delivery' ? 'selected' : ''}>איסוף עצמי</option>${car.deliveryEnabled ? `<option value="delivery" ${draft.fulfillment === 'delivery' ? 'selected' : ''}>מסירה</option>` : ''}</select></div><div class="field" id="delivery-address-field"><label>כתובת מסירה</label><input name="deliveryAddress" autocomplete="street-address" value="${esc(draft.deliveryAddress || '')}" placeholder="רחוב, מספר, עיר"></div><label class="booking-consent"><input type="checkbox" name="termsAccepted" required><span>קראתי ואני מסכים/ה ל<a href="terms.html" target="_blank" rel="noopener">תנאי השימוש</a>, כולל תנאי הביטול המפורטים בהם.</span></label>${bookingGate ? '' : `<button type="submit" class="btn primary block booking-submit-main" data-label="${rented ? 'שליחת בקשת שריון' : 'שליחת בקשה'}">${rented ? 'שליחת בקשת שריון' : 'שליחת בקשה'}</button>`}</form><div class="mobile-booking-bar"><div><small>${rented ? 'שריון מראש' : 'סיכום הזמנה'}</small><b id="mobile-booking-total">בחרו תאריכים</b></div>${bookingGate ? `<button type="button" class="btn primary" data-gate-act="${bookingGate.act || 'none'}">${esc(bookingGate.cta || 'ממתין לאישור')}</button>` : `<button type="submit" form="booking-form" class="btn primary" data-label="${rented ? 'שליחת בקשת שריון' : 'שליחת בקשה'}">${rented ? 'בקשת שריון' : 'שליחת בקשה'}</button>`}</div>`}`);
+`);
   const galleryImg = document.querySelector('#gallery-img');
   galleryImg?.addEventListener('error', event => { event.currentTarget.src = fallbackImage; }, {once: true});
   document.querySelectorAll('[data-photo]').forEach(button => button.onclick = () => {
@@ -988,6 +993,16 @@ export function openCar(id) {
     if (act === 'support') { closeModal(); openSupportChat(); return; }
     if (act === 'birthdate') { store.dashTab = 'profile'; closeModal(); location.hash = 'dashboard'; toast('הוסיפו תאריך לידה ושמרו — ואפשר להמשיך'); return; }
     if (act === 'browse') { closeModal(); location.hash = 'cars'; return; }
+  });
+  document.querySelector('#go-reservation')?.addEventListener('click', async () => {
+    closeModal();
+    try {
+      const m = await loadApp();
+      store.reservationId = window.__cdLastBookingId || '';
+      store.dashTab = store.reservationId ? 'reservation' : 'bookings';
+      location.hash = 'dashboard';
+      m.dashboard();
+    } catch { location.hash = 'dashboard'; }
   });
   document.querySelector('#car-share')?.addEventListener('click', async () => {
     const shareUrl = `${location.origin}/api/share?car=${encodeURIComponent(car.id)}`;
@@ -1121,6 +1136,7 @@ export function openCar(id) {
       if (rangeTaken(carTaken, s, e)) return toast('הרכב כבר מוזמן בחלק מהטווח שבחרתם — בחרו תאריכים אחרים');
       submitButtons.forEach(button => { button.disabled = true; button.setAttribute('aria-busy', 'true'); button.dataset.label = button.textContent; button.textContent = 'שולח…'; });
       const bookingId = await createBooking(car, data);
+      window.__cdLastBookingId = bookingId;   // the success screen opens THIS reservation
       try { sessionStorage.removeItem(draftKey); } catch {}
       closeModal();
       // Clear success screen (mobile audit #26): booking number, status, what happens next, and a direct
@@ -1132,7 +1148,7 @@ export function openCar(id) {
           <div class="summary"><span>רכב</span><b>${esc(car.make || '')} ${esc(car.model || '')}</b></div>
           <div class="summary"><span>סטטוס</span><b><span class="status-badge pending">ממתינה לאישור</span></b></div>
           <p class="mut">בעל הרכב קיבל את הבקשה. תקבלו עדכון ברגע שיאשר — ואז נבקש הוכחת תשלום ותיעוד לפני הנסיעה.</p>
-          <button class="btn primary block" data-route="dashboard">מעבר לאזור האישי</button>
+          <button class="btn primary block" id="go-reservation">צפייה בהזמנה</button>
         </div>`);
       document.querySelector('#modal-root [data-route]')?.addEventListener('click', () => closeModal());
     } catch (error) {

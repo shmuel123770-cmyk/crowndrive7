@@ -45,12 +45,35 @@ export async function enablePush() {
   if (!('serviceWorker' in navigator) || !('Notification' in window)) throw new Error('הדפדפן שלך לא תומך בהתראות');
   if (!window.CROWNDRIVE_VAPID_KEY) throw new Error('ההתראות עדיין לא הופעלו על ידי מנהל האתר');
   if (typeof firebase === 'undefined' || typeof firebase.messaging !== 'function') throw new Error('רכיב ההתראות לא נטען — נסו לרענן');
+  // iOS exposes Push ONLY inside a PWA opened from the Home Screen. Say so plainly instead of letting
+  // the request fail with a generic message.
+  const ua = navigator.userAgent || '';
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+  const standalone = window.navigator.standalone === true
+    || window.matchMedia?.('(display-mode: standalone)')?.matches === true;
+  if (isIOS && !standalone) throw new Error('באייפון צריך קודם להוסיף את האתר למסך הבית, ולפתוח אותו משם');
+  if (isIOS && !('PushManager' in window)) throw new Error('נדרש iOS 16.4 ומעלה כדי לקבל התראות');
+  if (typeof firebase.messaging.isSupported === 'function') {
+    const ok = await firebase.messaging.isSupported().catch(() => false);
+    if (!ok) throw new Error('הדפדפן הזה לא תומך בהתראות — נסו לפתוח את האפליקציה ממסך הבית');
+  }
   const permission = await Notification.requestPermission();
-  if (permission !== 'granted') throw new Error('כדי לקבל התראות יש לאשר אותן בדפדפן');
+  if (permission !== 'granted') throw new Error(permission === 'denied'
+    ? 'ההתראות חסומות בהגדרות. באייפון: הגדרות ← התראות ← Crown Drive'
+    : 'כדי לקבל התראות יש לאשר אותן בדפדפן');
+  // FCM registers /firebase-messaging-sw.js on its own, but does NOT wait for it to become ACTIVE.
+  // On iOS that registration is slower, so getToken could fire against a worker that wasn't ready and
+  // fail with an opaque error. Register it ourselves, wait for readiness, and hand it to getToken.
+  let swReg;
+  try {
+    swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js', {scope: '/firebase-cloud-messaging-push-scope'});
+    await navigator.serviceWorker.ready;
+  } catch { swReg = undefined; }   // fall back to FCM's own registration
   const messaging = firebase.messaging();
-  // getToken auto-registers /firebase-messaging-sw.js at its own scope (no clash with the app's sw.js).
-  const token = await messaging.getToken({vapidKey: window.CROWNDRIVE_VAPID_KEY});
-  if (!token) throw new Error('קבלת אסימון ההתראות נכשלה — נסו שוב');
+  const token = await messaging.getToken(swReg
+    ? {vapidKey: window.CROWNDRIVE_VAPID_KEY, serviceWorkerRegistration: swReg}
+    : {vapidKey: window.CROWNDRIVE_VAPID_KEY});
+  if (!token) throw new Error('קבלת אסימון ההתראות נכשלה — נסו לסגור ולפתוח את האפליקציה ולנסות שוב');
   await api('profile-save', {action: 'push-register', token});
   try { localStorage.setItem(TOKEN_KEY, token); } catch {}
   initPushForeground();
