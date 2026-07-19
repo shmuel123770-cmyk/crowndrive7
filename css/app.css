@@ -1,6 +1,6 @@
 /* CrownDrive V2 — full visual language ported from the original CrownDrive monolith.
    Heebo · steel-blue #3F6B8E · dark #1B222B · layered atmospheric background. */
-:root{
+:root{color-scheme:light;
   --bg:#EFF2F6; --bg2:#E6EAEF; --bg3:#DAE0E7; --bg-soft:#F6F8FB; --card:#FFFFFF;
   --dark:#1B222B; --dark-2:#232C37;
   --brand:#3F6B8E; --brand-l:#557FA1; --brand-d:#31567A;
@@ -206,13 +206,13 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
 .car-photo img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .5s var(--ease),transform .6s var(--ease)}
 .car-photo img.loaded{opacity:1}
 .car:hover .car-photo img{transform:scale(1.04)}
-.avail-badge{position:absolute;top:12px;inset-inline-start:12px;font-weight:700;font-size:.78rem;letter-spacing:.02em;padding:6px 15px;border-radius:99px;border:1px solid;backdrop-filter:blur(6px)}
+.avail-badge{position:absolute;top:12px;inset-inline-start:12px;font-weight:700;font-size:.76rem;letter-spacing:.02em;padding:6px 15px;border-radius:99px;border:1px solid;backdrop-filter:blur(6px)}
 .avail-badge.free{color:#fff;background:rgba(28,150,90,.85);border-color:rgba(150,220,180,.6)}
-.avail-badge.busy{color:#fff;background:rgba(183,28,28,.88);border-color:rgba(255,160,150,.6);font-size:.9rem;padding:8px 18px;box-shadow:0 6px 18px rgba(120,20,20,.35)}
+.avail-badge.busy{color:#fff;background:rgba(183,28,28,.88);border-color:rgba(255,160,150,.6)}
 /* Availability pill + the auto-expiring "new" badge stack in the top corner. */
 .car-badges{position:absolute;top:12px;inset-inline-start:12px;display:flex;flex-direction:column;gap:6px;align-items:flex-start;z-index:2}
 .car-badges .avail-badge{position:static}
-.new-badge{background:linear-gradient(135deg,#E9C46A,#C99A2E);color:#2A1F08;font-weight:800;font-size:.7rem;padding:4px 12px;border-radius:99px;letter-spacing:.02em;box-shadow:0 4px 12px rgba(180,140,30,.35)}
+.new-badge{background:linear-gradient(135deg,#E9C46A,#C99A2E);color:#2A1F08;font-weight:800;font-size:.76rem;padding:5px 13px;border-radius:99px;letter-spacing:.02em;box-shadow:0 4px 12px rgba(180,140,30,.35)}
 .car-detail-head .new-badge{font-size:.78rem;padding:6px 14px}
 .has-video{position:absolute;bottom:12px;inset-inline-end:12px;background:rgba(0,0,0,.55);color:#fff;font-size:.7rem;font-weight:600;padding:3px 10px;border-radius:99px;letter-spacing:.02em}
 .feat-badge{position:absolute;top:12px;inset-inline-end:12px;background:linear-gradient(135deg,#E9A93D,#B8862B);color:#2A1F08;font-weight:800;font-size:.72rem;padding:6px 13px;border-radius:99px;letter-spacing:.02em;box-shadow:0 6px 16px rgba(150,110,20,.4)}
@@ -255,6 +255,7 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
 .price-stack{display:grid;gap:2px}
 .price-alt{color:var(--muted);font-weight:600;font-size:.74rem;letter-spacing:.02em}
 .price small{font-size:.55em;font-weight:500;color:var(--muted);letter-spacing:.06em}
+.rate-new{font-size:.8rem;font-weight:600;color:var(--muted)}
 .owner-tag{font-size:.72rem;color:var(--muted);background:var(--bg2);border-radius:99px;padding:4px 12px;font-weight:500}
 .car .btn{margin-top:auto;background:#232A33;color:#fff;border:none;border-radius:10px;padding:13px}
 .car .btn:hover{background:#33404E;box-shadow:0 10px 24px rgba(20,26,33,.28)}
@@ -414,7 +415,7 @@ table.data .t-actions{display:flex;gap:8px;justify-content:flex-start;flex-wrap:
 .icon-btn.danger{color:var(--danger);border-color:rgba(215,0,21,.3)}
 .icon-btn.danger:hover{background:var(--danger-bg)}
 .icon-btn svg{width:16px;height:16px}
-.pill{display:inline-flex;align-items:center;border-radius:99px;padding:4px 13px;font-weight:600;font-size:.72rem;letter-spacing:.02em;background:var(--bg2);color:var(--text);border:1px solid transparent}
+.pill{display:inline-flex;align-items:center;border-radius:99px;padding:5px 13px;font-weight:600;font-size:.73rem;letter-spacing:.02em;background:var(--bg2);color:var(--text);border:1px solid transparent}
 .pill.ok{background:var(--ok-bg);color:var(--ok);border-color:rgba(127,191,158,.4)}
 .pill.warn{background:var(--warn-bg);color:var(--warn);border-color:rgba(217,190,128,.4)}
 .pill.mut{background:var(--bg2);color:var(--muted)}
@@ -428,6 +429,81 @@ table.data .t-actions{display:flex;gap:8px;justify-content:flex-start;flex-wrap:
 /* ---------- overview two-panel ---------- */
 .overview-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:16px;margin-top:6px}
 .mini-panel{border:1px solid var(--hair);border-radius:18px;background:var(--surface);overflow:hidden;box-shadow:0 14px 36px rgba(20,28,40,.06)}
+/* ---- Rental summary: a period switcher, and one comparable bar per group. The bar is proportional
+   to the biggest earner, so "which car actually carries the business" is readable at a glance. ---- */
+/* A Latin car name inside an RTL header got its ellipsis at the START ("…dai Elantra") — the useful
+   half was the part being cut. plaintext takes the direction from the text itself, so Latin names
+   truncate at the end and Hebrew ones still behave. */
+.chat-head-main h3{unicode-bidi:plaintext}
+/* Back and close were two identical 44px dark squares — same weight for two different destinations.
+   Back is the frequent one and stays solid; close steps down to a quiet outline. */
+.chat-head .chat-x{background:transparent;border:1px solid rgba(255,255,255,.22);color:rgba(255,255,255,.72);font-weight:400}
+.chat-head .chat-x:hover{background:rgba(255,255,255,.1);color:#fff}
+/* Who you are actually talking to — the header used to name only the car. */
+.chat-who{display:block;font-size:.78rem;color:var(--muted-2);margin-top:1px}
+/* Contact strip — the other side of the booking, reachable in one tap. */
+.contact-block{margin:10px 0 4px;padding:13px 14px;border:1px solid var(--line);border-radius:14px;background:var(--bg2)}
+.cb-id{display:flex;flex-direction:column;gap:2px;margin-bottom:10px}
+.cb-id b{font-size:.98rem;color:var(--text)}
+.cb-id span{font-size:.9rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.contact-block .chips{gap:8px}
+.contact-block .btn{flex:1 1 40%;margin:0;text-align:center;text-decoration:none}
+/* A stat that is also a shortcut — must read as part of the strip, not as a stray button. */
+.stat-link{background:none;border:none;padding:0;font:inherit;color:inherit;cursor:pointer;display:inline-flex;
+  align-items:baseline;gap:5px;border-bottom:1px dashed currentColor;min-width:0;min-height:0}
+.stat-link:hover{opacity:.75}
+/* ---- Admin: split user lists + a single user's control page ---- */
+.user-search{width:100%;padding:12px 14px;margin:0 0 14px;border:1px solid var(--line);border-radius:12px;
+  background:var(--surface);color:var(--text);font-size:.92rem;font-family:inherit}
+.user-search:focus{outline:none;border-color:var(--brand);box-shadow:0 0 0 3px rgba(63,107,142,.14)}
+.user-group{margin-bottom:14px;border:1px solid var(--hair);border-radius:16px;background:var(--surface);overflow:hidden}
+.user-group>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;
+  gap:10px;padding:14px 16px;font-size:.98rem;color:var(--text)}
+.user-group>summary::-webkit-details-marker{display:none}
+.user-group>summary::after{content:"⌄";font-size:1.1rem;transition:transform .2s;color:var(--muted)}
+.user-group[open]>summary::after{transform:rotate(180deg)}
+.user-group>summary:hover{background:var(--bg2)}
+.ug-count{background:var(--bg2);color:var(--muted);border-radius:99px;padding:2px 10px;font-size:.8rem;font-weight:700}
+.user-group .admin-cards{padding:0 12px 12px}
+/* the whole card is a shortcut into that user's area — its own buttons still win (handled in JS) */
+.auc-click{cursor:pointer;transition:transform .12s,box-shadow .12s}
+.auc-click:hover{transform:translateY(-1px);box-shadow:0 12px 28px rgba(20,28,40,.1)}
+/* Back is navigation, not an action — a quiet link, so it stops outweighing the person's name. */
+.up-back{background:none;border:none;padding:6px 2px;margin:0 0 10px;font:inherit;font-size:.84rem;
+  font-weight:600;color:var(--muted);cursor:pointer;min-height:0}
+.up-back:hover{color:var(--brand-d)}
+/* The identity card IS the page header: give it presence instead of repeating the name above it. */
+.up-head{display:flex;align-items:center;gap:13px;padding:16px;border:1px solid var(--line);border-radius:18px;
+  background:linear-gradient(135deg,rgba(63,107,142,.07),var(--surface) 60%);margin-bottom:16px;
+  box-shadow:0 10px 30px rgba(20,28,40,.05)}
+.up-ava{width:52px;height:52px;min-width:52px;font-size:1.25rem}
+.up-name{display:block;margin:0 0 2px;font-size:1.18rem;font-weight:800;color:var(--text);line-height:1.25}
+.up-id{flex:1;min-width:0}
+
+.up-id small{color:var(--muted);font-size:.82rem}
+.up-pills{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.up-sec{margin-top:12px;border:1px solid var(--hair);border-radius:16px;background:var(--surface);overflow:hidden}
+.up-sec>summary{list-style:none;cursor:pointer;display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:15px 16px}
+.up-sec>summary::-webkit-details-marker{display:none}
+.up-sec>summary b{font-size:.96rem;color:var(--text)}
+.up-sec>summary small{color:var(--muted);font-size:.8rem}
+.up-sec>summary:hover{background:var(--bg2)}
+.up-sec>*:not(summary){padding:0 14px 14px}
+.up-sec .chips{padding-top:4px}
+@media(max-width:520px){.up-head{flex-wrap:wrap}.up-pills{justify-content:flex-start;width:100%}}
+.period-chips{gap:6px;margin:0}
+.period-chips .type-chip{padding:7px 14px;font-size:.82rem}
+.sum-row{padding:12px 15px;border-top:1px solid var(--hair)}
+.sum-row:first-of-type{border-top:none}
+.sum-row-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:7px}
+.sum-row-top b:first-child{font-size:.92rem;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sum-row-top b:last-child{font-size:.95rem;color:var(--brand-d);white-space:nowrap}
+.sum-row small{color:var(--muted);font-size:.76rem}
+.sum-bar{height:7px;border-radius:99px;background:var(--bg2);overflow:hidden;margin-bottom:6px}
+.sum-bar span{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--brand),var(--brand-d));min-width:3px}
+.sum-open .sum-row-top b:last-child{color:var(--warn)}
+.sum-list-head{margin:22px 0 10px;padding:0 2px}
+@media(max-width:520px){.period-chips .type-chip{padding:6px 11px;font-size:.78rem}}
 .mini-panel-head{display:flex;justify-content:space-between;align-items:center;padding:15px 18px;border-bottom:1px solid var(--hair)}
 .mini-panel-head h3{margin:0;font-size:1rem}
 .mini-panel-head span{color:var(--muted);font-size:.78rem}
@@ -453,7 +529,7 @@ table.data .t-actions{display:flex;gap:8px;justify-content:flex-start;flex-wrap:
 .verification-list{margin-top:18px}
 .status{font-size:.8rem;font-weight:800}
 .status.ok{color:var(--ok)} .status.warn{color:var(--warn)} .status.bad{color:var(--danger)}
-.status-badge{display:inline-flex;align-items:center;border-radius:99px;padding:5px 13px;background:var(--bg2);font-weight:600;font-size:.74rem;letter-spacing:.02em;border:1px solid transparent}
+.status-badge{display:inline-flex;align-items:center;border-radius:99px;padding:5px 13px;background:var(--bg2);font-weight:600;font-size:.73rem;letter-spacing:.02em;border:1px solid transparent}
 .status-badge.approved,.status-badge.active{background:var(--ok-bg);color:var(--ok);border-color:rgba(127,191,158,.4)}
 .status-badge.pending{background:var(--warn-bg);color:var(--warn);border-color:rgba(217,190,128,.4)}
 .status-badge.rejected,.status-badge.cancelled{background:var(--danger-bg);color:var(--danger);border-color:rgba(217,138,128,.4)}
@@ -465,6 +541,9 @@ table.data .t-actions{display:flex;gap:8px;justify-content:flex-start;flex-wrap:
 .booking-main p{margin:0;color:var(--muted);font-size:.88rem}
 .booking-main small{color:var(--muted-2);font-size:.72rem;letter-spacing:.06em}
 .ev-note{margin:10px 0 0;font-size:.76rem;color:var(--warn);background:var(--warn-bg);border:1px solid rgba(217,190,128,.35);padding:9px 12px;border-radius:10px}
+/* Delivery is logistics, not a warning — same shape as .ev-note, calmer colour, and it must be easy
+   to spot on the card because it's the address the owner has to drive to. */
+.deliv-note{color:var(--brand-d);background:rgba(63,107,142,.09);border-color:rgba(63,107,142,.25);font-weight:600}
 
 /* ---------- modal ---------- */
 /* While a modal is open, lock the page behind it so it can't scroll (esp. on mobile). */
@@ -525,7 +604,9 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
 .thumb.active{border-color:var(--brand)}
 .thumb img{width:100%;height:100%;object-fit:cover}
 .thumb-video{display:grid;place-items:center;color:#fff;background:var(--dark);font-size:1.2rem}
-.car-detail-head{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+.car-detail-head{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+/* One shared height so the row reads as a single strip of facts, not stacked scraps. */
+.car-detail-head > *{min-height:28px;display:inline-flex;align-items:center}
 .car-detail-head .avail-badge{position:static}
 .detail-summaries{display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;margin-bottom:14px}
 .reviews{border-top:1px solid var(--hair);padding-top:14px;margin-bottom:14px}
@@ -539,7 +620,7 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
 .review-head{display:flex;justify-content:space-between;align-items:center}
 .review-stars{color:#E9A93D;letter-spacing:1px}
 .review-head small{color:var(--muted);font-size:.72rem}
-.review p{margin:6px 0 0;line-height:1.55;font-size:.88rem;color:#3A4450}
+.review p{margin:6px 0 0;line-height:1.55;font-size:.88rem;color:var(--text)}
 #booking-form h3,.form-section-title{margin:18px 0 12px;font-weight:800;font-size:1rem}
 .form-section-title{display:flex;align-items:center;gap:14px;color:var(--brand-d);font-size:.76rem;letter-spacing:.28em}
 .form-section-title::after{content:"";flex:1;height:1px;background:var(--hair)}
@@ -698,6 +779,14 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
 .ev-chip{display:inline-flex;align-items:center;gap:5px;border:1px solid rgba(63,107,142,.18);background:var(--surface);border-radius:14px;padding:9px 14px;font-size:.8rem;font-weight:700;color:#263342;cursor:pointer;box-shadow:0 5px 14px rgba(25,35,45,.05);transition:transform .18s var(--ease),background .2s,border-color .2s}
 .ev-chip:hover{transform:translateY(-2px);border-color:var(--brand)}
 .ev-chip.ok{background:var(--ok-bg);color:var(--ok);border-color:rgba(127,191,158,.4)}
+/* The chat's attach button, while its photo is in flight — same reasoning as the evidence chips. */
+.chat-attach.busy{opacity:.5;pointer-events:none;cursor:progress}
+/* Uploading — the chip must LOOK occupied for as long as the transfer runs, not for a 3s toast. */
+.ev-chip.busy{opacity:.75;cursor:progress;pointer-events:none;border-color:var(--brand);
+  background:linear-gradient(90deg,var(--bg2) 25%,var(--surface) 50%,var(--bg2) 75%) 0 0/280% 100%;
+  animation:evPulse 1.1s linear infinite}
+@keyframes evPulse{to{background-position:-280% 0}}
+@media (prefers-reduced-motion: reduce){.ev-chip.busy{animation:none}}
 .chat-composer{display:flex;gap:9px;padding:11px 14px;flex-shrink:0;border-top:1px solid var(--hair);background:var(--surface);box-shadow:0 -6px 16px rgba(20,26,33,.06)}
 .chat-composer input{flex:1;border:1px solid var(--line);border-radius:99px;padding:10px 16px;background:var(--surface)}
 .chat-composer input:focus{outline:none;border-color:var(--brand)}
@@ -847,6 +936,8 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
 .cal-day.today{box-shadow:inset 0 0 0 1.5px var(--brand)}
 .cal-day.sel{background:var(--brand);color:#fff}
 .cal-day:disabled{color:var(--muted-2);opacity:.45;cursor:default}
+/* Already booked — struck through so it reads as "taken", not merely "in the past". */
+.cal-day.taken{color:var(--danger);opacity:.55;text-decoration:line-through}
 .quick-search .date-field{text-align:right}
 @media(max-width:900px){ .cal-pop{inset-inline-end:auto;inset-inline-start:0} }
 
@@ -956,12 +1047,15 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 .avatar-btn{border:none;background:none;padding:0;cursor:pointer;border-radius:50%}
 .avatar-btn:hover .avatar,.avatar-btn:hover .avatar-fallback{filter:brightness(.9)}
 /* In-flow (not floating) so it never overlaps the page title; sits cleanly above it. */
-.page-back{display:inline-flex;align-items:center;gap:7px;margin:20px 0 6px;
-  background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:10px 20px;
-  font-weight:700;font-size:.9rem;color:var(--brand-d);cursor:pointer;box-shadow:0 3px 10px rgba(27,34,43,.08);
-  transition:border-color .18s,background .18s,transform .12s}
-.page-back:hover{border-color:var(--brand);background:rgba(63,107,142,.06)}
-.page-back:active{transform:scale(.97)}
+/* Back is navigation, not a call to action. A white pill with a shadow gave a secondary control
+   more weight than the page title it sits above — and it read as detached, floating in whitespace.
+   Same treatment as .up-back so the two back controls in the app finally match. */
+.page-back{display:inline-flex;align-items:center;gap:7px;margin:14px 0 2px;
+  background:none;border:none;border-radius:8px;padding:6px 2px;
+  font-weight:600;font-size:.86rem;color:var(--muted);cursor:pointer;min-height:0;
+  transition:color .15s}
+.page-back:hover{color:var(--brand-d)}
+.page-back:active{transform:translateX(2px)}
 /* professional svg icon sizing (replaces emojis) */
 .role-emoji svg{width:34px;height:34px;stroke:var(--brand)}
 .trust-icon svg{width:22px;height:22px;stroke:var(--brand-d)}
@@ -1137,11 +1231,11 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 .auc-head{display:flex;align-items:center;gap:11px}
 .auc-ava{flex:0 0 42px;width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#3F6B8E,#28455c);color:#fff;display:grid;place-items:center;font-weight:800;font-size:1rem;text-transform:uppercase}
 .auc-id{flex:1;min-width:0}
-.auc-name{display:block;font-weight:700;font-size:1.02rem;color:#1B222B;line-height:1.2}
-.auc-role{font-size:.8rem;color:#66707a}
+.auc-name{display:block;font-weight:700;font-size:1.02rem;color:var(--text);line-height:1.2}
+.auc-role{font-size:.8rem;color:var(--muted)}
 .auc-contact{margin:11px 0 12px;display:flex;flex-direction:column;gap:5px}
-.auc-contact span{font-size:.88rem;color:#37414b;word-break:break-all}
-.auc-contact .lab{color:#8b95a0;font-weight:600;margin-inline-end:6px}
+.auc-contact span{font-size:.88rem;color:var(--text);word-break:break-all}
+.auc-contact .lab{color:var(--muted);font-weight:600;margin-inline-end:6px}
 .auc-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px solid var(--hair);padding-top:12px}
 .auc-actions .btn.outline{padding:8px 13px;font-size:.82rem}
 .auc-icons{display:flex;gap:6px;margin-inline-start:auto}
@@ -1169,7 +1263,8 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 
 /* ---------- Rental modes + date-search pricing ---------- */
 .mode-badge{position:absolute;bottom:12px;inset-inline-start:12px;background:rgba(27,34,43,.82);color:#fff;font-weight:700;font-size:.7rem;padding:5px 11px;border-radius:99px;letter-spacing:.02em;-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px)}
-.mode-badge.lg{position:static;display:inline-block;background:var(--brand);font-size:.8rem;padding:6px 14px}
+.mode-badge.lg{position:static;display:inline-block;background:transparent;color:var(--brand-d);
+  border:1px solid var(--line-2);font-size:.76rem;font-weight:600;padding:5px 13px}
 .mode-line{font-size:.82rem;font-weight:700;color:var(--brand-d);margin:2px 0 4px}
 .period-est{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;background:rgba(63,107,142,.08);border:1px solid rgba(63,107,142,.2);border-radius:12px;padding:9px 13px;margin:8px 0}
 .period-est span{font-size:.76rem;color:var(--muted);font-weight:600}
@@ -1181,7 +1276,7 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 .period-search{display:grid;grid-template-columns:1.6fr .8fr 1.6fr .8fr auto;gap:10px;align-items:end;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:14px;box-shadow:0 6px 16px rgba(12,20,32,.05)}
 .period-search .hour-field{display:grid;gap:6px;text-align:right;margin:0}
 .period-search .hour-field span{font-size:.74rem;font-weight:800;color:var(--muted);letter-spacing:.02em}
-.period-search select,.period-search .date-btn{width:100%;height:50px;border:1px solid var(--line);border-radius:12px;padding:0 12px;background:var(--surface);color:#182631;font-size:1rem;font-weight:600}
+.period-search select,.period-search .date-btn{width:100%;height:50px;border:1px solid var(--line);border-radius:12px;padding:0 12px;background:var(--surface);color:var(--text);font-size:1rem;font-weight:600}
 .period-search .df-label{font-size:.74rem;font-weight:800;color:var(--muted);display:block;margin-bottom:6px;text-align:right}
 .period-search .date-field{margin:0}
 .period-search .btn{height:50px;white-space:nowrap}
@@ -1253,10 +1348,15 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
   .car .btn{margin-top:2px;padding:9px 6px;font-size:.78rem;border-radius:9px}
   .car-badges{top:8px;inset-inline-start:8px;gap:4px}
   .avail-badge{font-size:.6rem;padding:3px 9px}
-  .avail-badge.busy{font-size:.68rem;padding:5px 11px}
   .new-badge{font-size:.58rem;padding:3px 8px}
   .mode-badge{font-size:.58rem;padding:3px 8px;bottom:8px;inset-inline-start:8px}
   .has-video{font-size:.58rem;padding:2px 8px;bottom:8px}
+}
+/* Tablets fell into the phone rule: the 2-column grid is gated on max-width:820px, so a 768px
+   tablet showed the same two cars per screen as a phone — with 367px-wide cards and huge photos.
+   The 2×2 layout is meant for PHONES; from 601px up there is room for three. */
+@media (min-width:601px) and (max-width:820px){
+  .grid{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 /* Keep TWO columns on phones (user wants 4 cars per view = 2×2). Only fall back to a single
    column below ~320px — narrower than any current phone — so it never triggers in practice. */
@@ -1394,7 +1494,7 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 @media(max-width:820px){
   /* §5 buttons: primary 50px, secondary 46px, small/chips 44px; radius 14px; full feedback kept */
   .btn{border-radius:14px;min-height:46px}
-  .btn.primary,.btn.gold,.btn.block{min-height:50px}
+  .btn.block{min-height:50px}
   .chips .btn,.car .btn,.pill-btn{min-height:44px}
   .close{width:44px;height:44px;min-width:44px}
   /* §11 forms: fields 50px, textarea ≥110px, 22px checks inside a 44px target, 16px gaps */
@@ -1688,9 +1788,14 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 @media(prefers-reduced-motion:reduce){.chat-unread-dot{animation:none}}
 
 /* ---- Favorites (design doc §9, rev140): the 40×40 heart on every card + a favorites filter chip ---- */
-.fav-btn{position:absolute;top:8px;inset-inline-end:8px;width:40px;height:40px;border:none;border-radius:50%;background:rgba(255,255,255,.94);display:grid;place-items:center;cursor:pointer;z-index:2;box-shadow:0 4px 12px rgba(16,24,40,.2);transition:transform .12s}
+.fav-btn{position:absolute;top:8px;inset-inline-end:8px;width:34px;height:34px;border:none;border-radius:50%;background:rgba(255,255,255,.62);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);display:grid;place-items:center;cursor:pointer;transition:background .15s,transform .12s}
 .fav-btn:active{transform:scale(.9)}
-.fav-btn svg{width:20px;height:20px;color:var(--danger);fill:none;transition:fill .15s}
+.fav-btn svg{width:18px;height:18px;color:var(--muted);fill:none;transition:fill .15s,color .15s}
+.fav-btn:hover{background:rgba(255,255,255,.9)}
+.fav-btn:hover svg{color:var(--danger)}
+/* Saved is the state worth shouting about — full red, full white chip behind it. */
+.fav-btn.on{background:rgba(255,255,255,.94)}
+.fav-btn.on svg{color:var(--danger)}
 .fav-btn.on svg{fill:var(--danger)}
 @keyframes favPop{0%{transform:scale(1)}40%{transform:scale(1.4)}100%{transform:scale(1)}}
 .fav-btn.pop svg{animation:favPop .35s var(--ease)}
@@ -1825,46 +1930,9 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
   .auc-head{gap:8px}
 }
 
-/* ================= DARK MODE (rev147) =================
-   Follows the phone's system setting (prefers-color-scheme) — no toggle, exactly like a native app.
-   The palette flips through the :root tokens; every former literal white now rides var(--surface).
-   The dark hero/topbar/chat-header were dark already and simply deepen. */
-@media (prefers-color-scheme: dark){
-  :root{
-    --bg:#0F141B; --bg2:#19212B; --bg3:#232E3A; --bg-soft:#131A22; --card:#1A222C;
-    --surface:#1A222C;
-    --dark:#0B0F14; --dark-2:#111823;
-    --text:#E9EDF2; --muted:#9AA6B2; --muted-2:#66707C;
-    --line:rgba(255,255,255,.14); --line-2:rgba(255,255,255,.26); --hair:rgba(255,255,255,.09);
-    --brand-l:#6E95B5; --brand-d:#8FB4D4;
-    --ok:#3FBF87; --ok-bg:rgba(63,191,135,.14);
-    --danger:#FF6B72; --danger-bg:rgba(255,107,114,.14);
-    --warn:#E5A94F; --warn-bg:rgba(229,169,79,.16);
-    --accent-soft:#2A2416;
-    --shadow:0 24px 60px rgba(0,0,0,.55);
-  }
-  /* Elevation reads differently on dark: shadows deepen, top-lights soften */
-  .card{box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 1px 2px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.45)}
-  .kpi,.auc{box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 1px 2px rgba(0,0,0,.3), 0 12px 32px rgba(0,0,0,.4)}
-  .car:hover{box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 3px 8px rgba(0,0,0,.4), 0 24px 56px rgba(0,0,0,.55)}
-  /* Sticky glass bars turn dark-glass */
-  .modal-head{background:rgba(20,27,36,.92)}
-  .mobile-booking-bar,.wiz-nav{background:rgba(15,20,27,.96)}
-  /* Intentional whites STAY white on dark (switch knob, floating hearts) */
-  .price-request-toggle input::after{background:#fff}
-  .fav-btn{background:rgba(255,255,255,.92)}
-  /* The compact hero stat chips were light glass — flip to dark glass */
-  .hstat{background:rgba(255,255,255,.08)}
-  .hstat b{color:#fff}
-  /* Inputs: readable dark fields with visible borders */
-  .field input,.field select,.field textarea,.filter-bar select,.filter-bar input{color:var(--text)}
-  .quick-search input,.quick-search select,.quick-search .date-btn{background:#F2F5F8;color:#182631}
-  /* Bottom nav top-light softened */
-  .bottom-nav{box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 -10px 30px rgba(0,0,0,.5)}
-  /* Status pills inner light softened */
-  .pill,.status-badge{box-shadow:inset 0 1px 0 rgba(255,255,255,.08), 0 1px 2px rgba(0,0,0,.3)}
-  /* Own chat bubble keeps its deep gradient; the other side rides --surface automatically */
-}
+/* DARK MODE REMOVED (rev173, user request): the app now always renders in the light palette.
+   :root pins color-scheme:light so native controls/scrollbars never auto-darken either.
+   NOTE: the personal area's dark canvas (below) is a deliberate DESIGN choice, not dark mode. */
 
 /* ================= PERSONAL AREA PRO (rev148) =================
    User: "האזור האישי נראה עדיין חובבני". The document look (one huge white panel + bare text
@@ -1898,16 +1966,15 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
   .dashboard-panel .empty,.dashboard-panel .empty-state{background:var(--surface);border:1px dashed var(--line);border-radius:16px;padding:22px 16px}
 }
 /* Dark mode: the floating KPI seam needs a touch more separation */
-@media(max-width:820px) and (prefers-color-scheme: dark){
-  .dashboard-panel > .kpis:first-child .kpi{box-shadow:inset 0 1px 0 rgba(255,255,255,.07), 0 12px 32px rgba(0,0,0,.55)}
-}
 
 /* ================= PROFILE PRO (rev149) =================
    The profile tab joins the pro look: centered identity header, soft inset form, quiet logout. */
 @media(max-width:820px){
-  .avatar-row{flex-direction:column;align-items:center;text-align:center;gap:10px;margin:4px 0 16px}
-  .avatar-click .avatar{box-shadow:0 0 0 3px var(--surface), 0 0 0 5px rgba(63,107,142,.4), 0 14px 34px rgba(16,24,40,.28)}
-  .avatar-actions{display:flex;flex-direction:column;align-items:center;gap:6px}
+  .avatar-row{flex-direction:row;align-items:center;text-align:start;gap:14px;margin:4px 0 14px;padding:12px 14px}
+  .avatar-click .avatar,.avatar-click .avatar-fallback{box-shadow:0 0 0 3px var(--surface), 0 0 0 5px rgba(63,107,142,.35), 0 10px 24px rgba(16,24,40,.22)}
+  .avatar-click .avatar-cam{width:28px;height:28px}
+  .avatar-cam svg{width:14px;height:14px}
+  .avatar-actions{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0}
   .avatar-actions b{font-size:.84rem;color:var(--muted);font-weight:600}
   .avatar-actions .btn{min-height:40px;font-size:.82rem;padding:8px 14px;background:var(--bg-soft);border-color:transparent}
   #profile-form.card.inset{background:var(--bg-soft);border:1px solid var(--hair);box-shadow:none;border-radius:16px;padding:14px}
@@ -2004,7 +2071,7 @@ body[data-page="dashboard"] .dashboard-tabs .tab-group-label:first-child{border-
 .todo-row{display:flex;align-items:center;gap:13px;width:100%;background:linear-gradient(180deg,var(--surface),var(--surface));border:1px solid var(--line);border-inline-start:4px solid var(--warn);border-radius:15px;padding:13px 15px;cursor:pointer;font:inherit;text-align:right;box-shadow:var(--elev-1);transition:transform .16s var(--ease),box-shadow .22s}
 .todo-row:hover{transform:translateY(-2px);box-shadow:var(--elev-2)}
 .todo-row:active{transform:translateY(0)}
-.todo-count{min-width:38px;height:38px;padding:0 8px;border-radius:11px;background:linear-gradient(145deg,#E9A93D,#C6902E);color:#2A1F08;font-weight:800;font-size:1.1rem;display:grid;place-items:center;flex:0 0 auto;box-shadow:0 4px 10px rgba(198,144,46,.35),inset 0 1px 0 rgba(255,255,255,.4)}
+.todo-count{min-width:30px;height:30px;padding:0 9px;border-radius:99px;background:linear-gradient(145deg,#E9A93D,#C6902E);color:#2A1F08;font-weight:800;font-size:.94rem;display:grid;place-items:center;flex:none;box-shadow:0 2px 6px rgba(198,144,46,.28)}
 .todo-label{flex:1;font-weight:600;color:var(--text);font-size:.95rem}
 .todo-go{color:var(--warn);font-size:1.5rem;font-weight:700;opacity:.8}
 /* all-clear — solid surface (readable on the always-dark admin canvas), gentle green glow */
@@ -2025,21 +2092,13 @@ body[data-page="dashboard"] .dashboard-tabs .tab-group-label:first-child{border-
 .hub-ic.tint-gold{background:rgba(233,169,61,.16);color:#B17F00}
 .hub-ic.tint-purple{background:#F1EFFA;color:#7A66C9}
 .hub-ic.tint-slate{background:rgba(94,110,130,.14);color:#5E6E82}
-.hub-badge{position:absolute;top:13px;inset-inline-start:13px;min-width:24px;height:24px;padding:0 7px;border-radius:12px;background:linear-gradient(145deg,#F0555C,var(--danger));color:#fff;font-size:.78rem;font-weight:800;display:grid;place-items:center;box-shadow:0 3px 8px rgba(215,0,21,.4)}
+.hub-badge{position:absolute;top:13px;inset-inline-start:13px;min-width:24px;height:24px;padding:0 7px;border-radius:99px;background:linear-gradient(145deg,#E9A93D,#C6902E);color:#2A1F08;font-weight:800;font-size:.76rem;display:grid;place-items:center;box-shadow:0 2px 6px rgba(198,144,46,.3)}
 /* compact stats — a quiet, refined strip instead of four big KPI cards */
 .admin-stats-mini{display:flex;flex-wrap:wrap;gap:9px;margin:18px 0 6px}
 .admin-stats-mini span{flex:1 1 40%;background:var(--bg-soft);border:1px solid var(--line);border-radius:13px;padding:11px 14px;font-size:.8rem;color:var(--muted)}
 .admin-stats-mini b{display:block;font-size:1.2rem;font-weight:800;color:var(--brand-d);margin-bottom:1px;font-variant-numeric:tabular-nums}
 
 /* Control-hub icon discs on the DARK scheme (tiles become dark surfaces) — brighten so they pop */
-@media (prefers-color-scheme: dark){
-  .hub-ic{box-shadow:inset 0 0 0 1px rgba(255,255,255,.06)}
-  .hub-ic.tint-blue{background:rgba(143,180,212,.16);color:#8FB4D4}
-  .hub-ic.tint-green{background:rgba(63,191,135,.16);color:#3FBF87}
-  .hub-ic.tint-gold{background:rgba(233,169,79,.18);color:#E5A94F}
-  .hub-ic.tint-purple{background:rgba(160,144,224,.18);color:#B7A9EC}
-  .hub-ic.tint-slate{background:rgba(160,176,196,.16);color:#AEB6C0}
-}
 
 /* ===== CHAT PRO (rev161): WhatsApp-grade list + conversation ===== */
 /* Filter head: הכל / לא נקראו + סמן הכל כנקרא */
@@ -2149,3 +2208,82 @@ body[data-page="dashboard"] .dashboard-tabs .tab-group-label:first-child{border-
 .pb-close{background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;width:30px;height:30px;border-radius:8px;flex:0 0 auto}
 .pb-close:hover{background:rgba(0,0,0,.06)}
 @media(max-width:520px){.push-banner{flex-wrap:wrap}.push-banner .pb-actions{width:100%;justify-content:flex-end}}
+
+/* ===== MOBILE DECLUTTER (rev167) ===== */
+/* 1. Booking cards: decisive actions stay out; the rest live in an "עוד פעולות" menu */
+.bk-more{margin-top:8px;border-top:1px solid var(--hair);padding-top:8px}
+.bk-more>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;
+  font-size:.84rem;font-weight:700;color:var(--brand-d);padding:8px 12px;border-radius:10px;background:var(--bg-soft);transition:background .15s}
+.bk-more>summary::-webkit-details-marker{display:none}
+.bk-more>summary::after{content:"⌄";font-size:1rem;line-height:1;transition:transform .2s}
+.bk-more[open]>summary::after{transform:rotate(180deg)}
+.bk-more>summary:hover{background:rgba(63,107,142,.12)}
+.bk-more .chips{margin-top:9px}
+.chips.pill-row{margin-bottom:2px}
+/* 2. Home hero search — noticeably smaller/quieter on phones (it opened the page far too tall) */
+@media(max-width:820px){
+  .quick-search{gap:6px;padding:8px;border-radius:14px}
+  .quick-search input,.quick-search select,.quick-search .date-btn{height:42px!important;min-height:42px;font-size:.88rem;border-radius:10px;padding:0 10px}
+  .quick-search select{font-size:.84rem}
+  .quick-search label{gap:0}
+  .quick-search label span,.quick-search .df-label{font-size:.63rem;margin-bottom:2px}
+  .quick-search .btn{height:42px!important;min-height:42px;font-size:.9rem;margin-top:1px}
+  .quick-search .date-ic{transform:scale(.8)}
+  .hero-copy{margin-bottom:12px}
+}
+
+/* ===== CAR MODAL DECLUTTER (rev168) — spec sheet + availability fold away ===== */
+.spec-more,.avail-more{margin:10px 0 4px;border:1px solid var(--line);border-radius:14px;background:var(--bg-soft);overflow:hidden}
+.spec-more>summary,.avail-more>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:12px 15px;font-size:.88rem;font-weight:700;color:var(--brand-d)}
+.spec-more>summary::-webkit-details-marker,.avail-more>summary::-webkit-details-marker{display:none}
+.spec-more>summary::after,.avail-more>summary::after{content:"⌄";font-size:1.05rem;line-height:1;transition:transform .2s}
+.spec-more[open]>summary::after,.avail-more[open]>summary::after{transform:rotate(180deg)}
+.spec-more>summary:hover,.avail-more>summary:hover{background:rgba(63,107,142,.08)}
+.spec-more .detail-summaries,.avail-more .avail-section{margin:0;padding:4px 12px 12px;background:none;border:none}
+.detail-summaries.key-specs{margin-bottom:2px}
+
+/* ===== CARS-PAGE SEARCH COMPACTED (rev169) — same treatment the home hero search got in rev167.
+   (Its own class .period-search wasn't covered by that rule, so it stayed oversized on phones.) ===== */
+@media(max-width:820px){
+  .period-search{gap:6px;padding:9px;border-radius:14px;margin-bottom:10px}
+  .period-search select,.period-search .date-btn{height:42px!important;min-height:42px!important;font-size:.88rem;border-radius:10px;padding:0 10px}
+  .period-search .hour-field{gap:0}
+  .period-search .hour-field span,.period-search .df-label{font-size:.63rem;margin-bottom:2px}
+  .period-search .btn{height:42px!important;min-height:42px!important;font-size:.9rem;margin-top:1px}
+  .period-search .date-ic{transform:scale(.8)}
+  .filter-mobile .btn{min-height:42px;height:42px;font-size:.88rem}
+}
+/* Trim the stacked top margins above the catalog on phones (they added ~80px of pure whitespace
+   before a single car was visible): back button + page + section heading. */
+@media(max-width:820px){
+  #page-back{margin-top:10px;margin-bottom:4px}
+  .cars-page{margin-top:10px;padding-top:6px}
+  .cars-page .section-head{margin-top:8px;margin-bottom:8px}
+}
+
+/* ===== OPTIONAL FIELD GROUPS (rev170) — fold defaults away in the car wizard ===== */
+.field-more{margin-top:4px;border:1px solid var(--line);border-radius:12px;background:var(--bg-soft);overflow:hidden}
+.field-more>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:11px 14px;font-size:.86rem;font-weight:700;color:var(--brand-d)}
+.field-more>summary::-webkit-details-marker{display:none}
+.field-more>summary::after{content:"⌄";font-size:1rem;line-height:1;transition:transform .2s}
+.field-more[open]>summary::after{transform:rotate(180deg)}
+.field-more>summary:hover{background:rgba(63,107,142,.08)}
+.field-more .form-grid{padding:4px 12px 12px;margin:0}
+
+/* ===== DARK-MODE CONTRAST FIX (rev171) =====
+   .next-count / .next-count.ok hardcode white text, but --warn/--ok flip to LIGHT tints in dark mode,
+   so white-on-light dropped to ~2.1 contrast (unreadable). Use dark ink on those light chips instead. */
+
+/* ===== BOOKING GATE (rev172) — tell the visitor what's still needed BEFORE they fill the form ===== */
+/* A rating already submitted — the button is replaced by a quiet confirmation, not a dead control. */
+.rated-done{display:inline-flex;align-items:center;gap:5px;padding:9px 14px;border-radius:11px;
+  background:var(--ok-bg,rgba(45,138,86,.1));color:var(--ok,#2D8A56);font-size:.83rem;font-weight:700;white-space:nowrap}
+.book-gate{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:10px 0 12px;padding:14px 15px;
+  border:1px solid var(--brand-l);border-radius:16px;background:linear-gradient(135deg,rgba(63,107,142,.12),rgba(63,107,142,.05))}
+.book-gate .bg-ic{font-size:1.7rem;flex:0 0 auto;line-height:1}
+.book-gate .bg-body{flex:1;min-width:0}
+.book-gate .bg-body b{display:block;font-size:1rem;font-weight:800;color:var(--text);margin-bottom:2px}
+.book-gate .bg-body small{color:var(--muted);font-size:.84rem;line-height:1.45}
+.book-gate .btn{flex:1 1 100%;margin:0}

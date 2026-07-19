@@ -1,5 +1,6 @@
-import {getAdmin, verify, json, isAdmin, cleanText, audit, notifyAdmin, parseBody} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, isAdmin, cleanText, audit, notifyAdmin, notifyUser, parseBody} from './_firebase-admin.mjs';
 import {rateLimit, tooMany} from './_ratelimit.mjs';
+import crypto from 'node:crypto';
 
 // One endpoint for all privileged admin controls. Every action is audited.
 export async function handler(event) {
@@ -23,6 +24,14 @@ export async function handler(event) {
       const patch = {};
       if (body.patch?.name !== undefined) patch.name = cleanText(body.patch.name, 80);
       if (body.patch?.phone !== undefined) patch.phone = cleanText(body.patch.phone, 40);
+      // profile-save locks name + birthDate once verification is pending/approved and tells the user
+      // "לשינוי פנו למנהל האתר" — so the admin must actually be able to change them. birthDate was
+      // missing here, leaving that instruction impossible to act on (and booking-create requires one).
+      if (body.patch?.birthDate !== undefined) {
+        const date = String(body.patch.birthDate || '');
+        if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) return json(400, {error: 'תאריך לידה לא תקין'});
+        patch.birthDate = date;
+      }
       if (body.patch?.role !== undefined) {
         if (!['renter', 'owner'].includes(body.patch.role)) return json(400, {error: 'תפקיד לא תקין'});
         // Demoting an owner who still has cars would orphan their listings (audit #15).
@@ -43,6 +52,15 @@ export async function handler(event) {
       await db.ref(`users/${uid}`).update({blocked, updatedAt: Date.now()});
       await audit(token.uid, 'admin_user_block', 'user', uid, {blocked});
       await notifyAdmin('block', blocked ? 'משתמש נחסם' : 'חסימת משתמש הוסרה', {uid});
+      // Tell the person. Blocked: they're locked out of every screen, so SMS is the only channel that
+      // reaches them (the site itself now leaves a support thread open for an appeal). Unblocked: they
+      // would otherwise have no way of knowing they can come back.
+      const {smsUser} = await import('./_sms.mjs');
+      if (blocked) await smsUser(uid, 'CrownDrive: הגישה לחשבון שלך נחסמה. אם לדעתך מדובר בטעות, אפשר לכתוב לנו מהאתר ונבדוק.');
+      else {
+        await notifyUser(uid, 'block', 'החסימה על החשבון שלך הוסרה — אפשר להשתמש באתר כרגיל.');
+        await smsUser(uid, 'CrownDrive: החסימה על החשבון שלך הוסרה — אפשר להשתמש באתר כרגיל.');
+      }
       return json(200, {ok: true});
     }
     if (body.action === 'user-delete') {
@@ -74,7 +92,13 @@ export async function handler(event) {
         }
         const allRatings = (await db.ref('ratings').once('value')).val() || {};
         for (const [id, row] of Object.entries(allRatings)) {
-          if (row?.authorUid === uid || row?.targetUid === uid) { updates[`ratings/${id}`] = null; updates[`publicRatings/${id}`] = null; }
+          // The public projection is keyed by a hash of the private id (see rating-submit). Clear BOTH
+          // that and the legacy plaintext key, or deleting a user would leave their public review behind.
+          if (row?.authorUid === uid || row?.targetUid === uid) {
+            updates[`ratings/${id}`] = null;
+            updates[`publicRatings/${id}`] = null;
+            updates[`publicRatings/${crypto.createHash('sha1').update(id).digest('hex')}`] = null;
+          }
         }
       } catch (error) { console.error('user-delete cascade scan failed — deleting core nodes only', error); }
       await db.ref().update(updates);
@@ -151,6 +175,22 @@ export async function handler(event) {
       if (body.userUid) await db.ref(`supportGuestState/${cleanText(body.userUid, 128)}`).set(null);
       await audit(token.uid, 'admin_chat_clear', 'chat', thread);
       return json(200, {ok: true});
+    }
+    if (body.action === 'ratings-rekey') {
+      // One-time cleanup: publicRatings is world-readable, and rows written before rev.177 are keyed
+      // `<bookingId>_<type>_<authorUid>` — handing back the two fields the record body strips on
+      // purpose. Re-key them to the hash the server now writes. Idempotent: already-hashed keys are
+      // skipped, so running it twice is a no-op and it can safely disappear once the count hits zero.
+      const all = (await db.ref('publicRatings').once('value')).val() || {};
+      const legacy = Object.keys(all).filter(k => !/^[0-9a-f]{40}$/.test(k));
+      const updates = {};
+      for (const key of legacy) {
+        updates[crypto.createHash('sha1').update(key).digest('hex')] = all[key];
+        updates[key] = null;
+      }
+      if (legacy.length) await db.ref('publicRatings').update(updates);
+      await audit(token.uid, 'admin_ratings_rekey', 'rating', 'publicRatings', {moved: legacy.length});
+      return json(200, {ok: true, moved: legacy.length});
     }
     return json(400, {error: 'פעולה לא מוכרת'});
   } catch (error) {

@@ -128,14 +128,17 @@ function buildCar(data, ownerUid, existing = {}, ownerName = '') {
   };
 }
 
-export async function createCar(data) {
+// `forOwnerUid` lets an ADMIN publish a car on behalf of an owner (from that owner's control page).
+// The server re-checks the caller is an admin and that the target really is an owner.
+export async function createCar(data, forOwnerUid = '') {
   const uid = store.user?.uid;
   if (!uid) throw new Error('נדרשת התחברות');
   if (myRole() !== 'owner' && !store.isAdmin) throw new Error('בעל רכב בלבד');
-  const car = buildCar(data, uid, {}, store.profile?.name || '');
+  const targetUid = store.isAdmin && forOwnerUid ? forOwnerUid : uid;
+  const car = buildCar(data, targetUid, {}, (targetUid === uid ? store.profile?.name : store.users[targetUid]?.name) || '');
   if (!car.make || !car.model) throw new Error('יש לבחור יצרן ודגם');
   if (!car.photos.length) throw new Error('יש להוסיף לפחות תמונה אחת של הרכב');
-  const result = await api('car-action', {action: 'create', data: {...car, fullAddress: txt(data.fullAddress, 500)}});
+  const result = await api('car-action', {action: 'create', ownerUid: targetUid === uid ? '' : targetUid, data: {...car, fullAddress: txt(data.fullAddress, 500)}});
   return result.id;
 }
 

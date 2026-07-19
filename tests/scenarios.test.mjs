@@ -98,6 +98,16 @@ r = await call(fn['profile-save'], 'r1', {action: 'update', name: 'יוסי כה
 check('עדכון שם/טלפון/תאריך', S(r) === 200 && get('users/r1/birthDate') === '1990-05-15');
 r = await call(fn['profile-save'], 'r1', {action: 'update', role: 'owner'});
 check('שוכר לא יכול לשנות תפקיד (403)', S(r) === 403);
+// The identity lock must protect a VERIFIED date from being changed, without trapping a user whose
+// date was never collected: registration doesn't ask for one, and booking-create refuses to book
+// without it. Empty → fillable even while locked; filled → frozen.
+set('verificationStatus/r1', 'pending');
+r = await call(fn['profile-save'], 'r1', {action: 'update', birthDate: '1991-01-01'});
+check('תאריך לידה מאומת נעול לשינוי (409)', S(r) === 409 && get('users/r1/birthDate') === '1990-05-15');
+set('users/r1/birthDate', '');
+r = await call(fn['profile-save'], 'r1', {action: 'update', birthDate: '1990-05-15'});
+check('תאריך לידה ריק ניתן להשלמה גם בזמן אימות', S(r) === 200 && get('users/r1/birthDate') === '1990-05-15');
+set('verificationStatus/r1', 'missing');
 r = await call(fn['profile-save'], 'r1', {action: 'update', photoURL: 'javascript:evil'});
 check('photoURL לא-https נדחה', get('users/r1/photoURL') === '');
 // Web-Push token registration (notify when the app is closed) — stored under a hashed key.
@@ -148,6 +158,20 @@ r = await call(fn['verification-review'], 'a1', {uid: 'r1', status: 'approved'})
 check('אישור עובר גם בלי מייל מאומת (הרשמה פשוטה) + דגלי מסמכים מתרפאים', S(r) === 200 && get('users/r1/verification/licenseFront') === true);
 r = await call(fn['verification-review'], 'a1', {uid: 'nodocs1', status: 'approved'});
 check('בלי שלושת המסמכים — האישור נחסם (409)', S(r) === 409);
+// Verification is the gate that decides whether someone can rent AT ALL, and it used to be decided
+// in total silence — the user only found out by chance. Every decision must reach them, and a
+// rejection must carry the admin's reason (it's the only explanation they ever get).
+const notifs = () => Object.values(get('userNotifications/r1') || {});
+check('אישור אימות מודיע למשתמש', notifs().some(n => n.type === 'verification' && n.text.includes('אושר')));
+set('verificationStatus/r1', 'pending');
+r = await call(fn['verification-review'], 'a1', {uid: 'r1', status: 'rejected', note: 'הרישיון מטושטש'});
+check('דחיית אימות מודיעה למשתמש עם הסיבה', S(r) === 200
+  && notifs().some(n => n.type === 'verification' && n.text.includes('הרישיון מטושטש'))
+  && get('users/r1/verification/licenseFront') === false);
+// A rejection deliberately clears the document flags (audit #7) — restore r1 to a fully verified
+// renter so the scenarios below still run against the state they expect.
+set('verificationStatus/r1', 'approved');
+for (const doc of ['licenseFront', 'licenseBack', 'selfie']) set(`users/r1/verification/${doc}`, true);
 r = await call(fn['profile-save'], 'r1', {action: 'update', name: 'שם אחר'});
 check('שם חוקי נעול לאחר אימות (409)', S(r) === 409 && get('users/r1/name') === 'יוסי כהן');
 r = await call(fn['profile-save'], 'r1', {action: 'update', phone: '+1 5557770000'});
@@ -240,8 +264,17 @@ check('התחלת השכרה אחרי אישור התשלום', S(r) === 200);
 console.log('\nתרחיש F: פרטים פרטיים + מדיה');
 r = await call(fn['private-car-details'], 'r1', {bookingId: bId});
 check('שוכר רואה כתובת אחרי אישור', S(r) === 200 && B(r).fullAddress === '123 Kingston Ave');
+// The owner has had the renter's phone since the booking was created; the renter had no way to reach
+// the owner at all (users/$uid is self/admin-read only). Handing over a car is a meeting — it rides
+// on the same approval gate as the address, never earlier.
+check('שוכר מקבל גם את פרטי הקשר של בעל הרכב', B(r).ownerPhone === '+1 5551112222' && !!B(r).ownerName);
 r = await call(fn['private-car-details'], 'x9', {bookingId: bId});
 check('זר לא רואה כתובת (403)', S(r) === 403);
+const heldStatus = get(`bookings/${bId}/status`);
+set(`bookings/${bId}/status`, 'pending');
+r = await call(fn['private-car-details'], 'r1', {bookingId: bId});
+check('לפני אישור השוכר לא מקבל טלפון של בעל הרכב (403)', S(r) === 403);
+set(`bookings/${bId}/status`, heldStatus);
 r = await call(fn['user-private-profile'], 'o1', {uid: 'r1'});
 check('בעל הרכב רואה פרטים תפעוליים אך לא מסמכי זהות', S(r) === 200 && !!B(r).profile && !B(r).documents.licenseFront);
 r = await call(fn['user-private-profile'], 'x9', {uid: 'r1'});
@@ -280,12 +313,38 @@ r = await call(fn['booking-action'], 'r1', {action: 'handover', bookingId: bId, 
 check('נתיב תיעוד החזרה מזויף נדחה (400)', S(r) === 400);
 r = await call(fn['booking-action'], 'r1', {action: 'handover', bookingId: bId, stage: 'return', data: {videoPath: `bookings/${bId}/media/r1/return.mp4`, dashboardPhotoPath: `bookings/${bId}/media/r1/dashboard.jpg`, mileage: 1234, fuel: 'full'}});
 check('תיעוד החזרה נשמר כנתיבי Storage מלאים', S(r) === 200 && get(`bookings/${bId}/handover/return/videoPath`) === `bookings/${bId}/media/r1/return.mp4`);
+// The owner acts on this — inspect the car, close the rental — so the submission must reach them.
+check('תיעוד החזרה מודיע לבעל הרכב', Object.values(get('userNotifications/o1') || {}).some(n => n.text.includes('תיעד את החזרת הרכב')));
 r = await call(fn['rating-submit'], 'r1', {bookingId: bId, type: 'car', score: 5, review: 'מעולה'});
 check('אי אפשר לדרג לפני סיום (409)', S(r) === 409);
 r = await call(fn['booking-action'], 'o1', {action: 'status', bookingId: bId, status: 'done'});
 check('סיום השכרה', S(r) === 200 && get(`bookings/${bId}/status`) === 'done');
+// The owner may close the rental at ANY moment, and that used to make the renter's return
+// documentation impossible for ever — destroying their only proof of the car's condition at handback.
+// The window now stays open for 24h after the close, and shuts afterwards.
+set(`bookings/${bId}/handover/return`, null);
+r = await call(fn['booking-action'], 'r1', {action: 'handover', bookingId: bId, stage: 'return', data: {videoPath: `bookings/${bId}/media/r1/late.mp4`, dashboardPhotoPath: `bookings/${bId}/media/r1/late.jpg`, mileage: 1300, fuel: 'full'}});
+check('תיעוד החזרה אפשרי גם אחרי סיום (24 שעות)', S(r) === 200 && get(`bookings/${bId}/handover/return/mileage`) === 1300);
+set(`bookings/${bId}/handover/return`, null);
+set(`bookings/${bId}/endedAt`, Date.now() - 25 * 60 * 60 * 1000);
+r = await call(fn['booking-action'], 'r1', {action: 'handover', bookingId: bId, stage: 'return', data: {videoPath: `bookings/${bId}/media/r1/toolate.mp4`, dashboardPhotoPath: `bookings/${bId}/media/r1/toolate.jpg`, mileage: 1400, fuel: 'full'}});
+check('אחרי 24 שעות החלון נסגר (409)', S(r) === 409);
 r = await call(fn['message-send'], 'r1', {bookingId: bId, text: 'hi'});
 check('צ׳אט נסגר אחרי סיום (409)', S(r) === 409);
+// Cancelling never refunds anything (the site handles no money), so closing the thread on a PAID
+// cancelled booking would leave the renter's money out with no way to reach the owner.
+set(`bookings/${bId}/status`, 'cancelled');
+r = await call(fn['message-send'], 'r1', {bookingId: bId, text: 'מה עם ההחזר?'});
+check('הזמנה שבוטלה ושולמה — הצ׳אט נשאר פתוח', S(r) === 200);
+const keptPayment = get(`payments/${bId}`);
+set(`payments/${bId}`, null);
+r = await call(fn['message-send'], 'r1', {bookingId: bId, text: 'בלי תשלום'});
+check('הזמנה שבוטלה בלי תשלום — הצ׳אט סגור (409)', S(r) === 409);
+set(`payments/${bId}`, keptPayment);
+set(`bookings/${bId}/status`, 'done');
+// message-send is rate limited to 20/min per uid — the two calls above push r1 close to the ceiling
+// and would make a LATER scenario fail with 429 instead of the status it is actually asserting.
+set('rateLimits/r1', null);
 r = await call(fn['rating-submit'], 'r1', {bookingId: bId, type: 'car', score: 5, review: 'רכב מצוין'});
 check('שוכר מדרג רכב אחרי סיום', S(r) === 200);
 r = await call(fn['rating-submit'], 'r1', {bookingId: bId, type: 'car', score: 4});
@@ -294,6 +353,14 @@ r = await call(fn['rating-submit'], 'o1', {bookingId: bId, type: 'car', score: 5
 check('בעל הרכב לא יכול לדרג רכב (403)', S(r) === 403);
 r = await call(fn['rating-submit'], 'o1', {bookingId: bId, type: 'user', score: 5, review: 'שוכר טוב'});
 check('בעל הרכב מדרג שוכר', S(r) === 200 && get(`ratings/${bId}_user_o1/targetUid`) === 'r1');
+// The client can't read ratings/ (admin-only), so the "already rated" flag rides on the booking —
+// that's what lets the rate button retire itself instead of losing a written review to a 409.
+check('סימון דירוג על ההזמנה', get(`bookings/${bId}/ratedBy/r1_car`) === true && get(`bookings/${bId}/ratedBy/o1_user`) === true);
+// publicRatings is world-readable: the key must not carry the bookingId/authorUid that the record
+// body deliberately strips, or listing the node hands both back to anyone.
+const pubKeys = Object.keys(get('publicRatings') || {});
+check('מפתחות דירוג ציבורי לא חושפים הזמנה/מדרג', pubKeys.length === 2 && pubKeys.every(k => /^[0-9a-f]{40}$/.test(k) && !k.includes(bId) && !k.includes('r1') && !k.includes('o1')));
+check('גוף הדירוג הציבורי נשאר תקין', Object.values(get('publicRatings')).every(v => v.score >= 1 && !('bookingId' in v) && !('authorUid' in v)));
 
 console.log('\nתרחיש H: שליטת מנהל (admin-action)');
 r = await call(fn['admin-action'], 'r1', {action: 'user-block', uid: 'x9', blocked: true});
@@ -302,10 +369,30 @@ r = await call(fn['admin-action'], 'a1', {action: 'user-block', uid: 'r1', block
 check('מנהל חוסם משתמש', S(r) === 200 && get('users/r1/blocked') === true);
 r = await call(fn['booking-create'], 'r1', {carId, startAt: start, endAt: end, termsAccepted: true, requestId: 'blocked-test'});
 check('משתמש חסום לא יכול לפעול (403)', S(r) === 403);
+// A block must not be a sealed room: a mistaken block has to be appealable. The carve-out is exactly
+// ONE thing — the user's OWN support thread — and every other route must stay shut.
+r = await call(fn['message-send'], 'r1', {thread: 'admin', text: 'נחסמתי בטעות'});
+check('חסום יכול לערער בצ׳אט התמיכה שלו', S(r) === 200 && Object.values(get('messages/admin/r1') || {}).some(m => m.text === 'נחסמתי בטעות'));
+r = await call(fn['message-send'], 'r1', {thread: 'admin', userUid: 'o1', text: 'לא שלי'});
+check('חסום לא כותב לשיחת תמיכה של אחר (403)', S(r) === 403 && !Object.values(get('messages/admin/o1') || {}).some(m => m.text === 'לא שלי'));
+r = await call(fn['message-send'], 'r1', {bookingId: bId, text: 'צ׳אט הזמנה'});
+check('חסום לא כותב בצ׳אט הזמנה (403)', S(r) === 403);
+r = await call(fn['message-send'], 'r1', {inquiryId: 'anything', text: 'פנייה'});
+check('חסום לא כותב בפנייה על רכב (403)', S(r) === 403);
+r = await call(fn['message-send'], 'r1', {thread: 'admin', deleteId: 'x'});
+check('חסום לא מוחק הודעות (403)', S(r) === 403);
+r = await call(fn['car-action'], 'r1', {action: 'create', data: {make: 'X', model: 'Y', dailyPrice: 10}});
+check('חסום עדיין חסום בשאר הפעולות (403)', S(r) === 403);
 r = await call(fn['admin-action'], 'a1', {action: 'user-block', uid: 'r1', blocked: false});
 check('שחרור חסימה', S(r) === 200 && get('users/r1/blocked') === false);
+check('שחרור חסימה מודיע למשתמש', Object.values(get('userNotifications/r1') || {}).some(n => n.type === 'block'));
 r = await call(fn['admin-action'], 'a1', {action: 'user-update', uid: 'r1', patch: {name: 'שם מנהל', phone: '+1 000'}});
 check('מנהל עורך משתמש', S(r) === 200 && get('users/r1/name') === 'שם מנהל');
+// profile-save tells a locked user "לשינוי פנו למנהל האתר" — the admin must be able to deliver on it.
+r = await call(fn['admin-action'], 'a1', {action: 'user-update', uid: 'r1', patch: {birthDate: '1988-03-03'}});
+check('מנהל מתקן תאריך לידה נעול', S(r) === 200 && get('users/r1/birthDate') === '1988-03-03');
+r = await call(fn['admin-action'], 'a1', {action: 'user-update', uid: 'r1', patch: {birthDate: '3/3/1988'}});
+check('תאריך לידה בפורמט שגוי נדחה (400)', S(r) === 400 && get('users/r1/birthDate') === '1988-03-03');
 // audit #4: transfer to a RENTER is refused (role change stays a separate deliberate action)…
 r = await call(fn['admin-action'], 'a1', {action: 'car-owner', carId, uid: 'r1'});
 check('העברת בעלות לשוכר נדחית (409)', S(r) === 409 && get(`cars/${carId}/ownerUid`) === 'o1');
@@ -324,6 +411,25 @@ check('מצב תחזוקה', S(r) === 200 && get('config/maintenance/on') === tr
 await call(fn['admin-action'], 'a1', {action: 'maintenance', on: false});
 r = await call(fn['admin-action'], 'a1', {action: 'chat-clear', bookingId: bId});
 check('ניקוי צ׳אט', S(r) === 200 && get(`messages/${bId}`) === undefined);
+// One-time cleanup of pre-rev.177 publicRatings keys (`<bookingId>_<type>_<authorUid>` on a
+// world-readable node). Idempotent — a second run must find nothing left to move.
+set('publicRatings/oldbooking_car_r1', {type: 'car', carId: 'c9', score: 5, review: 'ישן', createdAt: 1});
+r = await call(fn['admin-action'], 'a1', {action: 'ratings-rekey'});
+check('ניקוי מפתחות דירוג ישנים', S(r) === 200 && B(r).moved === 1 && get('publicRatings/oldbooking_car_r1') === undefined
+  && Object.values(get('publicRatings')).some(v => v.review === 'ישן'));
+r = await call(fn['admin-action'], 'a1', {action: 'ratings-rekey'});
+check('הרצה שנייה לא עושה כלום', S(r) === 200 && B(r).moved === 0);
+r = await call(fn['admin-action'], 'r1', {action: 'ratings-rekey'});
+check('ניקוי מפתחות למנהל בלבד (403)', S(r) === 403);
+// The public row is keyed by a hash of the private id — the delete cascade must clear THAT, not just
+// the legacy plaintext key, or a deleted user's review stays publicly readable. Uses a throwaway uid
+// so the shared r1/o1 fixtures survive for the scenarios below.
+const zId = 'zbooking_car_z9';
+const zHash = (await import('node:crypto')).createHash('sha1').update(zId).digest('hex');
+set(`ratings/${zId}`, {bookingId: 'zbooking', type: 'car', authorUid: 'z9', targetUid: '', carId: 'c9', score: 5, review: 'z', createdAt: 1});
+set(`publicRatings/${zHash}`, {type: 'car', carId: 'c9', score: 5, review: 'z', createdAt: 1});
+r = await call(fn['admin-action'], 'a1', {action: 'user-delete', uid: 'z9'});
+check('מחיקת משתמש מוחקת גם את הדירוג הציבורי המגובב', S(r) === 200 && get(`publicRatings/${zHash}`) === undefined && get(`ratings/${zId}`) === undefined);
 r = await call(fn['admin-action'], 'a1', {action: 'user-delete', uid: 'x9'});
 check('מחיקת משתמש', S(r) === 200);
 
@@ -333,6 +439,39 @@ const car2 = B(r).id;
 r = await call(fn['car-action'], 'o1', {action: 'delete', id: car2});
 check('מחיקת רכב פנוי', S(r) === 200 && get(`cars/${car2}`) === undefined);
 check('התראות מנהל נוצרו', Object.keys(get('adminNotifications') || {}).length >= 3);
+// An admin acting on SOMEONE ELSE's car changes that owner's income. Silently pulling a listing from
+// the site (or deleting it) left the owner to discover it on their own.
+const ownerNotifs = () => Object.values(get('userNotifications/o1') || {}).filter(n => n.type === 'car');
+r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'Mazda', model: '3', dailyPrice: 80, priceHourly: 9, photos: ['https://a/1.jpg', 'https://b/2.jpg'], fullAddress: '770 Eastern Pkwy'}});
+const car3 = B(r).id;
+r = await call(fn['car-action'], 'a1', {action: 'status', id: car3, status: 'hidden'});
+check('הסתרה בידי מנהל מודיעה לבעל הרכב', S(r) === 200 && ownerNotifs().some(n => n.text.includes('הוסתר')));
+r = await call(fn['car-action'], 'o1', {action: 'status', id: car3, status: 'available'});
+check('בעל רכב שמשנה בעצמו לא מקבל התראה על עצמו', S(r) === 200 && !ownerNotifs().some(n => n.text.includes('הוחזר לתצוגה')));
+r = await call(fn['car-action'], 'a1', {action: 'delete', id: car3});
+check('מחיקה בידי מנהל מודיעה לבעל הרכב', S(r) === 200 && ownerNotifs().some(n => n.text.includes('הוסר מהאתר')));
+// Only an admin may delete a car that still has live bookings — and doing so wipes privateCarDetails,
+// so a renter mid-rental loses the pickup address. They must be told.
+r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'Honda', model: 'Fit', dailyPrice: 70, priceHourly: 8, photos: ['https://a/1.jpg', 'https://b/2.jpg'], fullAddress: '770 Eastern Pkwy'}});
+const car4 = B(r).id;
+set(`bookings/live1`, {carId: car4, ownerUid: 'o1', renterUid: 'r1', status: 'active', startAt: start, endAt: end, createdAt: Date.now()});
+r = await call(fn['car-action'], 'o1', {action: 'delete', id: car4});
+check('בעל רכב לא מוחק רכב עם הזמנה חיה (409)', S(r) === 409 && get(`cars/${car4}`) !== undefined);
+// The admin's user page can publish a car ON BEHALF of an owner — otherwise the car would land under
+// the admin's uid and need a transfer, which is blocked once the car has a live booking.
+r = await call(fn['car-action'], 'a1', {action: 'create', ownerUid: 'o1', data: {make: 'Ford', model: 'Focus', dailyPrice: 60, priceHourly: 7, photos: ['https://a/1.jpg', 'https://b/2.jpg'], fullAddress: '770 Eastern Pkwy'}});
+const behalf = B(r).id;
+check('מנהל מפרסם רכב עבור בעל רכב', S(r) === 200 && get(`cars/${behalf}/ownerUid`) === 'o1' && get(`privateCarDetails/${behalf}/ownerUid`) === 'o1');
+check('בעל הרכב מקבל הודעה על הרכב שפורסם עבורו', Object.values(get('userNotifications/o1') || {}).some(n => n.text.includes('פרסם עבורך')));
+r = await call(fn['car-action'], 'a1', {action: 'create', ownerUid: 'r1', data: {make: 'Ford', model: 'Ka', dailyPrice: 60, priceHourly: 7, photos: ['https://a/1.jpg', 'https://b/2.jpg']}});
+check('אי אפשר לפרסם עבור מי שאינו בעל רכב (409)', S(r) === 409);
+r = await call(fn['car-action'], 'o1', {action: 'create', ownerUid: 'r1', data: {make: 'Ford', model: 'Ka', dailyPrice: 60, priceHourly: 7, photos: ['https://a/1.jpg', 'https://b/2.jpg']}});
+check('בעל רכב לא יכול לפרסם בשם אחר', S(r) === 200 && get(`cars/${B(r).id}/ownerUid`) === 'o1');
+await call(fn['car-action'], 'a1', {action: 'delete', id: behalf});
+r = await call(fn['car-action'], 'a1', {action: 'delete', id: car4});
+check('מנהל כן יכול, והשוכר מקבל הודעה', S(r) === 200 && get(`cars/${car4}`) === undefined
+  && Object.values(get('userNotifications/r1') || {}).some(n => n.type === 'car' && n.text.includes('הוסר מהאתר')));
+set('bookings/live1', null);
 
 console.log('\nתרחיש J: העברת נתונים ישנים (migrate-legacy)');
 set('crowndrive-live/state/data', {
@@ -463,6 +602,18 @@ check('שוכר פותח פנייה לבעל הרכב', S(r) === 200 && get(`inq
 // Idempotent — re-contacting the same car returns the SAME thread.
 r = await call(fn['inquiry-start'], 'r1', {carId: carInq});
 check('פנייה חוזרת מחזירה את אותה שיחה (idempotent)', S(r) === 200 && B(r).inquiryId === inqId);
+// Hiding the car pulls it out of publicCars, so the client loses the vehicle the thread is entirely
+// about. The snapshot on the thread is what keeps it named.
+check('הפנייה שומרת תצלום של הרכב', get(`inquiries/${inqId}/carSnapshot/make`) === 'Inq');
+// The owner is asked to answer someone they cannot look up: canReadUserProfile grants access only via
+// a BOOKING, and users/$uid is self/admin-read. The name on the thread is what makes them a person.
+check('הפנייה שומרת את שם הפונה', !!get(`inquiries/${inqId}/renterName`));
+set(`inquiries/${inqId}/renterName`, null);
+r = await call(fn['inquiry-start'], 'r1', {carId: carInq});
+check('פנייה ישנה בלי שם מקבלת אחד', S(r) === 200 && !!get(`inquiries/${inqId}/renterName`));
+set(`inquiries/${inqId}/carSnapshot`, null);
+r = await call(fn['inquiry-start'], 'r1', {carId: carInq});
+check('שיחה ישנה בלי תצלום מקבלת אחד', S(r) === 200 && get(`inquiries/${inqId}/carSnapshot/model`) === 'Car');
 // Renter posts in the inquiry.
 r = await call(fn['message-send'], 'r1', {inquiryId: inqId, text: 'שלום, הרכב זמין לסופ״ש?'});
 check('שוכר שולח הודעה בפנייה', S(r) === 200 && get(`inquiries/${inqId}/lastSender`) === 'r1');

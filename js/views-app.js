@@ -1,11 +1,11 @@
 import {store, list, myRole, myBookings, myCars, carRating, carRatingCount, userRating} from './store.js';
-import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail, paintApp, resetPaint, TERMS_VERSION} from './core.js';
+import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail, paintApp, resetPaint, TERMS_VERSION, heCount, heCountF} from './core.js';
 import {register, login, logout, sendVerify, refreshEmailStatus, sendPasswordReset, createOwnProfile, signInGuest} from './auth.js';
 import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, startInquiry, setBookingStatus, registerDocument, approveVerification, sendMessage, deleteMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction, setMaintenance, setCarStatus, setCarFeatured, checkIsAdmin, saveExternalRental, deleteExternalRental} from './db.js';
 import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './media.js';
 import {legacyStatus, migrateLegacy} from './migrate.js';
 import {api} from './api.js';
-import {enablePush, pushPromptable, initPushForeground} from './push.js';
+import {enablePush, pushPromptable, iosNeedsInstall, initPushForeground} from './push.js';
 import {saveAuthReturn, afterAuthDestination, openCar, CAR_MAKES, CAR_TYPES, ICON, MODELS_BY_MAKE, RENTAL_MODES, TAB_ICONS, app, avatarHtml, carImage, carPhotoList, carStatusPill, carYears, composePhone, emptyState, fallbackImage, kpi, phoneField, roleName, selectOptions, bindCarButtons, carGrid, featuredFirst, userUnreadNotifs, bottomNav} from './views.js';
 
 // ---------- New rental-request popup for owners (they were MISSING incoming requests) ----------
@@ -42,7 +42,7 @@ function showRequestModal(b) {
       <div class="req-row"><span>דירוג שוכר</span><b>${rating ? `${stars(rating)} ${rating.toFixed(1)}` : 'חדש'}</b></div>
       <div class="req-row"><span>תאריכים</span><b>${esc(fmtDate(b.startAt))} → ${esc(fmtDate(b.endAt))}</b></div>
       ${price ? `<div class="req-row"><span>מחיר</span><b>${price}</b></div>` : ''}
-      ${b.fulfillment === 'delivery' && b.deliveryAddress ? `<div class="req-row"><span>מסירה</span><b>${esc(b.deliveryAddress)}</b></div>` : ''}
+      ${b.fulfillment === 'delivery' && b.deliveryAddress ? `<div class="req-row"><span>מסירה</span><b><bdi>${esc(b.deliveryAddress)}</bdi></b></div>` : ''}
     </div>
     <div class="req-actions"><button class="btn primary block" id="req-approve">✓ אישור ההזמנה</button><button class="btn danger block" id="req-reject">דחייה</button></div>
     <div class="req-links"><button class="btn outline" id="req-chat">💬 צ׳אט עם השוכר</button><button class="btn outline" id="req-later">אחר כך</button></div>
@@ -106,7 +106,13 @@ try { initPushForeground(); } catch {}
 // only when the browser supports it, it isn't blocked/on already, and wasn't dismissed this session.
 function pushBanner() {
   try {
-    if (!pushPromptable() || sessionStorage.getItem('cd-push-dismissed')) return '';
+    if (sessionStorage.getItem('cd-push-dismissed')) return '';
+    // On iPhone the ONLY route to notifications is installing to the Home Screen, and iOS fires no
+    // install prompt of its own — so spell out the two taps instead of showing nothing at all.
+    if (iosNeedsInstall()) {
+      return `<div class="push-banner" id="push-banner"><span class="pb-ic">📲</span><div class="pb-body"><b>כדי לקבל התראות באייפון</b><small>הוסיפו את האתר למסך הבית: כפתור השיתוף <b>􀈂</b> למטה ← "הוספה למסך הבית". אחר כך פתחו משם והפעילו התראות.</small></div><div class="pb-actions"><button class="pb-close" id="push-dismiss" aria-label="סגירה">×</button></div></div>`;
+    }
+    if (!pushPromptable()) return '';
     return `<div class="push-banner" id="push-banner"><span class="pb-ic">🔔</span><div class="pb-body"><b>אל תפספסו בקשות והודעות</b><small>הפעילו התראות כדי לקבל עדכון גם כשהאתר סגור</small></div><div class="pb-actions"><button class="btn primary" id="push-enable">הפעלה</button><button class="pb-close" id="push-dismiss" aria-label="סגירה">×</button></div></div>`;
   } catch { return ''; }
 }
@@ -231,7 +237,7 @@ function completeProfile() {
 
 // The user's in-app inbox (booking / payment / reserve updates written by the server). Opening the
 // tab stamps "seen", which clears the red badges in both nav bars.
-const NOTIF_EMOJI = {booking: '📅', payment: '💳', status: '🔔', reserve: '🚗'};
+const NOTIF_EMOJI = {booking: '📅', payment: '💳', status: '🔔', reserve: '🚗', verification: '🪪'};
 function userNotificationsView() {
   const rows = list(store.userNotifications).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
   const seen = Number(localStorage.getItem('cd-notif-seen') || 0);
@@ -280,13 +286,107 @@ function externalRentalsView(cars) {
   return `<div class="section-head"><h2>השכרות חוץ</h2><button class="btn gold" id="ext-add">+ הוספת השכרה</button></div>
     <p class="mut ext-sub">השכרות שסגרתם מחוץ לאתר — נרשמות כאן לניהול שלכם בלבד, והסיכום מחושב לפי מה שהזנתם.</p>
     <div class="kpis">${kpi('calendar', rows.length, 'השכרות חוץ')}${kpi('check', fmtHours(totalHours), 'סה״כ שעות השכרה')}${kpi('money', money(totalAmount), 'סה״כ הכנסה')}</div>
-    ${carKeys.length > 1 ? `<div class="mini-panel ext-bycar"><div class="mini-panel-head"><h3>לפי רכב</h3><span>${carKeys.length} רכבים</span></div>${carKeys.map(k => `<div class="mini-row"><b>${esc(k)}</b><span class="mut">${byCar[k].count} · ${fmtHours(byCar[k].hours)} · ${money(byCar[k].amount)}</span></div>`).join('')}</div>` : ''}
+    ${carKeys.length > 1 ? `<div class="mini-panel ext-bycar"><div class="mini-panel-head"><h3>לפי רכב</h3><span>${heCount(carKeys.length, 'רכב', 'רכבים')}</span></div>${carKeys.map(k => `<div class="mini-row"><b>${esc(k)}</b><span class="mut">${byCar[k].count} · ${fmtHours(byCar[k].hours)} · ${money(byCar[k].amount)}</span></div>`).join('')}</div>` : ''}
     <div class="list">${rows.length ? rows.map(r => `<div class="card inset ext-row">
       <div class="ext-row-head"><b>${esc(carName(r))}</b><b class="ext-amount">${money(r.amount)}</b></div>
       <div class="ext-row-sub"><span>${esc(r.renterName || 'שוכר')}${r.renterPhone ? ` · ${esc(r.renterPhone)}` : ''}</span><span>${extDT(r.startAt)} ← ${extDT(r.endAt)} · ${fmtHours(extHours(r))}</span></div>
       ${r.notes ? `<p class="mut ext-notes">${esc(r.notes)}</p>` : ''}
       <div class="chips"><button class="btn outline" data-ext-edit="${esc(r.id)}">עריכה</button><button class="btn outline" data-ext-del="${esc(r.id)}">מחיקה</button></div>
     </div>`).join('') : emptyState(ICON.calendar, 'עוד לא נרשמו השכרות חוץ', 'השכרתם רכב שלא דרך האתר? הוסיפו אותה כאן ותקבלו סיכום שעות והכנסות מסודר.')}</div>`;
+}
+// ---- Rental summary: the owner's (and admin's) whole rental book in one place ----
+// Two income sources exist and were only ever shown apart: bookings made through the site, and the
+// "השכרות חוץ" the owner logs by hand. Neither view answered "how much did I rent out, and for how
+// much". This merges them under one period filter, with the same hour/amount arithmetic as the
+// external-rentals view so the two screens can never disagree.
+const PERIODS = [['month', 'החודש'], ['year', 'השנה'], ['all', 'הכל']];
+function periodStart(key) {
+  const now = new Date();
+  if (key === 'month') return new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+  if (key === 'year') return new Date(now.getFullYear(), 0, 1).getTime();
+  return 0;
+}
+// Realised income counts FINISHED rentals only. Money for a booking that is still running (or merely
+// approved) is not earned yet, so it is reported separately rather than folded into the total.
+const REALISED = new Set(['done']);
+const UPCOMING = new Set(['approved', 'active']);
+function bookingAmount(b) {
+  const admin = Number(b.adminAmount);
+  return Number.isFinite(admin) && admin > 0 ? admin : Number(b.quote?.total || 0);
+}
+const spanHours = (from, to) => {
+  const ms = new Date(to).getTime() - new Date(from).getTime();
+  return Number.isFinite(ms) && ms > 0 ? ms / 3600000 : 0;
+};
+function summaryRows(scope) {
+  const uid = store.user?.uid;
+  const rows = [];
+  for (const b of myBookings()) {
+    if (scope === 'owner' && b.ownerUid !== uid) continue;
+    if (!REALISED.has(b.status) && !UPCOMING.has(b.status)) continue;
+    const car = store.cars[b.carId] || b.carSnapshot || {};
+    rows.push({
+      source: 'site', id: b.id, status: b.status, ownerUid: b.ownerUid,
+      carName: `${car.make || ''} ${car.model || ''}`.trim() || 'רכב',
+      who: b.renterName || store.users[b.renterUid]?.name || 'שוכר',
+      startAt: b.startAt, endAt: b.endAt,
+      hours: spanHours(b.startAt, b.endAt), amount: bookingAmount(b),
+    });
+  }
+  for (const r of list(store.externalRentals)) {
+    const car = r.carId && store.cars[r.carId];
+    rows.push({
+      source: 'external', id: r.id, status: 'done', ownerUid: uid,
+      carName: car ? `${car.make || ''} ${car.model || ''}`.trim() : (r.carLabel || 'רכב'),
+      who: r.renterName || 'שוכר',
+      startAt: r.startAt, endAt: r.endAt,
+      hours: spanHours(r.startAt, r.endAt), amount: Number(r.amount || 0),
+    });
+  }
+  return rows;
+}
+function groupPanel(title, groups, extra = '') {
+  const keys = Object.keys(groups);
+  if (keys.length < 2) return '';
+  const ordered = keys.sort((a, b) => groups[b].amount - groups[a].amount);
+  const max = Math.max(...ordered.map(k => groups[k].amount), 1);
+  return `<div class="mini-panel"><div class="mini-panel-head"><h3>${esc(title)}</h3><span>${keys.length}${extra}</span></div>${ordered.map(k => `
+    <div class="sum-row"><div class="sum-row-top"><b>${esc(k)}</b><b>${money(groups[k].amount)}</b></div>
+    <div class="sum-bar"><span style="width:${Math.round(groups[k].amount / max * 100)}%"></span></div>
+    <small>${heCountF(groups[k].count, 'השכרה', 'השכרות')} · ${fmtHours(groups[k].hours)}</small></div>`).join('')}</div>`;
+}
+function rentalSummaryView(scope) {
+  const period = store.summaryPeriod || 'all';
+  const from = periodStart(period);
+  const all = summaryRows(scope).filter(r => new Date(r.startAt).getTime() >= from);
+  const done = all.filter(r => REALISED.has(r.status));
+  const open = all.filter(r => UPCOMING.has(r.status));
+  const sum = (list, key) => list.reduce((t, r) => t + (Number(r[key]) || 0), 0);
+  const totalHours = sum(done, 'hours'), totalAmount = sum(done, 'amount');
+  const group = (list, keyFn) => { const g = {}; for (const r of list) { const k = keyFn(r) || '—';
+    g[k] = g[k] || {hours: 0, amount: 0, count: 0}; g[k].hours += r.hours; g[k].amount += r.amount; g[k].count++; } return g; };
+  const bySource = group(done, r => r.source === 'site' ? 'דרך האתר' : 'השכרות חוץ');
+  const ownerName = uid => store.users[uid]?.name || store.users[uid]?.email || 'בעל רכב';
+  return `<div class="section-head"><h2>סיכום השכרות</h2>
+      <div class="chips period-chips">${PERIODS.map(([k, label]) => `<button class="type-chip ${period === k ? 'on' : ''}" data-period="${k}">${label}</button>`).join('')}</div></div>
+    <p class="mut ext-sub">${scope === 'admin' ? 'כל ההשכרות באתר, יחד עם השכרות החוץ שרשמתם בעצמכם.' : 'ההזמנות שהתקבלו דרך האתר יחד עם השכרות החוץ שרשמתם — במקום אחד.'} הסכומים מחושבים על השכרות שהסתיימו בלבד.</p>
+    <div class="kpis">${kpi('calendar', done.length, 'השכרות שהסתיימו')}${kpi('check', fmtHours(totalHours), 'סה״כ שעות השכרה')}${kpi('money', money(totalAmount), 'סה״כ הכנסות')}${kpi('users', done.length ? money(totalAmount / done.length) : money(0), 'ממוצע להשכרה')}</div>
+    ${open.length ? `<div class="mini-panel sum-open"><div class="mini-panel-head"><h3>בתהליך כרגע</h3><span>${open.length}</span></div><div class="sum-row"><div class="sum-row-top"><b>${open.length === 1 ? 'השכרה אחת פעילה או מאושרת' : `${open.length} השכרות פעילות או מאושרות`}</b><b>${money(sum(open, 'amount'))}</b></div><small>טרם נכללות בסיכום — ייכנסו אליו עם סיום ההשכרה</small></div></div>` : ''}
+    ${groupPanel('לפי רכב', group(done, r => r.carName), ' רכבים')}
+    ${scope === 'admin' ? groupPanel('לפי בעל רכב', group(done.filter(r => r.source === 'site'), r => ownerName(r.ownerUid)), ' בעלי רכב') : ''}
+    ${groupPanel('לפי מקור', bySource)}
+    <div class="mini-panel-head sum-list-head"><h3>כל ההשכרות</h3><span>${all.length}</span></div>
+    <div class="list">${all.length ? all.sort((a, b) => new Date(b.startAt) - new Date(a.startAt)).map(r => `<div class="card inset ext-row">
+      <div class="ext-row-head"><b>${esc(r.carName)}</b><b class="ext-amount">${money(r.amount)}</b></div>
+      <div class="ext-row-sub"><span>${esc(r.who)}${scope === 'admin' && r.source === 'site' ? ` · ${esc(ownerName(r.ownerUid))}` : ''}</span><span>${extDT(r.startAt)} ← ${extDT(r.endAt)} · ${fmtHours(r.hours)}</span></div>
+      <div class="chips"><span class="pill ${r.source === 'site' ? 'ok' : ''}">${r.source === 'site' ? 'דרך האתר' : 'השכרת חוץ'}</span>${REALISED.has(r.status) ? '' : `<span class="pill warn">${statusLabel(r.status)}</span>`}</div>
+    </div>`).join('') : emptyState(ICON.calendar, 'אין השכרות בתקופה שנבחרה', 'נסו לבחור טווח רחב יותר, או הוסיפו השכרת חוץ.')}</div>`;
+}
+function bindSummary(renderer) {
+  document.querySelectorAll('[data-period]').forEach(btn => btn.onclick = () => {
+    store.summaryPeriod = btn.dataset.period;
+    renderer('summary');
+  });
 }
 function bindExternalRentals(cars, renderer) {
   document.querySelector('#ext-add')?.addEventListener('click', () => externalRentalModal(cars, null, renderer));
@@ -377,21 +477,26 @@ function ownerDashboard(tab = 'overview') {
     ? `<div class="admin-todo"><div class="admin-sec-h">דורש טיפול</div>${ownerTodo.map(([label, n, t]) => `<button class="todo-row" data-goto-tab="${t}"><span class="todo-count">${n}</span><span class="todo-label">${esc(label)}</span><span class="todo-go" aria-hidden="true">›</span></button>`).join('')}</div>`
     : '';
   const contents = {
-    overview: `${pushBanner()}${todoHtml}<div class="admin-stats-mini"><span><b>${cars.length}</b> רכבים</span><span><b>${cars.filter(c => c.status === 'available').length}</b> זמינים</span><span><b>${money(approvedTotal)}</b> הכנסות</span><span><b>${bookings.filter(b => b.status === 'active').length}</b> פעילות</span></div><h2>הזמנות פעילות</h2>${bookingList(bookings.filter(b => ['pending','approved','active'].includes(b.status)), 'owner')}`,
+    overview: `${pushBanner()}${todoHtml}<div class="admin-stats-mini"><span><b>${cars.length}</b> רכבים</span><span><b>${cars.filter(c => c.status === 'available').length}</b> זמינים</span><button type="button" class="stat-link" data-nav-tab="summary"><b>${money(approvedTotal)}</b> תשלומים שאושרו</button><span><b>${bookings.filter(b => b.status === 'active').length}</b> פעילות</span></div><h2>הזמנות פעילות</h2>${bookingList(bookings.filter(b => ['pending','approved','active'].includes(b.status)), 'owner')}`,
     bookings: `<h2>הזמנות</h2>${bookingList(bookings, 'owner')}`,
-    cars: `<div class="section-head"><h2>הרכבים שלי</h2><div class="chips"><button class="btn outline" id="goto-external">📒 השכרות חוץ</button><button class="btn gold" id="add-car">הוספת רכב</button></div></div>${carGrid(cars, true)}`,
+    cars: `<div class="section-head"><h2>הרכבים שלי</h2><div class="chips"><button class="btn outline" id="goto-external">📒 השכרות חוץ</button><button class="btn gold" id="add-car">הוספת רכב</button></div></div>${carGrid(cars, true, null, emptyState(ICON.car, 'עוד לא פרסמתם רכב', 'הוסיפו את הרכב הראשון שלכם — תמונות, מחיר וזמינות, ואפשר להתחיל לקבל בקשות.', '<button class="btn primary" id="add-car-empty">הוספת רכב ראשון</button>'))}`,
     external: externalRentalsView(cars),
+    summary: rentalSummaryView('owner'),
     notifications: userNotificationsView(),
     profile: ownerProfileView(),
   };
-  app().innerHTML = dashboardLayout('לוח בעל רכב', [['overview','סקירה'],['bookings','הזמנות'],['cars','רכבים'],['external','השכרות חוץ'],['chats','צ׳אטים'],['notifications',`התראות${userUnreadNotifs() ? ` (${userUnreadNotifs()})` : ''}`],['profile','פרופיל']], tab, contents[tab] || contents.overview, '<button class="btn gold" id="add-car-head">+ הוספת רכב</button>');
+  app().innerHTML = dashboardLayout('לוח בעל רכב', [['overview','סקירה'],['bookings','הזמנות'],['cars','רכבים'],['summary','סיכום'],['external','השכרות חוץ'],['chats','צ׳אטים'],['notifications',`התראות${userUnreadNotifs() ? ` (${userUnreadNotifs()})` : ''}`],['profile','פרופיל']], tab, contents[tab] || contents.overview, '<button class="btn gold" id="add-car-head">+ הוספת רכב</button>');
   bindDashboardTabs(ownerDashboard); bindActions(); bindCarButtons(); bindProfileActions();
+  // The overview's stats strip doubles as navigation (the admin hub already worked this way).
+  document.querySelectorAll('[data-nav-tab]').forEach(btn => btn.onclick = () => { store.dashTab = btn.dataset.navTab; ownerDashboard(btn.dataset.navTab); });
   if (tab === 'notifications') bindNotifThreads();
   if (tab === 'overview') bindPushBanner();
   document.querySelector('#add-car')?.addEventListener('click', () => carForm());
+  document.querySelector('#add-car-empty')?.addEventListener('click', () => carForm());
   document.querySelector('#add-car-head')?.addEventListener('click', () => carForm());
   document.querySelector('#goto-external')?.addEventListener('click', () => { store.dashTab = 'external'; ownerDashboard('external'); });
   if (tab === 'external') bindExternalRentals(cars, ownerDashboard);
+  if (tab === 'summary') bindSummary(ownerDashboard);
   if (tab === 'cars') injectCarStats(bookings);
 }
 
@@ -405,7 +510,7 @@ function injectCarStats(bookings) {
     const carBookings = bookings.filter(b => b.carId === carId && !['cancelled', 'rejected', 'expired'].includes(b.status));
     const earned = carBookings.reduce((sum, b) => { const p = store.payments[b.id]; return sum + (paymentApproved(p) ? Number(p.amount || 0) : 0); }, 0);
     const rating = carRating(carId);
-    const strip = `<div class="car-stats"><span>📅 ${carBookings.length} הזמנות</span><span>💵 ${money(earned)}</span>${rating ? `<span>⭐ ${rating.toFixed(1)}</span>` : ''}</div>`;
+    const strip = `<div class="car-stats"><span>📅 ${heCountF(carBookings.length, 'הזמנה', 'הזמנות')}</span><span>💵 ${money(earned)}</span>${rating ? `<span>⭐ ${rating.toFixed(1)}</span>` : ''}</div>`;
     cardEl.querySelector('.car-manage')?.insertAdjacentHTML('beforebegin', strip);
   });
 }
@@ -434,25 +539,34 @@ function adminDashboard(tab = 'overview') {
   // A SIMPLE control hub (user: "האזור האישי של המנהל מאוד מאוד מסובך"): (1) a plain "what needs you"
   // list where each row jumps straight to it, (2) big labeled tiles so every area is one tap away
   // (no hunting in "עוד"), (3) a compact stats strip, (4) search + rare tools folded away at the bottom.
+  // One-time privacy cleanup, rendered ONLY while there is something to clean — then it disappears for
+  // good. publicRatings is world-readable and rows written before rev.177 are keyed
+  // `<bookingId>_<type>_<authorUid>`, which hands back the two fields the record body strips on purpose.
+  const legacyRatingKeys = Object.keys(store.ratings || {}).filter(k => !/^[0-9a-f]{40}$/.test(k)).length;
+  const rekeyHtml = legacyRatingKeys
+    ? `<div class="admin-todo"><div class="admin-sec-h">תחזוקה חד-פעמית</div><button class="todo-row" id="ratings-rekey"><span class="todo-count">${legacyRatingKeys}</span><span class="todo-label">הסתרת מזהי הזמנה בדירוגים ישנים</span><span class="todo-go" aria-hidden="true">›</span></button></div>`
+    : '';
   const todoHtml = todo.length
     ? `<div class="admin-todo"><div class="admin-sec-h">דורש טיפול</div>${todo.map(([t, n, label]) => `<button class="todo-row" data-nav-tab="${t}"><span class="todo-count">${n}</span><span class="todo-label">${esc(label)}</span><span class="todo-go" aria-hidden="true">›</span></button>`).join('')}</div>`
     : `<div class="admin-allclear"><span class="ac-ic">✓</span><div><b>הכל מטופל</b><small>אין כרגע פעולות שממתינות לך</small></div></div>`;
   const navTile = (t, label, icon, tint, badge = 0) => `<button class="hub-tile" data-nav-tab="${t}"><span class="hub-ic tint-${tint}">${icon}</span><b>${esc(label)}</b>${badge ? `<span class="hub-badge">${badge}</span>` : ''}</button>`;
   const contents = {
-    overview: `${pushBanner()}${todoHtml}
+    overview: `${pushBanner()}${todoHtml}${rekeyHtml}
       <div class="admin-sec-h">ניהול האתר</div>
       <div class="admin-hub">${navTile('users', 'משתמשים', ICON.users, 'purple', pendingVerif)}${navTile('bookings', 'הזמנות', ICON.calendar, 'blue', pendingPay + pendingBook)}${navTile('cars', 'רכבים', ICON.car, 'gold')}${navTile('chats', 'צ׳אטים', ICON.chat, 'green', unread)}</div>
       <div class="admin-sec-h">האזור שלי — בעל רכב</div>
-      <div class="admin-hub">${navTile('myCars', 'הרכבים שלי', ICON.car, 'blue')}${navTile('external', 'השכרות חוץ', ICON.money, 'gold')}${navTile('profile', 'פרופיל', ICON.selfie, 'slate')}</div>
+      <div class="admin-hub">${navTile('myCars', 'הרכבים שלי', ICON.car, 'blue')}${navTile('summary', 'סיכום השכרות', ICON.check, 'green')}${navTile('external', 'השכרות חוץ', ICON.money, 'gold')}${navTile('profile', 'פרופיל', ICON.selfie, 'slate')}</div>
       <div class="admin-stats-mini"><span><b>${bookings.length}</b> הזמנות</span><span><b>${money(total)}</b> תשלומים</span><span><b>${users.length}</b> משתמשים</span><span><b>${cars.length}</b> רכבים</span></div>
-      <div class="field admin-search-wrap"><input id="admin-search" placeholder="🔎 חיפוש משתמש, רכב או הזמנה…" autocomplete="off"></div><div id="admin-search-results"></div>
+      <div class="field admin-search-wrap"><input id="admin-search" aria-label="חיפוש משתמש, רכב או הזמנה" placeholder="🔎 חיפוש משתמש, רכב או הזמנה…" autocomplete="off"></div><div id="admin-search-results"></div>
       <details class="admin-tools"><summary>הגדרות וכלים</summary><div class="admin-tools-grid"><button class="btn ${store.config?.maintenance?.on ? 'danger' : 'outline'}" id="maintenance-toggle">${store.config?.maintenance?.on ? 'האתר בתחזוקה — לחצו לפתיחה' : 'מצב תחזוקה'}</button><button class="btn outline" id="export-json">ייצוא JSON</button><button class="btn outline" id="legacy-migrate">העברת נתונים ישנים</button><button class="btn outline" id="media-migrate" title="מעביר תמונות רכב ישנות מהמסד לאחסון CDN — מאיץ את טעינת האתר">⚡ האצת טעינה (תמונות)</button></div></details>`,
-    users: `<h2 style="margin-bottom:16px">משתמשים ואימותים</h2>${adminUsersTable(users)}`,
+    users: adminUsersSplit(users),
+    userPage: adminUserPage(store.adminUserUid, bookings),
     cars: `<h2 style="margin-bottom:16px">רכבים</h2>${adminCarsTable(cars)}`,
     // The admin is ALSO a car owner: a personal "הרכבים שלי" tab (strictly their own cars, with the
     // owner's per-car stats strip) and the off-site rentals log — same tools an owner gets.
-    myCars: `<div class="section-head"><h2>הרכבים שלי</h2><div class="chips"><button class="btn outline" id="goto-external">📒 השכרות חוץ</button><button class="btn gold" id="add-car">הוספת רכב</button></div></div>${carGrid(adminOwnCars, true)}`,
+    myCars: `<div class="section-head"><h2>הרכבים שלי</h2><div class="chips"><button class="btn outline" id="goto-external">📒 השכרות חוץ</button><button class="btn gold" id="add-car">הוספת רכב</button></div></div>${carGrid(adminOwnCars, true, null, emptyState(ICON.car, 'עוד לא פרסמתם רכב', 'הוסיפו את הרכב הראשון שלכם — תמונות, מחיר וזמינות, ואפשר להתחיל לקבל בקשות.', '<button class="btn primary" id="add-car-empty">הוספת רכב ראשון</button>'))}`,
     external: externalRentalsView(adminOwnCars),
+    summary: rentalSummaryView('admin'),
     bookings: `<h2 style="margin-bottom:16px">הזמנות</h2>${bookingList(bookings, 'admin')}`,
     notifications: adminNotificationsView(),
     profile: ownerProfileView(),
@@ -463,12 +577,14 @@ function adminDashboard(tab = 'overview') {
     ['#', 'ניהול האתר'],
     ['overview','סקירה'],['users','משתמשים'],['cars','רכבים'],['bookings','הזמנות'],['chats','צ׳אטים'],['notifications', `התראות${unread ? ` (${unread})` : ''}`],
     ['#', 'האזור שלי'],
-    ['myCars','הרכבים שלי'],['external','השכרות חוץ'],['profile','פרופיל'],
+    ['myCars','הרכבים שלי'],['summary','סיכום השכרות'],['external','השכרות חוץ'],['profile','פרופיל'],
   ], tab, contents[tab] || contents.overview, '<button class="btn gold" id="admin-add-car">+ הוספת רכב</button>', '<button class="btn dark-out block" id="admin-refresh" title="רענון נתונים">רענון</button><button class="btn dark-out block" id="admin-logout">יציאה</button>');
   document.querySelector('#admin-add-car')?.addEventListener('click', () => carForm());
   document.querySelector('#add-car')?.addEventListener('click', () => carForm());
+  document.querySelector('#add-car-empty')?.addEventListener('click', () => carForm());
   document.querySelector('#goto-external')?.addEventListener('click', () => { store.dashTab = 'external'; adminDashboard('external'); });
   if (tab === 'external') bindExternalRentals(adminOwnCars, adminDashboard);
+  if (tab === 'summary') bindSummary(adminDashboard);
   if (tab === 'myCars') injectCarStats(bookings.filter(b => adminOwnCars.some(c => c.id === b.carId)));
   document.querySelector('#admin-refresh')?.addEventListener('click', () => window.location.reload());
   document.querySelector('#admin-logout')?.addEventListener('click', async () => { try { await logout(); location.hash = 'home'; } catch (error) { toast(error.message); } });
@@ -479,7 +595,27 @@ function adminDashboard(tab = 'overview') {
     if (t === 'chats') { location.hash = 'chats'; return; }
     store.dashTab = t; adminDashboard(t);
   });
+  const rekeyBtn = document.querySelector('#ratings-rekey');
+  if (rekeyBtn) rekeyBtn.onclick = async () => {
+    rekeyBtn.disabled = true;
+    try { const res = await adminAction('ratings-rekey'); toast(`הוסתרו ${res.moved || 0} מזהים`); }
+    catch (error) { toast(error.message); rekeyBtn.disabled = false; }
+  };
   document.querySelectorAll('[data-admin-user]').forEach(button => button.onclick = () => adminUserModal(button.dataset.adminUser));
+  // The whole user card is the shortcut into that person's control page.
+  document.querySelectorAll('[data-open-user]').forEach(el => el.onclick = event => {
+    if (event.target.closest('button')) return;   // the card's own buttons keep their meaning
+    store.adminUserUid = el.dataset.openUser; store.dashTab = 'userPage'; adminDashboard('userPage');
+  });
+  document.querySelector('[data-back-users]')?.addEventListener('click', () => { store.dashTab = 'users'; adminDashboard('users'); });
+  const userQ = document.querySelector('#admin-user-q');
+  if (userQ) userQ.oninput = () => {
+    store.adminUserQ = userQ.value;
+    clearTimeout(userQ._t);
+    // Re-render on a pause, then put the caret back — a repaint per keystroke would fight the typing.
+    userQ._t = setTimeout(() => { adminDashboard('users'); const box = document.querySelector('#admin-user-q'); box?.focus(); box?.setSelectionRange(box.value.length, box.value.length); }, 260);
+  };
+  if (store.dashTab === 'userPage') bindAdminUserPage();
   // One-tap approval straight from a pending user's card (the modal path with the documents stays
   // available via "מסמכים"; the server still refuses if the three documents are missing).
   document.querySelectorAll('[data-quick-approve]').forEach(button => button.onclick = async () => {
@@ -517,7 +653,14 @@ function adminDashboard(tab = 'overview') {
     catch (error) { toast(error.message); }
   });
   document.querySelectorAll('[data-car-delete]').forEach(button => button.onclick = async () => {
-    if (!confirm('למחוק את הרכב לצמיתות?')) return;
+    // Only an ADMIN can delete a car that still has live bookings (car-action 409s everyone else).
+    // Deleting wipes privateCarDetails too, so a renter mid-rental loses the pickup address — that is
+    // not something to discover from a generic "למחוק לצמיתות?".
+    const live = myBookings().filter(b => b.carId === button.dataset.carDelete && ['pending', 'approved', 'active'].includes(b.status));
+    const warning = live.length
+      ? `לרכב יש ${live.length === 1 ? 'הזמנה אחת פעילה או ממתינה' : `${live.length} הזמנות פעילות או ממתינות`}. מחיקה תסיר גם את כתובת האיסוף, והשוכרים יאבדו אותה באמצע ההשכרה.\n\nלמחוק בכל זאת?`
+      : 'למחוק את הרכב לצמיתות?';
+    if (!confirm(warning)) return;
     try { await deleteCar(button.dataset.carDelete); toast('הרכב נמחק'); }
     catch (error) { toast(error.message); }
   });
@@ -549,32 +692,152 @@ function adminDashboard(tab = 'overview') {
   });
 }
 
-function adminUsersTable(users) {
+function adminUsersTable(users, pageKey = 'users') {
   if (!users.length) return '<div class="empty">אין משתמשים</div>';
   const rentalCount = uid => myBookings().filter(b => b.renterUid === uid || b.ownerUid === uid).length;
-  return `<div class="admin-cards">${users.slice(0, pageOf('users')).map(user => {
+  return `<div class="admin-cards">${users.slice(0, pageOf(pageKey)).map(user => {
     const count = rentalCount(user.id);
     const initial = esc(String(user.name || user.email || '?').trim().charAt(0) || '?');
     const vs = user.verification?.status;
-    return `<div class="auc${user.blocked ? ' auc-blocked' : ''}">
+    return `<div class="auc auc-click${user.blocked ? ' auc-blocked' : ''}" data-open-user="${esc(user.id)}" role="button" tabindex="0" title="פתיחת האזור האישי של המשתמש">
       <div class="auc-head">
         <span class="auc-ava" aria-hidden="true">${initial}</span>
-        <div class="auc-id"><b class="auc-name">${esc(user.name || '—')}${user.blocked ? ' <span class="pill warn">חסום</span>' : ''}</b><span class="auc-role">${esc(roleName(user.role))} · ${count} השכרות</span></div>
+        <div class="auc-id"><b class="auc-name">${esc(user.name || '—')}${user.blocked ? ' <span class="pill warn">חסום</span>' : ''}</b><span class="auc-role">${esc(roleName(user.role))} · ${heCountF(count, 'השכרה', 'השכרות')}</span></div>
         <span class="pill ${vs === 'approved' ? 'ok' : 'warn'}">${esc(verificationLabel(vs))}</span>
       </div>
       <div class="auc-contact"><span><span class="lab">מייל</span>${esc(user.email || '—')}</span><span><span class="lab">טלפון</span>${esc(user.phone || '—')}</span></div>
       <div class="auc-actions">
         ${vs === 'pending' ? `<button class="btn primary auc-approve" data-quick-approve="${esc(user.id)}">✓ אישור אימות</button>` : ''}
         <button class="btn outline" data-admin-user="${esc(user.id)}">מסמכים</button>
-        <button class="btn outline" data-admin-rentals="${esc(user.id)}">${count} השכרות</button>
+        <button class="btn outline" data-admin-rentals="${esc(user.id)}">${heCountF(count, 'השכרה', 'השכרות')}</button>
         <span class="auc-icons"><button class="icon-btn" title="שליחת הודעה" data-user-message="${esc(user.id)}">${ICON.chat}</button><button class="icon-btn" title="עריכה" data-user-edit="${esc(user.id)}">${ICON.edit}</button><button class="icon-btn ${user.blocked ? '' : 'danger'}" title="${user.blocked ? 'שחרור חסימה' : 'חסימה'}" data-user-block="${esc(user.id)}">${user.blocked ? ICON.check : ICON.block}</button><button class="icon-btn danger" title="מחיקה" data-user-delete="${esc(user.id)}">${ICON.trash}</button></span>
       </div>
     </div>`;
-  }).join('')}</div>${listMoreBtn('users', users.length)}`;
+  }).join('')}</div>${listMoreBtn(pageKey, users.length)}`;
 }
 
+function bindAdminUserPage() {
+  const uid = store.adminUserUid;
+  if (!uid) return;
+  const reload = () => adminDashboard('userPage');
+  // Documents live behind a signed-read endpoint, so they load after the page paints.
+  const docBox = document.querySelector('#up-docs');
+  if (docBox) api('user-private-profile', {uid})
+    .then(data => { docBox.className = ''; docBox.innerHTML = docGallery(data.documents); bindDocGallery(); })
+    .catch(error => { docBox.textContent = `לא ניתן לטעון מסמכים: ${error.message}`; });
+
+  const form = document.querySelector('#up-profile');
+  if (form) form.onsubmit = async event => {
+    event.preventDefault();
+    const btn = event.submitter; if (btn) btn.disabled = true;
+    const data = formData(form);
+    const patch = {name: data.name, phone: data.phone, birthDate: data.birthDate};
+    // Role is sent ONLY when it actually changed: user-update rejects a renter switch while the user
+    // still owns cars, and re-sending the current role would fail a save that changed nothing else.
+    if (data.role && data.role !== store.users[uid]?.role) patch.role = data.role;
+    try { await adminAction('user-update', {uid, patch}); toast('הפרטים עודכנו'); reload(); }
+    catch (error) { toast(error.message); if (btn) btn.disabled = false; }
+  };
+  document.querySelectorAll('[data-up-review]').forEach(btn => btn.onclick = async () => {
+    const status = btn.dataset.upReview;
+    const note = status === 'approved' ? '' : prompt('מה צריך לתקן? (נשלח למשתמש בהתראה וב-SMS)') || '';
+    try { await approveVerification(uid, status, note); toast('סטטוס האימות עודכן'); reload(); }
+    catch (error) { toast(error.message); }
+  });
+  document.querySelector('[data-up-addcar]')?.addEventListener('click', () => {
+    if (store.users[uid]?.role !== 'owner') return toast('צריך להגדיר את המשתמש כבעל רכב לפני פרסום רכב עבורו');
+    carForm(null, uid);
+  });
+  document.querySelector('[data-up-message]')?.addEventListener('click', () => openChatThread(`a:${uid}`));
+  document.querySelector('[data-up-block]')?.addEventListener('click', async event => {
+    const blocking = event.currentTarget.dataset.upBlock === '1';
+    if (blocking && !confirm('לחסום את המשתמש? הוא יינעל מכל האתר, ותישלח לו הודעה. הוא יוכל לערער בצ׳אט התמיכה.')) return;
+    try { await adminAction('user-block', {uid, blocked: blocking}); toast(blocking ? 'המשתמש נחסם' : 'החסימה הוסרה'); reload(); }
+    catch (error) { toast(error.message); }
+  });
+  document.querySelector('[data-up-delete]')?.addEventListener('click', async () => {
+    const name = store.users[uid]?.name || store.users[uid]?.email || 'המשתמש';
+    if (!confirm(`למחוק לצמיתות את ${name}?\n\nיימחקו הפרופיל, המסמכים, הרכבים, הפניות והדירוגים. הזמנות יישמרו לצד השני עם שם מוסתר.\n\nהפעולה בלתי הפיכה.`)) return;
+    try { await adminAction('user-delete', {uid}); toast('המשתמש נמחק'); store.dashTab = 'users'; adminDashboard('users'); }
+    catch (error) { toast(error.message); }
+  });
+}
+// A user's whole personal area, from the admin side (Shmuel: "קיצור דרך ישיר לתוך האזור האישי ...
+// עם אפשרות לשנות הכל"). NOT impersonation: every request still carries the ADMIN's uid, and each
+// control below calls an endpoint that already grants admins authority over that user's data. That
+// keeps the audit trail honest — every change is recorded as the admin's, which is what it is.
+function adminUserPage(uid, allBookings) {
+  const user = store.users[uid];
+  if (!user) return `<button type="button" class="up-back" data-back-users>← חזרה לרשימת המשתמשים</button>${emptyState(ICON.users, 'המשתמש לא נמצא', 'ייתכן שנמחק.')}`;
+  const vs = store.verificationStatuses[uid] || 'missing';
+  const cars = list(store.cars).filter(c => c.ownerUid === uid);
+  const bookings = allBookings.filter(b => b.renterUid === uid || b.ownerUid === uid);
+  const done = bookings.filter(b => b.status === 'done');
+  const income = done.reduce((t, b) => { const a = Number(b.adminAmount); return t + (Number.isFinite(a) && a > 0 ? a : Number(b.quote?.total || 0)); }, 0);
+  const hours = done.reduce((t, b) => t + spanHours(b.startAt, b.endAt), 0);
+  const roleLabel = roleName(user.role) || 'ללא תפקיד';
+  return `<button type="button" class="up-back" data-back-users>← חזרה לרשימת המשתמשים</button>
+    <div class="up-head">
+      <span class="auc-ava up-ava" aria-hidden="true">${esc(String(user.name || user.email || '?').trim().charAt(0) || '?')}</span>
+      <div class="up-id"><b class="up-name">${esc(user.name || '—')}</b><small>${esc(roleLabel)} · <bdi>${esc(user.email || '—')}</bdi></small></div>
+      <div class="up-pills">${user.blocked ? '<span class="pill warn">חסום</span>' : ''}<span class="pill ${vs === 'approved' ? 'ok' : 'warn'}">${esc(verificationLabel(vs))}</span></div>
+    </div>
+    <div class="kpis">${kpi('calendar', bookings.length, 'הזמנות')}${kpi('check', fmtHours(hours), 'שעות השכרה')}${kpi('money', money(income), 'סה״כ')}${kpi('car', cars.length, 'רכבים')}</div>
+
+    <details class="up-sec" open><summary><b>פרטים אישיים</b><small>שם, טלפון, תאריך לידה, תפקיד</small></summary>
+      <form id="up-profile" class="card inset"><div class="form-grid">
+        <div class="field"><label>שם מלא</label><input name="name" value="${esc(user.name || '')}" required></div>
+        <div class="field"><label>טלפון</label><input name="phone" type="tel" value="${esc(user.phone || '')}"></div>
+        <div class="field"><label>תאריך לידה</label><input name="birthDate" type="date" value="${esc(user.birthDate || '')}"><small>נעול למשתמש בזמן אימות — כאן אפשר לתקן</small></div>
+        <div class="field"><label>סוג חשבון</label><select name="role"><option value="renter" ${user.role === 'renter' ? 'selected' : ''}>שוכר</option><option value="owner" ${user.role === 'owner' ? 'selected' : ''}>בעל רכב</option></select><small>העברה לשוכר חסומה כל עוד יש רכבים</small></div>
+        <div class="field"><label>מייל 🔒</label><input value="${esc(user.email || '')}" disabled></div>
+      </div><button class="btn primary block">שמירת שינויים</button></form>
+    </details>
+
+    <details class="up-sec"><summary><b>אימות ומסמכים</b><small>${esc(verificationLabel(vs))}</small></summary>
+      <div class="chips"><button class="btn primary" data-up-review="approved">אישור אימות</button><button class="btn danger" data-up-review="rejected">דחייה</button><button class="btn outline" data-up-review="needs_resubmission">בקשת צילום מחדש</button></div>
+      <div id="up-docs" class="mut">טוען מסמכים…</div>
+    </details>
+
+    <details class="up-sec"><summary><b>הרכבים שלו</b><small>${cars.length}</small></summary>
+      <div class="chips"><button class="btn gold" data-up-addcar>+ הוספת רכב עבורו</button></div>
+      ${cars.length ? `<div class="list">${cars.map(c => `<div class="card inset ext-row"><div class="ext-row-head"><b>${esc(c.make || '')} ${esc(c.model || '')} ${esc(c.year || '')}</b><b class="ext-amount">${money(c.dailyPrice || 0)}/יום</b></div><div class="ext-row-sub"><span>${carStatusPill(c.status)}</span><span>${esc(c.id.slice(-6))}</span></div><div class="chips"><button class="btn outline" data-car-edit="${esc(c.id)}">עריכה</button><button class="btn outline" data-car-toggle="${esc(c.id)}">${c.status === 'hidden' ? 'הצגה' : 'הסתרה'}</button><button class="btn outline danger" data-car-delete="${esc(c.id)}">מחיקה</button></div></div>`).join('')}</div>` : '<div class="empty">אין רכבים</div>'}
+    </details>
+
+    <details class="up-sec"><summary><b>ההזמנות שלו</b><small>${bookings.length}</small></summary>
+      ${bookings.length ? bookingList(bookings, 'admin') : '<div class="empty">אין הזמנות</div>'}
+    </details>
+
+    <details class="up-sec"><summary><b>פעולות חשבון</b><small>הודעה, סיסמה, חסימה, מחיקה</small></summary>
+      <div class="chips">
+        <button class="btn gold" data-up-message>💬 שליחת הודעה</button>
+        <button class="btn outline" data-reset-pw="${esc(user.email || '')}">קישור לאיפוס סיסמה</button>
+        <button class="btn outline" data-up-block="${user.blocked ? '' : '1'}">${user.blocked ? 'הסרת חסימה' : 'חסימת משתמש'}</button>
+        <button class="btn danger" data-up-delete>מחיקת המשתמש</button>
+      </div>
+    </details>`;
+}
+// Users split into the two groups the admin actually thinks in (Shmuel: "2 רשימות ... שוכרים ובעלי
+// רכבים"). Anyone whose role was never set lands in a third group so they can't silently disappear.
+function adminUsersSplit(users) {
+  const q = (store.adminUserQ || '').trim().toLowerCase();
+  const match = u => !q || `${u.name || ''} ${u.email || ''} ${u.phone || ''}`.toLowerCase().includes(q);
+  const shown = users.filter(match);
+  const groups = [
+    ['renter', 'שוכרים', shown.filter(u => u.role === 'renter')],
+    ['owner', 'בעלי רכב', shown.filter(u => u.role === 'owner')],
+    ['none', 'ללא תפקיד', shown.filter(u => !['renter', 'owner'].includes(u.role))],
+  ].filter(([, , rows]) => rows.length);
+  const pending = shown.filter(u => u.verification?.status === 'pending').length;
+  return `<div class="section-head"><h2>משתמשים</h2><span class="mut">${users.length} סה״כ${pending ? ` · ${pending} ממתינים לאימות` : ''}</span></div>
+    <input class="user-search" id="admin-user-q" type="search" placeholder="חיפוש לפי שם, מייל או טלפון" value="${esc(store.adminUserQ || '')}" aria-label="חיפוש משתמשים">
+    ${groups.length ? groups.map(([key, label, rows]) => `<details class="user-group" ${rows.length <= 25 || q ? 'open' : ''}>
+      <summary><b>${label}</b><span class="ug-count">${rows.length}</span></summary>
+      ${adminUsersTable(rows, `users-${key}`)}
+    </details>`).join('') : emptyState(ICON.users, 'לא נמצאו משתמשים', q ? 'נסו חיפוש אחר.' : '')}`;
+}
 // Admin notifications feed (new car / booking / status / payment / chat / block).
-const NOTIF_ICONS = {car: ICON.car, booking: ICON.calendar, status: ICON.check, payment: ICON.money, chat: ICON.chat, block: ICON.block, user: ICON.users};
+const NOTIF_ICONS = {car: ICON.car, booking: ICON.calendar, status: ICON.check, payment: ICON.money, chat: ICON.chat, block: ICON.block, user: ICON.users, verification: ICON.users};
 function adminUnreadCount() {
   const seen = Number(localStorage.getItem('cd-admin-seen') || 0);
   return list(store.adminNotifications).filter(n => Number(n.createdAt || 0) > seen).length;
@@ -606,14 +869,14 @@ function bindAdminSearch() {
     const users = list(store.users).filter(u => `${u.name || ''} ${u.email || ''} ${u.phone || ''}`.toLowerCase().includes(q)).slice(0, 6);
     const cars = list(store.cars).filter(c => `${c.make || ''} ${c.model || ''} ${c.ownerName || ''} ${c.area || ''}`.toLowerCase().includes(q)).slice(0, 6);
     const bookings = myBookings().filter(b => {
-      const car = store.cars[b.carId] || {};
+      const car = store.cars[b.carId] || b.carSnapshot || {};
       const renter = store.users[b.renterUid] || {};
       return `${car.make || ''} ${car.model || ''} ${renter.name || ''} ${renter.email || ''} ${b.status || ''} ${statusLabel(b.status)} ${b.id}`.toLowerCase().includes(q);
     }).slice(0, 6);
     box.innerHTML = (users.length + cars.length + bookings.length) ? `
       ${users.length ? `<p class="search-group">משתמשים</p>${users.map(u => `<button class="search-hit" data-hit-user="${esc(u.id)}">👤 ${esc(u.name || '—')} · ${esc(u.email || '')} · ${esc(u.phone || '')}</button>`).join('')}` : ''}
       ${cars.length ? `<p class="search-group">רכבים</p>${cars.map(c => `<button class="search-hit" data-hit-car="${esc(c.id)}">🚗 ${esc(c.make || '')} ${esc(c.model || '')} · ${esc(c.ownerName || '')} · ${carStatusPill(c.status)}</button>`).join('')}` : ''}
-      ${bookings.length ? `<p class="search-group">הזמנות</p>${bookings.map(b => { const car = store.cars[b.carId] || {}; return `<button class="search-hit" data-hit-booking="${esc(b.renterUid)}">📅 ${esc(car.make || 'רכב')} ${esc(car.model || '')} · ${fmtDate(b.startAt)} · ${statusLabel(b.status)}</button>`; }).join('')}` : ''}
+      ${bookings.length ? `<p class="search-group">הזמנות</p>${bookings.map(b => { const car = store.cars[b.carId] || b.carSnapshot || {}; return `<button class="search-hit" data-hit-booking="${esc(b.renterUid)}">📅 ${esc(car.make || 'רכב')} ${esc(car.model || '')} · ${fmtDate(b.startAt)} · ${statusLabel(b.status)}</button>`; }).join('')}` : ''}
     ` : '<div class="empty">לא נמצאו תוצאות</div>';
     box.querySelectorAll('[data-hit-user]').forEach(b => b.onclick = () => adminUserModal(b.dataset.hitUser));
     box.querySelectorAll('[data-hit-car]').forEach(b => b.onclick = () => { const car = {id: b.dataset.hitCar, ...store.cars[b.dataset.hitCar]}; carForm(car); });
@@ -671,7 +934,7 @@ function adminUserBookingsModal(uid) {
   const user = store.users[uid] || {};
   const rows = myBookings().filter(b => b.renterUid === uid || b.ownerUid === uid).sort((a, b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
   modal(`<div class="modal-head"><h2>השכרות · ${esc(user.name || user.email || 'משתמש')}</h2><button class="close" data-close-modal>×</button></div>${rows.length ? rows.map(booking => {
-    const car = store.cars[booking.carId] || {};
+    const car = store.cars[booking.carId] || booking.carSnapshot || {};
     const renter = store.users[booking.renterUid] || {};
     const owner = store.users[booking.ownerUid] || {};
     const payment = store.payments[booking.id];
@@ -717,19 +980,39 @@ function bookingTimeline(booking, pmt) {
 // pickup (video / fuel / odometer), and 3) payment. A numbered mini-guide makes that order unmistakable.
 function renterNextSteps(booking) {
   const ev = evidenceState(booking, booking.id);
+  // Step 3 used to be a bare "ממתין לתשלום" with no amount, no method and no button, while steps 1-2
+  // were actionable. The site never states HOW to pay (that's the owner's own arrangement), so the
+  // honest instruction is: the owner gives the method in chat, and you report it here.
+  const pmt = store.payments[booking.id];
+  const payPending = pmt?.status === 'pending';
+  const adminAmount = Number(booking.adminAmount);
+  const payDue = Number.isFinite(adminAmount) && adminAmount > 0 ? adminAmount : Number(booking.quote?.total || 0);
+  const isDelivery = booking.fulfillment === 'delivery';
   const docItems = [['סרטון חוץ', ev.video], ['תמונת דלק', ev.fuel], ['קילומטראז׳', ev.odometer]];
   const docsDone = docItems.every(([, ok]) => ok);
   if (docsDone && ev.payment) return `<div class="next-steps complete"><div class="next-head"><b>✓ הכל מוכן — ממתין שבעל הרכב יתחיל את ההשכרה</b></div></div>`;
   return `<div class="next-steps">
     <div class="next-head"><b>איך מקבלים את הרכב</b></div>
     <ol class="next-flow">
-      <li class="nf-step"><span class="nf-num">1</span><div class="nf-body"><b>קבלת מיקום ומפתח</b><small>בעל הרכב מוסר לך את מיקום הרכב והמפתח בצ׳אט</small><div class="nf-actions"><button class="btn outline" data-address="${booking.id}">📍 כתובת איסוף</button><button class="btn outline" data-chat="${booking.id}">💬 צ׳אט עם בעל הרכב</button></div></div></li>
+      <li class="nf-step"><span class="nf-num">1</span><div class="nf-body"><b>${isDelivery ? 'מסירת הרכב אליך' : 'קבלת מיקום ומפתח'}</b><small>${isDelivery ? `בעל הרכב יביא את הרכב אל <bdi>${booking.deliveryAddress ? esc(booking.deliveryAddress) : 'הכתובת שמסרתם'}</bdi> — תאמו איתו שעה בצ׳אט` : 'בעל הרכב מוסר לך את מיקום הרכב והמפתח בצ׳אט'}</small><div class="nf-actions">${isDelivery ? '' : `<button class="btn outline" data-address="${booking.id}">📍 כתובת איסוף</button>`}<button class="btn outline" data-chat="${booking.id}">💬 צ׳אט עם בעל הרכב</button></div></div></li>
       <li class="nf-step"><span class="nf-num">2</span><div class="nf-body"><b>תיעוד מצב הרכב — בעת האיסוף</b><small>אחרי שקיבלתם את הרכב, צלמו בצ׳אט:</small><div class="next-items">${docItems.map(([label, ok]) => `<span class="next-item${ok ? ' ok' : ''}">${ok ? '✓' : '○'} ${esc(label)}</span>`).join('')}</div></div></li>
-      <li class="nf-step"><span class="nf-num">3</span><div class="nf-body"><b>תשלום</b><div class="next-items"><span class="next-item${ev.payment ? ' ok' : ''}">${ev.payment ? '✓ שולם' : '○ ממתין לתשלום'}</span></div></div></li>
+      <li class="nf-step"><span class="nf-num">3</span><div class="nf-body"><b>תשלום${payDue ? ` — ${money(payDue)}` : ''}</b><small>${ev.payment ? 'התשלום אושר על ידי בעל הרכב.' : payPending ? 'הדיווח נשלח — ממתין לאישור בעל הרכב.' : 'אופן התשלום נמסר על ידי בעל הרכב בצ׳אט. אחרי ששילמתם, צלמו את האישור ודווחו כאן.'}</small><div class="next-items"><span class="next-item${ev.payment ? ' ok' : ''}">${ev.payment ? '✓ שולם ואושר' : payPending ? '⏳ ממתין לאישור' : '○ ממתין לתשלום'}</span></div>${ev.payment || payPending ? '' : `<div class="nf-actions"><button class="btn gold" data-payment="${booking.id}">💳 דיווח על תשלום</button><button class="btn outline" data-chat="${booking.id}">💬 איך משלמים?</button></div>`}</div></li>
     </ol>
     <button class="btn gold block" data-chat="${booking.id}">המשך בצ׳אט →</button>
   </div>`;
 }
+// Why "התחלת השכרה" can't be pressed yet — the same list the server checks, so the owner is never
+// allowed to click a button that would just come back as a 409.
+function startBlockedReason(booking) {
+  const ev = evidenceState(booking, booking.id);
+  const missing = [];
+  if (!ev.video) missing.push('סרטון חוץ');
+  if (!ev.fuel) missing.push('תמונת דלק');
+  if (!ev.odometer) missing.push('קילומטראז׳');
+  if (!ev.payment) missing.push('תשלום מאושר');
+  return missing.length ? `אפשר להתחיל אחרי שהשוכר ישלים: ${missing.join(', ')}` : '';
+}
+
 // The owner's counterpart on an approved booking: hand over the car's location + key in chat, and see
 // the renter's LIVE progress (each item they complete shows here) so the owner knows when to start.
 function ownerHandoverHint(booking) {
@@ -738,8 +1021,8 @@ function ownerHandoverHint(booking) {
   const done = items.filter(([, ok]) => ok).length;
   const allDone = done === items.length;
   return `<div class="next-steps owner-hint${allDone ? ' complete' : ''}">
-    <div class="next-head"><b>📍 מסרו לשוכר את מיקום הרכב והמפתח</b></div>
-    <small class="oh-note">תאמו מקום איסוף ומסירת מפתח בצ׳אט. לאחר שהשוכר יתעד את מצב הרכב וישלם — תוכלו להתחיל את ההשכרה.</small>
+    <div class="next-head"><b>${booking.fulfillment === 'delivery' ? '🚚 מסירת הרכב לשוכר' : '📍 מסרו לשוכר את מיקום הרכב והמפתח'}</b></div>
+    <small class="oh-note">${booking.fulfillment === 'delivery' ? `הזמנה עם מסירה: הביאו את הרכב אל <bdi>${booking.deliveryAddress ? esc(booking.deliveryAddress) : 'הכתובת שהשוכר מסר'}</bdi> ותאמו שעה בצ׳אט. לאחר שהשוכר יתעד את מצב הרכב וישלם — תוכלו להתחיל את ההשכרה.` : 'תאמו מקום איסוף ומסירת מפתח בצ׳אט. לאחר שהשוכר יתעד את מצב הרכב וישלם — תוכלו להתחיל את ההשכרה.'}</small>
     <div class="oh-progress"><div class="oh-progress-head"><b>התקדמות השוכר</b><span class="next-count${allDone ? ' ok' : ''}">${done}/${items.length}</span></div><div class="next-items">${items.map(([label, ok]) => `<span class="next-item${ok ? ' ok' : ''}">${ok ? '✓' : '○'} ${esc(label)}</span>`).join('')}</div></div>
     ${allDone ? '<div class="oh-ready">✓ השוכר השלים הכל — אפשר להתחיל את ההשכרה</div>' : ''}
     <div class="nf-actions"><button class="btn outline" data-chat="${booking.id}">💬 צ׳אט עם השוכר</button></div>
@@ -749,23 +1032,96 @@ function ownerHandoverHint(booking) {
 function bookingList(bookings, role) {
   const sorted = bookings.slice().sort((a,b) => Number(b.createdAt || 0) - Number(a.createdAt || 0));
   return `<div class="list">${sorted.length ? sorted.slice(0, pageOf(`bookings-${role}`)).map(booking => {
-    const car = store.cars[booking.carId] || {};
-    const ratingButtons = booking.status === 'done' ? (role === 'renter' ? `<button class="btn outline" data-rate="${booking.id}" data-rate-type="car">דרג רכב</button><button class="btn outline" data-rate="${booking.id}" data-rate-type="user">דרג בעל רכב</button>` : role === 'owner' ? `<button class="btn outline" data-rate="${booking.id}" data-rate-type="user">דרג שוכר</button>` : '') : '';
+    const car = store.cars[booking.carId] || booking.carSnapshot || {};
+    // Bookings made before carSnapshot existed have no name to fall back on — an empty <h3> reads as a
+    // broken card, so say plainly that the car is gone rather than showing nothing.
+    const carTitle = `${car.make || ''} ${car.model || ''}`.trim() || 'רכב שאינו מוצג יותר באתר';
+    // A rating can be submitted ONCE (rating-submit aborts the transaction on a second attempt), so the
+    // button retires itself instead of letting someone write a whole review and lose it to a 409.
+    // rating-submit records the flag here on the booking — the ratings node itself is admin-only.
+    const rated = type => !!booking.ratedBy?.[`${store.user?.uid}_${type}`];
+    const rateBtn = (type, label) => rated(type)
+      ? `<span class="rated-done">✓ ${label.replace('דרג', 'דירגת')}</span>`
+      : `<button class="btn outline" data-rate="${booking.id}" data-rate-type="${type}">${label}</button>`;
+    const ratingButtons = booking.status === 'done' ? (role === 'renter' ? `${rateBtn('car', 'דרג רכב')}${rateBtn('user', 'דרג בעל רכב')}` : role === 'owner' ? rateBtn('user', 'דרג שוכר') : '') : '';
     const evidence = booking.evidence || {};
     const pmt = store.payments[booking.id];
     const evidenceDone = evidence.video && evidence.fuel && evidence.odometer && paymentApproved(pmt);
-    const paymentSection = ['owner', 'admin'].includes(role) && pmt
-      ? `${pmt.status === 'approved' ? '<span class="pill ok">תשלום אושר</span>' : pmt.status === 'rejected' ? '<span class="pill warn">תשלום נדחה</span>' : pmt.status === 'pending' ? '<span class="pill warn">ממתין לאישור</span>' : ''}<button class="btn outline" data-view-payment="${booking.id}">הוכחת תשלום</button>${pmt.status === 'pending' ? `<button class="btn primary" data-pay-approve="${booking.id}">אישור תשלום</button><button class="btn danger" data-pay-reject="${booking.id}">דחייה</button>` : ''}`
+    // Mobile clutter fix: only the DECISIVE actions stay on the card; everything else collapses into
+    // an "עוד פעולות" menu. The buttons keep their data-* attributes and stay in the DOM (just hidden),
+    // so every existing binding keeps working with no re-binding.
+    const payPills = ['owner', 'admin'].includes(role) && pmt
+      ? `${pmt.status === 'approved' ? '<span class="pill ok">תשלום אושר</span>' : pmt.status === 'rejected' ? '<span class="pill warn">תשלום נדחה</span>' : pmt.status === 'pending' ? '<span class="pill warn">ממתין לאישור</span>' : ''}`
       : '';
-    const renterPaymentNote = role === 'renter' && pmt ? `<p class="ev-note">${pmt.status === 'approved' ? '✓ התשלום שלך אושר על ידי בעל הרכב.' : pmt.status === 'rejected' ? '✗ התשלום נדחה — שלחו הוכחה מעודכנת בצ׳אט.' : '⏳ הוכחת התשלום ממתינה לאישור בעל הרכב.'}</p>` : '';
-    return `<article class="booking-card"><div class="booking-main"><div><small>הזמנה ${esc(booking.id.slice(-7))}</small><h3>${esc(car.make || '')} ${esc(car.model || '')}</h3><p>${fmtDate(booking.startAt)} — ${fmtDate(booking.endAt)}</p>${booking.quote?.total ? `<p class="bk-total">${money(booking.quote.total)}</p>` : ''}${booking.status === 'pending' && booking.pendingExpiresAt ? `<p class="bk-expiry">ממתינה לאישור עד ${fmtDate(booking.pendingExpiresAt)}</p>` : ''}</div><span class="status-badge ${esc(booking.status)}">${statusLabel(booking.status)}</span></div>${bookingTimeline(booking, pmt)}${role === 'renter' && booking.status === 'approved' ? renterNextSteps(booking) : ''}${role === 'owner' && booking.status === 'approved' ? ownerHandoverHint(booking) : ''}<div class="chips">${role === 'renter' && booking.status === 'approved' && (!pmt || pmt.status === 'rejected') ? `<button class="btn gold" data-payment="${booking.id}">💳 דיווח על תשלום</button>` : ''}${role === 'owner' && booking.status === 'pending' ? `<button class="btn primary" data-status="approved" data-booking="${booking.id}">אישור</button><button class="btn danger" data-status="rejected" data-booking="${booking.id}">דחייה</button>` : ''}${role === 'owner' && booking.status === 'approved' ? `<button class="btn gold ${evidenceDone ? '' : 'soft-disabled'}" data-status="active" data-booking="${booking.id}">התחלת השכרה</button>` : ''}${role === 'owner' && booking.status === 'active' ? `<button class="btn gold" data-status="done" data-booking="${booking.id}">סיום השכרה</button>` : ''}${role === 'owner' && ['pending','approved','active'].includes(booking.status) ? `<button class="btn outline" data-renter="${booking.renterUid}">פרטי שוכר</button>` : ''}${['approved','active'].includes(booking.status) ? `<button class="btn outline" data-address="${booking.id}">כתובת איסוף</button>` : ''}${['pending','approved','active'].includes(booking.status) ? `<button class="btn outline" data-chat="${booking.id}">צ׳אט</button>` : ''}${car.id ? `<button class="btn outline" data-view-car="${esc(car.id)}">פרטי הרכב</button>` : ''}${role === 'renter' && booking.status === 'active' ? `<button class="btn outline" data-handover="${booking.id}" data-stage="return">תיעוד החזרה</button>` : ''}${paymentSection}${['owner','admin'].includes(role) && booking.handover ? `<button class="btn outline" data-view-handover="${booking.id}">צפייה בתיעוד</button>` : ''}${role === 'admin' ? `<select class="admin-status-select" data-admin-status="${booking.id}"><option value="">שינוי סטטוס…</option><option value="approved">אישור</option><option value="rejected">דחייה</option><option value="active">התחלת השכרה</option><option value="done">סיום</option><option value="cancelled">ביטול</option></select><button class="btn outline" data-admin-note="${booking.id}">הערת מנהל</button>` : ''}${['renter', 'owner'].includes(role) && ['pending', 'approved'].includes(booking.status) ? `<button class="btn outline" data-cancel-booking="${booking.id}">ביטול הזמנה</button>` : ''}${ratingButtons}</div>${booking.adminNote || booking.adminAmount !== undefined ? `<p class="ev-note">הערת מנהל: ${esc(booking.adminNote || '')}${booking.adminAmount !== undefined ? ` · סכום מתוקן: ${money(booking.adminAmount)}` : ''}</p>` : ''}${booking.status === 'cancelled' && (booking.cancelledByRole || booking.cancelReason) ? `<p class="ev-note">בוטלה${booking.cancelledByRole ? ` על ידי ${({renter: 'השוכר', owner: 'בעל הרכב', admin: 'המנהל'})[booking.cancelledByRole] || ''}` : ''}${booking.cancelReason ? ` · סיבה: ${esc(booking.cancelReason)}` : ''}</p>` : ''}${renterPaymentNote}</article>`;
-  }).join('') : emptyState(ICON.calendar, role === 'renter' ? 'אין לך הזמנות עדיין' : 'אין הזמנות עדיין', role === 'renter' ? 'מצאו רכב מהצי שלנו והזמינו — זה מהיר ופשוט.' : 'כשתתקבל בקשת הזמנה היא תופיע כאן.', role === 'renter' ? '<button class="btn primary" data-route="cars">חיפוש רכב</button>' : '')}</div>${listMoreBtn(`bookings-${role}`, sorted.length)}`;
+    const primaryChips = [
+      role === 'owner' && booking.status === 'pending' ? `<button class="btn primary" data-status="approved" data-booking="${booking.id}">אישור</button><button class="btn danger" data-status="rejected" data-booking="${booking.id}">דחייה</button>` : '',
+      role === 'owner' && booking.status === 'approved' ? `<button class="btn gold" data-status="active" data-booking="${booking.id}"${evidenceDone ? '' : ` disabled title="${esc(startBlockedReason(booking))}"`}>התחלת השכרה</button>` : '',
+      role === 'owner' && booking.status === 'active' ? `<button class="btn gold" data-status="done" data-booking="${booking.id}">סיום השכרה</button>` : '',
+      role === 'renter' && booking.status === 'approved' && (!pmt || pmt.status === 'rejected') ? `<button class="btn gold" data-payment="${booking.id}">💳 דיווח על תשלום</button>` : '',
+      ['owner', 'admin'].includes(role) && pmt && pmt.status === 'pending' ? `<button class="btn primary" data-pay-approve="${booking.id}">אישור תשלום</button><button class="btn danger" data-pay-reject="${booking.id}">דחיית תשלום</button>` : '',
+      role === 'renter' && (booking.status === 'active' || (booking.status === 'done' && !booking.handover?.return && Date.now() - Number(booking.endedAt || 0) <= 24 * 60 * 60 * 1000))
+        ? `<button class="btn ${booking.status === 'done' ? 'gold' : 'outline'}" data-handover="${booking.id}" data-stage="return">תיעוד החזרה${booking.status === 'done' ? ' — נותרו שעות אחרונות' : ''}</button>` : '',
+      ratingButtons,
+      ['pending', 'approved', 'active'].includes(booking.status) || (booking.status === 'cancelled' && pmt) ? `<button class="btn outline" data-chat="${booking.id}">צ׳אט${booking.status === 'cancelled' ? ' — סגירת ההחזר' : ''}</button>` : '',
+      // A request that died left the renter with a badge and nothing else — no chat, no action, no
+      // explanation. The expiry SMS already tells them "אפשר לשלוח בקשה חדשה"; this is that path.
+      role === 'renter' && ['expired', 'rejected', 'cancelled'].includes(booking.status) && booking.carId
+        ? `<button class="btn primary" data-rebook="${esc(booking.carId)}" data-rebook-from="${esc(booking.id)}">בקשה חדשה לרכב הזה</button>` : '',
+    ].filter(Boolean).join('');
+    const moreChips = [
+      role === 'owner' && ['pending', 'approved', 'active'].includes(booking.status) ? `<button class="btn outline" data-renter="${booking.renterUid}">פרטי שוכר</button>` : '',
+      ['approved', 'active'].includes(booking.status) ? `<button class="btn outline" data-address="${booking.id}">כתובת איסוף</button>` : '',
+      booking.carId && store.cars[booking.carId] ? `<button class="btn outline" data-view-car="${esc(booking.carId)}">פרטי הרכב</button>` : '',
+      ['owner', 'admin'].includes(role) && pmt ? `<button class="btn outline" data-view-payment="${booking.id}">הוכחת תשלום</button>` : '',
+      ['owner', 'admin'].includes(role) && booking.handover ? `<button class="btn outline" data-view-handover="${booking.id}">צפייה בתיעוד</button>` : '',
+      role === 'admin' ? `<select class="admin-status-select" data-admin-status="${booking.id}"><option value="">שינוי סטטוס…</option><option value="approved">אישור</option><option value="rejected">דחייה</option><option value="active">התחלת השכרה</option><option value="done">סיום</option><option value="cancelled">ביטול</option></select><button class="btn outline" data-admin-note="${booking.id}">הערת מנהל</button>` : '',
+      ['renter', 'owner'].includes(role) && ['pending', 'approved'].includes(booking.status) ? `<button class="btn outline" data-cancel-booking="${booking.id}">ביטול הזמנה</button>` : '',
+    ].filter(Boolean).join('');
+    const moreBlock = moreChips ? `<details class="bk-more"><summary>עוד פעולות</summary><div class="chips">${moreChips}</div></details>` : '';
+    // "פג תוקף"/"נדחתה" as a bare badge reads like a system error. Name the cause.
+    const endedNote = role === 'renter' && booking.status === 'expired'
+      ? '<p class="ev-note">הבקשה פגה — בעל הרכב לא השיב תוך 48 שעות. אפשר לשלוח בקשה חדשה, או לבחור רכב אחר.</p>'
+      : role === 'renter' && booking.status === 'rejected'
+      ? '<p class="ev-note">בעל הרכב לא אישר את הבקשה לתאריכים האלה. אפשר לנסות תאריכים אחרים, או לבחור רכב אחר.</p>'
+      : '';
+    const cancelledPaidNote = booking.status === 'cancelled' && pmt
+      ? `<p class="ev-note">שולם על ההזמנה הזו ${money(pmt.amount)}. הביטול אינו מבצע החזר אוטומטי — סגרו את ההחזר ישירות בצ׳אט, ואם צריך עזרה פנו לתמיכה.</p>`
+      : '';
+    const renterPaymentNote = role === 'renter' && pmt && booking.status !== 'cancelled' ? `<p class="ev-note">${pmt.status === 'approved' ? '✓ התשלום שלך אושר על ידי בעל הרכב.' : pmt.status === 'rejected' ? '✗ התשלום נדחה — שלחו הוכחה מעודכנת בצ׳אט.' : '⏳ הוכחת התשלום ממתינה לאישור בעל הרכב.'}</p>` : '';
+    return `<article class="booking-card"><div class="booking-main"><div><small>הזמנה ${esc(booking.id.slice(-7))}</small><h3>${esc(carTitle)}</h3><p>${fmtDate(booking.startAt)} — ${fmtDate(booking.endAt)}</p>${booking.quote?.total ? `<p class="bk-total">${money(booking.quote.total)}</p>` : ''}${booking.status === 'pending' && booking.pendingExpiresAt ? `<p class="bk-expiry">ממתינה לאישור עד ${fmtDate(booking.pendingExpiresAt)}</p>` : ''}</div><span class="status-badge ${esc(booking.status)}">${statusLabel(booking.status)}</span></div>${bookingTimeline(booking, pmt)}${role === 'renter' && booking.status === 'approved' ? renterNextSteps(booking) : ''}${role === 'renter' && booking.status === 'active' && !booking.handover?.return ? '<p class="ev-note">לפני שמחזירים את הרכב — צלמו אותו שוב (סרטון, דלק, קילומטראז׳) דרך "תיעוד החזרה". זו ההוכחה שלכם למצב שבו הוחזר.</p>' : ''}${role === 'owner' && booking.status === 'approved' ? ownerHandoverHint(booking) : ''}${payPills ? `<div class="chips pill-row">${payPills}</div>` : ''}${booking.fulfillment === 'delivery' ? `<div class="ev-note deliv-note">🚚 מסירה${booking.deliveryAddress ? ` לכתובת: <bdi>${esc(booking.deliveryAddress)}</bdi>` : ' — הכתובת תואמה בצ׳אט'}</div>` : ''}<div class="chips">${primaryChips}</div>${moreBlock}${booking.adminNote || booking.adminAmount !== undefined ? `<p class="ev-note">הערת מנהל: ${esc(booking.adminNote || '')}${booking.adminAmount !== undefined ? ` · סכום מתוקן: ${money(booking.adminAmount)}` : ''}</p>` : ''}${booking.status === 'cancelled' && (booking.cancelledByRole || booking.cancelReason) ? `<p class="ev-note">בוטלה${booking.cancelledByRole ? ` על ידי ${({renter: 'השוכר', owner: 'בעל הרכב', admin: 'המנהל'})[booking.cancelledByRole] || ''}` : ''}${booking.cancelReason ? ` · סיבה: ${esc(booking.cancelReason)}` : ''}</p>` : ''}${endedNote}${cancelledPaidNote}${renterPaymentNote}</article>`;
+  }).join('') : emptyState(ICON.calendar,
+      role === 'renter' ? 'אין לך הזמנות עדיין' : 'אין הזמנות עדיין',
+      // The owner's "כשתתקבל בקשה היא תופיע כאן" is wrong for an ADMIN looking at the whole site's
+      // bookings — nobody is going to send THEM a request.
+      role === 'renter' ? 'מצאו רכב מהצי שלנו והזמינו — זה מהיר ופשוט.'
+        : role === 'admin' ? 'עדיין לא בוצעו הזמנות באתר. ברגע שתתקבל הזמנה ראשונה היא תופיע כאן.'
+        : 'כשתתקבל בקשת הזמנה היא תופיע כאן.',
+      role === 'renter' ? '<button class="btn primary" data-route="cars">חיפוש רכב</button>' : '')}</div>${listMoreBtn(`bookings-${role}`, sorted.length)}`;
 }
 
 function bindActions() {
   // "פרטי הרכב" on a booking card → open the car's detail modal (data-car-open can't be used on a button —
   // bindCarButtons deliberately ignores clicks landing on buttons).
   document.querySelectorAll('[data-view-car]').forEach(button => button.onclick = () => openCar(button.dataset.viewCar));
+  // Re-open the car with the original dates already filled in — but only while they are still in the
+  // future, and NEVER carrying the old requestId: booking-create treats a repeated requestId from the
+  // same renter as a duplicate and would hand back the dead booking instead of creating a new one.
+  document.querySelectorAll('[data-rebook]').forEach(button => button.onclick = () => {
+    const carId = button.dataset.rebook;
+    const previous = store.bookings[button.dataset.rebookFrom];
+    const [startDate, startHour] = String(previous?.startLocal || '').split('T');
+    const [endDate, endHour] = String(previous?.endLocal || '').split('T');
+    const stillAhead = startDate && new Date(`${startDate}T00:00`).getTime() > Date.now();
+    try {
+      if (stillAhead) sessionStorage.setItem(`cd-booking-draft-${carId}`, JSON.stringify({
+        startDate, endDate, startHour: startHour || '10:00', endHour: endHour || '10:00',
+        fulfillment: previous?.fulfillment || 'pickup', deliveryAddress: previous?.deliveryAddress || '',
+      }));
+      else sessionStorage.removeItem(`cd-booking-draft-${carId}`);
+    } catch {}
+    openCar(carId);
+    if (!stillAhead) toast('התאריכים הקודמים כבר עברו — בחרו תאריכים חדשים');
+  });
   // "הצגת עוד" on a long list grows that list by 50 and repaints the current dashboard in place.
   document.querySelectorAll('[data-list-more]').forEach(button => button.onclick = () => {
     listPages[button.dataset.listMore] = pageOf(button.dataset.listMore) + 50;
@@ -776,7 +1132,15 @@ function bindActions() {
     // Confirm the significant/irreversible transitions (reject denies the renter; done ends the rental) — the
     // forward steps (approve/start) don't need it. Also disable during the call so a double-click can't double-submit.
     if (status === 'rejected' && !confirm('לדחות את ההזמנה? השוכר יקבל הודעה שהבקשה נדחתה.')) return;
-    if (status === 'done' && !confirm('לסיים את ההשכרה?')) return;
+    // Ending the rental is the moment the renter's return documentation stops being routine — say so
+    // when it's still missing, instead of letting the owner close it without realising.
+    if (status === 'done') {
+      const bk = store.bookings[button.dataset.booking] || {};
+      const msg = bk.handover?.return
+        ? 'לסיים את ההשכרה?'
+        : 'השוכר עדיין לא תיעד את החזרת הרכב.\n\nאפשר לסיים — יישארו לו 24 שעות להשלים את התיעוד, ואחר כך לא תהיה הוכחה למצב שבו הרכב הוחזר.\n\nלסיים בכל זאת?';
+      if (!confirm(msg)) return;
+    }
     button.disabled = true;
     try { await setBookingStatus(button.dataset.booking, status); toast('ההזמנה עודכנה'); }
     catch (error) { toast(error.message); button.disabled = false; }
@@ -784,6 +1148,10 @@ function bindActions() {
   // audit #19: renter/owner can cancel a pending/approved booking themselves (with confirmation).
   document.querySelectorAll('[data-cancel-booking]').forEach(button => button.onclick = async () => {
     // The reason is optional but recorded (audit #12) — Escape/ביטול in the prompt aborts the whole action.
+    // Cancelling never touches the payment record, so a paid booking is being cancelled with money
+    // outstanding. Say the amount out loud before it happens, not after.
+    const cancelPmt = store.payments[button.dataset.cancelBooking];
+    if (cancelPmt && !confirm(`שולם על ההזמנה הזו ${money(cancelPmt.amount)}.\n\nביטול אינו מבצע החזר אוטומטי — תצטרכו לסגור את ההחזר ישירות מול הצד השני (הצ׳אט יישאר פתוח).\n\nלהמשיך לביטול?`)) return;
     const reason = prompt('לבטל את ההזמנה? אפשר לציין סיבה (רשות):', '');
     if (reason === null) return;
     button.disabled = true;
@@ -817,16 +1185,20 @@ function profileView() {
   const approved = verification.status === 'approved';
   const cardSvg = '<svg viewBox="0 0 96 64" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="92" height="60" rx="8" fill="#EDF2F7" stroke="#3F6B8E" stroke-width="2.5"/><rect x="10" y="12" width="26" height="26" rx="4" fill="#C9D8E5"/><circle cx="23" cy="21" r="5" fill="#3F6B8E"/><path d="M14 36c2-6 6-8 9-8s7 2 9 8" fill="#3F6B8E"/><rect x="44" y="14" width="42" height="5" rx="2.5" fill="#9FB6C9"/><rect x="44" y="24" width="34" height="5" rx="2.5" fill="#C9D8E5"/><rect x="44" y="34" width="38" height="5" rx="2.5" fill="#C9D8E5"/><rect x="10" y="48" width="76" height="5" rx="2.5" fill="#9FB6C9"/></svg>';
   const verLocked = done && !['needs_resubmission', 'rejected'].includes(verification.status);
+  // The birth date locks only once it HAS a value: registration never collects it, so a user who
+  // uploads documents first would otherwise be stuck with a blank, un-editable field that
+  // booking-create demands. Mirrors the same carve-out in profile-save.mjs.
+  const dobLocked = verLocked && !!profile.birthDate;
   return `<div class="section-head"><h2>פרופיל ואימות</h2><span class="status-badge ${approved ? 'approved' : 'pending'}">${esc(verificationLabel(verification.status))}</span></div>
-    <div class="avatar-row"><button type="button" class="avatar-click" id="avatar-open" title="החלפת תמונת פרופיל">${avatarHtml(profile, 116)}<span class="avatar-cam">${ICON.camera}</span></button><input hidden type="file" accept="image/jpeg,image/png,image/webp" id="avatar-file"><div class="avatar-actions"><b>תמונת פרופיל</b><button type="button" class="btn outline" id="avatar-open2">בחירת תמונה מהגלריה</button></div></div><form id="profile-form" class="card inset"><div class="form-grid"><div class="field"><label>שם חוקי ${verLocked ? '🔒' : ''}</label><input name="name" value="${esc(profile.name || '')}" disabled ${verLocked ? 'data-locked' : ''} required>${verLocked ? '<small>נעול לאחר הגשת מסמכים. לשינוי פנו לתמיכה.</small>' : ''}</div><div class="field"><label>טלפון</label><input name="phone" type="tel" inputmode="tel" autocomplete="tel" value="${esc(profile.phone || '')}" disabled></div><div class="field"><label>תאריך לידה ${verLocked ? '🔒' : ''}</label><input name="birthDate" type="date" value="${esc(profile.birthDate || '')}" disabled ${verLocked ? 'data-locked' : ''} required></div><div class="field"><label>מייל 🔒</label><input value="${esc(profile.email || store.user?.email || '')}" disabled data-locked></div></div><button type="button" class="btn outline block" id="profile-edit">עריכה</button><button class="btn primary block" id="profile-save" style="display:none">שמירת שינויים</button></form>
+    <div class="avatar-row"><button type="button" class="avatar-click" id="avatar-open" title="החלפת תמונת פרופיל">${avatarHtml(profile, 84)}<span class="avatar-cam">${ICON.camera}</span></button><input hidden type="file" accept="image/jpeg,image/png,image/webp" id="avatar-file"><div class="avatar-actions"><b>תמונת פרופיל</b><button type="button" class="btn outline" id="avatar-open2">בחירת תמונה מהגלריה</button></div></div><form id="profile-form" class="card inset"><div class="form-grid"><div class="field"><label>שם חוקי ${verLocked ? '🔒' : ''}</label><input name="name" value="${esc(profile.name || '')}" disabled ${verLocked ? 'data-locked' : ''} required>${verLocked ? '<small>נעול לאחר הגשת מסמכים. לשינוי פנו לתמיכה.</small>' : ''}</div><div class="field"><label>טלפון</label><input name="phone" type="tel" inputmode="tel" autocomplete="tel" value="${esc(profile.phone || '')}" disabled></div><div class="field"><label>תאריך לידה ${dobLocked ? '🔒' : ''}</label><input name="birthDate" type="date" value="${esc(profile.birthDate || '')}" disabled ${dobLocked ? 'data-locked' : ''} required>${!profile.birthDate ? '<small>חסר — נדרש כדי להזמין רכב. אפשר להשלים גם עכשיו.</small>' : ''}</div><div class="field"><label>מייל 🔒</label><input value="${esc(profile.email || store.user?.email || '')}" disabled data-locked></div></div><button type="button" class="btn outline block" id="profile-edit">עריכה</button><button class="btn primary block" id="profile-save" style="display:none">שמירת שינויים</button></form>
     ${verLocked
       ? `<div class="ver-card ver-locked ${approved ? 'ver-ok' : ''}"><span class="ver-illustration">${cardSvg}</span><span class="ver-main"><b>אימות רישיון נהיגה</b><small>${approved ? 'האימות אושר ונעול 🔒 — אפשר להזמין רכבים' : 'המסמכים נשלחו ונעולים 🔒 · בבדיקת מנהל'}</small></span><span class="ver-arrow">${approved ? '✓' : '🔒'}</span></div>`
-      : `<button type="button" class="ver-card" id="ver-wizard"><span class="ver-illustration">${cardSvg}</span><span class="ver-main"><b>אימות רישיון נהיגה</b><small>${verification.status === 'needs_resubmission' ? 'המנהל ביקש צילום מחדש — לחצו להעלאה' : 'צלמו רישיון (2 צדדים) וסלפי — לוקח דקה'}</small></span><span class="ver-arrow">←</span></button>`}
-    ${verification.reviewNote ? `<p class="ev-note">הערת מנהל: ${esc(verification.reviewNote)}</p>` : ''}<button type="button" class="btn outline block" id="logout-profile">יציאה מהחשבון</button>`;
+      : `<button type="button" class="ver-card" id="ver-wizard"><span class="ver-illustration">${cardSvg}</span><span class="ver-main"><b>אימות רישיון נהיגה</b><small>${verification.status === 'needs_resubmission' ? 'המנהל ביקש צילום מחדש — לחצו להעלאה' : verification.status === 'rejected' ? 'האימות לא אושר — אפשר לצלם ולשלוח שוב' : 'צלמו רישיון (2 צדדים) וסלפי — לוקח דקה'}</small></span><span class="ver-arrow">←</span></button>`}
+    ${verification.reviewNote ? `<p class="ev-note">${['rejected', 'needs_resubmission'].includes(verification.status) ? 'מה צריך לתקן' : 'הערת מנהל'}: ${esc(verification.reviewNote)}</p>` : ''}<button type="button" class="btn outline block" id="logout-profile">יציאה מהחשבון</button>`;
 }
 function ownerProfileView() {
   const profile = store.profile || {};
-  return `<h2>פרופיל</h2><div class="avatar-row"><button type="button" class="avatar-click" id="avatar-open" title="החלפת תמונת פרופיל">${avatarHtml(profile, 116)}<span class="avatar-cam">${ICON.camera}</span></button><input hidden type="file" accept="image/*" id="avatar-file"><div class="avatar-actions"><b>תמונת פרופיל</b><button type="button" class="btn outline" id="avatar-open2">בחירת תמונה מהגלריה</button></div></div><form id="profile-form" class="card inset"><div class="form-grid"><div class="field"><label>שם מלא</label><input name="name" value="${esc(profile.name || '')}" disabled required></div><div class="field"><label>טלפון</label><input name="phone" value="${esc(profile.phone || '')}" disabled></div><div class="field"><label>מייל 🔒</label><input value="${esc(profile.email || store.user?.email || '')}" disabled data-locked></div></div><button type="button" class="btn outline block" id="profile-edit">עריכה</button><button class="btn primary block" id="profile-save" style="display:none">שמירת שינויים</button></form><button type="button" class="btn outline block" id="logout-profile">יציאה מהחשבון</button>`;
+  return `<h2>פרופיל</h2><div class="avatar-row"><button type="button" class="avatar-click" id="avatar-open" title="החלפת תמונת פרופיל">${avatarHtml(profile, 84)}<span class="avatar-cam">${ICON.camera}</span></button><input hidden type="file" accept="image/*" id="avatar-file"><div class="avatar-actions"><b>תמונת פרופיל</b><button type="button" class="btn outline" id="avatar-open2">בחירת תמונה מהגלריה</button></div></div><form id="profile-form" class="card inset"><div class="form-grid"><div class="field"><label>שם מלא</label><input name="name" value="${esc(profile.name || '')}" disabled required></div><div class="field"><label>טלפון</label><input name="phone" value="${esc(profile.phone || '')}" disabled></div><div class="field"><label>מייל 🔒</label><input value="${esc(profile.email || store.user?.email || '')}" disabled data-locked></div></div><button type="button" class="btn outline block" id="profile-edit">עריכה</button><button class="btn primary block" id="profile-save" style="display:none">שמירת שינויים</button></form><button type="button" class="btn outline block" id="logout-profile">יציאה מהחשבון</button>`;
 }
 function bindProfileActions() {
   const form = document.querySelector('#profile-form');
@@ -1084,7 +1456,7 @@ export function chatsPage() {
   if (document.querySelector('#chat-shell')) { renderChatItems(); return; }
   app().innerHTML = `<div class="chat-shell" id="chat-shell">
     <aside class="chat-list">
-      <div class="chat-list-head"><button type="button" class="chat-page-back" id="chat-page-back" title="חזרה לאזור האישי" aria-label="חזרה">→</button><h2>צ׳אטים</h2>${store.isAdmin ? '<input id="chat-search" placeholder="חיפוש משתמש…" autocomplete="off">' : ''}</div>
+      <div class="chat-list-head"><button type="button" class="chat-page-back" id="chat-page-back" title="חזרה לאזור האישי" aria-label="חזרה">→</button><h2>צ׳אטים</h2>${store.isAdmin ? '<input id="chat-search" aria-label="חיפוש משתמש בצ׳אטים" placeholder="חיפוש משתמש…" autocomplete="off">' : ''}</div>
       <div class="chat-filter" id="chat-filter"></div>
       <div class="chat-items" id="chat-items"></div>
     </aside>
@@ -1149,14 +1521,14 @@ function chatItems() {
     // this screen (audit #48). ALL of them, newest first (user decision: no limits).
     const inquiryThreads = list(store.inquiries)
       .filter(inq => {
-        const car = store.cars[inq.carId] || {};
-        const renter = store.users[inq.renterUid] || {};
+        const car = store.cars[inq.carId] || inq.carSnapshot || {};
+        const renter = {name: inq.renterName, ...(store.users[inq.renterUid] || {})};
         return !query || `פנייה ${car.make || ''} ${car.model || ''} ${renter.name || ''} ${car.ownerName || ''}`.toLowerCase().includes(query);
       })
       .sort((a, b) => Number(b.updatedAt || b.createdAt || 0) - Number(a.updatedAt || a.createdAt || 0))
       .map(inq => {
-        const car = store.cars[inq.carId] || {};
-        const renter = store.users[inq.renterUid] || {};
+        const car = store.cars[inq.carId] || inq.carSnapshot || {};
+        const renter = {name: inq.renterName, ...(store.users[inq.renterUid] || {})};
         return {key: `i:${inq.id}`, emoji: ICON.car, title: `פנייה: ${`${car.make || 'רכב'} ${car.model || ''}`.trim()}`, subtitle: `${renter.name || 'שוכר'} ↔ ${car.ownerName || 'בעל הרכב'}`, live: true};
       });
     return [...supportThreads, ...inquiryThreads];
@@ -1166,9 +1538,11 @@ function chatItems() {
   const preview = (key, fallback) => { const m = threadMeta(key); return m?.text ? `${m.from === store.user?.uid ? 'את/ה: ' : ''}${m.text}` : fallback; };
   const timeOf = key => threadMeta(key)?.at || 0;
   const bookingItems = myBookings()
-    .filter(b => ['pending', 'approved', 'active', 'done'].includes(b.status))
+    // A cancelled booking that had money in it keeps its thread open for the refund (rev.187) — it has
+    // to be reachable from the chat list, not only from the booking card.
+    .filter(b => ['pending', 'approved', 'active', 'done'].includes(b.status) || (b.status === 'cancelled' && store.payments[b.id]))
     .map(b => {
-      const car = store.cars[b.carId] || {};
+      const car = store.cars[b.carId] || b.carSnapshot || {};
       const key = `b:${b.id}`;
       return {key, at: timeOf(key) || Number(b.updatedAt || b.createdAt || 0), emoji: ICON.car, title: `${car.make || 'רכב'} ${car.model || ''}`.trim(), subtitle: preview(key, role === 'owner' ? 'שיחה עם השוכר' : 'שיחה עם בעל הרכב'), status: b.status, live: ['pending', 'approved', 'active'].includes(b.status), unread: threadUnread(key)};
     });
@@ -1176,13 +1550,21 @@ function chatItems() {
   // an owner sees ones about their cars).
   const inquiryItems = list(store.inquiries)
     .map(inq => {
-      const car = store.cars[inq.carId] || {};
+      const car = store.cars[inq.carId] || inq.carSnapshot || {};
       const key = `i:${inq.id}`;
-      return {key, at: timeOf(key) || Number(inq.updatedAt || inq.createdAt || 0), emoji: ICON.chat, title: `${car.make || 'רכב'} ${car.model || ''}`.trim(), subtitle: preview(key, role === 'owner' ? 'פנייה משוכר (טרם הזמנה)' : 'שיחה עם בעל הרכב (טרם הזמנה)'), live: true, unread: threadUnread(key)};
+      // Two people asking about the SAME car produced two identical rows — the asker's name is the
+      // only thing that tells them apart, and store.users is unreadable to an owner.
+      const askerName = inq.renterName || store.users[inq.renterUid]?.name || '';
+      const carName = `${car.make || 'רכב'} ${car.model || ''}`.trim();
+      return {key, at: timeOf(key) || Number(inq.updatedAt || inq.createdAt || 0), emoji: ICON.chat, title: role === 'owner' && askerName ? `${carName} · ${askerName}` : carName, subtitle: preview(key, role === 'owner' ? `פנייה${askerName ? ` מ${askerName}` : ' משוכר'} (טרם הזמנה)` : 'שיחה עם בעל הרכב (טרם הזמנה)'), live: true, unread: threadUnread(key)};
     });
+  // A blocked user is allowed onto this page for one reason only — to appeal. Their booking and
+  // inquiry threads stay out of reach (the server would refuse them anyway).
+  const blocked = store.profile?.blocked === true && !store.isAdmin;
   const supportKey = `a:${store.user.uid}`;
   const support = {key: supportKey, at: timeOf(supportKey), emoji: ICON.chat, title: 'שירות לקוחות', subtitle: preview(supportKey, 'תמיכה טכנית · מענה מהיר'), live: true, unread: threadUnread(supportKey)};
   // Newest-active conversations first (support pinned when it has recent activity, else near the top).
+  if (blocked) return [support];
   return [support, ...bookingItems, ...inquiryItems].sort((a, b) => Number(b.at || 0) - Number(a.at || 0));
 }
 
@@ -1242,20 +1624,38 @@ function selectThread(key) {
   const booking = (isSupport || isInquiry) ? null : store.bookings[id];
   if (isInquiry && !inquiry) { pane.innerHTML = '<div class="chat-empty"><p>השיחה לא נמצאה</p></div>'; return; }
   if (!isSupport && !isInquiry && !booking) { pane.innerHTML = '<div class="chat-empty"><p>השיחה לא נמצאה</p></div>'; return; }
-  const car = booking ? store.cars[booking.carId] || {} : (inquiry ? store.cars[inquiry.carId] || {} : {});
+  const car = booking ? (store.cars[booking.carId] || booking.carSnapshot || {}) : (inquiry ? store.cars[inquiry.carId] || inquiry.carSnapshot || {} : {});
   const title = isSupport ? (store.isAdmin ? (store.users[id]?.name || store.users[id]?.email || `אורח · ${id.slice(-5)}`) : 'שירות לקוחות') : `${car.make || 'רכב'} ${car.model || ''}`.trim();
+  // Who is on the other end. The owner already has renterName on the booking; the renter gets the
+  // owner's name from the car record, which is public.
+  const otherParty = isSupport ? '' : (() => {
+    const meIsOwner = booking ? booking.ownerUid === store.user?.uid : inquiry?.ownerUid === store.user?.uid;
+    if (store.isAdmin) return [booking?.renterName || store.users[booking?.renterUid]?.name, car.ownerName].filter(Boolean).join(' ↔ ');
+    if (meIsOwner) {
+      const name = booking?.renterName || inquiry?.renterName || store.users[booking?.renterUid || inquiry?.renterUid]?.name || 'השוכר';
+      const score = userRating(booking?.renterUid || inquiry?.renterUid);
+      return score ? `${name} · ★ ${score.toFixed(1)}` : name;
+    }
+    return car.ownerName || 'בעל הרכב';
+  })();
   const isOwner = booking && booking.ownerUid === store.user.uid;
   const isRenter = booking && booking.renterUid === store.user.uid;
   const convEnded = booking ? booking.chatEnded === true : false;   // owner/admin pressed "סיום שיחה"
-  const live = (isSupport || isInquiry || ['pending', 'approved', 'active'].includes(booking?.status)) && !(convEnded && isRenter);
+  // rev.187 keeps a cancelled booking's thread open when money changed hands, so the refund can be
+  // arranged — the server allows it and the chat button offers it. The composer has to agree, or the
+  // renter arrives at the conversation and cannot type a word.
+  const refundOpen = booking?.status === 'cancelled' && !!store.payments[booking.id];
+  // A blocked user may write to support and nowhere else — the same rule message-send enforces.
+  const blockedElsewhere = store.profile?.blocked === true && !store.isAdmin && !isSupport;
+  const live = (isSupport || isInquiry || refundOpen || ['pending', 'approved', 'active'].includes(booking?.status)) && !(convEnded && isRenter) && !blockedElsewhere;
   const ev = booking ? evidenceState(booking, id) : null;
   const evReady = ev && ev.video && ev.fuel && ev.odometer && ev.payment;
 
   const headActions = `${booking && isOwner
-    ? (booking.status === 'approved' ? `<button class="btn gold ${evReady ? '' : 'soft-disabled'}" id="rental-start">התחלת השכרה</button>`
+    ? (booking.status === 'approved' ? `<button class="btn gold" id="rental-start"${evReady ? '' : ` disabled title="${esc(startBlockedReason({...booking, id}))}"`}>התחלת השכרה</button>`
       : booking.status === 'active' ? `<button class="btn primary" id="rental-end">סיום השכרה</button>` : '')
     : ''}${booking && (isOwner || store.isAdmin) && !convEnded && ['done', 'cancelled', 'rejected', 'expired'].includes(booking.status) ? '<button class="btn dark-out" id="chat-end" title="הצד השני לא יוכל לשלוח עוד הודעות">סיום שיחה</button>' : ''}${booking && (isOwner || store.isAdmin) && convEnded ? '<button class="btn dark-out" id="chat-reopen" title="פתיחה מחדש של השיחה לשני הצדדים">פתיחת שיחה מחדש</button>' : ''}${store.isAdmin ? '<button class="btn dark-out" id="chat-clear" title="מחיקת כל ההודעות">ניקוי</button>' : ''}`;
-  const checklist = booking && booking.status === 'approved'
+  const checklist = booking && booking.status === 'approved' && !isRenter
     ? `<div class="ev-checklist">${[['video', 'סרטון חוץ'], ['fuel', 'דלק'], ['odometer', 'קילומטראז׳'], ['payment', 'תשלום']].map(([k, label]) => `<span class="ev-status ${ev[k] ? 'ok' : ''}">${ev[k] ? '✓' : '○'} ${label}</span>`).join('')}</div>` : '';
   const evidenceRow = booking && booking.status === 'approved' && isRenter
     ? `<div class="evidence-row">
@@ -1265,12 +1665,12 @@ function selectThread(key) {
         <button type="button" class="ev-chip ${ev.payment ? 'ok' : ''}" id="ev-payment">תשלום</button>
       </div>` : '';
   const composer = live
-    ? `${evidenceRow}<form class="chat-composer" id="chat-composer" autocomplete="off"><label class="chat-attach" title="שליחת תמונה">${ICON.image}<input hidden type="file" accept="image/*" id="chat-photo"></label><input name="text" maxlength="2000" placeholder="כתבו הודעה…" value="${esc(chatState.draft)}"><button class="btn primary">שליחה</button></form>`
+    ? `${evidenceRow}<form class="chat-composer" id="chat-composer" autocomplete="off"><label class="chat-attach" title="שליחת תמונה">${ICON.image}<input hidden type="file" accept="image/*" id="chat-photo"></label><input name="text" aria-label="כתיבת הודעה" maxlength="2000" placeholder="כתבו הודעה…" value="${esc(chatState.draft)}"><button class="btn primary">שליחה</button></form>`
     : `<div class="chat-closed">${convEnded && isRenter ? 'השיחה נסגרה על ידי הצד השני — לא ניתן לשלוח הודעות נוספות' : 'ההשכרה הסתיימה — הצ׳אט פתוח רק מאישור ההזמנה ועד סיום ההשכרה'}</div>`;
 
   pane.innerHTML = `<header class="chat-head">
       <button class="chat-back" id="chat-back" aria-label="חזרה לרשימה">→</button><button class="chat-x" id="chat-close" aria-label="סגירת הצ׳אט">×</button>
-      <div class="chat-head-main"><h3>${esc(title)}</h3>${booking ? `<span class="status-badge ${esc(booking.status)}">${statusLabel(booking.status)}</span>` : isInquiry ? '<span class="pill ok">פנייה על רכב · טרם הזמנה</span>' : '<span class="pill ok">שירות לקוחות</span>'}</div>
+      <div class="chat-head-main"><h3>${esc(title)}</h3>${otherParty ? `<span class="chat-who">${esc(otherParty)}</span>` : ''}${booking ? `<span class="status-badge ${esc(booking.status)}">${statusLabel(booking.status)}</span>` : isInquiry ? '<span class="pill ok">פנייה על רכב · טרם הזמנה</span>' : '<span class="pill ok">שירות לקוחות</span>'}</div>
       <div class="chips">${headActions}</div>
     </header>${checklist}<div class="chat-msgs" id="chat-msgs"><div class="empty">טוען הודעות…</div></div>${composer}`;
 
@@ -1286,18 +1686,30 @@ function selectThread(key) {
       const text = form.text.value.trim();
       if (!text) return;
       form.text.value = ''; chatState.draft = '';
+      // The message travels through a serverless function, so the bubble only appears once the write
+      // lands AND the listener echoes it back. Clearing the field is the double-send guard, but on a
+      // slow connection it also means the text vanishes with nothing yet in the thread — which reads
+      // as "my message disappeared". Hold a visible sending state until the round trip finishes.
+      const sendBtn = form.querySelector('button');
+      const sendLabel = sendBtn ? sendBtn.textContent : '';
+      if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = 'שולח…'; }
       // ALWAYS pass userUid = the thread's user id. For the admin it's the person they're messaging;
       // for a regular user it's their own uid (harmlessly ignored server-side). Previously this was
       // gated on store.isAdmin — if that flag was momentarily false the message lost its target and
       // went to the admin's OWN thread instead of the user's. THAT was the "can't message users" bug.
       try { await sendMessage(isSupport ? {thread: 'admin', userUid: id, text} : isInquiry ? {inquiryId: id, text} : {bookingId: id, text}); }
       catch (error) { toast(error.message); form.text.value = text; chatState.draft = text; }
+      finally { if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = sendLabel; } }
     };
   }
   pane.querySelector('#chat-photo')?.addEventListener('change', async event => {
     const file = event.target.files[0];
     event.target.value = '';
     if (!file) return;
+    // Same gap the evidence chips had: one 3-second toast for an upload that can run much longer, with
+    // the attach button still live the whole time — so a second tap sends the photo twice.
+    const attach = pane.querySelector('.chat-attach');
+    attach?.classList.add('busy');
     try {
       toast('מעלה תמונה…');
       const dataUrl = await uploadPublicMedia(file, 'chat-photo', id);
@@ -1305,16 +1717,32 @@ function selectThread(key) {
       await sendMessage(isSupport ? {thread: 'admin', userUid: id, text: '', attachment} : isInquiry ? {inquiryId: id, text: '', attachment} : {bookingId: id, text: '', attachment});
       toast('התמונה נשלחה');
     } catch (error) { toast(error.message); }
+    finally { attach?.classList.remove('busy'); }
   });
   pane.querySelectorAll('[data-ev]').forEach(input => input.onchange = async () => {
     const file = input.files[0];
     if (!file) return;
+    // A phone video is easily 60MB+ and can upload for minutes. The old feedback was one toast that
+    // vanished after 3 seconds, leaving the renter staring at an unchanged chip with no idea whether
+    // anything was happening — and free to tap again and start a second upload of the same file.
+    const chip = input.closest('.ev-chip');
+    const label = chip ? chip.childNodes[0] : null;   // the text node before the hidden <input>
+    const original = label ? label.textContent : '';
+    const big = file.size > 25 * 1024 * 1024;
+    input.disabled = true;
+    chip?.classList.add('busy');
+    if (label) label.textContent = big ? 'מעלה… (קובץ גדול)' : 'מעלה…';
     try {
-      toast('מעלה קובץ…');
+      if (big) toast('הקובץ גדול — ההעלאה עשויה לקחת דקה או שתיים. אפשר להשאיר את המסך פתוח.');
       const path = await uploadPrivate(file, 'booking-media', id);
       await sendMessage({bookingId: id, text: EV_LABELS[input.dataset.ev], attachment: {path, type: `evidence-${input.dataset.ev}`}});
       toast('התיעוד נשלח לבעל הרכב');
     } catch (error) { toast(error.message); }
+    finally {
+      input.disabled = false; input.value = '';
+      chip?.classList.remove('busy');
+      if (label) label.textContent = original;
+    }
   });
   pane.querySelector('#ev-payment')?.addEventListener('click', () => paymentModal(id, async amount => {
     try { await sendMessage({bookingId: id, text: `נשלחה הוכחת תשלום על ${money(amount)}`}); } catch {}
@@ -1525,10 +1953,27 @@ async function viewHandoverModal(bookingId) {
   modal(`<div class="modal-head"><h2>תיעוד הזמנה</h2><button class="close" data-close-modal>×</button></div>${html}`);
 }
 
+// Contact strip shared by both sides of a booking. A number printed as text is not much use while
+// you're standing next to a car — these are the two actions people actually take.
+const waNumber = phone => String(phone || '').replace(/[^\d]/g, '').replace(/^0+/, '');
+function contactBlock(name, phone, role) {
+  if (!phone) return `<p class="mut">${esc(role)} לא הזין טלפון — אפשר להמשיך בצ׳אט.</p>`;
+  const wa = waNumber(phone);
+  return `<div class="contact-block">
+    <div class="cb-id"><b>${esc(name || role)}</b><span dir="ltr">${esc(phone)}</span></div>
+    <div class="chips"><a class="btn primary" href="tel:${esc(phone.replace(/\s/g, ''))}">📞 חיוג</a>${wa.length >= 8 ? `<a class="btn outline" href="https://wa.me/${esc(wa)}" target="_blank" rel="noopener">💬 וואטסאפ</a>` : ''}</div>
+  </div>`;
+}
 async function addressModal(bookingId) {
   try {
     const data = await api('private-car-details', {bookingId});
-    modal(`<div class="modal-head"><h2>פרטי איסוף</h2><button class="close" data-close-modal>×</button></div><div class="summary"><span>כתובת מלאה</span><b>${esc(data.fullAddress || 'לא הוגדרה')}</b></div>`);
+    const mapQ = encodeURIComponent(data.fullAddress || '');
+    modal(`<div class="modal-head"><h2>פרטי איסוף</h2><button class="close" data-close-modal>×</button></div>
+      <div class="summary"><span>כתובת מלאה</span><b><bdi>${esc(data.fullAddress || 'לא הוגדרה')}</bdi></b></div>
+      ${data.fullAddress ? `<a class="btn outline block" href="https://maps.google.com/?q=${mapQ}" target="_blank" rel="noopener">🗺️ ניווט לכתובת</a>` : ''}
+      <h3 class="doc-h">בעל הרכב</h3>${contactBlock(data.ownerName, data.ownerPhone, 'בעל הרכב')}
+      <button type="button" class="btn gold block" data-addr-chat="${esc(bookingId)}">💬 צ׳אט עם בעל הרכב</button>`);
+    document.querySelector('[data-addr-chat]')?.addEventListener('click', () => { closeModal(); openChatThread(`b:${bookingId}`); });
   } catch (error) { toast(error.message); }
 }
 
@@ -1561,7 +2006,7 @@ async function ownerRenterModal(uid) {
     const data = await api('user-private-profile', {uid});
     const rating = userRating(uid);
     const reviews = list(store.ratings).filter(r => r.type === 'user' && r.targetUid === uid && r.review).slice(0, 6);
-    modal(`<div class="modal-head"><h2 class="with-avatar">${avatarHtml(data.profile, 38)} ${esc(data.profile.name || data.profile.email || 'שוכר')}</h2><button class="close" data-close-modal>×</button></div><div class="summary"><span>מייל</span><b>${esc(data.profile.email || '—')}</b></div><div class="summary"><span>טלפון</span><b>${esc(data.profile.phone || '—')}</b></div><div class="summary"><span>דירוג</span><b>${stars(rating)} ${rating ? rating.toFixed(1) : 'חדש'}</b></div><div class="summary"><span>סטטוס אימות</span><b>${esc(verificationLabel(data.profile.verification?.status))}</b></div><h3 class="doc-h">מסמכי אימות</h3>${docGallery(data.documents)}${reviews.length ? `<div class="reviews"><h3>ביקורות על המשתמש</h3>${reviews.map(r => `<div class="review"><div class="review-head"><span class="review-stars">${stars(r.score)}</span><small>${fmtDate(r.createdAt)}</small></div><p>${esc(r.review)}</p></div>`).join('')}</div>` : ''}`);
+    modal(`<div class="modal-head"><h2 class="with-avatar">${avatarHtml(data.profile, 38)} ${esc(data.profile.name || data.profile.email || 'שוכר')}</h2><button class="close" data-close-modal>×</button></div><div class="summary"><span>מייל</span><b>${esc(data.profile.email || '—')}</b></div><div class="summary"><span>דירוג</span><b>${stars(rating)} ${rating ? rating.toFixed(1) : 'חדש'}</b></div><div class="summary"><span>סטטוס אימות</span><b>${esc(verificationLabel(data.profile.verification?.status))}</b></div>${contactBlock(data.profile.name, data.profile.phone, 'השוכר')}<h3 class="doc-h">מסמכי אימות</h3>${docGallery(data.documents)}${reviews.length ? `<div class="reviews"><h3>ביקורות על המשתמש</h3>${reviews.map(r => `<div class="review"><div class="review-head"><span class="review-stars">${stars(r.score)}</span><small>${fmtDate(r.createdAt)}</small></div><p>${esc(r.review)}</p></div>`).join('')}</div>` : ''}`);
     bindDocGallery();
   } catch (error) { toast(error.message); }
 }
@@ -1579,7 +2024,8 @@ async function adminUserModal(uid) {
     bindDocGallery();
     document.querySelector('[data-message-user]')?.addEventListener('click', () => { closeModal(); openChatThread(`a:${uid}`); });
     document.querySelectorAll('[data-review]').forEach(button => button.onclick = async () => {
-      const note = button.dataset.review === 'approved' ? '' : prompt('הערה למשתמש:') || '';
+      // This note is the user's ONLY explanation — it goes into their notification, SMS and profile.
+      const note = button.dataset.review === 'approved' ? '' : prompt('מה צריך לתקן? (נשלח למשתמש בהתראה וב-SMS)') || '';
       try { await approveVerification(uid, button.dataset.review, note); closeModal(); toast('סטטוס האימות עודכן'); }
       catch (error) { toast(error.message); }
     });
@@ -1606,7 +2052,7 @@ function ratingModal(bookingId, type) {
   };
 }
 
-export function carForm(car = null) {
+export function carForm(car = null, forOwnerUid = '') {
   const editing = Boolean(car?.id);
   // Photo manager state: up to 6 photos, one marked as main.
   const photos = editing ? carPhotoList(car).slice(0, 6) : [];
@@ -1623,14 +2069,21 @@ export function carForm(car = null) {
     <div class="form-grid">
       <div class="field"><label>יצרן <span class="req">*</span></label><select name="makeSelect" id="make-select">${selectOptions(CAR_MAKES, knownMake ? car.make : '')}<option value="__other" ${editing && !knownMake ? 'selected' : ''}>אחר…</option></select><input name="make" id="make-input" value="${esc(car?.make || '')}" placeholder="שם היצרן" style="${knownMake || !editing ? 'display:none' : ''};margin-top:6px"></div>
       <div class="field"><label>דגם <span class="req">*</span></label><select name="modelSelect" id="model-select"></select><input name="model" id="model-input" value="${esc(car?.model || '')}" placeholder="שם הדגם" style="display:none;margin-top:6px"></div>
-      <div class="field"><label>תת דגם <span class="mut">(רשות)</span></label><input name="trim" value="${esc(car?.trim || '')}" placeholder="לדוגמה Sport, Limited"></div>
       <div class="field"><label>שנה</label><select name="year">${selectOptions(carYears(), String(car?.year || new Date().getFullYear()))}</select></div>
       <div class="field"><label>סוג רכב <span class="req">*</span></label><select name="category" required>${selectOptions(CAR_TYPES, car?.category)}</select></div>
-      <div class="field"><label>סוג דלק</label><select name="fuel">${selectOptions(['בנזין','דיזל','היברידי','PHEV','חשמלי'], car?.fuel)}</select></div>
-      <div class="field"><label>תיבת הילוכים</label><select name="gear">${selectOptions(['אוטומט','ידני'], car?.gear)}</select></div>
-      <div class="field"><label>מספר מושבים</label><input name="seats" type="number" min="1" max="20" value="${esc(car?.seats || 5)}"></div>
-      <div class="field"><label>גיל מינימלי</label><input name="minAge" type="number" min="18" max="99" value="${esc(car?.minAge || 21)}"></div>
     </div>
+    <!-- Everything below has a sensible default, so it folds away: an owner can publish a car after
+         four fields instead of scrolling past nine. The inputs stay in the DOM, so formData() and the
+         per-step :invalid gating are unaffected. -->
+    <details class="field-more"><summary>פרטים נוספים <span class="mut">(רשות)</span></summary>
+      <div class="form-grid">
+        <div class="field"><label>תת דגם</label><input name="trim" value="${esc(car?.trim || '')}" placeholder="לדוגמה Sport, Limited"></div>
+        <div class="field"><label>סוג דלק</label><select name="fuel">${selectOptions(['בנזין','דיזל','היברידי','PHEV','חשמלי'], car?.fuel)}</select></div>
+        <div class="field"><label>תיבת הילוכים</label><select name="gear">${selectOptions(['אוטומט','ידני'], car?.gear)}</select></div>
+        <div class="field"><label>מספר מושבים</label><input name="seats" type="number" min="1" max="20" value="${esc(car?.seats || 5)}"></div>
+        <div class="field"><label>גיל מינימלי</label><input name="minAge" type="number" min="18" max="99" value="${esc(car?.minAge || 21)}"></div>
+      </div>
+    </details>
     </section>
     <section class="wiz-step" data-step="2">
     <p class="form-section-title">אופן ההשכרה <span class="req">*</span></p>
@@ -1892,7 +2345,7 @@ export function carForm(car = null) {
     const submit = document.querySelector('#car-submit');
     submit.disabled = true; submit.textContent = 'שומר…';
     try {
-      if (editing) await updateCar(car.id, data); else await createCar(data);
+      if (editing) await updateCar(car.id, data); else await createCar(data, forOwnerUid);
       try { sessionStorage.removeItem(draftKey); } catch {}  // the draft made it in — drop it
       closeModal(); toast(editing ? 'הרכב עודכן' : 'הרכב פורסם');
     } catch (error) { toast(error.message); submit.disabled = false; submit.textContent = editing ? 'שמירת שינויים' : 'פרסום הרכב'; }

@@ -72,10 +72,20 @@ function render() {
     bottomNav();
     // A user blocked by the admin is fully locked out of the app (every route) with a big notice. (This is
     // the reliable account-level lock; an optional IP-level block for logged-OUT access is separate.)
-    if (store.profile?.blocked === true && !store.isAdmin) {
+    // ...except the support thread. openChatThread navigates to #chats, so blocking that route too
+    // meant the appeal button just re-rendered this very screen — the door was never actually open.
+    // message-send lets a blocked user write ONLY to their own support thread, and the chat list is
+    // reduced to that one thread for them, so nothing else becomes reachable here.
+    if (store.profile?.blocked === true && !store.isAdmin && route !== 'chats') {
       resetPaint();
       const navEl = document.querySelector('#main-nav'); if (navEl) navEl.innerHTML = '';
-      document.querySelector('#app').innerHTML = '<section class="card blocked-screen"><div class="blocked-ic" aria-hidden="true">⛔</div><h1>הגישה נחסמה</h1><p>החשבון הזה נחסם על ידי הנהלת האתר.</p></section>';
+      // Leave ONE door open: a mistaken block must be appealable. message-send lets a blocked user
+      // write to their own support thread (and nothing else) precisely for this.
+      document.querySelector('#app').innerHTML = '<section class="card blocked-screen"><div class="blocked-ic" aria-hidden="true">⛔</div><h1>הגישה נחסמה</h1><p>החשבון הזה נחסם על ידי הנהלת האתר. אם לדעתכם מדובר בטעות, אפשר לכתוב לנו כאן ונבדוק.</p><button type="button" class="btn primary" id="blocked-support">פנייה לתמיכה</button></section>';
+      document.querySelector('#blocked-support')?.addEventListener('click', async () => {
+        const {openSupportChat} = await import('./views.js');
+        openSupportChat();
+      });
       return;
     }
     // Maintenance mode: only admins can browse; everyone else sees a notice (login stays open).

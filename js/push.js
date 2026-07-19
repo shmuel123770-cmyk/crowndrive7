@@ -15,6 +15,21 @@ export function pushSupported() {
   } catch { return false; }
 }
 
+// iOS only exposes Web Push to a PWA that was added to the Home Screen — in a normal Safari tab
+// `PushManager` doesn't exist, so pushSupported() is false and every notification prompt stays hidden.
+// `beforeinstallprompt` doesn't exist on iOS either, so the install tip never fires. Result: iPhone
+// users saw NOTHING and had no way to learn that notifications are possible at all. This tells them.
+export function iosNeedsInstall() {
+  try {
+    const ua = navigator.userAgent || '';
+    const isIOS = /iPad|iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+    if (!isIOS) return false;
+    const standalone = window.navigator.standalone === true
+      || window.matchMedia?.('(display-mode: standalone)')?.matches === true;
+    return !standalone && !('PushManager' in window);
+  } catch { return false; }
+}
+
 // Whether we should still OFFER to turn notifications on (supported, not blocked, not already on).
 export function pushPromptable() {
   return pushSupported() && Notification.permission === 'default';

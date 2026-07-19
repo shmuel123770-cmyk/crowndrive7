@@ -1,5 +1,6 @@
 import {getAdmin, verify, json, booking, cleanText, audit, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
 import {rateLimit, tooMany} from './_ratelimit.mjs';
+import crypto from 'node:crypto';
 export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
@@ -35,7 +36,14 @@ export async function handler(event) {
       return {bookingId: body.bookingId, type, authorUid: token.uid, targetUid, carId, score, review, createdAt};
     });
     if (!result.committed) return json(409, {error: 'כבר דירגת הזמנה זו'});
-    await db.ref(`publicRatings/${id}`).set({type, targetUid, carId, score, review, createdAt});
+    // The public projection strips bookingId + authorUid — but publicRatings is world-readable, so a
+    // key of `<bookingId>_<type>_<authorUid>` would hand back both to anyone who lists the node. Hash
+    // it: still deterministic (a re-write overwrites rather than duplicating), no longer readable.
+    await db.ref(`publicRatings/${crypto.createHash('sha1').update(id).digest('hex')}`).set({type, targetUid, carId, score, review, createdAt});
+    // Let the two participants see that this rating is already used up. Lives on the booking (readable
+    // only by them + admin), so the rate button can retire itself instead of losing a written review
+    // to a 409. The private ratings/ node stays admin-only, so the client can't check it directly.
+    await db.ref(`bookings/${body.bookingId}/ratedBy/${token.uid}_${type}`).set(true).catch(() => {});
     await audit(token.uid, 'rating_submit', type, type === 'car' ? carId : targetUid, {score});
     return json(200, {ok: true});
   } catch (error) {

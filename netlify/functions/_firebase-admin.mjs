@@ -19,13 +19,16 @@ export function getAdmin() {
   }, 'crowndrive-netlify');
   return app;
 }
-export async function verify(event) {
+// A blocked account is refused everywhere. `allowBlocked` exists for ONE caller — message-send's own
+// support thread — so someone blocked by mistake can appeal instead of being sealed out with no
+// recourse at all. The token is still marked, and that caller re-checks it before doing anything else.
+export async function verify(event, {allowBlocked = false} = {}) {
   const header = event.headers.authorization || event.headers.Authorization || '';
   if (!header.startsWith('Bearer ')) throw Object.assign(new Error('Unauthorized'), {status: 401});
   const decoded = await getAdmin().auth().verifyIdToken(header.slice(7));
-  const blocked = (await getAdmin().database().ref(`users/${decoded.uid}/blocked`).once('value')).val();
-  if (blocked === true) throw Object.assign(new Error('החשבון חסום על ידי מנהל האתר'), {status: 403});
-  return decoded;
+  const blocked = (await getAdmin().database().ref(`users/${decoded.uid}/blocked`).once('value')).val() === true;
+  if (blocked && !allowBlocked) throw Object.assign(new Error('החשבון חסום על ידי מנהל האתר'), {status: 403});
+  return blocked ? {...decoded, blocked: true} : decoded;
 }
 // Admin activity feed — every important event lands here (admin-only read).
 export async function notifyAdmin(type, text, meta = {}) {

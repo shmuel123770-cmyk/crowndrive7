@@ -55,10 +55,22 @@ export async function startPublic() {
   // (hidden cars are absent from it). During the transition — mirror not yet seeded, or the locked-
   // down rules not yet published — the legacy world-readable cars node fills the gap; once cars is
   // locked its read simply fails, legacyCatalog empties, and only the mirror remains.
-  store.publicUnsubs.push(listen(refs.publicCars, v => { store.publicCatalog = v; mergeCars(); store.publicReady = true; }, 'cars',
-    () => { if (!store.publicReady) { store.publicReady = true; emit('cars'); } }));
-  store.publicUnsubs.push(listen(refs.cars, v => { store.legacyCatalog = v; mergeCars(); store.publicReady = true; }, 'cars',
-    () => { store.legacyCatalog = {}; mergeCars(); if (!store.publicReady) { store.publicReady = true; } emit('cars'); }));
+  // The legacy fallback is now attempted ONLY if the mirror comes back empty. Once the locked-down
+  // rules are published (they are), reading `cars` as a visitor always fails — so firing it eagerly
+  // cost every single page load, for every visitor, a doomed request and a console error. The safety
+  // net still exists for a site whose mirror hasn't been seeded yet; it just no longer runs when
+  // there is plainly nothing to rescue.
+  let legacyTried = false;
+  const tryLegacyCatalog = () => {
+    if (legacyTried) return;
+    legacyTried = true;
+    store.publicUnsubs.push(listen(refs.cars, v => { store.legacyCatalog = v; mergeCars(); store.publicReady = true; }, 'cars',
+      () => { store.legacyCatalog = {}; mergeCars(); if (!store.publicReady) { store.publicReady = true; } emit('cars'); }));
+  };
+  store.publicUnsubs.push(listen(refs.publicCars, v => {
+    store.publicCatalog = v; mergeCars(); store.publicReady = true;
+    if (!v || !Object.keys(v).length) tryLegacyCatalog();
+  }, 'cars', () => { tryLegacyCatalog(); if (!store.publicReady) { store.publicReady = true; emit('cars'); } }));
   // Read the SANITIZED public projection (carId/targetUid/type/score/review/date) — the full ratings
   // node (with authorUid + bookingId) is no longer public (audit #3).
   store.publicUnsubs.push(listen(refs.publicRatings, v => { store.ratings = v; }, 'ratings'));

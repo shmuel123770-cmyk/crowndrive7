@@ -2,6 +2,7 @@ import {getAdmin, verify, json, isAdmin, booking, audit, cleanText, notifyAdmin,
 import {smsUser} from './_sms.mjs';
 import {rateLimit, tooMany} from './_ratelimit.mjs';
 import {storageObjectExists} from './_storage.mjs';
+const RETURN_GRACE_MS = 24 * 60 * 60 * 1000;
 const transitions = {
   pending: ['approved', 'rejected', 'cancelled'],
   approved: ['active', 'cancelled'],
@@ -155,7 +156,13 @@ export async function handler(event) {
       if (!renter && !admin) return json(403, {error: 'התיעוד נשלח על ידי השוכר'});
       if (!['pickup', 'return'].includes(body.stage)) return json(400, {error: 'שלב לא תקין'});
       if (body.stage === 'pickup' && current.status !== 'approved' && !admin) return json(409, {error: 'אפשר לתעד איסוף רק לאחר אישור ההזמנה'});
-      if (body.stage === 'return' && current.status !== 'active' && !admin) return json(409, {error: 'אפשר לתעד החזרה רק בזמן השכרה פעילה'});
+      // A renter may still document the return for 24h after the owner closed the rental — otherwise
+      // ending it (which the owner can do at any moment) destroys the renter's only proof of the
+      // car's condition at handback.
+      if (body.stage === 'return' && !admin) {
+        const withinGrace = current.status === 'done' && Date.now() - Number(current.endedAt || 0) <= RETURN_GRACE_MS;
+        if (current.status !== 'active' && !withinGrace) return json(409, {error: 'אפשר לתעד החזרה בזמן ההשכרה ועד 24 שעות מסיומה'});
+      }
       if (current.handover?.[body.stage] && !admin) return json(409, {error: 'התיעוד כבר הוגש'});
       if (body.stage === 'pickup') {
         const payment = (await db.ref(`payments/${body.bookingId}`).once('value')).val();
@@ -183,6 +190,17 @@ export async function handler(event) {
         submittedAt: Date.now(),
       });
       await audit(token.uid, 'handover_submit', 'booking', body.bookingId, {stage: body.stage});
+      // The owner is the one who acts on this — inspecting the car and closing the rental — but nothing
+      // told them it had arrived. Pickup evidence at least lands in the chat; this form was silent.
+      if (token.uid === current.renterUid && current.ownerUid) {
+        const ref7 = String(body.bookingId).slice(-7);
+        const isReturn = body.stage === 'return';
+        const text = isReturn
+          ? `השוכר תיעד את החזרת הרכב (${ref7}) — אפשר לבדוק ולסיים את ההשכרה`
+          : `השוכר תיעד את מצב הרכב באיסוף (${ref7})`;
+        await notifyUser(current.ownerUid, 'status', text, {bookingId: body.bookingId});
+        if (isReturn) await sendPush(current.ownerUid, '📋 תיעוד החזרה הגיע', 'השוכר תיעד את החזרת הרכב — אפשר לבדוק ולסיים את ההשכרה.', '/#dashboard');
+      }
       return json(200, {ok: true});
     }
     // Owner (or admin) ends the conversation: after this the RENTER can no longer send in this thread.

@@ -1,5 +1,5 @@
 import {store, list, myRole, myBookings, myCars, carRating, carRatingCount, userRating} from './store.js';
-import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail, paintApp, resetPaint, fieldError, TERMS_VERSION} from './core.js';
+import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail, paintApp, resetPaint, fieldError, TERMS_VERSION, heCount} from './core.js';
 import {register, login, logout, sendVerify, refreshEmailStatus, sendPasswordReset, createOwnProfile, signInGuest} from './auth.js';
 import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, startInquiry, setBookingStatus, registerDocument, approveVerification, sendMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction, setMaintenance, setCarStatus, setCarFeatured, checkIsAdmin} from './db.js';
 import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './media.js';
@@ -175,6 +175,18 @@ const hourOptions = (selected = '10:00') => Array.from({length: 24}, (_, h) => {
 // Custom big calendar picker (the native one is tiny and unstylable).
 const pad2 = n => String(n).padStart(2, '0');
 const fmtHe = iso => { if (!iso) return 'בחרו תאריך'; const [y, m, d] = iso.split('-'); return `${d}.${m}.${y}`; };
+// Mirrors ageFromBirthDate() in netlify/functions/booking-create.mjs — same UTC arithmetic, so the
+// gate and the server can never disagree on a birthday boundary. null = no usable date on file.
+function ageFromBirthDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))) return null;
+  const birth = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(birth.getTime())) return null;
+  const now = new Date();
+  let age = now.getUTCFullYear() - birth.getUTCFullYear();
+  const month = now.getUTCMonth() - birth.getUTCMonth();
+  if (month < 0 || (month === 0 && now.getUTCDate() < birth.getUTCDate())) age--;
+  return age;
+}
 function newYorkIso(dateValue, timeValue) {
   const match = `${dateValue || ''}T${timeValue || ''}`.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/);
   if (!match) return '';
@@ -193,11 +205,20 @@ function newYorkIso(dateValue, timeValue) {
   if (nyWallUtc(guess) < wallUtc) guess += 3600000;
   return new Date(guess).toISOString();
 }
-const dateField = (name, label, value = '') => `<div class="date-field"><span class="df-label">${label}</span><button type="button" class="date-btn ${value ? 'has-val' : ''}" data-date-btn aria-expanded="false"><span>${fmtHe(value)}</span><i class="date-ic" aria-hidden="true">${ICON.cal}</i></button><input type="hidden" name="${name}" value="${value}"></div>`;
-function bindDateFields(scope = document) {
-  scope.querySelectorAll('[data-date-btn]').forEach(button => button.onclick = event => { event.stopPropagation(); openCalendar(button); });
+// A car's TAKEN ranges. reservations/<carId> is written only when a booking is approved and removed on
+// cancel/reject/done, so it holds exactly the ['approved','active'] set that booking-create's overlap
+// check uses — the client can therefore warn on precisely what the server would reject, no more.
+function takenRanges(car) {
+  return Object.values(store.reservations?.[car?.id] || {})
+    .map(r => [new Date(r.startAt).getTime(), new Date(r.endAt).getTime()])
+    .filter(([s, e]) => Number.isFinite(s) && Number.isFinite(e));
 }
-function openCalendar(button) {
+const rangeTaken = (ranges, s, e) => ranges.some(([bs, be]) => s < be && e > bs);
+const dateField = (name, label, value = '') => `<div class="date-field"><span class="df-label">${label}</span><button type="button" class="date-btn ${value ? 'has-val' : ''}" data-date-btn aria-expanded="false"><span>${fmtHe(value)}</span><i class="date-ic" aria-hidden="true">${ICON.cal}</i></button><input type="hidden" name="${name}" value="${value}"></div>`;
+function bindDateFields(scope = document, busy = []) {
+  scope.querySelectorAll('[data-date-btn]').forEach(button => button.onclick = event => { event.stopPropagation(); openCalendar(button, busy); });
+}
+function openCalendar(button, busy = []) {
   document.querySelectorAll('.cal-pop').forEach(p => p.remove());
   const hidden = button.parentElement.querySelector('input[type="hidden"]');
   const today = new Date(); today.setHours(0, 0, 0, 0);
@@ -228,7 +249,10 @@ function openCalendar(button) {
       const iso = `${y}-${pad2(m + 1)}-${pad2(d)}`;
       const date = new Date(y, m, d);
       const fullDate = new Intl.DateTimeFormat('he-IL', {weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'}).format(date);
-      cells += `<button type="button" role="gridcell" aria-label="${fullDate}" aria-selected="${hidden.value === iso}" ${date.getTime() === today.getTime() ? 'aria-current="date"' : ''} class="cal-day ${hidden.value === iso ? 'sel' : ''} ${date.getTime() === today.getTime() ? 'today' : ''}" ${date < today ? 'disabled' : ''} data-iso="${iso}">${d}</button>`;
+      // A day already covered by an approved booking can't be picked at all — the old picker offered it
+      // happily and the range was only rejected on submit.
+      const dayTaken = rangeTaken(busy, date.getTime(), date.getTime() + 86400000);
+      cells += `<button type="button" role="gridcell" aria-label="${fullDate}${dayTaken ? ' — תפוס' : ''}" aria-selected="${hidden.value === iso}" ${date.getTime() === today.getTime() ? 'aria-current="date"' : ''} class="cal-day ${hidden.value === iso ? 'sel' : ''} ${date.getTime() === today.getTime() ? 'today' : ''} ${dayTaken ? 'taken' : ''}" ${date < today || dayTaken ? 'disabled' : ''} data-iso="${iso}">${d}</button>`;
     }
     const monthId = `cal-month-${y}-${m}`;
     pop.innerHTML = `<div class="cal-head"><button type="button" class="cal-nav" data-nav="-1" aria-label="החודש הקודם">‹</button><b id="${monthId}">${monthName}</b><button type="button" class="cal-nav" data-nav="1" aria-label="החודש הבא">›</button></div><div class="cal-grid" role="grid" aria-labelledby="${monthId}">${['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'].map(x => `<span class="cal-dow" role="columnheader">${x}</span>`).join('')}${cells}</div>`;
@@ -422,8 +446,8 @@ export function home() {
         <button class="btn gold" id="home-search">חפש רכב</button>
       </div>
       <div class="hero-stats">
-        <div class="hstat"><b>${ready ? all.length : '·'}</b><span>רכבים באתר</span></div>
-        <div class="hstat"><b>${ready ? available.length : '·'}</b><span>זמינים כעת</span></div>
+        <div class="hstat"><b>${ready ? all.length : '·'}</b><span>${all.length === 1 ? 'רכב באתר' : 'רכבים באתר'}</span></div>
+        <div class="hstat"><b>${ready ? available.length : '·'}</b><span>${available.length === 1 ? 'זמין כעת' : 'זמינים כעת'}</span></div>
       </div>
       <div class="cat-row" aria-label="קיצורי דרך לפי סוג רכב">${[
         ['סדאן', '<svg viewBox="0 0 48 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 17h40M8 17c0-1 1-5 3-6l6-1 6-5h8l7 5 5 1c2 1 2 5 2 6"/><circle cx="14" cy="17" r="3"/><circle cx="35" cy="17" r="3"/></svg>'],
@@ -648,10 +672,13 @@ export function featuredFirst(cars) {
 // Placeholder cards shown while the FIRST cars snapshot is still loading — so the catalog area has a
 // calm shimmer instead of a "no cars" message or an empty gap (the hero above already rendered).
 const carSkeletons = (n = 6) => Array.from({length: n}, () => '<article class="card car car-sk" aria-hidden="true"><div class="car-photo sk"></div><div class="car-body"><span class="sk-line sk-lg"></span><span class="sk-line sk-sm"></span><span class="sk-line sk-md"></span><span class="sk-btn"></span></div></article>').join('');
-export function carGrid(cars, manage = false, period = null) {
+export function carGrid(cars, manage = false, period = null, empty = null) {
   if (!cars.length) {
     if (!store.publicReady) return `<div class="grid">${carSkeletons(6)}</div>`;  // still loading — not "no cars"
-    return `<div class="grid">${emptyState(ICON.car, 'אין כרגע רכבים זמינים', 'נסו שוב בקרוב — אנחנו מוסיפים רכבים כל הזמן.')}</div>`;
+    // The default copy is written for a RENTER browsing the catalogue ("we add cars all the time").
+    // Shown to an owner staring at their own empty garage it tells them to wait for someone else to
+    // do the very thing they are here to do — callers with an owner context pass their own text.
+    return `<div class="grid">${empty || emptyState(ICON.car, 'אין כרגע רכבים זמינים', 'נסו שוב בקרוב — אנחנו מוסיפים רכבים כל הזמן.')}</div>`;
   }
   let ordered = featuredFirst(cars);
   if (period) {
@@ -728,6 +755,9 @@ const carFilters = readSession('cd-car-filters', {make: '', model: '', year: '',
 // works for guests and members alike, no backend, survives sessions on the same phone.
 const FAV_KEY = 'cd-favorites';
 function favList() { try { return new Set(JSON.parse(localStorage.getItem(FAV_KEY) || '[]')); } catch { return new Set(); } }
+// The badge must count what the filter will actually SHOW. Favourites live in localStorage forever, so
+// a car that was hidden or deleted still counts there — the chip promised "מועדפים (5)" and delivered 3.
+function favVisibleCount() { let n = 0; for (const id of favList()) if (store.cars[id]) n++; return n; }
 function toggleFavorite(id) {
   const favs = favList();
   if (favs.has(id)) favs.delete(id); else favs.add(id);
@@ -772,14 +802,14 @@ function openFilterSheet(all, rerender, persistFilters) {
       <div class="field"><label>שנה</label><select id="fs-year"><option value="">כל השנים</option>${years.map(t => opt(t, t, temp.year)).join('')}</select></div>
       <div class="field"><label>זמינות</label><select id="fs-availability">${opt('all', 'כל הרכבים', temp.availability)}${opt('available', 'זמינים כעת', temp.availability)}</select></div>
       <div class="field"><label>מיון</label><select id="fs-sort">${opt('new', 'החדשים ביותר', temp.sort)}${opt('priceLow', 'מהזול ליקר', temp.sort)}${opt('priceHigh', 'מהיקר לזול', temp.sort)}</select></div>
-      <div class="field"><label>סוג רכב</label><div class="type-chips">${['סדאן', 'SUV', 'פיקאפ', 'מיניוואן'].map(t => `<button type="button" class="type-chip ${temp.category === t ? 'on' : ''}" data-fs-chip="${t}">${t}</button>`).join('')}<button type="button" class="type-chip fav-chip ${temp.favorites ? 'on' : ''}" id="fs-favs">♥ מועדפים${favList().size ? ` (${favList().size})` : ''}</button></div></div>
-      <div class="sheet-actions"><button type="button" class="btn outline" id="fs-clear">נקה מסננים</button><button type="button" class="btn primary" id="fs-apply">הצגת ${count()} רכבים</button></div>
+      <div class="field"><label>סוג רכב</label><div class="type-chips">${['סדאן', 'SUV', 'פיקאפ', 'מיניוואן'].map(t => `<button type="button" class="type-chip ${temp.category === t ? 'on' : ''}" data-fs-chip="${t}">${t}</button>`).join('')}<button type="button" class="type-chip fav-chip ${temp.favorites ? 'on' : ''}" id="fs-favs">♥ מועדפים${favVisibleCount() ? ` (${favVisibleCount()})` : ''}</button></div></div>
+      <div class="sheet-actions"><button type="button" class="btn outline" id="fs-clear">נקה מסננים</button><button type="button" class="btn primary" id="fs-apply">הצגת ${heCount(count(), 'רכב', 'רכבים')}</button></div>
     </div>`);
   const sheet = document.querySelector('#modal-root .filter-sheet');
   const refresh = () => {
     sheet.querySelector('#fs-model').innerHTML = modelOpts();
     sheet.querySelectorAll('[data-fs-chip]').forEach(c => c.classList.toggle('on', temp.category === c.dataset.fsChip));
-    sheet.querySelector('#fs-apply').textContent = `הצגת ${count()} רכבים`;
+    sheet.querySelector('#fs-apply').textContent = `הצגת ${heCount(count(), 'רכב', 'רכבים')}`;
   };
   [['#fs-make', 'make'], ['#fs-model', 'model'], ['#fs-year', 'year'], ['#fs-availability', 'availability'], ['#fs-sort', 'sort']].forEach(([id, key]) => {
     sheet.querySelector(id).onchange = e => { temp[key] = e.target.value; if (key === 'make') temp.model = ''; refresh(); };
@@ -804,7 +834,7 @@ export function cars() {
   const startTime = searchPeriod.startAt ? searchPeriod.startAt.slice(11, 16) : '10:00';
   const endTime = searchPeriod.endAt ? searchPeriod.endAt.slice(11, 16) : '10:00';
   const periodNote = period ? `<div class="period-active"><span>מחירים מחושבים לפי הטווח שבחרתם (<b>${BUCKET_HE[period.bucket]}</b>). רכבים המושכרים בתנאים אחרים מוצגים בסוף עם הבהרה.</span><button type="button" class="link-btn" id="period-clear">ניקוי תאריכים</button></div>` : '';
-  const html = `<div class="cars-page fleet-zone"><div class="section-head"><h1>כל הרכבים באתר</h1><span class="mut">${rows.length} רכבים</span></div>
+  const html = `<div class="cars-page fleet-zone"><div class="section-head"><h1>כל הרכבים באתר</h1><span class="mut">${heCount(rows.length, 'רכב', 'רכבים')}</span></div>
     <div class="period-search" id="period-search">
       ${dateField('carsStart', 'תאריך איסוף', startDate)}
       <label class="hour-field"><span>שעת איסוף</span><select id="cars-start-hour">${hourOptions(startTime)}</select></label>
@@ -821,7 +851,7 @@ export function cars() {
       <select id="f-availability" aria-label="סינון לפי זמינות">${opt('all', 'כל הרכבים', carFilters.availability)}${opt('available', 'זמינים כעת', carFilters.availability)}</select>
       <select id="f-sort" aria-label="מיון רכבים">${opt('new', 'מיון: החדשים ביותר', carFilters.sort)}${opt('priceLow', 'מיון: מהזול ליקר', carFilters.sort)}${opt('priceHigh', 'מיון: מהיקר לזול', carFilters.sort)}</select>
       ${(carFilters.make || carFilters.model || carFilters.year || carFilters.category || carFilters.availability !== 'all' || carFilters.sort !== 'new') ? '<button class="btn outline" id="f-clear">ניקוי</button>' : ''}
-      <div class="type-chips"><button class="type-chip fav-chip ${carFilters.favorites ? 'on' : ''}" data-fav-filter aria-pressed="${!!carFilters.favorites}">♥ מועדפים${favList().size ? ` (${favList().size})` : ''}</button>${['סדאן', 'SUV', 'פיקאפ', 'מיניוואן'].map(t => `<button class="type-chip ${carFilters.category === t ? 'on' : ''}" data-type-chip="${t}">${t}</button>`).join('')}</div>
+      <div class="type-chips"><button class="type-chip fav-chip ${carFilters.favorites ? 'on' : ''}" data-fav-filter aria-pressed="${!!carFilters.favorites}">♥ מועדפים${favVisibleCount() ? ` (${favVisibleCount()})` : ''}</button>${['סדאן', 'SUV', 'פיקאפ', 'מיניוואן'].map(t => `<button class="type-chip ${carFilters.category === t ? 'on' : ''}" data-type-chip="${t}">${t}</button>`).join('')}</div>
     </div>
     ${all.length && !rows.length
     ? `<div class="grid">${emptyState(ICON.car, 'לא נמצאו רכבים לסינון הזה', 'יש רכבים באתר — אבל אף אחד מהם לא עונה על הסינון שבחרתם.')}</div><div class="see-all"><button type="button" class="btn primary see-all-btn" id="cars-clear-empty">ניקוי הסינון והצגת כל הרכבים</button></div>`
@@ -877,6 +907,28 @@ export function openCar(id) {
   // "Contact owner" is offered to everyone except the admin and the car's own owner (the handler asks a
   // guest / logged-out visitor to sign in). It opens a DIRECT renter↔owner thread — no booking needed.
   const canInquire = !store.isAdmin && (!store.user || car.ownerUid !== store.user.uid);
+  // Tell the visitor UP FRONT what's still needed to book, instead of letting them fill the whole form
+  // and get bounced by the server. Status-aware: sign in → verify licence → wait for review → book.
+  const signedIn = store.user && !store.user.isAnonymous;
+  const verStatus = store.profile?.verification?.status;
+  const isOwnCar = signedIn && car.ownerUid === store.user.uid;
+  const minAge = Number(car.minAge || 21);
+  const age = ageFromBirthDate(store.profile?.birthDate);
+  // Order matters: a blocker the user CANNOT clear (own car / wrong account type / too young for THIS
+  // car) must win over the licence prompt — otherwise we'd send an owner to photograph a licence that
+  // still won't let them book. The birth-date prompt also comes BEFORE the licence one: uploading
+  // documents locks the identity fields, so a user who photographs first can no longer fill the date
+  // that booking-create requires.
+  const bookingGate = car.status === 'hidden' ? null
+    : !signedIn ? {icon: '👤', title: 'התחברו כדי להזמין', text: 'הרשמה לוקחת פחות מדקה — שם, מייל וסיסמה.', cta: 'התחברות / הרשמה', act: 'auth'}
+    : isOwnCar ? {icon: '🚗', title: 'זה הרכב שלך', text: 'אי אפשר להזמין רכב שאתם עצמכם מפרסמים. לניהול הרכב עברו לאזור האישי.', cta: 'לרכבים שלי', act: 'mycars'}
+    : (store.isAdmin || store.profile?.role === 'owner') ? {icon: '🔑', title: 'חשבון בעל רכב — אי אפשר להזמין', text: 'החשבון הזה מוגדר כבעל רכב. להשכרת רכב צריך חשבון שוכר — כתבו לנו ונסדר את זה.', cta: 'פנייה לתמיכה', act: 'support'}
+    : age !== null && age < minAge ? {icon: '🚫', title: `הרכב הזה מגיל ${minAge}`, text: `לפי תאריך הלידה בפרופיל אתם בני ${age}. באתר יש רכבים עם גיל מינימלי נמוך יותר — שווה לבדוק.`, cta: 'לרכבים אחרים', act: 'browse'}
+    : age === null ? {icon: '🎂', title: 'חסר תאריך לידה בפרופיל', text: 'צריך אותו כדי לאשר את גיל הנהיגה. לוקח 10 שניות, וכדאי להשלים לפני העלאת המסמכים.', cta: 'השלמת תאריך לידה', act: 'birthdate'}
+    : verStatus === 'approved' ? null
+    : verStatus === 'pending' ? {icon: '⏳', title: 'המסמכים שלך בבדיקה', text: 'נעדכן אותך ברגע שהאימות יאושר — ואז אפשר להזמין כל רכב באתר.', cta: '', act: ''}
+    : {icon: '🪪', title: 'אימות רישיון — שלב אחד לפני הזמנה', text: 'צלמו רישיון נהיגה (2 צדדים) וסלפי. לוקח דקה, וזה חד-פעמי.', cta: 'אימות עכשיו', act: 'verify'};
+  const gateHtml = bookingGate ? `<div class="book-gate"><span class="bg-ic">${bookingGate.icon}</span><div class="bg-body"><b>${esc(bookingGate.title)}</b><small>${esc(bookingGate.text)}</small></div>${bookingGate.cta ? `<button type="button" class="btn primary block" id="gate-cta" data-gate-act="${bookingGate.act}">${esc(bookingGate.cta)}</button>` : ''}</div>` : '';
   const draftKey = `cd-booking-draft-${car.id}`;
   const draft = readSession(draftKey, {});
   const requestId = draft.requestId || crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`;
@@ -891,23 +943,29 @@ export function openCar(id) {
   modal(`<div class="modal-head"><h2>${esc(car.make || '')} ${esc(car.model || '')} ${esc(car.trim || '')}</h2><button class="close" data-close-modal>×</button></div>
     ${gallery}
     <div class="car-detail-head">${availPill(car.status)}${newBadge(car)}${mode ? `<span class="mode-badge lg">${mode.label}</span>` : ''}${car.ownerName ? `<span class="owner-tag">בעל הרכב: ${esc(car.ownerName)}</span>` : ''}</div>
-    <div class="detail-summaries">
-      <div class="summary"><span>שנה</span><b>${esc(car.year || '—')}</b></div>
-      ${car.category ? `<div class="summary"><span>סוג רכב</span><b>${esc(car.category)}</b></div>` : ''}
-      ${car.fuel ? `<div class="summary"><span>סוג דלק</span><b>${esc(car.fuel)}</b></div>` : ''}
-      ${car.gear ? `<div class="summary"><span>תיבת הילוכים</span><b>${esc(car.gear)}</b></div>` : ''}
-      ${car.seats ? `<div class="summary"><span>מושבים</span><b>${esc(car.seats)}</b></div>` : ''}
-      <div class="summary"><span>גיל מינימלי</span><b>${esc(car.minAge || 21)}</b></div>
+    <!-- Mobile declutter: the DECISION info (price + rating) stays visible; the rest of the spec sheet
+         folds into "מפרט מלא" so the modal opens short and scannable. -->
+    <div class="detail-summaries key-specs">
       ${onRequest ? '<div class="summary"><span>מחיר</span><b>שלחו הודעה</b></div>' : `${car.priceHourly ? `<div class="summary"><span>מחיר לשעה</span><b>${money(car.priceHourly)}</b></div>` : ''}${car.dailyPrice ? `<div class="summary"><span>מחיר יומי</span><b>${money(car.dailyPrice)}</b></div>` : ''}${car.priceWeekly ? `<div class="summary"><span>מחיר לשבוע</span><b>${money(car.priceWeekly)}</b></div>` : ''}`}
-      ${car.deliveryEnabled ? `<div class="summary"><span>מסירה</span><b>${car.deliveryCost ? money(car.deliveryCost) : 'זמינה'}</b></div>` : ''}
-      <div class="summary"><span>דירוג</span><b>${stars(carRating(car.id))} ${carRating(car.id) ? carRating(car.id).toFixed(1) : 'חדש'}</b></div>
+      <div class="summary"><span>דירוג</span><b>${carRating(car.id) ? `${stars(carRating(car.id))} ${carRating(car.id).toFixed(1)}` : '<span class="rate-new">חדש באתר — אין דירוגים עדיין</span>'}</b></div>
     </div>
+    <details class="spec-more"><summary>מפרט מלא</summary>
+      <div class="detail-summaries">
+        <div class="summary"><span>שנה</span><b>${esc(car.year || '—')}</b></div>
+        ${car.category ? `<div class="summary"><span>סוג רכב</span><b>${esc(car.category)}</b></div>` : ''}
+        ${car.fuel ? `<div class="summary"><span>סוג דלק</span><b>${esc(car.fuel)}</b></div>` : ''}
+        ${car.gear ? `<div class="summary"><span>תיבת הילוכים</span><b>${esc(car.gear)}</b></div>` : ''}
+        ${car.seats ? `<div class="summary"><span>מושבים</span><b>${esc(car.seats)}</b></div>` : ''}
+        <div class="summary"><span>גיל מינימלי</span><b>${esc(car.minAge || 21)}</b></div>
+        ${car.deliveryEnabled ? `<div class="summary"><span>מסירה</span><b>${car.deliveryCost ? money(car.deliveryCost) : 'זמינה'}</b></div>` : ''}
+      </div>
+    </details>
     ${onRequest && canInquire ? '<div class="price-contact-cta"><div><b>שלחו הודעה לקבלת מחיר</b><small>המחיר נקבע מול בעל הרכב — שלחו הודעה כדי לקבל אותו.</small></div><button type="button" class="btn gold" id="price-contact">שליחת הודעה לקבלת מחיר</button></div>' : ''}
     ${canInquire && !onRequest ? `<div class="owner-contact-cta"><div><b>יש לכם שאלה על הרכב?</b><small>דברו ישירות עם בעל הרכב עוד לפני שליחת הבקשה.</small></div><button type="button" class="btn dark-out" id="contact-owner">${ICON.chat} צור קשר עם בעל הרכב</button></div>` : ''}
     ${reviewsHtml}
     <button type="button" class="btn outline block car-share-btn" id="car-share"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="10.5" x2="15.4" y2="6.5"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/></svg> שיתוף הרכב בוואטסאפ</button>
-    ${car.status !== 'hidden' ? `<div class="avail-section"><div class="avail-head"><h3>זמינות</h3><div class="avail-nav"><button type="button" class="cal-nav" id="avail-prev" aria-label="החודש הקודם">‹</button><b id="avail-month"></b><button type="button" class="cal-nav" id="avail-next" aria-label="החודש הבא">›</button></div></div><div class="avail-cal" id="avail-cal" aria-label="לוח זמינות"></div><div class="avail-legend"><span class="lg free">פנוי — לחיצה קובעת תאריך איסוף</span><span class="lg busy">תפוס</span></div></div>` : ''}
-    ${car.status === 'hidden' ? '<div class="chat-closed">הרכב אינו זמין להזמנה כרגע</div>' : `<form id="booking-form" autocomplete="on"><div class="booking-form-head"><span>${rented ? 'שריון מראש' : 'בקשת הזמנה'}</span><h3>בחירת מועד וקבלת מחיר</h3><small>כל השעות לפי ניו יורק (ET)</small></div>${rented ? `<div class="notice">🕐 הרכב מושכר כרגע — אפשר לשריין אותו מראש: בחרו תאריכים עתידיים, ובעל הרכב יאשר בהתאם לזמינות בתאריכים שבחרתם.${freesAt ? ` צפוי להתפנות בערך ב־${fmtDate(freesAt)}.` : ''}</div>` : ''}<div class="form-grid">${dateField('startDate', 'תאריך איסוף', bStart)}<div class="field"><label>שעת איסוף</label><select name="startHour">${hourOptions(bStartH)}</select></div>${dateField('endDate', 'תאריך החזרה', bEnd)}<div class="field"><label>שעת החזרה</label><select name="endHour">${hourOptions(bEndH)}</select></div></div><div class="booking-est" id="booking-est" aria-live="polite"></div><div class="field"><label>אופן קבלה</label><select name="fulfillment"><option value="pickup" ${draft.fulfillment !== 'delivery' ? 'selected' : ''}>איסוף עצמי</option>${car.deliveryEnabled ? `<option value="delivery" ${draft.fulfillment === 'delivery' ? 'selected' : ''}>מסירה</option>` : ''}</select></div><div class="field" id="delivery-address-field"><label>כתובת מסירה</label><input name="deliveryAddress" autocomplete="street-address" value="${esc(draft.deliveryAddress || '')}" placeholder="רחוב, מספר, עיר"></div><label class="booking-consent"><input type="checkbox" name="termsAccepted" required><span>קראתי ואני מסכים/ה ל<a href="terms.html" target="_blank" rel="noopener">תנאי השימוש</a>, כולל תנאי הביטול המפורטים בהם.</span></label><button type="submit" class="btn primary block booking-submit-main" data-label="${rented ? 'שליחת בקשת שריון' : 'שליחת בקשה'}">${rented ? 'שליחת בקשת שריון' : 'שליחת בקשה'}</button></form><div class="mobile-booking-bar"><div><small>${rented ? 'שריון מראש' : 'סיכום הזמנה'}</small><b id="mobile-booking-total">בחרו תאריכים</b></div><button type="submit" form="booking-form" class="btn primary" data-label="${rented ? 'שליחת בקשת שריון' : 'שליחת בקשה'}">${rented ? 'בקשת שריון' : 'שליחת בקשה'}</button></div>`}`);
+    ${car.status !== 'hidden' ? `<details class="avail-more"><summary>לוח זמינות — בדיקת תאריכים תפוסים</summary><div class="avail-section"><div class="avail-head"><h3>זמינות</h3><div class="avail-nav"><button type="button" class="cal-nav" id="avail-prev" aria-label="החודש הקודם">‹</button><b id="avail-month"></b><button type="button" class="cal-nav" id="avail-next" aria-label="החודש הבא">›</button></div></div><div class="avail-cal" id="avail-cal" aria-label="לוח זמינות"></div><div class="avail-legend"><span class="lg free">פנוי — לחיצה קובעת תאריך איסוף</span><span class="lg busy">תפוס</span></div></div></details>` : ''}
+    ${car.status === 'hidden' ? '<div class="chat-closed">הרכב אינו זמין להזמנה כרגע</div>' : `${gateHtml}<form id="booking-form" autocomplete="on"><div class="booking-form-head"><span>${rented ? 'שריון מראש' : 'בקשת הזמנה'}</span><h3>בחירת מועד וקבלת מחיר</h3><small>כל השעות לפי ניו יורק (ET)</small></div>${rented ? `<div class="notice">🕐 הרכב מושכר כרגע — אפשר לשריין אותו מראש: בחרו תאריכים עתידיים, ובעל הרכב יאשר בהתאם לזמינות בתאריכים שבחרתם.${freesAt ? ` צפוי להתפנות בערך ב־${fmtDate(freesAt)}.` : ''}</div>` : ''}<div class="form-grid">${dateField('startDate', 'תאריך איסוף', bStart)}<div class="field"><label>שעת איסוף</label><select name="startHour">${hourOptions(bStartH)}</select></div>${dateField('endDate', 'תאריך החזרה', bEnd)}<div class="field"><label>שעת החזרה</label><select name="endHour">${hourOptions(bEndH)}</select></div></div><div class="booking-est" id="booking-est" aria-live="polite"></div><div class="field"><label>אופן קבלה</label><select name="fulfillment"><option value="pickup" ${draft.fulfillment !== 'delivery' ? 'selected' : ''}>איסוף עצמי</option>${car.deliveryEnabled ? `<option value="delivery" ${draft.fulfillment === 'delivery' ? 'selected' : ''}>מסירה</option>` : ''}</select></div><div class="field" id="delivery-address-field"><label>כתובת מסירה</label><input name="deliveryAddress" autocomplete="street-address" value="${esc(draft.deliveryAddress || '')}" placeholder="רחוב, מספר, עיר"></div><label class="booking-consent"><input type="checkbox" name="termsAccepted" required><span>קראתי ואני מסכים/ה ל<a href="terms.html" target="_blank" rel="noopener">תנאי השימוש</a>, כולל תנאי הביטול המפורטים בהם.</span></label>${bookingGate ? '' : `<button type="submit" class="btn primary block booking-submit-main" data-label="${rented ? 'שליחת בקשת שריון' : 'שליחת בקשה'}">${rented ? 'שליחת בקשת שריון' : 'שליחת בקשה'}</button>`}</form><div class="mobile-booking-bar"><div><small>${rented ? 'שריון מראש' : 'סיכום הזמנה'}</small><b id="mobile-booking-total">בחרו תאריכים</b></div>${bookingGate ? `<button type="button" class="btn primary" data-gate-act="${bookingGate.act || 'none'}">${esc(bookingGate.cta || 'ממתין לאישור')}</button>` : `<button type="submit" form="booking-form" class="btn primary" data-label="${rented ? 'שליחת בקשת שריון' : 'שליחת בקשה'}">${rented ? 'בקשת שריון' : 'שליחת בקשה'}</button>`}</div>`}`);
   const galleryImg = document.querySelector('#gallery-img');
   galleryImg?.addEventListener('error', event => { event.currentTarget.src = fallbackImage; }, {once: true});
   document.querySelectorAll('[data-photo]').forEach(button => button.onclick = () => {
@@ -921,6 +979,16 @@ export function openCar(id) {
   });
   // Share: the link points at the share-card endpoint, so WhatsApp previews THIS car's photo and
   // price (crawlers don't run JS); real visitors get forwarded straight to the car's deep link.
+  // Booking gate actions: sign in, or go straight to the licence-verification card in the personal area.
+  document.querySelectorAll('[data-gate-act]').forEach(button => button.onclick = () => {
+    const act = button.dataset.gateAct;
+    if (act === 'auth') { saveAuthReturn({carId: car.id}); closeModal(); location.hash = 'auth'; return; }
+    if (act === 'verify') { store.dashTab = 'profile'; closeModal(); location.hash = 'dashboard'; toast('צלמו רישיון וסלפי — ואפשר להזמין'); return; }
+    if (act === 'mycars') { store.dashTab = store.isAdmin ? 'myCars' : 'cars'; closeModal(); location.hash = 'dashboard'; return; }
+    if (act === 'support') { closeModal(); openSupportChat(); return; }
+    if (act === 'birthdate') { store.dashTab = 'profile'; closeModal(); location.hash = 'dashboard'; toast('הוסיפו תאריך לידה ושמרו — ואפשר להמשיך'); return; }
+    if (act === 'browse') { closeModal(); location.hash = 'cars'; return; }
+  });
   document.querySelector('#car-share')?.addEventListener('click', async () => {
     const shareUrl = `${location.origin}/api/share?car=${encodeURIComponent(car.id)}`;
     const text = `${car.make || ''} ${car.model || ''}${car.year ? ' ' + car.year : ''} להשכרה בקראון הייטס · Crown Drive`.trim();
@@ -936,9 +1004,7 @@ export function openCar(id) {
   const availCal = document.querySelector('#avail-cal');
   if (availCal) {
     let availView = new Date();
-    const availRanges = Object.values(store.reservations?.[car.id] || {})
-      .map(r => [new Date(r.startAt).getTime(), new Date(r.endAt).getTime()])
-      .filter(([s, e]) => Number.isFinite(s) && Number.isFinite(e));
+    const availRanges = takenRanges(car);
     const paintAvail = () => {
       const y = availView.getFullYear(), mo = availView.getMonth();
       document.querySelector('#avail-month').textContent = new Intl.DateTimeFormat('he-IL', {month: 'long', year: 'numeric'}).format(new Date(y, mo, 1));
@@ -977,7 +1043,8 @@ export function openCar(id) {
     document.querySelectorAll('.thumb').forEach(t => t.classList.toggle('active', t === event.currentTarget));
   });
   const bookingForm = document.querySelector('#booking-form');
-  if (bookingForm) bindDateFields(bookingForm);
+  const carTaken = takenRanges(car);
+  if (bookingForm) bindDateFields(bookingForm, carTaken);
   if (bookingForm) {
     // Live price estimate: recompute the total from the chosen dates by the same duration rule as
     // search (hours→hourly, days→daily, week+→weekly) and warn if the range doesn't fit this car.
@@ -1004,6 +1071,11 @@ export function openCar(id) {
         const only = mode ? mode.short : carBuckets(car).map(b => BUCKET_HE[b]).join(' / ');
         estBox.innerHTML = `<div class="period-note">רכב זה זמין להשכרה ${only} בלבד — לא מתאים לטווח שבחרתם</div>`;
         if (mobileTotal) mobileTotal.textContent = 'הטווח אינו מתאים';
+        return;
+      }
+      if (rangeTaken(carTaken, s, e)) {
+        estBox.innerHTML = '<div class="period-note">הרכב כבר מוזמן בחלק מהטווח שבחרתם — בחרו תאריכים אחרים (לוח הזמינות מראה מה תפוס)</div>';
+        if (mobileTotal) mobileTotal.textContent = 'הטווח תפוס';
         return;
       }
       const est = estimatePrice(car, s, e);
@@ -1044,6 +1116,9 @@ export function openCar(id) {
       // Immediate feedback for a range the car's rental mode doesn't cover (the server also enforces this).
       const s = new Date(data.startAt).getTime(), e = new Date(data.endAt).getTime();
       if (!onRequest && e > s && !carServesPeriod(car, s, e)) return toast('הרכב אינו מושכר לטווח שבחרתם');
+      // Same rule as booking-create's overlap check — stop here rather than letting the request go out
+      // and come back rejected after the renter filled the whole form.
+      if (rangeTaken(carTaken, s, e)) return toast('הרכב כבר מוזמן בחלק מהטווח שבחרתם — בחרו תאריכים אחרים');
       submitButtons.forEach(button => { button.disabled = true; button.setAttribute('aria-busy', 'true'); button.dataset.label = button.textContent; button.textContent = 'שולח…'; });
       const bookingId = await createBooking(car, data);
       try { sessionStorage.removeItem(draftKey); } catch {}

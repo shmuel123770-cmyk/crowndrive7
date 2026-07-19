@@ -79,7 +79,13 @@ export async function handler(event) {
       }
       if ('birthDate' in body) {
         const date = /^\d{4}-\d{2}-\d{2}$/.test(String(body.birthDate)) ? String(body.birthDate) : '';
-        if (identityLocked && date !== String(existing.birthDate || '')) return json(409, {error: 'תאריך הלידה נעול בזמן האימות — לשינוי פנו למנהל האתר'});
+        // The lock protects a date the admin already verified against being CHANGED — it must not
+        // block FILLING a blank one. Registration never asks for a birth date, so a user who uploads
+        // documents first gets locked with an empty field, and booking-create then demands one they
+        // can no longer enter: a permanent dead end reachable only through support. Empty → settable.
+        const wasEmpty = !String(existing.birthDate || '');
+        if (identityLocked && !wasEmpty && date !== String(existing.birthDate)) return json(409, {error: 'תאריך הלידה נעול בזמן האימות — לשינוי פנו למנהל האתר'});
+        if (identityLocked && wasEmpty && !date) return json(400, {error: 'תאריך לידה לא תקין'});
         patch.birthDate = date;
       }
       patch.updatedAt = Date.now();

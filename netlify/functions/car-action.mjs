@@ -64,8 +64,18 @@ export async function handler(event) {
     const db = getAdmin().database();
     if (!admin && userProfile?.role !== 'owner') return json(403, {error: 'בעל רכב בלבד'});
     if (body.action === 'create') {
+      // An admin may publish a car ON BEHALF of an owner (the admin's user page offers it). Without
+      // this the car would be created under the ADMIN's uid and then need an ownership transfer,
+      // which is blocked whenever the car already has a live booking.
+      let ownerUid = token.uid, ownerProfile = userProfile;
+      if (admin && body.ownerUid && body.ownerUid !== token.uid) {
+        ownerUid = cleanText(body.ownerUid, 128);
+        ownerProfile = await profile(ownerUid);
+        if (!ownerProfile) return json(404, {error: 'בעל הרכב לא נמצא'});
+        if (ownerProfile.role !== 'owner') return json(409, {error: 'המשתמש אינו מוגדר כבעל רכב — שנו את סוג החשבון שלו קודם'});
+      }
       const id = db.ref('cars').push().key;
-      const car = publicCar(body.data || {}, token.uid, {}, userProfile?.name || '');
+      const car = publicCar(body.data || {}, ownerUid, {}, ownerProfile?.name || '');
       if (!car.make || !car.model) return json(400, {error: 'יצרן ודגם הם חובה'});
       if (!car.photos.length) return json(400, {error: 'יש להוסיף לפחות תמונה אחת של הרכב'});
       // Pricing and address stay flexible by the owner's choice (user decision) — no server-side
@@ -75,9 +85,14 @@ export async function handler(event) {
       await db.ref().update({
         [`cars/${id}`]: record,
         [`publicCars/${id}`]: record,  // public mirror (audit #45)
-        [`privateCarDetails/${id}`]: {ownerUid: token.uid, fullAddress, updatedAt: Date.now()},
+        [`privateCarDetails/${id}`]: {ownerUid, fullAddress, updatedAt: Date.now()},
       });
-      await audit(token.uid, 'car_create', 'car', id);
+      await audit(token.uid, 'car_create', 'car', id, ownerUid !== token.uid ? {onBehalfOf: ownerUid} : {});
+      if (ownerUid !== token.uid) {
+        const text = `המנהל פרסם עבורך רכב חדש: ${car.make} ${car.model}`;
+        await notifyUser(ownerUid, 'car', text);
+        await smsUser(ownerUid, `CrownDrive: ${text}`);
+      }
       await notifyAdmin('car', `רכב חדש פורסם: ${car.make} ${car.model}`, {carId: id, by: token.uid});
       return json(200, {ok: true, id});
     }
@@ -101,6 +116,20 @@ export async function handler(event) {
       if (blocked && !admin) return json(409, {error: 'לא ניתן למחוק רכב עם הזמנה פתוחה'});
       await db.ref().update({[`cars/${id}`]: null, [`publicCars/${id}`]: null, [`privateCarDetails/${id}`]: null});
       await audit(token.uid, 'car_delete', 'car', id);
+      const carLabel = `${existing.make || ''} ${existing.model || ''}`.trim() || 'רכב';
+      if (admin && existing.ownerUid && existing.ownerUid !== token.uid) {
+        const text = `הרכב שלך (${carLabel}) הוסר מהאתר על ידי המנהל. לפרטים פנו לתמיכה.`;
+        await notifyUser(existing.ownerUid, 'car', text);
+        await smsUser(existing.ownerUid, `CrownDrive: ${text}`);
+      }
+      // Deleting also removes privateCarDetails — a renter mid-rental silently loses the pickup
+      // address. Whoever had a live booking on this car has to hear it from us, not find out.
+      for (const [bookingId, b] of Object.entries(active.val() || {})) {
+        if (!['pending', 'approved', 'active'].includes(b?.status) || !b.renterUid) continue;
+        const text = `הרכב (${carLabel}) בהזמנה ${String(bookingId).slice(-7)} הוסר מהאתר. פנו לתמיכה להמשך טיפול.`;
+        await notifyUser(b.renterUid, 'car', text);
+        await smsUser(b.renterUid, `CrownDrive: ${text}`);
+      }
       return json(200, {ok: true});
     }
     if (body.action === 'status') {
@@ -113,6 +142,17 @@ export async function handler(event) {
         // Hiding removes the car from the public mirror entirely (audit #45); unhiding restores it.
         [`publicCars/${id}`]: status !== 'hidden' ? stamped : null,
       });
+      // An ADMIN can flip someone else's car. Hiding it pulls it from the public site and stops all new
+      // bookings — an owner who isn't told just sees their listing quietly stop earning.
+      if (admin && existing.ownerUid && existing.ownerUid !== token.uid && status !== existing.status) {
+        const name = `${existing.make || 'הרכב'} ${existing.model || ''}`.trim();
+        const text = status === 'hidden'
+          ? `הרכב שלך (${name}) הוסתר מהאתר על ידי המנהל ואינו מקבל הזמנות. לפרטים פנו לתמיכה.`
+          : existing.status === 'hidden' ? `הרכב שלך (${name}) הוחזר לתצוגה באתר ומקבל הזמנות שוב.`
+          : `סטטוס הרכב שלך (${name}) שונה על ידי המנהל ל${status === 'rented' ? 'תפוס' : 'פנוי'}.`;
+        await notifyUser(existing.ownerUid, 'car', text);
+        await smsUser(existing.ownerUid, `CrownDrive: ${text}`);
+      }
       // Pre-reserve waitlist: the owner flipped the car back to AVAILABLE — renters with a pending
       // request hear about it right away (best-effort; requires Twilio env).
       if (status === 'available' && existing.status === 'rented') {

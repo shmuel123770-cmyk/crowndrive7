@@ -9,17 +9,28 @@ import {validateImageDataUrl} from './_media.mjs';
 // Owner↔renter chat is open from the moment the renter REQUESTS (pending) — so they can coordinate before
 // approval — through the active rental, until it's marked done.
 const CHAT_OPEN = new Set(['pending', 'approved', 'active']);
+// Cancelling does NOT touch the payment record — the site takes no money and processes no refunds, so
+// a refund can only be arranged between the two people. Closing the thread the moment a PAID booking
+// is cancelled leaves the renter's money out with no way to reach the owner. The owner still has
+// "סיום שיחה" if the conversation has run its course.
 const EVIDENCE_KEYS = {'evidence-video': 'video', 'evidence-fuel': 'fuel', 'evidence-odometer': 'odometer'};
 const ATTACHMENT_TYPES = new Set(['evidence-video', 'evidence-fuel', 'evidence-odometer', 'photo']);
 
 export async function handler(event) {
   try {
     if (event.httpMethod !== 'POST') return json(405, {error: 'Method not allowed'});
-    const token = await verify(event);
+    // Blocked accounts are allowed THROUGH here only to appeal — see the re-check below.
+    const token = await verify(event, {allowBlocked: true});
     if (await maintenanceBlocked(token.uid)) return json(503, {error: 'האתר בתחזוקה כרגע — נסו שוב בעוד מספר דקות'});  // audit #23
     if (!(await rateLimit(token.uid, 'message', 20, 60 * 1000))) throw tooMany();
     const body = parseBody(event);
     if (!body) return json(400, {error: 'הבקשה גדולה או פגומה — נסו תמונה קטנה יותר'});
+    // A blocked user may write to their OWN support thread and nothing else: no booking chats, no
+    // inquiries, no deletions, no writing into someone else's thread. Being blocked by mistake must
+    // not mean being sealed out with no way to say so.
+    if (token.blocked && !(body.thread === 'admin' && !body.deleteId && (!body.userUid || body.userUid === token.uid))) {
+      return json(403, {error: 'החשבון חסום על ידי מנהל האתר'});
+    }
     const db = getAdmin().database();
     const admin = await isAdmin(token.uid);
     // Delete a single message: the SENDER may delete their own; an admin may delete any. Verified by
@@ -119,7 +130,11 @@ export async function handler(event) {
     const value = await booking(bookingId);
     if (!value) return json(404, {error: 'הזמנה לא נמצאה'});
     if (!admin && ![value.ownerUid, value.renterUid].includes(token.uid)) return json(403, {error: 'אין הרשאה'});
-    if (!admin && !CHAT_OPEN.has(value.status)) return json(409, {error: 'הצ׳אט פתוח רק מאישור ההזמנה ועד סיום ההשכרה'});
+    if (!admin && !CHAT_OPEN.has(value.status)) {
+      const paid = value.status === 'cancelled'
+        && (await db.ref(`payments/${bookingId}`).once('value')).exists();
+      if (!paid) return json(409, {error: 'הצ׳אט פתוח רק מאישור ההזמנה ועד סיום ההשכרה'});
+    }
     // Owner/admin ended the conversation → the renter can no longer send (owner + admin still can).
     if (value.chatEnded && token.uid === value.renterUid) return json(403, {error: 'השיחה נסגרה על ידי הצד השני'});
 

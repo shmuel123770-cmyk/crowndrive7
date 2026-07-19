@@ -1,4 +1,5 @@
-import {getAdmin, verify, json, isAdmin, cleanText, audit, parseBody} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, isAdmin, cleanText, audit, notifyUser, sendPush, parseBody} from './_firebase-admin.mjs';
+import {smsUser} from './_sms.mjs';
 import {rateLimit, tooMany} from './_ratelimit.mjs';
 export async function handler(event) {
   try {
@@ -38,6 +39,24 @@ export async function handler(event) {
     }
     await db.ref().update(updates);
     await audit(token.uid, 'verification_review', 'user', uid, {status});
+    // Tell the user. Every comparable decision (booking approve/reject, payment approve/reject) notifies
+    // the party it affects — verification, the gate that decides whether they can rent AT ALL, used to be
+    // silent. A rejected user kept waiting for a decision that had already been made.
+    const reviewNote = cleanText(note, 500);
+    const withNote = text => reviewNote ? `${text} · ${reviewNote}` : text;
+    if (status === 'approved') {
+      await notifyUser(uid, 'verification', 'האימות שלך אושר ✓ — אפשר להזמין רכבים באתר');
+      await sendPush(uid, '✓ האימות אושר!', 'אפשר להתחיל להזמין רכבים באתר.', '/#cars');
+      await smsUser(uid, 'CrownDrive: האימות שלך אושר — אפשר להזמין רכבים באתר.');
+    } else if (status === 'rejected') {
+      await notifyUser(uid, 'verification', withNote('האימות לא אושר'));
+      await sendPush(uid, 'האימות לא אושר', withNote('היכנסו לאזור האישי לפרטים.'), '/#dashboard');
+      await smsUser(uid, withNote('CrownDrive: האימות שלך לא אושר. היכנסו לאזור האישי לפרטים.'));
+    } else if (status === 'needs_resubmission') {
+      await notifyUser(uid, 'verification', withNote('נדרש צילום מחדש של מסמכי האימות'));
+      await sendPush(uid, 'נדרש צילום מחדש', withNote('היכנסו לאזור האישי כדי להעלות שוב.'), '/#dashboard');
+      await smsUser(uid, withNote('CrownDrive: נדרש צילום מחדש של מסמכי האימות. היכנסו לאזור האישי.'));
+    }
     return json(200, {ok: true});
   } catch (error) {
     console.error(error);
