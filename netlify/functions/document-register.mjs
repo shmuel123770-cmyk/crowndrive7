@@ -1,4 +1,5 @@
-import {getAdmin, verify, json, cleanText, audit, notifyAdmin, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
+import {getAdmin, verify, json, cleanText, audit, notifyAdmin, notifyUser, sendPush, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
+import {smsUser} from './_sms.mjs';
 import {rateLimit, tooMany} from './_ratelimit.mjs';
 import {validateImageDataUrl} from './_media.mjs';
 const allowed = new Set(['licenseFront', 'licenseBack', 'selfie']);
@@ -46,8 +47,19 @@ export async function handler(event) {
     const profileSnap = await db.ref(`users/${token.uid}/verification`).once('value');
     const verification = {...(profileSnap.val() || {}), [documentType]: true};
     const nowComplete = verification.licenseFront && verification.licenseBack && verification.selfie;
+    // AUTO-APPROVAL (user decision): the three documents are the requirement, and meeting it approves
+    // the account on the spot — no admin step in between. The documents are still stored and still
+    // visible in the admin area, and an admin can revoke or ask for a resubmission at any time, so
+    // this removes the WAIT rather than the oversight.
     if (nowComplete) {
-      updates[`verificationStatus/${token.uid}`] = 'pending';
+      updates[`verificationStatus/${token.uid}`] = 'approved';
+      // The wizard's per-document flags are what the UI reads; heal them together with the status so
+      // an approved user never sees a half-filled verification card.
+      updates[`users/${token.uid}/verification/licenseFront`] = true;
+      updates[`users/${token.uid}/verification/licenseBack`] = true;
+      updates[`users/${token.uid}/verification/selfie`] = true;
+      updates[`users/${token.uid}/verification/reviewedAt`] = Date.now();
+      updates[`users/${token.uid}/verification/reviewedBy`] = 'auto';
     }
     await db.ref().update(updates);
     await audit(token.uid, 'document_register', 'user', token.uid, {documentType});
@@ -55,7 +67,13 @@ export async function handler(event) {
     // real action item ("כל מה שזז באתר"): a new verification is now waiting for the admin's review.
     if (nowComplete) {
       const name = (await db.ref(`users/${token.uid}/name`).once('value')).val() || 'משתמש';
-      await notifyAdmin('user', `${name} השלים/ה הגשת מסמכים לאימות — ממתין לבדיקתך`, {userUid: token.uid});
+      // The admin feed still records it — it is no longer an action item, it is a record to review
+      // after the fact if they want to.
+      await notifyAdmin('user', `${name} השלים/ה אימות — אושר אוטומטית`, {userUid: token.uid});
+      // Tell the user themselves, the same way verification-review does on a manual approval.
+      await notifyUser(token.uid, 'verification', 'האימות שלך אושר ✓ — אפשר להזמין רכבים באתר');
+      await sendPush(token.uid, '✓ האימות אושר!', 'אפשר להתחיל להזמין רכבים באתר.', '/#cars');
+      await smsUser(token.uid, 'CrownDrive: האימות שלך אושר — אפשר להזמין רכבים באתר.');
     }
     return json(200, {ok: true});
   } catch (error) {

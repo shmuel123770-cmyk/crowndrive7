@@ -192,6 +192,41 @@ export async function handler(event) {
       await audit(token.uid, 'admin_ratings_rekey', 'rating', 'publicRatings', {moved: legacy.length});
       return json(200, {ok: true, moved: legacy.length});
     }
+    if (body.action === 'verification-heal') {
+      // One-time catch-up for accounts stranded by the switch to automatic verification. Auto-approval
+      // fires inside document-register when the third document lands — for anyone who submitted BEFORE
+      // that shipped, it already fired under the old rules and left them at 'pending'. They see
+      // "המסמכים שלך בבדיקה" and cannot book, with nothing they can do about it.
+      // The rule is now "three documents = approved", so anyone already holding three IS approved by
+      // the current rule; this just applies it retroactively. Idempotent (already-approved users are
+      // skipped) and bounded, so it is safe to re-run and can disappear once the count reaches zero.
+      const PER_CALL = 25;
+      const users = (await db.ref('users').once('value')).val() || {};
+      const statuses = (await db.ref('verificationStatus').once('value')).val() || {};
+      const updates = {};
+      const healed = [];
+      let remaining = 0;
+      for (const [uid, user] of Object.entries(users)) {
+        const v = user?.verification || {};
+        if (!(v.licenseFront && v.licenseBack && v.selfie)) continue;   // not complete → not eligible
+        const status = statuses[uid] || v.status;
+        // Only lift accounts that are WAITING. A rejection or a resubmission request is a deliberate
+        // decision by a human and must not be undone by a migration.
+        if (status !== 'pending') continue;
+        if (healed.length >= PER_CALL) { remaining++; continue; }
+        updates[`verificationStatus/${uid}`] = 'approved';
+        updates[`users/${uid}/verification/reviewedAt`] = Date.now();
+        updates[`users/${uid}/verification/reviewedBy`] = 'auto-heal';
+        healed.push(uid);
+      }
+      if (healed.length) await db.ref().update(updates);
+      // Tell them — being approved without being told is the same silence the wait already was.
+      for (const uid of healed) {
+        await notifyUser(uid, 'verification', 'האימות שלך אושר ✓ — אפשר להזמין רכבים באתר');
+      }
+      await audit(token.uid, 'admin_verification_heal', 'user', '', {healed: healed.length, remaining});
+      return json(200, {ok: true, healed: healed.length, remaining, done: remaining === 0});
+    }
     return json(400, {error: 'פעולה לא מוכרת'});
   } catch (error) {
     console.error(error);

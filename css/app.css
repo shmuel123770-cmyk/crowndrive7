@@ -14,6 +14,11 @@
   --radius:16px;
   --shadow:0 24px 60px rgba(0,0,0,.1);
   --accent:#E9A93D; --accent-soft:#FBF3E1;
+  /* --accent is a BACKGROUND colour: badges and gradients put dark #2A1F08 on it, which reads fine.
+     As a FOREGROUND on a light surface it measures 2.06:1 — below the 3:1 that WCAG 1.4.11 requires of
+     graphical objects like ★/☆. --star is the same hue darkened to 4.12:1 on white / 3.41:1 on the soft
+     panel, for the three rules that paint stars as text. */
+  --star:#A97210;
   --surface:#FFFFFF;
   --ease:cubic-bezier(.22,.9,.26,1);
 }
@@ -129,7 +134,10 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
 .road{position:absolute;inset-inline:0;bottom:0;height:150px;z-index:1;pointer-events:none}
 .asphalt{position:absolute;inset-inline:0;bottom:0;height:74px;background:linear-gradient(#232B35,#151B22);box-shadow:0 -1px 0 rgba(255,255,255,.06)}
 .sil{position:absolute;fill:#0A0E13}
-.cars-near .sil{bottom:8px;width:168px;height:59px;fill:#4E86B4;filter:drop-shadow(0 10px 8px rgba(0,0,0,.45))}
+/* The near car was #4E86B4 — a saturated mid-blue that exists nowhere else in the palette, so it read
+   as a flat sticker pasted on the hero rather than a car in a dark scene. Deepened into the same family
+   as the far silhouette (#2B3542) but lighter, so the near/far depth still reads. */
+.cars-near .sil{bottom:8px;width:168px;height:59px;fill:#3A5675;filter:drop-shadow(0 10px 8px rgba(0,0,0,.45))}
 .cars-near .sil circle{fill:#0E1620}
 .cars-far .sil{bottom:66px;width:96px;height:34px;fill:#2B3542;opacity:.55;filter:blur(.7px)}
 .s1{animation:drive 24s linear infinite}
@@ -234,16 +242,24 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
 .car-manage .btn.gold:hover{filter:brightness(1.06)}
 .car-manage .btn.outline{background:var(--surface);color:var(--brand-d);border:1px solid var(--line)}
 .car-manage .btn.outline:hover{background:rgba(63,107,142,.06);border-color:var(--brand)}
+/* `.car-manage .btn{background:none}` above strips every variant's fill, which is why .outline restores
+   its own. Delete needs the same, or it renders as bare red text with no button surface. Sized narrower
+   than its siblings: it is the destructive one, so it should not read as an equal-weight primary action. */
+.car-manage .btn.danger{background:var(--danger-bg);color:var(--danger);border:1px solid rgba(215,0,21,.28);flex:0 1 auto;min-width:0;padding-inline:14px}
+.car-manage .btn.danger:hover{background:rgba(215,0,21,.12);border-color:rgba(215,0,21,.45)}
 .car-body{padding:15px 18px 17px;display:flex;flex-direction:column;gap:8px;flex:1}
 /* Clean/premium card: name + compact rating on one row */
 .car-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
 .car-body h3{margin:0;font-size:1.12rem;line-height:1.28;letter-spacing:-.01em}
-.car-rate{flex:0 0 auto;font-size:.9rem;color:#E9A93D;white-space:nowrap;display:inline-flex;align-items:baseline;gap:3px;margin-top:2px}
+.car-rate{flex:0 0 auto;font-size:.9rem;color:var(--star);white-space:nowrap;display:inline-flex;align-items:baseline;gap:3px;margin-top:2px}
 .car-rate b{color:var(--brand-d);font-weight:700}
 .car-rate small{color:var(--muted);font-weight:600;font-size:.82em}
 .car-specs{display:flex;flex-wrap:wrap;gap:6px;color:var(--muted);font-size:.8rem;font-weight:300;letter-spacing:.03em}
 .car-specs span{white-space:nowrap}
-.rating{color:#E9A93D;letter-spacing:1px;font-size:.95rem}
+/* Separator belongs to the item that follows it, so it wraps together with that item and can never be
+   left stranded at the end of a line. */
+.car-specs span + span::before{content:"· ";opacity:.75}
+.rating{color:var(--star);letter-spacing:1px;font-size:.95rem}
 .rating small{color:var(--muted);letter-spacing:0}
 .car-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px solid var(--hair);padding-top:12px;margin-top:auto}
 /* Subtle "פרטים ←" affordance — the whole card is the link, so this replaces the heavy button */
@@ -665,14 +681,12 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
 .detail-summaries{display:grid;grid-template-columns:1fr 1fr;gap:6px 20px;margin-bottom:14px}
 .reviews{border-top:1px solid var(--hair);padding-top:14px;margin-bottom:14px}
 .reviews h3{margin:0 0 10px;font-size:1.05rem}
-.reviews-summary{display:flex;align-items:center;gap:14px;margin-bottom:14px}
-.reviews-avg{display:flex;align-items:baseline;gap:8px}
-.reviews-avg b{font-size:2.1rem;font-weight:800;color:var(--brand-d);line-height:1}
-.reviews-avg .reviews-stars{font-size:1.05rem}
-.reviews-total{color:var(--muted);font-size:.9rem;font-weight:600}
 .review{background:var(--bg2);border-radius:12px;padding:12px 14px;margin-bottom:8px}
 .review-head{display:flex;justify-content:space-between;align-items:center}
-.review-stars{color:#E9A93D;letter-spacing:1px}
+/* #E9A93D measured 2.06:1 on white and 1.70:1 on the soft panel. The ★/☆ shape carries the score, so
+   this is a graphical object under WCAG 1.4.11 (3:1), not body text (4.5:1) — 4.5 would force a dark
+   olive that no longer reads as gold. #A97210 gives 4.12:1 on white and 3.41:1 on soft. */
+.review-stars{color:var(--star);letter-spacing:1px}
 .review-head small{color:var(--muted);font-size:.72rem}
 .review p{margin:6px 0 0;line-height:1.55;font-size:.88rem;color:var(--text)}
 #booking-form h3,.form-section-title{margin:18px 0 12px;font-weight:800;font-size:1rem}
@@ -762,7 +776,9 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
 .search-hit:hover{background:rgba(63,107,142,.12)}
 .admin-status-select{border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--surface);font-size:.85rem}
 .row-blocked{opacity:.55}
-.rate-note{font-size:.8rem;color:var(--warn);background:var(--warn-bg);border-radius:10px;padding:9px 12px;margin:0 0 14px}
+/* Neutral footnote, not a warning: it explains who may rate, nothing is wrong. The --warn palette made
+   it the loudest thing between two quiet reference rows. */
+.rate-note{font-size:.78rem;color:var(--muted);padding:2px 2px 0;margin:0 0 12px;line-height:1.5}
 
 /* ---------- admin: user rentals modal ---------- */
 .rental-row{display:flex;gap:14px;align-items:flex-start;background:var(--bg2);border-radius:14px;padding:13px 15px;margin-bottom:10px;flex-wrap:wrap}
@@ -1363,11 +1379,6 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 .price-contact-cta b{display:block;color:var(--brand-d);font-size:1rem;margin-bottom:2px}
 .price-contact-cta small{color:var(--muted);font-size:.82rem}
 .price-contact-cta .btn{white-space:nowrap}
-.owner-contact-cta{display:flex;align-items:center;gap:12px;flex-wrap:wrap;justify-content:space-between;background:rgba(27,34,43,.045);border:1px solid var(--hair);border-radius:14px;padding:14px 16px;margin:12px 0}
-.owner-contact-cta b{display:block;color:var(--dark);font-size:1rem;margin-bottom:2px}
-.owner-contact-cta small{color:var(--muted);font-size:.82rem}
-.owner-contact-cta .btn{white-space:nowrap;display:inline-flex;align-items:center;gap:7px}
-.owner-contact-cta .btn svg{width:17px;height:17px}
 .period-note.contact{background:rgba(63,107,142,.08);border-color:rgba(63,107,142,.24);color:var(--brand-d)}
 
 /* prominent "כל הרכבים באתר" button on the home page */
@@ -1390,21 +1401,25 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
   .car-photo{aspect-ratio:4/3}
   .car-body{padding:10px 11px;gap:6px}
   .car-body h3{font-size:.9rem;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-  .car-specs{font-size:.66rem;gap:4px;font-weight:400}
+  /* These were shrunk to make the 2-per-row grid fit and overshot: the spec line rendered at 9.9px,
+     the per-day suffix at 8.25px and the badges at 8.7–9px. The root font here is 15px, so a .6rem
+     rule is 9px on screen — below anything readable at arm's length. Raised to ~10.2–11.4px, which
+     still fits a 171px card. The grid itself is unchanged. */
+  .car-specs{font-size:.76rem;gap:4px;font-weight:400}
   .rating{font-size:.74rem;letter-spacing:.5px}
   .car-title-row{gap:7px}
   .car-rate{font-size:.72rem;margin-top:1px}
   .car-go{display:none}          /* card is fully tappable on touch — the extra CTA text just crowds the price */
   .car-foot{padding-top:9px;gap:4px}
   .price{font-size:.98rem}
-  .price small{font-size:.5em}
-  .price-alt{font-size:.62rem}
+  .price small{font-size:.58em}
+  .price-alt{font-size:.72rem}
   .car .btn{margin-top:2px;padding:9px 6px;font-size:.78rem;border-radius:9px}
   .car-badges{top:8px;inset-inline-start:8px;gap:4px}
-  .avail-badge{font-size:.6rem;padding:3px 9px}
-  .new-badge{font-size:.58rem;padding:3px 8px}
-  .mode-badge{font-size:.58rem;padding:3px 8px;bottom:8px;inset-inline-start:8px}
-  .has-video{font-size:.58rem;padding:2px 8px;bottom:8px}
+  .avail-badge{font-size:.68rem;padding:4px 10px}
+  .new-badge{font-size:.68rem;padding:4px 9px}
+  .mode-badge{font-size:.66rem;padding:4px 9px;bottom:8px;inset-inline-start:8px}
+  .has-video{font-size:.66rem;padding:3px 9px;bottom:8px}
 }
 /* Tablets fell into the phone rule: the 2-column grid is gated on max-width:820px, so a 768px
    tablet showed the same two cars per screen as a phone — with 367px-wide cards and huge photos.
@@ -1428,9 +1443,11 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 .password-field:focus-within{background:var(--surface);border-color:var(--brand);box-shadow:0 0 0 4px rgba(63,107,142,.13)}
 .password-field input{flex:1;min-width:0;border:0!important;border-radius:0!important;background:transparent!important;box-shadow:none!important}
 .password-field button{border:0;border-inline-start:1px solid var(--hair);background:transparent;color:var(--brand-d);font-weight:800;padding:0 14px;min-width:68px}
-.booking-form-head{margin:24px 0 14px}
-.booking-form-head span{font-size:.75rem;font-weight:800;color:var(--brand);letter-spacing:.08em}
-.booking-form-head h3{margin:2px 0 0}
+/* rev218: was an eyebrow + title + note stacked to 98px. The eyebrow repeated what the submit button
+   already says, so the header is now title + note on one baseline. */
+.booking-form-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:20px 0 12px}
+.booking-form-head h3{margin:0}
+.booking-form-head small{color:var(--muted);font-size:.78rem}
 .booking-consent{display:flex;align-items:flex-start;gap:10px;margin:14px 0;padding:12px 13px;border:1px solid var(--hair);border-radius:12px;background:var(--bg-soft);font-size:.83rem;line-height:1.45;cursor:pointer}
 .booking-consent input{width:20px;height:20px;flex:0 0 auto;margin:1px 0 0;accent-color:var(--brand)}
 .booking-consent a{color:var(--brand-d);font-weight:700;margin-inline:3px}
@@ -1824,7 +1841,15 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 .chat-item.active{background:rgba(63,107,142,.08);border-color:rgba(63,107,142,.25)}
 .chat-item-emoji{width:42px;height:42px;display:grid;place-items:center;background:rgba(63,107,142,.1);border-radius:14px;flex:0 0 42px}
 .chat-item-emoji svg{width:20px;height:20px;color:var(--brand-d)}
+/* The car's own photo in place of the generic glyph — same 42px footprint and radius, so the list keeps
+   its rhythm whether a thread has a photo (booking) or an icon (support). */
+.chat-item-photo{width:42px;height:42px;border-radius:14px;flex:0 0 42px;overflow:hidden;background:var(--bg-soft);display:block}
+.chat-item-photo img{width:100%;height:100%;object-fit:cover;display:block}
 .chat-item small{color:var(--muted)}
+/* Time and unread dot on one line. The dot used to be its own row in the meta column, stranded between
+   the timestamp and the status badge with no visible relationship to either — it reads as "something
+   new, at this time" only when it sits beside the time. */
+.chat-item-when{display:inline-flex;align-items:center;gap:6px}
 .chat-unread-dot{width:10px;height:10px;border-radius:50%;background:var(--danger);flex:0 0 10px;box-shadow:0 0 0 3px var(--danger-bg);animation:pulseDot 1.6s ease-in-out infinite}
 @keyframes pulseDot{50%{box-shadow:0 0 0 6px var(--danger-bg)}}
 /* The payment moment: the amount is the hero, the proof upload is an inviting tile */
@@ -1843,6 +1868,11 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 
 /* ---- Favorites (design doc §9, rev140): the 40×40 heart on every card + a favorites filter chip ---- */
 .fav-btn{position:absolute;top:8px;inset-inline-end:8px;width:34px;height:34px;border:none;border-radius:50%;background:rgba(255,255,255,.62);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);display:grid;place-items:center;cursor:pointer;transition:background .15s,transform .12s}
+/* The circle stays 34px so the card art is unchanged, but the tap target is extended to 44px with a
+   transparent pseudo-element — WCAG 2.5.5 / HIG minimum. Enlarging the circle itself would have made
+   it crowd the status pill in the image corner. */
+.fav-btn::before{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:44px;height:44px;border-radius:50%}
 .fav-btn:active{transform:scale(.9)}
 .fav-btn svg{width:18px;height:18px;color:var(--muted);fill:none;transition:fill .15s,color .15s}
 .fav-btn:hover{background:rgba(255,255,255,.9)}
@@ -1857,8 +1887,6 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 .type-chip.fav-chip.on{background:var(--danger-bg);border-color:var(--danger);color:var(--danger)}
 @media(prefers-reduced-motion:reduce){.fav-btn.pop svg{animation:none}}
 /* Share button on the car page (rev141) */
-.car-share-btn{display:flex;align-items:center;justify-content:center;gap:8px;margin:12px 0 2px}
-.car-share-btn svg{width:18px;height:18px}
 
 /* In-app inbox badges (rev142): red counter on the nav tabs */
 .tab-badge{position:absolute;top:4px;inset-inline-end:calc(50% - 22px);min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:var(--danger);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;line-height:1;box-shadow:0 2px 6px rgba(215,0,21,.4)}
@@ -1918,11 +1946,16 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
   .quick-search input,.quick-search select,.quick-search .date-btn{height:42px;font-size:.92rem;border-radius:10px}
   .quick-search label span,.df-label{font-size:.64rem;margin-bottom:2px}
   #home-search{min-height:42px}
-  /* Stats: two big white cards → one slim chip row */
+  /* Stats: two big white cards → one slim chip row.
+     The chips were rgba(255,255,255,.94) — near-solid white slabs sitting directly above the frosted
+     .cat-tile row (rgba(255,255,255,.07)). Two different materials, touching, inside one dark hero.
+     Same frosted glass as the tiles now, so the hero reads as a single surface; the numbers keep their
+     prominence through weight and the gold accent rather than through a white background. */
   .hero-stats{display:flex;gap:8px;margin-top:10px;background:none;border:none;box-shadow:none;padding:0}
-  .hstat{display:flex;align-items:baseline;justify-content:center;gap:6px;padding:9px 8px;background:rgba(255,255,255,.94);border:none;border-radius:12px}
-  .hstat b{font-size:1.05rem;display:inline}
-  .hstat span{font-size:.7rem}
+  .hstat{display:flex;align-items:baseline;justify-content:center;gap:6px;padding:10px 8px;
+    background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);border-radius:13px}
+  .hstat b{font-size:1.05rem;display:inline;color:#fff}
+  .hstat span{font-size:.7rem;color:rgba(255,255,255,.72)}
   /* Category tiles: still tappable, half the height */
   .cat-row{margin-top:10px;gap:8px}
   .cat-tile{min-height:64px;border-radius:13px;font-size:.7rem;gap:4px;max-width:none}
@@ -2094,6 +2127,10 @@ body[data-page="dashboard"] .dashboard-tabs .tab-group-label:first-child{border-
 .btn.wa-share svg{width:18px;height:18px;flex:0 0 18px}
 .car-manage{flex-wrap:wrap}
 .car-manage .wa-share{flex:1 1 100%}
+/* On the 2-up mobile grid the manage row is only ~143px wide, so every button already takes its own
+   line and a compact delete just leaves dead space beside it. Let it fill there. On wider cards it stays
+   narrow and shares a line with "עריכת פרטים", which is where the smaller size reads as intended. */
+@media(max-width:600px){ .car-manage .btn.danger{flex:1 1 auto} }
 
 /* ===== ADMIN MAINTENANCE (rev155) ===== */
 /* The fixed ✕ (dash-close) sits at inline-start (RTL: right) and overlapped the greeting line —
@@ -2149,7 +2186,14 @@ body[data-page="dashboard"] .dashboard-tabs .tab-group-label:first-child{border-
 .hub-badge{position:absolute;top:13px;inset-inline-start:13px;min-width:24px;height:24px;padding:0 7px;border-radius:99px;background:linear-gradient(145deg,#E9A93D,#C6902E);color:#2A1F08;font-weight:800;font-size:.76rem;display:grid;place-items:center;box-shadow:0 2px 6px rgba(198,144,46,.3)}
 /* compact stats — a quiet, refined strip instead of four big KPI cards */
 .admin-stats-mini{display:flex;flex-wrap:wrap;gap:9px;margin:18px 0 6px}
-.admin-stats-mini span{flex:1 1 40%;background:var(--bg-soft);border:1px solid var(--line);border-radius:13px;padding:11px 14px;font-size:.8rem;color:var(--muted)}
+/* The card styling was scoped to `span`, but one of these stats is a <button class="stat-link"> (it
+   navigates to the payouts tab). .stat-link deliberately strips background/border/padding — built for
+   an inline dashed link inside a sentence — so that one tile rendered with NO card at all: dark text
+   directly on the dark page shell, measured at 1.04:1. It reads as a card here, so it is styled as one. */
+.admin-stats-mini span,
+.admin-stats-mini > .stat-link{flex:1 1 40%;background:var(--bg-soft);border:1px solid var(--line);border-radius:13px;padding:11px 14px;font-size:.8rem;color:var(--muted)}
+.admin-stats-mini > .stat-link{display:block;text-align:start;border-bottom:1px solid var(--line);min-height:0}
+.admin-stats-mini > .stat-link:hover{opacity:1;border-color:var(--brand);background:var(--surface)}
 .admin-stats-mini b{display:block;font-size:1.2rem;font-weight:800;color:var(--brand-d);margin-bottom:1px;font-variant-numeric:tabular-nums}
 
 /* Control-hub icon discs on the DARK scheme (tiles become dark surfaces) — brighten so they pop */
@@ -2259,6 +2303,10 @@ body[data-page="dashboard"] .dashboard-tabs .tab-group-label:first-child{border-
 .push-banner .pb-body small{color:var(--muted);font-size:.8rem}
 .push-banner .pb-actions{display:flex;align-items:center;gap:6px;flex:0 0 auto}
 .push-banner .btn.primary{margin:0;padding:9px 16px;font-size:.85rem}
+/* Blocked state: informational, not an offer — the brand-blue invitation styling would imply there is
+   something to tap here, and there isn't (only OS settings can undo a denial). */
+.push-banner.push-blocked{background:var(--bg-soft);border-color:var(--line)}
+.push-banner.push-blocked .pb-body small{line-height:1.55}
 .pb-close{background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;width:30px;height:30px;border-radius:8px;flex:0 0 auto}
 .pb-close:hover{background:rgba(0,0,0,.06)}
 @media(max-width:520px){.push-banner{flex-wrap:wrap}.push-banner .pb-actions{width:100%;justify-content:flex-end}}
@@ -2287,15 +2335,46 @@ body[data-page="dashboard"] .dashboard-tabs .tab-group-label:first-child{border-
 }
 
 /* ===== CAR MODAL DECLUTTER (rev168) — spec sheet + availability fold away ===== */
-.spec-more,.avail-more{margin:10px 0 4px;border:1px solid var(--line);border-radius:14px;background:var(--bg-soft);overflow:hidden}
-.spec-more>summary,.avail-more>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;
-  padding:12px 15px;font-size:.88rem;font-weight:700;color:var(--brand-d)}
-.spec-more>summary::-webkit-details-marker,.avail-more>summary::-webkit-details-marker{display:none}
-.spec-more>summary::after,.avail-more>summary::after{content:"⌄";font-size:1.05rem;line-height:1;transition:transform .2s}
-.spec-more[open]>summary::after,.avail-more[open]>summary::after{transform:rotate(180deg)}
-.spec-more>summary:hover,.avail-more>summary:hover{background:rgba(63,107,142,.08)}
-.spec-more .detail-summaries,.avail-more .avail-section{margin:0;padding:4px 12px 12px;background:none;border:none}
+/* Three tiers of weight. TIER 1 is the photo, the price and the booking form — the reason the modal
+   was opened. TIER 2 is reference material (spec sheet, reviews, availability): one shared, deliberately
+   quiet row style, flat and hairline-separated so it recedes behind the form instead of reading as three
+   more cards. TIER 3 is the side actions. Before rev218 all of these were soft grey 14px-radius cards of
+   equal weight, which is why the screen read as "everything looks the same". */
+.spec-more,.avail-more,.reviews-more{margin:0;border:0;border-top:1px solid var(--hair);border-radius:0;background:none;overflow:hidden}
+.spec-more:first-of-type{margin-top:6px}
+.spec-more>summary,.avail-more>summary,.reviews-more>summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:13px 2px;font-size:.88rem;font-weight:600;color:var(--dark)}
+.spec-more>summary::-webkit-details-marker,.avail-more>summary::-webkit-details-marker,.reviews-more>summary::-webkit-details-marker{display:none}
+.spec-more>summary::after,.avail-more>summary::after,.reviews-more>summary::after{content:"⌄";font-size:1.05rem;line-height:1;color:var(--muted);transition:transform .2s}
+.spec-more[open]>summary::after,.avail-more[open]>summary::after,.reviews-more[open]>summary::after{transform:rotate(180deg)}
+.spec-more>summary:hover,.avail-more>summary:hover,.reviews-more>summary:hover{color:var(--brand-d)}
+.spec-more .detail-summaries,.avail-more .avail-section{margin:0;padding:2px 0 12px;background:none;border:none}
 .detail-summaries.key-specs{margin-bottom:2px}
+
+/* The summary carries only the count ("3 ביקורות"). The average already sits in the דירוג row directly
+   above, and showing "★★★★★ 4.7" beside a bare "3" rendered as the ambiguous string "4.73". */
+.reviews-more .reviews{border-top:0;padding-top:0;margin-bottom:12px}
+
+/* The global mobile rule collapses every .form-grid to one column, which is right for text fields but
+   wrong here: it stacked תאריך/שעה × 2 into four full-width rows (365px). A date and its hour are one
+   decision, so they pair on a single row — both controls stay comfortably tappable at 375px. */
+@media(max-width:820px){
+  #booking-form .form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 10px}
+}
+
+/* Generic .hide utility. syncDelivery() has always toggled this class on the delivery-address field,
+   but the only .hide rule in the sheet was scoped to .bottom-nav — so the class was applied and did
+   nothing, and every renter saw "כתובת מסירה" even with self-pickup selected. */
+.hide{display:none !important}
+
+/* TIER 3 — side actions: two compact buttons sharing one row, never full-width, so the booking
+   submit stays the only block-level button in the modal. */
+.car-side-actions{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 2px}
+.car-side-actions .btn{flex:0 1 auto;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  padding-inline:14px;font-size:.86rem;white-space:nowrap}
+.car-side-actions .btn svg{width:16px;height:16px;flex:none}
+/* Only share the row on phones. On the 820px desktop modal, growing turned "שיתוף" into a 346px button. */
+@media(max-width:820px){ .car-side-actions .btn{flex:1 1 auto} }
 
 /* ===== CARS-PAGE SEARCH COMPACTED (rev169) — same treatment the home hero search got in rev167.
    (Its own class .period-search wasn't covered by that rule, so it stayed oversized on phones.) ===== */

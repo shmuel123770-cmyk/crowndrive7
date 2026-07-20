@@ -15,7 +15,7 @@ const dist = path.join(root, 'dist');
 
 const runtimeFiles = ['index.html', 'privacy.html', 'terms.html', 'firebase-config.js', 'manifest.json', 'sw.js', 'firebase-messaging-sw.js', '_headers'];
 const runtimeDirs = ['js', 'css', 'icons'];
-const optionalPublicFiles = ['googlef21d119a5e0daadb.html'];
+const optionalPublicFiles = ['googlef21d119a5e0daadb.html', 'robots.txt', 'sitemap.xml'];
 
 const listFiles = dir => fs.readdirSync(dir, {withFileTypes: true})
   .flatMap(entry => entry.isDirectory() ? listFiles(path.join(dir, entry.name)) : [path.join(dir, entry.name)]);

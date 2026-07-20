@@ -139,8 +139,13 @@ await call(fn['car-action'], 'o1', {action: 'status', id: carId, status: 'availa
 console.log('\nתרחיש C: אימות רישיון (document-register + verification-review)');
 for (const doc of ['licenseFront', 'licenseBack']) await call(fn['document-register'], 'r1', {documentType: doc, path: `users/r1/documents/${doc}/x.jpg`});
 r = await call(fn['document-register'], 'r1', {documentType: 'selfie', path: 'users/r1/documents/selfie/x.jpg'});
-check('שלושת המסמכים → סטטוס pending', get('verificationStatus/r1') === 'pending');
-check('השלמת מסמכים יוצרת התראת מנהל (כל מה שזז)', Object.values(get('adminNotifications') || {}).some(n => n.type === 'user' && /מסמכים לאימות/.test(n.text || '')));
+// Auto-approval: meeting the three-document requirement approves the account on the spot, with no
+// admin step in between. The per-document flags are healed alongside it so the card never shows a
+// half-filled verification, and the user is told through the same three channels a manual approval uses.
+check('שלושת המסמכים → אישור אוטומטי', get('verificationStatus/r1') === 'approved');
+check('דגלי המסמכים מסונכרנים', get('users/r1/verification/selfie') === true && get('users/r1/verification/reviewedBy') === 'auto');
+check('המשתמש מקבל הודעה על האישור', Object.values(get('userNotifications/r1') || {}).some(n => n.type === 'verification' && n.text.includes('אושר')));
+check('השלמת מסמכים נרשמת ביומן המנהל', Object.values(get('adminNotifications') || {}).some(n => n.type === 'user' && /אושר אוטומטית/.test(n.text || '')));
 r = await call(fn['document-register'], 'r1', {documentType: 'selfie', path: 'users/r1/documents/selfie/y.jpg'});
 check('אימות נעול אחרי השלמה (409)', S(r) === 409);
 r = await call(fn['document-register'], 'r1', {documentType: 'licenseFront', path: 'users/r2/documents/licenseFront/x.jpg'});
@@ -546,6 +551,49 @@ check('תמונת https קיימת נשמרה כמו שהיא', get('cars/mig1/p
 check('אין יותר data URL ברכב + done=true', B(r).done === true && !/^data:/.test(String(get('cars/mig1/photos')[0])));
 r = await call(fn['media-migrate'], 'a1', {});
 check('הרצה חוזרת בטוחה (idempotent) — אין מה להעביר', S(r) === 200 && B(r).migrated === 0 && B(r).done === true);
+
+// Profile avatars: legacy base64 sits inline in users/<uid>/photoURL (up to 1.4MB each) and the ADMIN
+// subscribes to the whole users node, so every stale avatar is re-downloaded on every admin load.
+set('users/r1/photoURL', dataImg);
+set('users/o1/photoURL', 'https://cdn/already-a-url.jpg');
+set('users/nopic1', {name: 'בלי תמונה', role: 'renter'});
+r = await call(fn['media-migrate'], 'a1', {});
+check('תמונת פרופיל base64 עוברת ל-Storage', S(r) === 200 && /^https:\/\//.test(String(get('users/r1/photoURL'))));
+check('הועברו נספרות בשדה avatars', B(r).avatars === 1);
+check('תמונת פרופיל שכבר URL לא נגעו בה', get('users/o1/photoURL') === 'https://cdn/already-a-url.jpg');
+check('משתמש בלי תמונה לא נפגע', get('users/nopic1/photoURL') === undefined && get('users/nopic1/name') === 'בלי תמונה');
+check('שאר שדות המשתמש נשמרו', get('users/r1/name') !== undefined || get('users/r1/email') !== undefined);
+r = await call(fn['media-migrate'], 'a1', {});
+check('הרצה חוזרת על תמונות פרופיל — אין מה להעביר', S(r) === 200 && B(r).avatars === 0 && B(r).done === true);
+r = await call(fn['media-migrate'], 'r1', {});
+check('לא-מנהל לא יכול להעביר תמונות פרופיל (403)', S(r) === 403);
+
+console.log('\nתרחיש O2: שחרור אימותים תקועים (admin-action / verification-heal)');
+// Accounts that submitted all three documents BEFORE auto-approval shipped are stranded at 'pending':
+// nothing will ever fire for them again. The current rule is "three documents = approved".
+const fullDocs = {licenseFront: true, licenseBack: true, selfie: true};
+set('users/stuck1', {name: 'תקוע', role: 'renter', verification: {...fullDocs}});
+set('verificationStatus/stuck1', 'pending');
+set('users/stuck2', {name: 'תקוע 2', role: 'renter', verification: {...fullDocs}});
+set('verificationStatus/stuck2', 'pending');
+set('users/partial1', {name: 'חלקי', role: 'renter', verification: {licenseFront: true, selfie: true}});
+set('verificationStatus/partial1', 'pending');
+set('users/refused1', {name: 'נדחה', role: 'renter', verification: {...fullDocs}});
+set('verificationStatus/refused1', 'rejected');
+set('users/redo1', {name: 'צילום מחדש', role: 'renter', verification: {...fullDocs}});
+set('verificationStatus/redo1', 'needs_resubmission');
+r = await call(fn['admin-action'], 'r1', {action: 'verification-heal'});
+check('לא-מנהל לא יכול לשחרר אימותים (403)', S(r) === 403);
+r = await call(fn['admin-action'], 'a1', {action: 'verification-heal'});
+check('משתמשים תקועים שוחררו', S(r) === 200 && get('verificationStatus/stuck1') === 'approved' && get('verificationStatus/stuck2') === 'approved');
+check('הספירה מדווחת נכון', B(r).healed >= 2 && B(r).done === true);
+check('מי שחסר לו מסמך לא שוחרר', get('verificationStatus/partial1') === 'pending');
+check('דחייה של אדם לא בוטלה', get('verificationStatus/refused1') === 'rejected');
+check('בקשה לצילום מחדש לא בוטלה', get('verificationStatus/redo1') === 'needs_resubmission');
+check('סומן כשוחרר אוטומטית', get('users/stuck1/verification/reviewedBy') === 'auto-heal');
+check('המשתחרר קיבל הודעה', Object.values(get('userNotifications/stuck1') || {}).some(n => n.type === 'verification' && /אושר/.test(n.text)));
+r = await call(fn['admin-action'], 'a1', {action: 'verification-heal'});
+check('הרצה חוזרת — אין מה לשחרר', S(r) === 200 && B(r).healed === 0 && B(r).done === true);
 
 console.log('\nתרחיש P: סיום שיחה (בעל רכב/מנהל מסיים → השוכר חסום, הם עדיין שולחים)');
 r = await call(fn['car-action'], 'o1', {action: 'create', data: {make: 'End', model: 'Chat', dailyPrice: 100, photos: ['https://a/1.jpg', 'https://b/2.jpg'], fullAddress: '770 Eastern Pkwy'}});

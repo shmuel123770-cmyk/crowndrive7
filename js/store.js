@@ -42,6 +42,43 @@ function listen(ref, setter, key, onErr) {
   return () => ref.off('value', handler);
 }
 
+// Delta listener for COLLECTIONS (a node of id → record). `on('value')` re-sends the WHOLE node on any
+// child change, so with the admin subscribed to users/bookings/inquiries/payments/cars in full, one
+// edit anywhere re-downloaded every record — repeatedly, for as long as the session stayed open.
+// Child events carry only what actually changed.
+//
+// Deliberately NOT built on once('value') to detect "initial load finished": that would re-read the
+// entire node and reintroduce the very download we are removing. Instead the burst of child_added
+// events Firebase fires for existing children is coalesced by a short timer, so the first paint still
+// happens once rather than once per record.
+//
+// Only for collections — listen() is still correct for scalars (e.g. verificationStatus/<uid>), where
+// there are no children to iterate.
+// Exported so it can be exercised against a real Firebase ref in a browser check — this sits in the
+// data layer, where "the syntax is fine" is not evidence of anything.
+export function listenCollection(ref, setter, key, onErr) {
+  const map = {};
+  let timer = null;
+  const onError = error => { console.error(`firebase listener ${key}`, error); if (onErr) onErr(error); emit(`${key}:error`); };
+  const flush = () => {
+    if (timer) return;
+    timer = setTimeout(() => { timer = null; setter({...map}); emit(key); }, 16);
+  };
+  const upsert = snap => { map[snap.key] = snap.val(); flush(); };
+  const remove = snap => { delete map[snap.key]; flush(); };
+  ref.on('child_added', upsert, onError);
+  ref.on('child_changed', upsert, onError);
+  ref.on('child_removed', remove, onError);
+  // An EMPTY collection fires no child events at all, where on('value') would still deliver {} once.
+  // Schedule the first flush unconditionally so a consumer always gets exactly one initial callback,
+  // empty or not — anything waiting on that callback would otherwise wait forever.
+  flush();
+  return () => {
+    if (timer) { clearTimeout(timer); timer = null; }
+    ref.off('child_added', upsert); ref.off('child_changed', upsert); ref.off('child_removed', remove);
+  };
+}
+
 function mergeCars() {
   store.cars = {...store.legacyCatalog, ...store.publicCatalog, ...store.ownCars, ...store.adminCars};
 }
@@ -158,14 +195,14 @@ export async function startPrivate(user) {
   }
 
   if (store.isAdmin) {
-    store.privateUnsubs.push(listen(refs.users, v => { store.users = v; }, 'users'));
-    store.privateUnsubs.push(listen(refs.verificationStatus, v => { store.verificationStatuses = v; }, 'verification-statuses'));
-    store.privateUnsubs.push(listen(refs.bookings, v => { store.bookings = v; }, 'bookings'));
-    store.privateUnsubs.push(listen(refs.inquiries, v => { store.inquiries = v; }, 'inquiries'));
-    store.privateUnsubs.push(listen(refs.payments, v => { store.payments = v; }, 'payments'));
-    store.privateUnsubs.push(listen(refs.adminNotifications.limitToLast(200), v => { store.adminNotifications = v; }, 'admin-notifications'));
+    store.privateUnsubs.push(listenCollection(refs.users, v => { store.users = v; }, 'users'));
+    store.privateUnsubs.push(listenCollection(refs.verificationStatus, v => { store.verificationStatuses = v; }, 'verification-statuses'));
+    store.privateUnsubs.push(listenCollection(refs.bookings, v => { store.bookings = v; }, 'bookings'));
+    store.privateUnsubs.push(listenCollection(refs.inquiries, v => { store.inquiries = v; }, 'inquiries'));
+    store.privateUnsubs.push(listenCollection(refs.payments, v => { store.payments = v; }, 'payments'));
+    store.privateUnsubs.push(listenCollection(refs.adminNotifications.limitToLast(200), v => { store.adminNotifications = v; }, 'admin-notifications'));
     // The admin manages EVERYTHING, including hidden cars — full source-of-truth tree (audit #45 phase B).
-    store.privateUnsubs.push(listen(refs.cars, v => { store.adminCars = v; mergeCars(); }, 'cars'));
+    store.privateUnsubs.push(listenCollection(refs.cars, v => { store.adminCars = v; mergeCars(); }, 'cars'));
   } else {
     // An owner must keep seeing their OWN cars (including hidden ones) after the cars node is locked
     // to the public — the rules allow exactly this ownerUid query. Renters simply get an empty set.

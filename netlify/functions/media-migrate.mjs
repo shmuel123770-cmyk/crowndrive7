@@ -62,8 +62,26 @@ export async function handler(event) {
       }
     }
 
-    await audit(token.uid, 'media_migrate', 'cars', '', {migrated, remaining});
-    return json(200, {ok: true, migrated, remaining, done: remaining === 0});
+    // ---- Profile avatars ----------------------------------------------------------------------
+    // setOwnPhoto() accepts BOTH `data:image/…` and `https://…`, and the crop dialog has uploaded to
+    // Storage for a while now — so new avatars are already tiny URLs. What remains is legacy base64
+    // sitting inline in users/<uid>/photoURL, up to 1.4 MB each. That node is the one an ADMIN
+    // subscribes to in full (store.js), so every stale avatar is re-downloaded on every admin load and
+    // again on every change to any user. Same bounded, idempotent, re-runnable treatment as cars.
+    let avatars = 0;
+    const users = (await db.ref('users').once('value')).val() || {};
+    for (const [uid, user] of Object.entries(users)) {
+      if (!dataUrlRe.test(String(user?.photoURL || ''))) continue;
+      if (migrated >= IMAGES_PER_CALL) { remaining++; continue; }
+      const img = decode(user.photoURL);
+      if (!img) continue;   // not a real image by magic bytes — leave it for a human to look at
+      const url = await putStorageObject(`avatars/${uid}/migrated-${Date.now()}.jpg`, img.buffer, img.contentType);
+      await db.ref(`users/${uid}/photoURL`).set(url);
+      migrated++; avatars++;
+    }
+
+    await audit(token.uid, 'media_migrate', 'cars', '', {migrated, remaining, avatars});
+    return json(200, {ok: true, migrated, remaining, avatars, done: remaining === 0});
   } catch (error) {
     console.error('media-migrate failed', error);
     const m = `${error?.message || error?.code || ''} ${error?.storageStatus || ''}`;

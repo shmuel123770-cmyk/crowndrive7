@@ -5,7 +5,7 @@ import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, s
 import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './media.js';
 import {legacyStatus, migrateLegacy} from './migrate.js';
 import {api} from './api.js';
-import {enablePush, pushPromptable, iosNeedsInstall, initPushForeground} from './push.js';
+import {enablePush, pushPromptable, pushSupported, iosNeedsInstall, initPushForeground} from './push.js';
 import {saveAuthReturn, afterAuthDestination, openCar, CAR_MAKES, CAR_TYPES, ICON, MODELS_BY_MAKE, RENTAL_MODES, TAB_ICONS, app, avatarHtml, carImage, carPhotoList, carStatusPill, carYears, composePhone, emptyState, fallbackImage, kpi, phoneField, roleName, selectOptions, bindCarButtons, carGrid, featuredFirst, userUnreadNotifs, bottomNav} from './views.js';
 
 // ---------- New rental-request popup for owners (they were MISSING incoming requests) ----------
@@ -111,6 +111,14 @@ function pushBanner() {
     // install prompt of its own — so spell out the two taps instead of showing nothing at all.
     if (iosNeedsInstall()) {
       return `<div class="push-banner" id="push-banner"><span class="pb-ic">📲</span><div class="pb-body"><b>כדי לקבל התראות באייפון</b><small>הוסיפו את האתר למסך הבית: כפתור השיתוף <b>􀈂</b> למטה ← "הוספה למסך הבית". אחר כך פתחו משם והפעילו התראות.</small></div><div class="pb-actions"><button class="pb-close" id="push-dismiss" aria-label="סגירה">×</button></div></div>`;
+    }
+    // DENIED is a dead end unless we say something. pushPromptable() is false once permission is
+    // 'denied', so this function used to return '' — the user saw no banner, no explanation and no way
+    // back. The recovery instructions existed only inside enablePush()'s error message, i.e. behind a
+    // button that is never rendered in this state. Browsers do not let a site re-prompt after a denial;
+    // the only route is the OS/browser settings, so spell that out.
+    if (pushSupported() && Notification.permission === 'denied') {
+      return `<div class="push-banner push-blocked" id="push-banner"><span class="pb-ic">🔕</span><div class="pb-body"><b>ההתראות חסומות</b><small>באייפון: הגדרות ← התראות ← Crown Drive ← "אפשר התראות". במחשב: סמל המנעול בשורת הכתובת ← התראות ← אפשר. אחר כך רעננו את הדף.</small></div><div class="pb-actions"><button class="pb-close" id="push-dismiss" aria-label="סגירה">×</button></div></div>`;
     }
     if (!pushPromptable()) return '';
     return `<div class="push-banner" id="push-banner"><span class="pb-ic">🔔</span><div class="pb-body"><b>אל תפספסו בקשות והודעות</b><small>הפעילו התראות כדי לקבל עדכון גם כשהאתר סגור</small></div><div class="pb-actions"><button class="btn primary" id="push-enable">הפעלה</button><button class="pb-close" id="push-dismiss" aria-label="סגירה">×</button></div></div>`;
@@ -559,7 +567,7 @@ function adminDashboard(tab = 'overview') {
       <div class="admin-hub">${navTile('myCars', 'הרכבים שלי', ICON.car, 'blue')}${navTile('summary', 'סיכום השכרות', ICON.check, 'green')}${navTile('external', 'השכרות חוץ', ICON.money, 'gold')}${navTile('profile', 'פרופיל', ICON.selfie, 'slate')}</div>
       <div class="admin-stats-mini"><span><b>${bookings.length}</b> הזמנות</span><span><b>${money(total)}</b> תשלומים</span><span><b>${users.length}</b> משתמשים</span><span><b>${cars.length}</b> רכבים</span></div>
       <div class="field admin-search-wrap"><input id="admin-search" aria-label="חיפוש משתמש, רכב או הזמנה" placeholder="🔎 חיפוש משתמש, רכב או הזמנה…" autocomplete="off"></div><div id="admin-search-results"></div>
-      <details class="admin-tools"><summary>הגדרות וכלים</summary><div class="admin-tools-grid"><button class="btn ${store.config?.maintenance?.on ? 'danger' : 'outline'}" id="maintenance-toggle">${store.config?.maintenance?.on ? 'האתר בתחזוקה — לחצו לפתיחה' : 'מצב תחזוקה'}</button><button class="btn outline" id="export-json">ייצוא JSON</button><button class="btn outline" id="legacy-migrate">העברת נתונים ישנים</button><button class="btn outline" id="media-migrate" title="מעביר תמונות רכב ישנות מהמסד לאחסון CDN — מאיץ את טעינת האתר">⚡ האצת טעינה (תמונות)</button></div></details>`,
+      <details class="admin-tools"><summary>הגדרות וכלים</summary><div class="admin-tools-grid"><button class="btn ${store.config?.maintenance?.on ? 'danger' : 'outline'}" id="maintenance-toggle">${store.config?.maintenance?.on ? 'האתר בתחזוקה — לחצו לפתיחה' : 'מצב תחזוקה'}</button><button class="btn outline" id="export-json">ייצוא JSON</button><button class="btn outline" id="legacy-migrate">העברת נתונים ישנים</button><button class="btn outline" id="media-migrate" title="מעביר תמונות רכב ישנות מהמסד לאחסון CDN — מאיץ את טעינת האתר">⚡ האצת טעינה (תמונות)</button><button class="btn outline" id="verification-heal" title="מאשר משתמשים שהגישו את שלושת המסמכים לפני שהאימות האוטומטי נכנס לתוקף, ונשארו תקועים בהמתנה">🪪 שחרור אימותים תקועים</button></div></details>`,
     users: adminUsersSplit(users),
     userPage: adminUserPage(store.adminUserUid, bookings),
     cars: `<h2 style="margin-bottom:16px">רכבים</h2>${adminCarsTable(cars)}`,
@@ -658,6 +666,14 @@ function adminDashboard(tab = 'overview') {
     // Deleting wipes privateCarDetails too, so a renter mid-rental loses the pickup address — that is
     // not something to discover from a generic "למחוק לצמיתות?".
     const live = myBookings().filter(b => b.carId === button.dataset.carDelete && ['pending', 'approved', 'active'].includes(b.status));
+    // car-action REFUSES a delete with live bookings for anyone but an admin (409). Asking an owner
+    // "למחוק בכל זאת?" and then failing is act-then-fail — say plainly that it is blocked, and what to
+    // do instead. The admin keeps the override, with the warning about wiping the pickup address.
+    if (live.length && !store.isAdmin) {
+      const many = live.length > 1;
+      alert(`אי אפשר למחוק את הרכב — יש עליו ${many ? `${live.length} הזמנות פתוחות` : 'הזמנה פתוחה'}.\n\nאפשר לסמן את הרכב כתפוס כדי שלא יתקבלו בקשות חדשות, ולמחוק אחרי ש${many ? 'ההזמנות יסתיימו' : 'ההזמנה תסתיים'} או יבוטלו.`);
+      return;
+    }
     const warning = live.length
       ? `לרכב יש ${live.length === 1 ? 'הזמנה אחת פעילה או ממתינה' : `${live.length} הזמנות פעילות או ממתינות`}. מחיקה תסיר גם את כתובת האיסוף, והשוכרים יאבדו אותה באמצע ההשכרה.\n\nלמחוק בכל זאת?`
       : 'למחוק את הרכב לצמיתות?';
@@ -667,6 +683,7 @@ function adminDashboard(tab = 'overview') {
   });
   document.querySelector('#legacy-migrate')?.addEventListener('click', migratePrompt);
   document.querySelector('#media-migrate')?.addEventListener('click', migrateMediaPrompt);
+  document.querySelector('#verification-heal')?.addEventListener('click', healVerificationsPrompt);
   document.querySelector('#maintenance-toggle')?.addEventListener('click', async event => {
     const button = event.currentTarget;
     const on = !store.config?.maintenance?.on;
@@ -1259,7 +1276,7 @@ function profileView() {
   return `<div class="section-head"><h2>פרופיל ואימות</h2><span class="status-badge ${approved ? 'approved' : 'pending'}">${esc(verificationLabel(verification.status))}</span></div>
     <div class="avatar-row"><button type="button" class="avatar-click" id="avatar-open" title="החלפת תמונת פרופיל">${avatarHtml(profile, 84)}<span class="avatar-cam">${ICON.camera}</span></button><input hidden type="file" accept="image/jpeg,image/png,image/webp" id="avatar-file"><div class="avatar-actions"><b>תמונת פרופיל</b><button type="button" class="btn outline" id="avatar-open2">בחירת תמונה מהגלריה</button></div></div><form id="profile-form" class="card inset"><div class="form-grid"><div class="field"><label>שם חוקי ${verLocked ? '🔒' : ''}</label><input name="name" value="${esc(profile.name || '')}" disabled ${verLocked ? 'data-locked' : ''} required>${verLocked ? '<small>נעול לאחר הגשת מסמכים. לשינוי פנו לתמיכה.</small>' : ''}</div><div class="field"><label>טלפון</label><input name="phone" type="tel" inputmode="tel" autocomplete="tel" value="${esc(profile.phone || '')}" disabled></div><div class="field"><label>תאריך לידה ${dobLocked ? '🔒' : ''}</label><input name="birthDate" type="date" value="${esc(profile.birthDate || '')}" disabled ${dobLocked ? 'data-locked' : ''} required>${!profile.birthDate ? '<small>חסר — נדרש כדי להזמין רכב. אפשר להשלים גם עכשיו.</small>' : ''}</div><div class="field"><label>מייל 🔒</label><input value="${esc(profile.email || store.user?.email || '')}" disabled data-locked></div></div><button type="button" class="btn outline block" id="profile-edit">עריכה</button><button class="btn primary block" id="profile-save" style="display:none">שמירת שינויים</button></form>
     ${verLocked
-      ? `<div class="ver-card ver-locked ${approved ? 'ver-ok' : ''}"><span class="ver-illustration">${cardSvg}</span><span class="ver-main"><b>אימות רישיון נהיגה</b><small>${approved ? 'האימות אושר ונעול 🔒 — אפשר להזמין רכבים' : 'המסמכים נשלחו ונעולים 🔒 · בבדיקת מנהל'}</small></span><span class="ver-arrow">${approved ? '✓' : '🔒'}</span></div>`
+      ? `<div class="ver-card ver-locked ${approved ? 'ver-ok' : ''}"><span class="ver-illustration">${cardSvg}</span><span class="ver-main"><b>אימות רישיון נהיגה</b><small>${approved ? 'האימות אושר ונעול 🔒 — אפשר להזמין רכבים' : 'המסמכים נשלחו ונעולים 🔒'}</small></span><span class="ver-arrow">${approved ? '✓' : '🔒'}</span></div>`
       : `<button type="button" class="ver-card" id="ver-wizard"><span class="ver-illustration">${cardSvg}</span><span class="ver-main"><b>אימות רישיון נהיגה</b><small>${verification.status === 'needs_resubmission' ? 'המנהל ביקש צילום מחדש — לחצו להעלאה' : verification.status === 'rejected' ? 'האימות לא אושר — אפשר לצלם ולשלוח שוב' : 'צלמו רישיון (2 צדדים) וסלפי — לוקח דקה'}</small></span><span class="ver-arrow">←</span></button>`}
     ${verification.reviewNote ? `<p class="ev-note">${['rejected', 'needs_resubmission'].includes(verification.status) ? 'מה צריך לתקן' : 'הערת מנהל'}: ${esc(verification.reviewNote)}</p>` : ''}<button type="button" class="btn outline block" id="logout-profile">יציאה מהחשבון</button>`;
 }
@@ -1407,10 +1424,31 @@ function messagesView() {
 
 // ---------- Chats page: app-like messaging (thread list + conversation) ----------
 const chatState = {thread: null, unsub: null, draft: ''};
+// Detach the open thread's message listener. Switching threads and the ✕ button already did this, but
+// leaving the chats route through the router (bottom nav, a link, the back button) did not — and the
+// listener's own self-detach only runs when a SNAPSHOT arrives, so a quiet thread stayed subscribed
+// indefinitely. Each one is a limitToLast(100) `value` listener that re-sends all 100 messages on every
+// change, so they accumulate across a session.
+export function teardownChatThread() {
+  chatState.unsub?.();
+  chatState.unsub = null;
+  chatState.thread = null;
+}
 let pendingThread = null;
 let adminChatActivity = null;
 let adminUnread = {};   // uid -> true when the thread's last message is from the USER (awaiting the admin)
-let adminReadAt = {};   // uid -> ts the admin last opened the thread; clears the green "unread" dot
+// uid -> ts the admin last opened the thread; clears the green "unread" dot.
+// PERSISTED, like the chatRead map every other role uses. It used to live in memory only and was wiped
+// by teardownAdminChatFeed() on leaving the chats route, while loadAdminThreads() kept re-asserting the
+// server's `unread` flag every 15s. That flag means "the last message is not from the admin", which
+// stays true until the admin REPLIES — so reading a thread without replying, then navigating away and
+// back, re-lit every dot. The admin saw permanent unread badges for messages already read.
+const ADMIN_READ_KEY = 'cd-admin-chat-read';
+let adminReadAt = (() => { try { return JSON.parse(localStorage.getItem(ADMIN_READ_KEY) || '{}'); } catch { return {}; } })();
+function setAdminReadAt(id, ts) {
+  adminReadAt[id] = ts;
+  try { localStorage.setItem(ADMIN_READ_KEY, JSON.stringify(adminReadAt)); } catch {}
+}
 
 // A thread shows the green unread light only if the server says its last message isn't from the admin
 // AND that message is newer than the last time the admin opened it (so reading a thread clears the dot,
@@ -1570,7 +1608,6 @@ function teardownAdminChatFeed() {
   if (adminFeedTimer) { clearInterval(adminFeedTimer); adminFeedTimer = null; }
   adminChatActivity = null;
   adminUnread = {};
-  adminReadAt = {};
 }
 async function loadAdminThreads() {
   if (!store.isAdmin) return teardownAdminChatFeed();
@@ -1630,7 +1667,19 @@ function chatItems() {
     .map(b => {
       const car = store.cars[b.carId] || b.carSnapshot || {};
       const key = `b:${b.id}`;
-      return {key, at: timeOf(key) || Number(b.updatedAt || b.createdAt || 0), emoji: ICON.car, title: `${car.make || 'רכב'} ${car.model || ''}`.trim(), subtitle: preview(key, role === 'owner' ? 'שיחה עם השוכר' : 'שיחה עם בעל הרכב'), status: b.status, live: ['pending', 'approved', 'active'].includes(b.status), unread: threadUnread(key)};
+      // Name the person, not just the car. A chat list is between people, and "Hyundai Elantra" alone
+      // does not say who is on the other end — which matters most when several bookings are open at
+      // once. Inquiry threads already did this ("<car> · <name>"); bookings now match.
+      const other = role === 'owner' ? b.renterName : (car.ownerName || b.ownerName);
+      const carName = `${car.make || 'רכב'} ${car.model || ''}`.trim();
+      // The car's own photo instead of a generic glyph — far faster to recognise in a list.
+      const photo = carImage(car);
+      const avatar = photo && photo !== fallbackImage
+        ? `<span class="chat-item-photo"><img src="${esc(photo)}" alt="" loading="lazy" decoding="async"></span>`
+        : '';
+      return {key, at: timeOf(key) || Number(b.updatedAt || b.createdAt || 0), emoji: ICON.car, avatar,
+        title: other ? `${carName} · ${esc(other)}` : carName,
+        subtitle: preview(key, role === 'owner' ? 'שיחה עם השוכר' : 'שיחה עם בעל הרכב'), status: b.status, live: ['pending', 'approved', 'active'].includes(b.status), unread: threadUnread(key)};
     });
   // Pre-booking inquiry threads (store.inquiries is already role-filtered: a renter sees ones they opened,
   // an owner sees ones about their cars).
@@ -1666,13 +1715,13 @@ function renderChatItems() {
     filterBar.querySelectorAll('[data-chat-filter]').forEach(chip => chip.onclick = () => { chatFilterUnread = chip.dataset.chatFilter === 'unread'; renderChatItems(); });
     filterBar.querySelector('#chat-markall')?.addEventListener('click', () => {
       let changed = false;
-      for (const it of all) if (it.unread) { markThreadRead(it.key, threadMeta(it.key)?.at); if (store.isAdmin && it.key.startsWith('a:')) { const uid = it.key.slice(2); adminReadAt[uid] = Date.now(); adminUnread[uid] = false; } changed = true; }
+      for (const it of all) if (it.unread) { markThreadRead(it.key, threadMeta(it.key)?.at); if (store.isAdmin && it.key.startsWith('a:')) { const uid = it.key.slice(2); setAdminReadAt(uid, Date.now()); adminUnread[uid] = false; } changed = true; }
       if (changed) { renderChatItems(); refreshChatBadges(); }
     });
   }
   const items = chatFilterUnread ? all.filter(i => i.unread) : all;
   box.innerHTML = items.length
-    ? items.map(item => `<button class="chat-item ${item.key === chatState.thread ? 'active' : ''} ${item.live ? '' : 'ended'} ${item.unread ? 'is-unread' : ''}" data-thread="${esc(item.key)}">${item.avatar || `<span class="chat-item-emoji">${item.emoji}</span>`}<span class="chat-item-main"><b>${esc(item.title)}</b><small>${esc(item.subtitle)}</small></span><span class="chat-item-meta">${item.at ? `<time>${chatListTime(item.at)}</time>` : ''}${item.unread ? '<span class="chat-unread-dot" title="הודעה שלא נקראה" aria-label="הודעה שלא נקראה"></span>' : ''}${item.status ? `<span class="status-badge ${esc(item.status)}">${statusLabel(item.status)}</span>` : ''}</span></button>`).join('')
+    ? items.map(item => `<button class="chat-item ${item.key === chatState.thread ? 'active' : ''} ${item.live ? '' : 'ended'} ${item.unread ? 'is-unread' : ''}" data-thread="${esc(item.key)}">${item.avatar || `<span class="chat-item-emoji">${item.emoji}</span>`}<span class="chat-item-main"><b>${esc(item.title)}</b><small>${esc(item.subtitle)}</small></span><span class="chat-item-meta"><span class="chat-item-when">${item.at ? `<time>${chatListTime(item.at)}</time>` : ''}${item.unread ? '<span class="chat-unread-dot" title="הודעה שלא נקראה" aria-label="הודעה שלא נקראה"></span>' : ''}</span>${item.status ? `<span class="status-badge ${esc(item.status)}">${statusLabel(item.status)}</span>` : ''}</span></button>`).join('')
     : `<div class="empty">${chatFilterUnread ? 'אין הודעות שלא נקראו 🎉' : 'אין שיחות עדיין'}</div>`;
   box.querySelectorAll('[data-thread]').forEach(button => button.onclick = () => selectThread(button.dataset.thread));
 }
@@ -1703,7 +1752,7 @@ function selectThread(key) {
   const isInquiry = key.startsWith('i:');   // pre-booking renter↔owner thread about a car
   const id = key.slice(2);
   // Opening a thread marks it read (every role) → clears its unread dot and updates the badges.
-  if (isSupport && store.isAdmin) { adminReadAt[id] = Date.now(); adminUnread[id] = false; }
+  if (isSupport && store.isAdmin) { setAdminReadAt(id, Date.now()); adminUnread[id] = false; }
   markThreadRead(key, threadMeta(key)?.at);
   renderChatItems(); refreshChatBadges();
   const inquiry = isInquiry ? store.inquiries[id] : null;
@@ -1783,9 +1832,17 @@ function selectThread(key) {
       // for a regular user it's their own uid (harmlessly ignored server-side). Previously this was
       // gated on store.isAdmin — if that flag was momentarily false the message lost its target and
       // went to the admin's OWN thread instead of the user's. THAT was the "can't message users" bug.
+      // Which thread this text belongs to. A failed send restores the draft — but chatState.draft is a
+      // SINGLE field shared by every thread, and the composer renders it as its value. Switching threads
+      // mid-flight (slow connection) and then failing would put this thread's text into the OTHER
+      // thread's input box, where the next tap on "send" delivers it to the wrong person.
+      const sentFrom = key;
       try { await sendMessage(isSupport ? {thread: 'admin', userUid: id, text} : isInquiry ? {inquiryId: id, text} : {bookingId: id, text}); }
-      catch (error) { toast(error.message); form.text.value = text; chatState.draft = text; }
-      finally { if (sendBtn) { sendBtn.disabled = false; sendBtn.textContent = sendLabel; } }
+      catch (error) {
+        toast(error.message);
+        if (chatState.thread === sentFrom) { form.text.value = text; chatState.draft = text; }
+      }
+      finally { if (sendBtn && chatState.thread === sentFrom) { sendBtn.disabled = false; sendBtn.textContent = sendLabel; } }
     };
   }
   pane.querySelector('#chat-photo')?.addEventListener('change', async event => {
@@ -2449,20 +2506,45 @@ async function migratePrompt() {
 }
 // Move existing inline (base64) car images to Storage/CDN so the public catalog loads fast. The
 // server migrates a small batch per call (never times out); we loop until it reports done.
-async function migrateMediaPrompt() {
-  if (!confirm('להעביר את תמונות הרכבים לאחסון CDN? זה מאיץ משמעותית את טעינת האתר. הפעולה בטוחה, חד-פעמית וניתן להריץ אותה שוב.')) return;
-  const button = document.querySelector('#media-migrate');
+// Lift accounts left at "pending" by the switch to automatic verification: they submitted all three
+// documents before auto-approval existed, so nothing will ever fire for them on its own. Bounded batches
+// server-side; loop until it reports done.
+async function healVerificationsPrompt() {
+  if (!confirm('לאשר את כל המשתמשים שכבר הגישו את שלושת המסמכים ונשארו בהמתנה?\n\nמשתמשים שנדחו או שהתבקשו לצלם מחדש לא יושפעו. הפעולה בטוחה וניתן להריץ אותה שוב.')) return;
+  const button = document.querySelector('#verification-heal');
   const label = button?.textContent;
   if (button) button.disabled = true;
   let total = 0;
   try {
+    for (let i = 0; i < 40; i++) {
+      const res = await api('admin-action', {action: 'verification-heal'});
+      total += res.healed || 0;
+      if (button) button.textContent = `משחרר… (${total})`;
+      if (res.done) break;
+    }
+    toast(total ? `${total} משתמשים אושרו וקיבלו הודעה` : 'אין אימותים תקועים — הכל מעודכן');
+  } catch (error) { toast(error.message); }
+  finally { if (button) { button.disabled = false; button.textContent = label; } }
+}
+async function migrateMediaPrompt() {
+  if (!confirm('להעביר תמונות רכבים ותמונות פרופיל לאחסון CDN? זה מאיץ משמעותית את טעינת האתר, ובמיוחד את לוח הניהול. הפעולה בטוחה, חד-פעמית וניתן להריץ אותה שוב.')) return;
+  const button = document.querySelector('#media-migrate');
+  const label = button?.textContent;
+  if (button) button.disabled = true;
+  let total = 0, avatars = 0;
+  try {
     for (let i = 0; i < 60; i++) {
       const res = await api('media-migrate', {});
       total += res.migrated || 0;
+      avatars += res.avatars || 0;
       if (button) button.textContent = `מעביר תמונות… (${total})`;
       if (res.done) break;
     }
-    toast(total ? `הועברו ${total} תמונות ל-CDN — הטעינה תהיה מהירה יותר` : 'כל התמונות כבר מאוחסנות ב-CDN');
+    // Call out the avatars separately: they are what makes the ADMIN's own load slow, since the admin
+    // subscribes to the whole users node.
+    toast(total
+      ? `הועברו ${total} תמונות ל-CDN${avatars ? ` (מתוכן ${avatars} תמונות פרופיל)` : ''} — הטעינה תהיה מהירה יותר`
+      : 'כל התמונות כבר מאוחסנות ב-CDN');
   } catch (error) { toast(error.message); }
   finally { if (button) { button.disabled = false; button.textContent = label; } }
 }

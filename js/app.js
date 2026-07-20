@@ -1,6 +1,6 @@
 import {startPublic, store} from './store.js';
 import {authReady} from './auth.js';
-import {nav, bottomNav, home, cars, authView, dashboard, chatsPage, openAdminLogin, openCar, ensureAppModule} from './views.js';
+import {nav, bottomNav, home, cars, authView, dashboard, chatsPage, openAdminLogin, openCar, ensureAppModule, teardownChat} from './views.js';
 import {toast, closeModal, resetPaint, enhanceUI} from './core.js';
 
 // Start data + auth in the background — do NOT block first paint on them.
@@ -99,6 +99,11 @@ function render() {
     // Remember how far the user scrolled on the route they're LEAVING (design spec §6: switching
     // tabs must not lose your place) — captured before the new route repaints.
     if (route !== lastRoute && lastRoute) scrollMemory[lastRoute] = window.scrollY;
+    // Leaving the chats route detaches the open thread's message listener. Switching threads and the ✕
+    // button already did, but navigating away (bottom nav, back button, a link) did not: the listener
+    // self-detaches only when a snapshot ARRIVES, so a quiet thread stayed subscribed after the user
+    // left. Each is a limitToLast(100) `value` listener that re-sends all 100 messages on any change.
+    if (lastRoute === 'chats' && route !== 'chats') teardownChat();
     (routes[route] || home)();
     // The shared car opens as soon as its data has arrived (first render may be pre-data).
     if (pendingCarLink && store.publicReady) {
