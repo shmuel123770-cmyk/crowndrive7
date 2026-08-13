@@ -1,7 +1,7 @@
 import {startPublic, store} from './store.js';
 import {authReady} from './auth.js';
 import {nav, bottomNav, home, cars, authView, dashboard, chatsPage, openAdminLogin, openCar, ensureAppModule, teardownChat} from './views.js';
-import {toast, closeModal, resetPaint, enhanceUI} from './core.js';
+import {toast, closeModal, resetPaint, enhanceUI, safeDecodeURIComponent} from './core.js';
 
 // Start data + auth in the background — do NOT block first paint on them.
 // The home page renders instantly; auth-gated views wait via store.authSettled.
@@ -10,11 +10,8 @@ authReady.then(() => { store.authSettled = true; scheduleRender(); });
 // Safety net: if Firebase Auth never reports back (blocked storage, dead network), don't spin
 // forever — after 10s treat auth as "settled" so gated screens resolve (login prompt / content).
 setTimeout(() => { if (!store.authSettled) { store.authSettled = true; scheduleRender(); } }, 10000);
-// The header + hero + search render INSTANTLY now; only the cars grid shows a skeleton until data
-// arrives (see carGrid). Ultimate fallback: if the cars read HANGS (no snapshot AND no error) for 5s,
-// end the loading state so the skeleton clears. Guarded so it fires NOTHING once the data arrived
-// (previously this timer always ran a redundant extra render around the 5s mark).
-setTimeout(() => { if (!store.publicReady) { store.publicReady = true; scheduleRender(); } }, 5000);
+// The header + hero + search render instantly; startPublic owns the catalog timeout and only marks the
+// data ready after Firebase, the same-origin fallback, or their bounded failure path has completed.
 
 const routes = {home, cars, auth: authView, dashboard, chats: chatsPage};
 
@@ -60,7 +57,7 @@ function render() {
     // Deep link #car=<id> (share links / WhatsApp): land on the catalog and open that car once the
     // public data is in. The hash is normalized to #cars so the rest of the router behaves as usual.
     if (requestedRoute.startsWith('car=')) {
-      pendingCarLink = decodeURIComponent(requestedRoute.slice(4));
+      pendingCarLink = safeDecodeURIComponent(requestedRoute.slice(4));
       history.replaceState(null, '', '#cars');
       requestedRoute = 'cars';
     }
