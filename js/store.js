@@ -98,16 +98,62 @@ export async function startPublic() {
   // net still exists for a site whose mirror hasn't been seeded yet; it just no longer runs when
   // there is plainly nothing to rescue.
   let legacyTried = false;
+  let fallbackPromise = null;
+  let fallbackAttempts = 0;
+  let retryTimer = null;
   const tryLegacyCatalog = () => {
     if (legacyTried) return;
     legacyTried = true;
     store.publicUnsubs.push(listen(refs.cars, v => { store.legacyCatalog = v; mergeCars(); store.publicReady = true; }, 'cars',
       () => { store.legacyCatalog = {}; mergeCars(); if (!store.publicReady) { store.publicReady = true; } emit('cars'); }));
   };
+  const loadCatalogFallback = () => {
+    if (fallbackPromise) return fallbackPromise;
+    fallbackAttempts++;
+    fallbackPromise = (async () => {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 8000);
+      try {
+        const response = await fetch('/api/cars-public', {headers: {accept: 'application/json'}, signal: controller.signal});
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const payload = await response.json();
+        const cars = payload?.cars && typeof payload.cars === 'object' && !Array.isArray(payload.cars) ? payload.cars : {};
+        clearTimeout(retryTimer);
+        store.publicCatalog = cars;
+        mergeCars();
+        store.publicReady = true;
+        emit('cars');
+        if (!Object.keys(cars).length) tryLegacyCatalog();
+      } catch (error) {
+        console.warn('public catalog fallback failed', error?.message || error);
+        tryLegacyCatalog();
+        if (!store.publicReady) { store.publicReady = true; emit('cars'); }
+        if (fallbackAttempts < 3 && navigator.onLine !== false) {
+          clearTimeout(retryTimer);
+          retryTimer = setTimeout(loadCatalogFallback, 5000);
+        }
+      } finally {
+        clearTimeout(timer);
+        fallbackPromise = null;
+      }
+    })();
+    return fallbackPromise;
+  };
+  const fallbackTimer = setTimeout(loadCatalogFallback, 3000);
+  const retryWhenOnline = () => {
+    if (Object.keys(store.publicCatalog).length) return;
+    fallbackAttempts = 0;
+    clearTimeout(retryTimer);
+    loadCatalogFallback();
+  };
+  window.addEventListener('online', retryWhenOnline);
+  store.publicUnsubs.push(() => { clearTimeout(fallbackTimer); clearTimeout(retryTimer); window.removeEventListener('online', retryWhenOnline); });
   store.publicUnsubs.push(listen(refs.publicCars, v => {
+    clearTimeout(fallbackTimer);
+    clearTimeout(retryTimer);
     store.publicCatalog = v; mergeCars(); store.publicReady = true;
-    if (!v || !Object.keys(v).length) tryLegacyCatalog();
-  }, 'cars', () => { tryLegacyCatalog(); if (!store.publicReady) { store.publicReady = true; emit('cars'); } }));
+    if (!v || !Object.keys(v).length) loadCatalogFallback();
+  }, 'cars', () => { clearTimeout(fallbackTimer); loadCatalogFallback(); }));
   // Read the SANITIZED public projection (carId/targetUid/type/score/review/date) — the full ratings
   // node (with authorUid + bookingId) is no longer public (audit #3).
   store.publicUnsubs.push(listen(refs.publicRatings, v => { store.ratings = v; }, 'ratings'));

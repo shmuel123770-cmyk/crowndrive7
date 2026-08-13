@@ -8,6 +8,11 @@
 
 // Refresh one mirror entry. Pass the car record when the caller already holds it (saves a read);
 // otherwise it is re-read from the source of truth.
+export function visiblePublicCars(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  return Object.fromEntries(Object.entries(value).filter(([, car]) => car && car.status !== 'hidden'));
+}
+
 export async function syncPublicCar(db, carId, car = undefined) {
   const value = car === undefined ? (await db.ref(`cars/${carId}`).once('value')).val() : car;
   await db.ref(`publicCars/${carId}`).set(value && value.status !== 'hidden' ? value : null);

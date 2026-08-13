@@ -13,5 +13,8 @@
   "dependencies": {
     "firebase-admin": "^13.0.2"
   },
+  "overrides": {
+    "fast-xml-parser": "5.10.1"
+  },
   "engines": {"node": ">=20"}
 }
