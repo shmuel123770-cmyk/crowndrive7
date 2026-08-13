@@ -1,4 +1,4 @@
-import {store, list, myRole, myBookings, myCars, carRating, carRatingCount, userRating} from './store.js';
+import {store, list, myRole, myBookings, myCars, carRating, carRatingCount, userRating, retryPublicCatalog} from './store.js';
 import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail, paintApp, resetPaint, fieldError, TERMS_VERSION, heCount, heCountF} from './core.js';
 import {register, login, logout, sendVerify, refreshEmailStatus, sendPasswordReset, createOwnProfile, signInGuest} from './auth.js';
 import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, startInquiry, setBookingStatus, registerDocument, approveVerification, sendMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction, setMaintenance, setCarStatus, setCarFeatured, checkIsAdmin} from './db.js';
@@ -476,8 +476,8 @@ export function home() {
     <div class="trust-card"><div class="trust-icon">${ICON.star}</div><h3>ביקורות אמיתיות</h3><p>רק לאחר השכרה שהושלמה בפועל.</p></div>
     <div class="trust-card"><div class="trust-icon">${ICON.chat}</div><h3>שירות לקוחות</h3><p>מענה מהיר ואישי לכל שאלה, ישירות בצ׳אט.</p></div>
   </div></section>
-  <section class="info-section reveal" id="contact"><div class="foot-cta"><p class="kicker">צור קשר</p><h2>צריכים עזרה? אנחנו כאן</h2><p>צ׳אט ישיר עם שירות הלקוחות — מענה מהיר לכל שאלה.</p><button class="btn gold" id="contact-support">פתיחת צ׳אט עם התמיכה</button></div></section>
-  <footer class="site-foot"><span${APP_BUILD ? ` title="build ${esc(APP_BUILD)}"` : ''}>© Crown Drive · קראון הייטס${APP_VERSION ? ` · גרסה ${esc(APP_VERSION)}` : ''}</span><nav class="foot-links"><a href="privacy.html">פרטיות</a><a href="terms.html">תנאי שימוש</a></nav><button type="button" class="admin-entry" id="admin-entry">כניסת מנהל</button></footer>
+  <section class="info-section reveal" id="contact"><div class="foot-cta"><p class="kicker">צור קשר</p><h2>צריכים עזרה? אנחנו כאן</h2><p>צ׳אט ישיר עם שירות הלקוחות — מענה מהיר לכל שאלה.</p><p class="contact-location">אזור השירות: קינגסטון אווניו, קראון הייטס, ברוקלין · <a href="https://www.google.com/maps/search/?api=1&amp;query=Kingston+Avenue%2C+Crown+Heights%2C+Brooklyn%2C+NY" target="_blank" rel="noopener noreferrer">פתיחה במפה</a></p><button class="btn gold" id="contact-support">פתיחת צ׳אט עם התמיכה</button></div></section>
+  <footer class="site-foot"><span${APP_BUILD ? ` title="build ${esc(APP_BUILD)}"` : ''}>© Crown Drive · קראון הייטס${APP_VERSION ? ` · גרסה ${esc(APP_VERSION)}` : ''}</span><nav class="foot-links"><a href="privacy.html">פרטיות</a><a href="terms.html">תנאי שימוש</a></nav></footer>
   <button type="button" class="search-pill" id="search-pill" hidden aria-label="חזרה לחיפוש">${ICON.search || '🔍'} חיפוש רכב</button>`;
   if (!paintApp(html)) return;  // nothing changed → keep DOM + handlers (no flicker on repeated data events)
   bindCarButtons();
@@ -505,7 +505,6 @@ export function home() {
     else openAuthAs('owner', 'register');
   });
   document.querySelector('#contact-support')?.addEventListener('click', () => openSupportChat());
-  document.querySelector('#admin-entry')?.addEventListener('click', () => openAdminLogin());
   // "חפש רכב": carry the chosen dates into the cars page so it can price + filter by the rental mode.
   document.querySelector('#home-search')?.addEventListener('click', () => {
     const sd = document.querySelector('input[name="homeStart"]')?.value || '';
@@ -627,7 +626,7 @@ function carCard(car, manage = false, period = null, index = 99) {
   if (car.dailyPrice) priceRows.push([money(car.dailyPrice), 'ליום']);
   if (car.priceHourly) priceRows.push([money(car.priceHourly), 'לשעה']);
   if (car.priceWeekly) priceRows.push([money(car.priceWeekly), 'לשבוע']);
-  const priceMain = onRequest ? 'שלחו הודעה<small> לקבלת מחיר</small>' : (priceRows.length ? `${priceRows[0][0]}<small> ${priceRows[0][1]}</small>` : '');
+  const priceMain = onRequest ? 'מחיר לפי בקשה' : (priceRows.length ? `${priceRows[0][0]}<small> ${priceRows[0][1]}</small>` : '');
   const priceAlt = onRequest ? '' : priceRows.slice(1).map(([value, label]) => `${value} ${label}`).join(' · ');
   // Period-aware: when the visitor searched dates, matching cars show an estimated total and cars whose
   // rental mode doesn't fit the chosen range still appear — with a clear "available only for X" note.
@@ -666,7 +665,7 @@ function carCard(car, manage = false, period = null, index = 99) {
 <!-- Separators come from CSS (span+span::before), never their own elements: as standalone flex items a
      "·" could wrap alone to the end of a line, which is what happened once the line grew long enough to
      wrap ("קרוסאובר ·" / "היברידי ·"). Bound to the following item, a separator can never dangle. -->
-<div class="car-specs"><span>${esc(car.year || '—')}</span><span>${esc(type)}</span>${car.seats ? `<span>${esc(car.seats)} מקומות</span>` : ''}${car.fuel ? `<span>${esc(car.fuel)}</span>` : ''}</div>${rented && carFreesAt(car.id) ? `<div class="frees-note">🕐 מתפנה בערך: ${fmtDate(carFreesAt(car.id))}</div>` : ''}${periodHtml}<div class="car-foot"><div class="price-stack"><div class="price">${priceMain}</div>${priceAlt ? `<small class="price-alt">${priceAlt}</small>` : ''}</div><span class="car-go">${car.status === 'available' ? 'פרטים והזמנה' : car.status === 'rented' ? 'שריון מראש' : 'צפייה'} ←</span></div>${manageRow}</div></article>`;
+<div class="car-specs"><span>${esc(car.year || '—')}</span><span>${esc(type)}</span>${car.seats ? `<span>${esc(car.seats)} מקומות</span>` : ''}${car.fuel ? `<span>${esc(car.fuel)}</span>` : ''}</div>${rented && carFreesAt(car.id) ? `<div class="frees-note">🕐 מתפנה בערך: ${fmtDate(carFreesAt(car.id))}</div>` : ''}${periodHtml}<div class="car-foot"><div class="price-stack"><div class="price${onRequest ? ' price-request' : ''}">${priceMain}</div>${priceAlt ? `<small class="price-alt">${priceAlt}</small>` : ''}</div><span class="car-go">${car.status === 'available' ? 'פרטים והזמנה' : car.status === 'rented' ? 'שריון מראש' : 'צפייה'} ←</span></div>${manageRow}</div></article>`;
 }
 // Featured cars (pinned by the admin) always come first, newest-pin first.
 export function featuredFirst(cars) {
@@ -681,6 +680,7 @@ const carSkeletons = (n = 6) => Array.from({length: n}, () => '<article class="c
 export function carGrid(cars, manage = false, period = null, empty = null) {
   if (!cars.length) {
     if (!store.publicReady) return `<div class="grid">${carSkeletons(6)}</div>`;  // still loading — not "no cars"
+    if (store.catalogError && !manage) return `<div class="grid"><div class="empty-state catalog-error"><span class="empty-ic" aria-hidden="true">${ICON.car}</span><h3>לא הצלחנו לטעון את הרכבים כרגע</h3><p>בדקו את החיבור ונסו שוב. הקטלוג עשוי להיות זמין גם אם החיבור בזמן אמת חסום.</p><button type="button" class="btn gold" data-catalog-retry>נסה שוב</button></div></div>`;
     // The default copy is written for a RENTER browsing the catalogue ("we add cars all the time").
     // Shown to an owner staring at their own empty garage it tells them to wait for someone else to
     // do the very thing they are here to do — callers with an owner context pass their own text.
@@ -697,6 +697,10 @@ export function carGrid(cars, manage = false, period = null, empty = null) {
 }
 
 export function bindCarButtons() {
+  app().querySelectorAll('[data-catalog-retry]').forEach(button => button.onclick = () => {
+    button.disabled = true;
+    retryPublicCatalog();
+  });
   app().querySelectorAll('[data-car]').forEach(button => button.onclick = () => openCar(button.dataset.car));
   // Heart toggles (favorites) — the card-open handler already ignores clicks landing on buttons.
   app().querySelectorAll('[data-fav]').forEach(button => button.onclick = event => {
@@ -982,7 +986,7 @@ export function openCar(id) {
     <!-- Mobile declutter: the DECISION info (price + rating) stays visible; the rest of the spec sheet
          folds into "מפרט מלא" so the modal opens short and scannable. -->
     <div class="detail-summaries key-specs">
-      ${onRequest ? '<div class="summary price-row"><span>מחיר</span><b>שלחו הודעה</b></div>' : `${car.priceHourly ? `<div class="summary price-row"><span>מחיר לשעה</span><b>${money(car.priceHourly)}</b></div>` : ''}${car.dailyPrice ? `<div class="summary"><span>מחיר יומי</span><b>${money(car.dailyPrice)}</b></div>` : ''}${car.priceWeekly ? `<div class="summary"><span>מחיר לשבוע</span><b>${money(car.priceWeekly)}</b></div>` : ''}`}
+      ${onRequest ? '<div class="summary price-row"><span>מחיר</span><b>לפי בקשה</b></div>' : `${car.dailyPrice ? `<div class="summary price-row"><span>מחיר יומי</span><b>${money(car.dailyPrice)}</b></div>` : ''}${car.priceHourly ? `<div class="summary price-secondary"><span>מחיר לשעה</span><b>${money(car.priceHourly)}</b></div>` : ''}${car.priceWeekly ? `<div class="summary price-secondary"><span>מחיר לשבוע</span><b>${money(car.priceWeekly)}</b></div>` : ''}`}
       <div class="summary"><span>דירוג</span><b>${carRating(car.id) ? `${stars(carRating(car.id))} ${carRating(car.id).toFixed(1)}` : '<span class="rate-new">חדש באתר — אין דירוגים עדיין</span>'}</b></div>
     </div>
     <details class="spec-more"><summary>מפרט מלא</summary>

@@ -1,4 +1,4 @@
-import {refs} from './firebase.js';
+import {readViaREST, refs} from './firebase.js';
 
 export const store = {
   user: null,
@@ -8,6 +8,8 @@ export const store = {
   adminChecked: false,
   authSettled: false,
   publicReady: false,
+  catalogError: null,
+  catalogSource: null,
   // store.cars is a MERGED view (audit #45 phase B): the public mirror (no hidden cars) + the legacy
   // public node during the transition + the signed-in user's own cars (incl. their hidden ones) + the
   // admin's full tree. Everything else in the app keeps reading store.cars as before.
@@ -83,6 +85,83 @@ function mergeCars() {
   store.cars = {...store.legacyCatalog, ...store.publicCatalog, ...store.ownCars, ...store.adminCars};
 }
 
+let catalogUnsub = null;
+let catalogAttempt = 0;
+
+function publishCatalog(data, source) {
+  store.publicCatalog = data && typeof data === 'object' ? data : {};
+  store.catalogError = null;
+  store.catalogSource = source;
+  store.publicReady = true;
+  mergeCars();
+  emit('cars');
+  if (source === 'rest') window.dispatchEvent(new CustomEvent('crowndrive:diagnostic', {detail: {type: 'catalog-rest-used'}}));
+}
+
+function subscribePublicCatalog() {
+  catalogUnsub?.();
+  const attempt = ++catalogAttempt;
+  let sdkDelivered = false;
+  let restStarted = false;
+  let restFailed = false;
+  let sdkFailed = false;
+  store.publicReady = false;
+  store.catalogError = null;
+  emit('cars');
+
+  const failIfExhausted = error => {
+    if (attempt !== catalogAttempt || sdkDelivered || !restFailed || !sdkFailed) return;
+    store.publicReady = true;
+    store.catalogError = error || new Error('catalog-unavailable');
+    store.catalogSource = null;
+    mergeCars();
+    emit('cars');
+  };
+  const tryREST = async () => {
+    if (restStarted || attempt !== catalogAttempt || sdkDelivered) return;
+    restStarted = true;
+    try {
+      const data = await readViaREST('publicCars');
+      if (attempt === catalogAttempt && !sdkDelivered) publishCatalog(data, 'rest');
+    } catch (error) {
+      restFailed = true;
+      console.warn('catalog REST fallback failed', error);
+      window.dispatchEvent(new CustomEvent('crowndrive:diagnostic', {detail: {type: 'catalog-rest-failed'}}));
+      failIfExhausted(error);
+    }
+  };
+
+  let timer = null;
+  const ref = refs.publicCars;
+  const onValue = snapshot => {
+    if (attempt !== catalogAttempt) return;
+    sdkDelivered = true;
+    clearTimeout(timer);
+    publishCatalog(snapshot.val() || {}, 'realtime');
+  };
+  const onError = error => {
+    if (attempt !== catalogAttempt) return;
+    sdkFailed = true;
+    console.warn('catalog realtime channel failed — trying REST', error);
+    tryREST();
+    failIfExhausted(error);
+  };
+  ref.on('value', onValue, onError);
+  if (!sdkDelivered) timer = setTimeout(() => {
+    sdkFailed = true;
+    window.dispatchEvent(new CustomEvent('crowndrive:diagnostic', {detail: {type: 'catalog-realtime-timeout'}}));
+    tryREST();
+  }, 3000);
+  catalogUnsub = () => {
+    clearTimeout(timer);
+    ref.off('value', onValue);
+  };
+}
+
+export function retryPublicCatalog() {
+  subscribePublicCatalog();
+}
+
 export async function startPublic() {
   if (store.publicUnsubs.length) return;
   // publicReady flips true the moment the FIRST catalog snapshot arrives OR the read fails — either
@@ -97,17 +176,8 @@ export async function startPublic() {
   // cost every single page load, for every visitor, a doomed request and a console error. The safety
   // net still exists for a site whose mirror hasn't been seeded yet; it just no longer runs when
   // there is plainly nothing to rescue.
-  let legacyTried = false;
-  const tryLegacyCatalog = () => {
-    if (legacyTried) return;
-    legacyTried = true;
-    store.publicUnsubs.push(listen(refs.cars, v => { store.legacyCatalog = v; mergeCars(); store.publicReady = true; }, 'cars',
-      () => { store.legacyCatalog = {}; mergeCars(); if (!store.publicReady) { store.publicReady = true; } emit('cars'); }));
-  };
-  store.publicUnsubs.push(listen(refs.publicCars, v => {
-    store.publicCatalog = v; mergeCars(); store.publicReady = true;
-    if (!v || !Object.keys(v).length) tryLegacyCatalog();
-  }, 'cars', () => { tryLegacyCatalog(); if (!store.publicReady) { store.publicReady = true; emit('cars'); } }));
+  subscribePublicCatalog();
+  store.publicUnsubs.push(() => { catalogUnsub?.(); catalogUnsub = null; });
   // Read the SANITIZED public projection (carId/targetUid/type/score/review/date) — the full ratings
   // node (with authorUid + bookingId) is no longer public (audit #3).
   store.publicUnsubs.push(listen(refs.publicRatings, v => { store.ratings = v; }, 'ratings'));
@@ -135,6 +205,7 @@ export async function startPrivate(user) {
       ]);
     } catch (error) {
       console.error('admin check failed — continuing as non-admin', error);
+      if (error?.message === 'admin-check-timeout') window.dispatchEvent(new CustomEvent('crowndrive:diagnostic', {detail: {type: 'admin-check-timeout'}}));
       store.isAdmin = false;
     }
   }

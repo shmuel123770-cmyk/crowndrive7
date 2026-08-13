@@ -659,7 +659,8 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
 .car:nth-child(3){animation-delay:.14s}
 .car:nth-child(4){animation-delay:.21s}
 
-.type-chips{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;margin-top:4px}
+.type-chips{display:flex;flex-wrap:wrap;gap:8px;width:100%;margin-top:4px}
+.type-chips > button{width:auto}
 .type-chip{border:1px solid rgba(63,107,142,.18);background:var(--surface);color:#263342;border-radius:14px;padding:12px 6px;font-weight:800;font-size:.85rem;box-shadow:0 5px 14px rgba(25,35,45,.05);transition:transform .18s var(--ease),background .2s,border-color .2s,color .2s}
 .type-chip:hover{transform:translateY(-2px);border-color:var(--brand)}
 .type-chip.on{background:#1B222B;color:#fff;border-color:#1B222B;box-shadow:0 10px 24px rgba(27,34,43,.18)}
@@ -1883,8 +1884,8 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 .fav-btn.on svg{fill:var(--danger)}
 @keyframes favPop{0%{transform:scale(1)}40%{transform:scale(1.4)}100%{transform:scale(1)}}
 .fav-btn.pop svg{animation:favPop .35s var(--ease)}
-.type-chip.fav-chip{color:var(--danger)}
-.type-chip.fav-chip.on{background:var(--danger-bg);border-color:var(--danger);color:var(--danger)}
+.type-chip.fav-chip{color:inherit}
+.type-chip.fav-chip.on{background:#1B222B;border-color:#1B222B;color:#fff}
 @media(prefers-reduced-motion:reduce){.fav-btn.pop svg{animation:none}}
 /* Share button on the car page (rev141) */
 
@@ -2420,3 +2421,31 @@ body[data-page="dashboard"] .dashboard-tabs .tab-group-label:first-child{border-
 .book-gate .bg-body b{display:block;font-size:1rem;font-weight:800;color:var(--text);margin-bottom:2px}
 .book-gate .bg-body small{color:var(--muted);font-size:.84rem;line-height:1.45}
 .book-gate .btn{flex:1 1 100%;margin:0}
+
+/* ===== PUBLIC CATALOG POLISH (rev219) ===== */
+body[data-page="home"],body[data-page="cars"]{
+  color-scheme:dark;
+  --bg:#0F1216;--bg2:#14181D;--bg3:#1C2229;--bg-soft:#13171C;--card:#171B21;
+  --surface:#171B21;--text:#F3F0E8;--dark:#F3F0E8;--dark-2:#D9D4C8;
+  --muted:#A9AFB7;--muted-2:#737B85;--line:rgba(255,255,255,.12);--line-2:rgba(255,255,255,.2);--hair:rgba(255,255,255,.09);
+  --brand:#C3A56B;--brand-l:#D3B97F;--brand-d:#E3C98F;--gold:#C3A56B;--gold-l:#D3B97F;--gold-d:#9E7E43;
+  background:#0F1216;
+}
+body[data-page="home"]::before,body[data-page="cars"]::before{background:
+  radial-gradient(900px 520px at 82% 14%,rgba(195,165,107,.09),transparent 66%),
+  radial-gradient(760px 500px at 12% 76%,rgba(83,104,124,.12),transparent 68%),
+  linear-gradient(180deg,#0F1216,#11151A)}
+body[data-page="home"] .card,body[data-page="cars"] .card{border-color:rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 18px 44px rgba(0,0,0,.28)}
+body[data-page="home"] .car-photo,body[data-page="cars"] .car-photo{aspect-ratio:16/10}
+body[data-page="home"] .car-photo img,body[data-page="cars"] .car-photo img{filter:saturate(.85) contrast(1.08) brightness(.94)}
+body[data-page="home"] .car-photo::after,body[data-page="cars"] .car-photo::after{background:linear-gradient(to top,rgba(10,12,16,.78) 0%,rgba(10,12,16,.28) 36%,rgba(10,12,16,0) 72%)}
+body[data-page="home"] .type-chip,body[data-page="cars"] .type-chip{color:var(--text);background:#171B21;border-color:rgba(255,255,255,.12);box-shadow:none}
+body[data-page="home"] .type-chip.on,body[data-page="cars"] .type-chip.on,body[data-page="home"] .type-chip.fav-chip.on,body[data-page="cars"] .type-chip.fav-chip.on{color:#17130B;background:var(--brand);border-color:var(--brand)}
+body[data-page="home"] .filter-bar,body[data-page="cars"] .filter-bar,body[data-page="cars"] .period-search{background:#14181D;border-color:rgba(255,255,255,.1)}
+body[data-page="home"] select,body[data-page="home"] input,body[data-page="cars"] select,body[data-page="cars"] input,body[data-page="cars"] .date-btn{background:#1A1F25;color:var(--text);border-color:rgba(255,255,255,.12)}
+body[data-page="home"] .summary.price-secondary > b,body[data-page="cars"] .summary.price-secondary > b{font-size:.95rem;color:var(--muted);font-weight:600}
+body[data-page="home"] .price-request,body[data-page="cars"] .price-request{min-height:1.45em;display:flex;align-items:center;color:var(--muted);font-size:.92rem;font-weight:700}
+body[data-page="home"] .catalog-error,body[data-page="cars"] .catalog-error{grid-column:1/-1;border:1px solid rgba(195,165,107,.24);background:#171B21;padding:54px 24px}
+body[data-page="home"] .contact-location{font-size:.9rem;color:var(--muted)}
+body[data-page="home"] .contact-location a{color:var(--brand-d);font-weight:700}
+@media(min-width:821px){body[data-page="home"] .grid,body[data-page="cars"] .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}}
