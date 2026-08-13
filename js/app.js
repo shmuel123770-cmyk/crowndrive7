@@ -10,13 +10,14 @@ authReady.then(() => { store.authSettled = true; scheduleRender(); });
 // Safety net: if Firebase Auth never reports back (blocked storage, dead network), don't spin
 // forever — after 10s treat auth as "settled" so gated screens resolve (login prompt / content).
 setTimeout(() => { if (!store.authSettled) { store.authSettled = true; scheduleRender(); } }, 10000);
-// The header + hero + search render INSTANTLY now; only the cars grid shows a skeleton until data
-// arrives (see carGrid). Ultimate fallback: if the cars read HANGS (no snapshot AND no error) for 5s,
-// end the loading state so the skeleton clears. Guarded so it fires NOTHING once the data arrived
-// (previously this timer always ran a redundant extra render around the 5s mark).
-setTimeout(() => { if (!store.publicReady) { store.publicReady = true; scheduleRender(); } }, 5000);
+// The catalog owns its own 3-second REST fallback and explicit error state. Do not convert a hung read
+// into a fake empty catalog here — visitors need to know when loading failed.
 
-const routes = {home, cars, auth: authView, dashboard, chats: chatsPage};
+function adminEntry() {
+  home();
+  setTimeout(() => openAdminLogin(), 0);
+}
+const routes = {home, cars, auth: authView, dashboard, chats: chatsPage, admin: adminEntry};
 
 // Scroll reveal (same motion language as the original design).
 const revealObserver = 'IntersectionObserver' in window
@@ -133,7 +134,7 @@ function render() {
     // their own navigation (bottom tab bar, in-form back link, chat back/close), so they don't need it.
     // Insert exactly one in-flow "→ חזרה" (only on the cars listing). Guarded so a memoized re-render
     // that kept the existing DOM doesn't add a second one.
-    if (!['home', 'dashboard', 'auth', 'chats'].includes(route)) {
+    if (!['home', 'dashboard', 'auth', 'chats', 'admin'].includes(route)) {
       if (!document.querySelector('#page-back')) {
         document.querySelector('#app').insertAdjacentHTML('afterbegin', '<button type="button" class="page-back" id="page-back">→ חזרה</button>');
         document.querySelector('#page-back').onclick = () => { if (history.length > 1) history.back(); else location.hash = 'home'; };
@@ -182,6 +183,16 @@ window.addEventListener('storechange', event => {
   if (key === 'profile' && store.user && !store.user.isAnonymous) ensureAppModule();
 });
 window.addEventListener('authchange', scheduleRender);
+window.addEventListener('crowndrive:diagnostic', event => {
+  const type = String(event.detail?.type || '');
+  if (!type) return;
+  fetch('/api/client-diagnostic', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({type, route: store.route, version: document.querySelector('meta[name="crowndrive-version"]')?.content || ''}),
+    keepalive: true,
+  }).catch(() => {});
+});
 window.addEventListener('unhandledrejection', event => {
   console.error('unhandled rejection', event.reason);
   // Never surface raw/technical text to the user. We only toast our OWN messages, which are

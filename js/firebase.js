@@ -4,6 +4,7 @@ if (!cfg) throw new Error('Firebase config missing');
 const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(cfg);
 export const auth = firebase.auth();
 export const db = firebase.database();
+const DB_URL = 'https://amar-75684-default-rtdb.firebaseio.com';
 // Defensive: if the storage-compat script ever fails to load, keep the whole app alive
 // (auth + database still work) and let uploads fail gracefully instead of white-screening.
 export const storage = typeof firebase.storage === 'function' ? firebase.storage() : null;
@@ -36,3 +37,14 @@ export const refs = {
   externalRentals: db.ref('externalRentals'),
   legacy: db.ref('crowndrive-live/state/data'),
 };
+
+export async function readViaREST(path) {
+  const user = auth.currentUser;
+  const query = user ? `?auth=${encodeURIComponent(await user.getIdToken())}` : '';
+  const response = await fetch(`${DB_URL}/${String(path).replace(/^\/+|\/+$/g, '')}.json${query}`, {
+    headers: {'Accept': 'application/json'},
+    cache: 'no-store',
+  });
+  if (!response.ok) throw new Error(`rest-${response.status}`);
+  return response.json();
+}
