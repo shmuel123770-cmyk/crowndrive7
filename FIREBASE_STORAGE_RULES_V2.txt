@@ -38,7 +38,12 @@ service firebase.storage {
     // Profile avatars — public read (shown across the site), owner-only write.
     match /avatars/{uid}/{allPaths=**} {
       allow read:  if true;
-      allow write: if isMember() && request.auth.uid == uid && isImage();
+      // NO direct client write. Avatars are images, and images always go through the media-upload
+      // function (js/media.js only reaches the Storage SDK for VIDEO), which enforces a 4MB cap and
+      // 25-uploads-per-10-minutes. This match previously let any signed-in account PUT unlimited
+      // 12MB images straight here — and this prefix is world-readable, so it was free public file
+      // hosting on the project's bill. The Admin SDK bypasses these rules, so the app is unaffected.
+      allow write: if false;
     }
 
     // Booking media (payment proof, handover photos/videos) — PRIVATE. Direct read is limited to the
