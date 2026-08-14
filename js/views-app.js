@@ -34,7 +34,7 @@ function showRequestModal(b) {
   const rating = userRating(b.renterUid);
   const price = b.quote?.total ? money(b.quote.total) : '';
   modal(`<div class="req-pop">
-    <div class="req-pop-top"><span class="req-pop-bell">🔔</span><div class="req-pop-title"><b>בקשת השכרה חדשה</b><small>ממתינה לאישורך</small></div><button class="close" data-close-modal aria-label="סגירה">×</button></div>
+    <div class="req-pop-top"><span class="req-pop-bell"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span><div class="req-pop-title"><b>בקשת השכרה חדשה</b><small>ממתינה לאישורך</small></div><button class="close" data-close-modal aria-label="סגירה">×</button></div>
     <div class="req-car">${esc(`${car.make || 'רכב'} ${car.model || ''}`.trim())}${car.year ? ` · ${esc(car.year)}` : ''}</div>
     <div class="req-rows">
       <div class="req-row"><span>שוכר</span><b>${esc(b.renterName || 'שוכר')}</b></div>
@@ -118,10 +118,10 @@ function pushBanner() {
     // button that is never rendered in this state. Browsers do not let a site re-prompt after a denial;
     // the only route is the OS/browser settings, so spell that out.
     if (pushSupported() && Notification.permission === 'denied') {
-      return `<div class="push-banner push-blocked" id="push-banner"><span class="pb-ic">🔕</span><div class="pb-body"><b>ההתראות חסומות</b><small>באייפון: הגדרות ← התראות ← Crown Drive ← "אפשר התראות". במחשב: סמל המנעול בשורת הכתובת ← התראות ← אפשר. אחר כך רעננו את הדף.</small></div><div class="pb-actions"><button class="pb-close" id="push-dismiss" aria-label="סגירה">×</button></div></div>`;
+      return `<div class="push-banner push-blocked" id="push-banner"><span class="pb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/><path d="M4 3l16 18"/></svg></span><div class="pb-body"><b>ההתראות חסומות</b><small>באייפון: הגדרות ← התראות ← Crown Drive ← "אפשר התראות". במחשב: סמל המנעול בשורת הכתובת ← התראות ← אפשר. אחר כך רעננו את הדף.</small></div><div class="pb-actions"><button class="pb-close" id="push-dismiss" aria-label="סגירה">×</button></div></div>`;
     }
     if (!pushPromptable()) return '';
-    return `<div class="push-banner" id="push-banner"><span class="pb-ic">🔔</span><div class="pb-body"><b>אל תפספסו בקשות והודעות</b><small>הפעילו התראות כדי לקבל עדכון גם כשהאתר סגור</small></div><div class="pb-actions"><button class="btn primary" id="push-enable">הפעלה</button><button class="pb-close" id="push-dismiss" aria-label="סגירה">×</button></div></div>`;
+    return `<div class="push-banner" id="push-banner"><span class="pb-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg></span><div class="pb-body"><b>אל תפספסו בקשות והודעות</b><small>הפעילו התראות כדי לקבל עדכון גם כשהאתר סגור</small></div><div class="pb-actions"><button class="btn primary" id="push-enable">הפעלה</button><button class="pb-close" id="push-dismiss" aria-label="סגירה">×</button></div></div>`;
   } catch { return ''; }
 }
 function bindPushBanner() {
@@ -146,7 +146,7 @@ function dashboardLayout(title, tabs, active, content, actions = '', navFooter =
   return `<div class="dashboard-shell"><header class="dashboard-head">
       <div class="dash-head-top">
         <div class="dash-head-titles"><p class="eyebrow">${eyebrow}</p><h1>${esc(title)}</h1></div>
-        <div class="dash-head-controls"><button type="button" class="dash-bell" data-goto-notifications aria-label="התראות">🔔${userUnreadNotifs() ? `<span class="tab-badge">${userUnreadNotifs()}</span>` : ''}</button><button type="button" class="avatar-btn" data-goto-profile title="לפרופיל שלי">${avatarHtml(store.profile, 60)}</button><button type="button" class="dash-close" data-route="home" aria-label="סגירת האזור האישי">✕</button></div>
+        <div class="dash-head-controls"><button type="button" class="dash-bell" data-goto-notifications aria-label="התראות"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>${userUnreadNotifs() ? `<span class="tab-badge">${userUnreadNotifs()}</span>` : ''}</button><button type="button" class="avatar-btn" data-goto-profile title="לפרופיל שלי">${avatarHtml(store.profile, 60)}</button><button type="button" class="dash-close" data-route="home" aria-label="סגירת האזור האישי">✕</button></div>
       </div>
       ${actions ? `<div class="dash-head-actions">${actions}</div>` : ''}
     </header><nav class="dashboard-tabs" aria-label="תפריט אזור אישי">${tabs.map(([key, label]) => key === '#'
@@ -467,6 +467,42 @@ function externalRentalModal(cars, existing, renderer) {
   };
 }
 
+// The one thing a renter opens the personal area to find: when and where the next pickup is. It used
+// to be buried inside a full booking list that the "הזמנות" tab already showed in full.
+function nextBookingCard(bookings) {
+  const now = Date.now();
+  const upcoming = bookings
+    .filter(b => ['approved', 'active'].includes(b.status))
+    .map(b => ({b, at: new Date(b.startAt || 0).getTime()}))
+    .filter(x => Number.isFinite(x.at) && (x.b.status === 'active' || x.at >= now - 12 * 3600000))
+    .sort((a, b) => a.at - b.at)[0];
+  if (!upcoming) return '';
+  const b = upcoming.b;
+  const car = store.cars[b.carId] || b.carSnapshot || {};
+  const name = `${car.make || ''} ${car.model || ''}`.trim() || 'הרכב שלך';
+  const when = b.startLocal ? fmtDate(new Date(b.startAt).getTime()) : '';
+  const live = b.status === 'active';
+  return `<section class="next-booking">
+    <span class="nb-label">${live ? 'ההשכרה שלך פעילה' : 'ההזמנה הקרובה'}</span>
+    <b>${esc(name)}</b>
+    ${when ? `<span class="nb-when">${esc(when)}</span>` : ''}
+    <div class="nb-acts">
+      <button type="button" class="btn gold" data-reservation="${esc(b.id)}">${live ? 'פרטי ההשכרה' : 'פרטי איסוף'}</button>
+      <button type="button" class="btn outline" data-chat="${esc(b.id)}">הודעה לבעל הרכב</button>
+    </div>
+  </section>`;
+}
+// Was `admin-stats-mini` — a class copied from the admin console — with the verification state shown as
+// a bare "—", which tells a renter neither what is wrong nor what to do. Verification has its own row
+// in "דורש טיפול" above, so these are just counts now.
+function renterStats(active, pending, done) {
+  return `<div class="stat-row">
+    <span class="stat"><b>${active}</b><small>פעילות</small></span>
+    <span class="stat"><b>${pending}</b><small>ממתינות</small></span>
+    <span class="stat"><b>${done}</b><small>הושלמו</small></span>
+  </div>`;
+}
+
 function renterDashboard(tab = 'overview') {
 
   const bookings = myBookings();
@@ -477,14 +513,20 @@ function renterDashboard(tab = 'overview') {
   // "דורש טיפול" for the renter: an unfinished license verification is the one thing that blocks them
   // from booking — surface it as a tappable row that jumps to the profile/verification tab.
   const renterTodo = [
-    verification.status !== 'approved' && [verification.status === 'pending' ? 'האימות שלך בבדיקה' : 'להשלים אימות רישיון', verification.status === 'pending' ? '⏳' : '!', 'profile'],
+    verification.status !== 'approved' && [verification.status === 'pending' ? 'האימות שלך בבדיקה' : 'להשלים אימות רישיון', verification.status === 'pending' ? '·' : '!', 'profile'],
   ].filter(Boolean);
   const todoHtml = renterTodo.length
     ? `<div class="admin-todo">${renterTodo.map(([label, n, t]) => `<button class="todo-row" data-goto-tab="${t}"><span class="todo-count">${n}</span><span class="todo-label">${esc(label)}</span><span class="todo-go" aria-hidden="true">›</span></button>`).join('')}</div>`
     : '';
   const contents = {
     reservation: reservationView(store.reservationId),
-    overview: `${pushBanner()}${todoHtml}<div class="admin-stats-mini"><span><b>${active}</b> פעילות</span><span><b>${pending}</b> ממתינות</span><span><b>${done}</b> הושלמו</span><span><b>${verification.status === 'approved' ? '✓' : '—'}</b> אימות</span></div><h2>ההזמנות שלי</h2>${bookingList(bookings, 'renter')}`,
+    overview: `${pushBanner()}${nextBookingCard(bookings)}${todoHtml}${renterStats(active, pending, done)}${
+      // The overview used to print the FULL booking list, the very same bookingList() the "הזמנות"
+      // tab renders — so both tabs showed identical content and the second one felt broken. The
+      // overview now answers "what needs me": the next pickup above, and anything still waiting.
+      pending ? `<h2>ממתינות לאישור</h2>${bookingList(bookings.filter(b => b.status === 'pending'), 'renter')}`
+        : `<div class="all-clear">אין הזמנות שממתינות לאישור.<button type="button" class="btn outline" data-goto-tab="bookings">כל ההזמנות שלי</button></div>`
+    }`,
     bookings: `<h2>ההזמנות שלי</h2>${bookingList(bookings, 'renter')}`,
     profile: profileView(),
     notifications: userNotificationsView(),

@@ -2515,3 +2515,32 @@ h1,h2,h3,.brand,.hero h1,.section-head h1,.auth-head h2,.modal-head h2{
 .role-seg:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
 
 #reset-box{margin-top:14px;padding-top:14px;border-top:1px solid var(--hair)}
+
+/* ============================================================================
+   PERSONAL AREA — answer "what needs me" first.
+   The overview opened with a strip of counts and then reprinted the ENTIRE
+   booking list that the "הזמנות" tab already shows, so the second tab felt
+   broken and the one fact a renter came for — when and where the next pickup is
+   — was buried inside it.
+   ============================================================================ */
+.next-booking{background:linear-gradient(150deg,#26303C,var(--dark));color:#fff;border-radius:16px;
+  padding:16px;margin-bottom:14px;box-shadow:0 4px 16px rgba(16,24,40,.16)}
+.next-booking .nb-label{display:block;font-size:.68rem;font-weight:800;letter-spacing:.1em;color:var(--accent)}
+.next-booking b{display:block;font-family:var(--font-display);font-size:1.15rem;letter-spacing:-.02em;margin:5px 0 2px}
+.next-booking .nb-when{display:block;font-size:.85rem;color:rgba(255,255,255,.74)}
+.next-booking .nb-acts{display:flex;gap:8px;margin-top:13px;flex-wrap:wrap}
+.next-booking .nb-acts .btn{flex:1 1 auto;margin:0;padding:10px 14px;font-size:.85rem}
+.next-booking .nb-acts .btn.outline{background:rgba(255,255,255,.12);color:#fff;border-color:rgba(255,255,255,.28)}
+
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.stat-row .stat{background:var(--surface);border:1px solid var(--hair);border-radius:12px;
+  padding:11px 8px;text-align:center}
+.stat-row .stat b{display:block;font-family:var(--font-display);font-size:1.25rem;letter-spacing:-.02em;
+  font-variant-numeric:tabular-nums}
+.stat-row .stat small{font-size:.7rem;color:var(--muted)}
+
+.all-clear{background:var(--surface);border:1px dashed var(--line);border-radius:14px;padding:18px 16px;
+  text-align:center;color:var(--muted);font-size:.9rem;display:flex;flex-direction:column;align-items:center;gap:11px}
+.all-clear .btn{margin:0}
+.dash-bell svg{width:19px;height:19px;display:block}
+.req-pop-bell svg,.pb-ic svg{width:22px;height:22px;display:block;color:var(--accent)}
