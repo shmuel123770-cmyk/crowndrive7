@@ -46,6 +46,25 @@ function carServesPeriod(car, startRaw, endRaw, startMs, endMs) {
   if (carBuckets(car).includes(periodBucket(endMs - startMs))) return true;
   return !!car.weekendEnabled && Number(car.weekendPrice) > 0 && (endMs - startMs) <= 4 * DAY && (endMs - startMs) >= 20 * 3600000 && rangeIncludesSaturday(startRaw, endRaw);
 }
+// New York wall clock, derived from an absolute instant. quoteFor answers a CALENDAR question ("does
+// this range touch a Saturday"), which cannot be read off a UTC instant without a timezone — which is
+// why a wall-clock string is needed at all. It used to arrive as a separate client field that nothing
+// cross-checked against startAt/endAt, so a request could send Mon–Fri for the duration and a Saturday
+// pair for the calendar and be handed the flat weekend rate for a four-day rental. Deriving it here
+// removes the client's say in it entirely.
+const NY_WALL = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'America/New_York', year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+});
+function nyWallClock(ms) {
+  const p = Object.fromEntries(NY_WALL.formatToParts(new Date(ms)).filter(x => x.type !== 'literal').map(x => [x.type, x.value]));
+  return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}`;
+}
+// Only an absolute instant can be converted. Legacy clients sent a naive local string as startAt, and
+// for those the raw value already IS the New York wall clock, so it is used as-is — never the client's
+// separate field.
+const isInstant = value => /(?:Z|[+-]\d{2}:\d{2})$/.test(String(value).trim());
+
 function quoteFor(car, startRaw, endRaw, startMs, endMs, fulfillment) {
   const deliveryFee = fulfillment === 'delivery' ? Number(car.deliveryCost || 0) : 0;
   if (car.priceOnRequest) return {currency: 'USD', status: 'on_request', baseAmount: null, deliveryFee, total: null};
@@ -108,8 +127,10 @@ export async function handler(event) {
     const endAt = new Date(endRaw).getTime();
     if (!Number.isFinite(startAt) || !Number.isFinite(endAt) || endAt <= startAt) return json(400, {error: 'טווח התאריכים אינו תקין'});
     if (startAt < Date.now() - 5 * 60 * 1000) return json(400, {error: 'זמן האיסוף כבר עבר'});
-    const startLocal = cleanText(body.startLocal, 40) || startRaw;
-    const endLocal = cleanText(body.endLocal, 40) || endRaw;
+    // Derived from the instants validated just above — NOT from body.startLocal/body.endLocal, which
+    // were unvalidated parallel fields the price basis depended on.
+    const startLocal = isInstant(startRaw) ? nyWallClock(startAt) : startRaw;
+    const endLocal = isInstant(endRaw) ? nyWallClock(endAt) : endRaw;
     if (!carServesPeriod(car, startLocal, endLocal, startAt, endAt)) return json(409, {error: 'הרכב אינו מושכר לטווח שנבחר'});  // #14: enforce rental mode server-side
     if ((endAt - startAt) > 90 * DAY) return json(400, {error: 'משך ההשכרה ארוך מדי (עד 90 ימים)'});  // #40
     if (startAt > Date.now() + 365 * DAY) return json(400, {error: 'לא ניתן להזמין יותר משנה מראש'});  // #40
