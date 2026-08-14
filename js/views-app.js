@@ -166,10 +166,10 @@ function bindDashboardTabs(renderer) {
   document.querySelectorAll('[data-goto-tab]').forEach(button => button.onclick = () => {
     const tab = button.dataset.gotoTab;
     if (tab === 'chats') { location.hash = 'chats'; return; }
-    store.dashTab = tab; renderer(tab);
+    store.dashTab = tab; renderer(tab); bottomNav();
   });
   const headAvatar = document.querySelector('[data-goto-profile]');
-  if (headAvatar) headAvatar.onclick = () => { store.dashTab = 'profile'; renderer('profile'); };
+  if (headAvatar) headAvatar.onclick = () => { store.dashTab = 'profile'; renderer('profile'); bottomNav(); };
 }
 export function dashboard() {
   resetPaint();
@@ -635,12 +635,18 @@ function adminDashboard(tab = 'overview') {
   const pendingVerif = users.filter(u => u.verification?.status === 'pending').length;
   const pendingPay = Object.values(store.payments).filter(p => p && p.status === 'pending').length;
   const pendingBook = bookings.filter(b => b.status === 'pending').length;
-  const unread = adminUnreadCount();
+  const unread = adminUnreadCount();          // ALL admin notifications — correct for the התראות label
+  // ...but NOT for chat. adminUnreadCount counts every notification type (car, booking, payment,
+  // verification, block…), so publishing a car and receiving a payment made the admin screen say
+  // "2 הודעות צ׳אט שלא נקראו" with zero unread chats — and tapping through to the chats could not
+  // clear it, because cd-admin-seen is only stamped when the התראות tab renders. chatUnreadTotal()
+  // is the real chat figure; the bottom bar already uses it.
+  const chatUnread = chatUnreadTotal();
   const todo = [
     pendingVerif && ['users', pendingVerif, 'אימותים ממתינים לבדיקה'],
     pendingPay && ['bookings', pendingPay, 'תשלומים ממתינים לאישור'],
     pendingBook && ['bookings', pendingBook, 'הזמנות ממתינות לאישור'],
-    unread && ['chats', unread, 'הודעות צ׳אט שלא נקראו'],
+    chatUnread && ['chats', chatUnread, 'הודעות צ׳אט שלא נקראו'],
   ].filter(Boolean);
   // A SIMPLE control hub (user: "האזור האישי של המנהל מאוד מאוד מסובך"): (1) a plain "what needs you"
   // list where each row jumps straight to it, (2) big labeled tiles so every area is one tap away
@@ -659,7 +665,7 @@ function adminDashboard(tab = 'overview') {
   const contents = {
     overview: `${pushBanner()}${todoHtml}${rekeyHtml}
       <div class="admin-sec-h">ניהול האתר</div>
-      <div class="admin-hub">${navTile('users', 'משתמשים', ICON.users, 'purple', pendingVerif)}${navTile('bookings', 'הזמנות', ICON.calendar, 'blue', pendingPay + pendingBook)}${navTile('cars', 'רכבים', ICON.car, 'gold')}${navTile('chats', 'צ׳אטים', ICON.chat, 'green', unread)}</div>
+      <div class="admin-hub">${navTile('users', 'משתמשים', ICON.users, 'purple', pendingVerif)}${navTile('bookings', 'הזמנות', ICON.calendar, 'blue', pendingPay + pendingBook)}${navTile('cars', 'רכבים', ICON.car, 'gold')}${navTile('chats', 'צ׳אטים', ICON.chat, 'green', chatUnread)}</div>
       <div class="admin-sec-h">האזור שלי — בעל רכב</div>
       <div class="admin-hub">${navTile('myCars', 'הרכבים שלי', ICON.car, 'blue')}${navTile('summary', 'סיכום השכרות', ICON.check, 'green')}${navTile('external', 'השכרות חוץ', ICON.money, 'gold')}${navTile('profile', 'פרופיל', ICON.selfie, 'slate')}</div>
       <div class="admin-stats-mini"><span><b>${bookings.length}</b> הזמנות</span><span><b>${money(total)}</b> תשלומים</span><span><b>${users.length}</b> משתמשים</span><span><b>${cars.length}</b> רכבים</span></div>
@@ -699,7 +705,11 @@ function adminDashboard(tab = 'overview') {
   document.querySelectorAll('[data-nav-tab]').forEach(btn => btn.onclick = () => {
     const t = btn.dataset.navTab;
     if (t === 'chats') { location.hash = 'chats'; return; }
-    store.dashTab = t; adminDashboard(t);
+    // bottomNav() must follow the re-render, exactly as views.js:390/409 do for the tab bar and the
+    // "עוד" sheet. Without it the panel changes but the bar keeps highlighting the previous tab (and
+    // its aria-current), because bottomNav otherwise only runs from render() — on a hashchange or a
+    // Firebase event, neither of which a tile tap produces.
+    store.dashTab = t; adminDashboard(t); bottomNav();
   });
   const rekeyBtn = document.querySelector('#ratings-rekey');
   if (rekeyBtn) rekeyBtn.onclick = async () => {
