@@ -2437,3 +2437,11 @@ body[data-page="dashboard"] .dashboard-tabs .tab-group-label:first-child{border-
 .msg-tick.pending{opacity:.9}
 .msg-tick.failed{color:#FFD3D0;font-weight:800}
 .chat-msgs .message.is-failed{outline:1px solid rgba(215,0,21,.5)}
+
+/* Data-driven re-render of the SAME route: #app is replaced wholesale, so every card would replay its
+   cardIn entry animation and the settled page visibly jumps. app.js marks those repaints; a real route
+   change does not get the class, so navigating between tabs still animates. */
+#app.no-entry-anim .car,
+#app.no-entry-anim .booking-card,
+#app.no-entry-anim .mini-panel,
+#app.no-entry-anim .reveal{animation:none}

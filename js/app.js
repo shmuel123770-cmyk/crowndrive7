@@ -104,6 +104,17 @@ function render() {
     // self-detaches only when a snapshot ARRIVES, so a quiet thread stayed subscribed after the user
     // left. Each is a limitToLast(100) `value` listener that re-sends all 100 messages on any change.
     if (lastRoute === 'chats' && route !== 'chats') teardownChat();
+    // THE "site jumps a few times on open" BUG. Every `.car` / `.booking-card` carries a 0.55s cardIn
+    // entry animation (css/app.css). A route function replaces #app wholesale, so a data-driven
+    // re-render — the catalogue arriving ~1s after first paint, and again on any later snapshot —
+    // recreates every card and replays that animation on all of them. The page had already settled, so
+    // the viewer sees it visibly re-enter. Measured on a cold load: 3 full repaints, the last at 1.2s.
+    //
+    // The page-level enter transition below is already guarded to real route changes; this extends the
+    // same rule to the per-element animations. Must be set BEFORE the route function writes the DOM,
+    // or the animation has already started on the new nodes.
+    const appNode = document.querySelector('#app');
+    if (appNode) appNode.classList.toggle('no-entry-anim', route === lastRoute);
     (routes[route] || home)();
     // The shared car opens as soon as its data has arrived (first render may be pre-data).
     if (pendingCarLink && store.publicReady) {
