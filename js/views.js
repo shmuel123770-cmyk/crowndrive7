@@ -1143,8 +1143,15 @@ export function openCar(id) {
         return;
       }
       const est = estimatePrice(car, s, e);
-      estBox.innerHTML = est ? `<div class="period-est"><span>מחיר משוער</span><b>${money(est.total)}</b><small>${est.label}</small></div>` : '';
-      if (mobileTotal) mobileTotal.textContent = est ? money(est.total + (fulfillment?.value === 'delivery' ? Number(car.deliveryCost || 0) : 0)) : 'המחיר יחושב';
+      // The delivery fee is part of what the server charges (booking-create: total = base + delivery),
+      // and the sticky bar already included it — but this box did not, so the same screen showed two
+      // different totals and the smaller one was wrong. Show the fee as its own line and total once.
+      const delivery = fulfillment?.value === 'delivery' ? Number(car.deliveryCost || 0) : 0;
+      const grand = est ? est.total + delivery : 0;
+      estBox.innerHTML = est
+        ? `<div class="period-est"><span>מחיר משוער</span><b>${money(grand)}</b><small>${est.label}${delivery ? ` + ${money(delivery)} מסירה` : ''}</small></div>`
+        : '';
+      if (mobileTotal) mobileTotal.textContent = est ? money(grand) : 'המחיר יחושב';
     };
     bookingForm.addEventListener('change', () => {
       syncDelivery(); recalc();
