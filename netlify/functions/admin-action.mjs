@@ -84,6 +84,28 @@ export async function handler(event) {
       try {
         const ownedCars = (await db.ref('cars').orderByChild('ownerUid').equalTo(uid).once('value')).val() || {};
         for (const carId of Object.keys(ownedCars)) { updates[`cars/${carId}`] = null; updates[`publicCars/${carId}`] = null; updates[`privateCarDetails/${carId}`] = null; }
+        // Every car this user owned is being deleted, including its privateCarDetails — the pickup
+        // address. car-action refuses that while a booking is live and tells the affected renter; this
+        // path did neither, so a renter mid-rental lost the address with no message, and the booking
+        // kept a status whose only legal exit belongs to an account that no longer exists. (An admin
+        // can still force it, since the transition guards are skipped for admins — but nothing told
+        // anyone it needed forcing.) Close those bookings here and say so.
+        const stranded = [];
+        for (const carId of Object.keys(ownedCars)) {
+          updates[`reservations/${carId}`] = null;   // otherwise a public, permanent phantom hold
+          const onCar = (await db.ref('bookings').orderByChild('carId').equalTo(carId).once('value')).val() || {};
+          for (const [bookingId, b] of Object.entries(onCar)) {
+            if (!['pending', 'approved', 'active'].includes(b?.status)) continue;
+            updates[`bookings/${bookingId}/status`] = 'cancelled';
+            updates[`bookings/${bookingId}/cancelledAt`] = Date.now();
+            updates[`bookings/${bookingId}/cancelledBy`] = token.uid;
+            updates[`bookings/${bookingId}/cancelledByRole`] = 'admin';
+            updates[`bookings/${bookingId}/cancelReason`] = 'חשבון בעל הרכב נמחק';
+            const car = ownedCars[carId] || {};
+            const label = `${car.make || ''} ${car.model || ''}`.trim() || 'הרכב';
+            if (b.renterUid && b.renterUid !== uid) stranded.push({renterUid: b.renterUid, bookingId, label});
+          }
+        }
         for (const field of ['renterUid', 'ownerUid']) {
           const inquiries = (await db.ref('inquiries').orderByChild(field).equalTo(uid).once('value')).val() || {};
           for (const id of Object.keys(inquiries)) { updates[`inquiries/${id}`] = null; updates[`messages/inquiry/${id}`] = null; }
@@ -102,6 +124,13 @@ export async function handler(event) {
         }
       } catch (error) { console.error('user-delete cascade scan failed — deleting core nodes only', error); }
       await db.ref().update(updates);
+      // Only once the cancellation is actually committed — telling someone their rental ended and then
+      // failing the write would be worse than saying nothing. Best effort per renter: one failing
+      // notification must not abort the rest of the deletion.
+      for (const {renterUid, bookingId, label} of stranded) {
+        const text = `ההזמנה שלך (${label}, ${String(bookingId).slice(-7)}) בוטלה — חשבון בעל הרכב הוסר מהאתר. פנו לתמיכה להמשך טיפול.`;
+        try { await notifyUser(renterUid, 'booking', text); } catch {}
+      }
       // Storage folders (best effort — bucket may be unreachable locally).
       try {
         const {storageBucketName} = await import('./_storage.mjs');
