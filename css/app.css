@@ -2493,3 +2493,25 @@ h1,h2,h3,.brand,.hero h1,.section-head h1,.auth-head h2,.modal-head h2{
 /* "שלחו הודעה לקבלת מחיר" occupies the price slot but is a sentence, not a figure — a serif display
    face sized for numerals reads wrong on it. Keep the interface face there. */
 .price.price-ask{font-family:var(--font-ui);letter-spacing:normal;font-size:.95rem;font-weight:700}
+
+/* ============================================================================
+   AUTH — one screen instead of three.
+   The old flow asked for the account type, then sign-in vs sign-up, and only
+   then showed a field. On the sign-in path the account type decided nothing,
+   so it was two taps of pure friction at the point where visitors drop off.
+   ============================================================================ */
+.auth-switch{display:flex;gap:4px;background:var(--wash,rgba(20,26,33,.06));border-radius:12px;padding:4px;margin:0 0 18px}
+.auth-seg{flex:1;border:none;background:transparent;border-radius:9px;padding:10px;font:inherit;
+  font-size:.95rem;font-weight:700;color:var(--muted);cursor:pointer;transition:background .15s,color .15s}
+.auth-seg.on{background:var(--surface);color:var(--text);box-shadow:0 1px 4px rgba(16,24,40,.12)}
+.auth-seg:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+
+.role-segs{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.role-seg{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:11px 10px;
+  text-align:center;cursor:pointer;font:inherit;transition:border-color .15s,background .15s}
+.role-seg b{display:block;font-size:.92rem;font-weight:700;color:var(--text)}
+.role-seg small{display:block;font-size:.72rem;color:var(--muted);margin-top:2px}
+.role-seg.on{border-color:var(--accent);background:rgba(233,169,61,.1)}
+.role-seg:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+
+#reset-box{margin-top:14px;padding-top:14px;border-top:1px solid var(--hair)}

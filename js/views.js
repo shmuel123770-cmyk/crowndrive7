@@ -1224,37 +1224,49 @@ export function authView() {
   app().innerHTML = `<section class="card auth-shell"><div id="auth-content"></div></section>`;
   const content = () => document.querySelector('#auth-content');
 
-  // Step 1 — choose account type.
-  function roleChoice() {
-    content().innerHTML = `<div class="auth-head"><h2>האזור האישי</h2><p>בחרו את סוג החשבון כדי להמשיך</p></div>
-      <div class="role-grid">
-        <button class="role-card" data-role="renter"><span class="role-emoji">${ICON.key}</span><b>שוכר</b><small>מחפש רכב לשכור</small></button>
-        <button class="role-card" data-role="owner"><span class="role-emoji">${ICON.car}</span><b>בעל רכב</b><small>משכיר רכב ומנהל הזמנות</small></button>
-      </div>`;
-    content().querySelectorAll('[data-role]').forEach(card => card.onclick = () => modeChoice(card.dataset.role));
+  // ONE screen. It used to be three: choose renter/owner, then choose sign-in/sign-up, then the form —
+  // two taps before a returning customer saw a single field, at the highest-drop-off point on the site.
+  // And on the sign-in path the account-type question did nothing: loginScreen(role) used `role` only to
+  // print a label, so picking the "wrong" one still signed you in. The account already knows its type.
+  // It is asked only where it decides something: registration.
+  let mode = 'login';          // 'login' | 'register'
+  let regRole = 'renter';      // only meaningful while registering
+
+  function screen() {
+    const seg = (value, label) => `<button type="button" class="auth-seg${mode === value ? ' on' : ''}" data-mode="${value}">${label}</button>`;
+    const roleSeg = (value, label, hint) => `<button type="button" class="role-seg${regRole === value ? ' on' : ''}" data-reg-role="${value}"><b>${label}</b><small>${hint}</small></button>`;
+    content().innerHTML = `
+      <div class="auth-switch">${seg('login', 'כניסה')}${seg('register', 'הרשמה')}</div>
+      ${mode === 'login' ? `
+        <form id="login-form" autocomplete="on">
+          <div class="field"><label>מייל</label><input name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" required></div>
+          <div class="field"><label>סיסמה</label><div class="password-field"><input id="login-password" name="password" type="password" autocomplete="current-password" required><button type="button" data-toggle-password="login-password" aria-pressed="false">הצגה</button></div></div>
+          <button class="btn gold block">כניסה</button>
+          <button type="button" class="forgot-pw" id="forgot-pw">שכחתי סיסמה</button>
+        </form>
+        <div id="reset-box" hidden>
+          <div class="field"><label>המייל של החשבון</label><input id="reset-email" type="email" inputmode="email" autocapitalize="none" placeholder="name@example.com"></div>
+          <button type="button" class="btn outline block" id="reset-send">שליחת קישור לאיפוס</button>
+        </div>`
+      : `
+        <form id="register-form" autocomplete="on">
+          <div class="field"><label>אני נרשם/ת בתור</label><div class="role-segs">${roleSeg('renter', 'שוכר', 'מחפש רכב לשכור')}${roleSeg('owner', 'בעל רכב', 'משכיר רכב ומנהל הזמנות')}</div></div>
+          <input type="hidden" name="role" value="${esc(regRole)}">
+          <div class="field"><label>שם מלא</label><input name="name" autocomplete="name" required></div>
+          ${phoneField()}
+          <div class="field"><label>מייל</label><input name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" required></div>
+          <div class="field"><label>בחירת סיסמה</label><div class="password-field"><input id="register-password" name="password" type="password" minlength="6" autocomplete="new-password" required><button type="button" data-toggle-password="register-password" aria-pressed="false">הצגה</button></div><small>לפחות 6 תווים.</small></div>
+          <div class="field"><label>אישור סיסמה</label><input name="passwordConfirm" type="password" minlength="6" autocomplete="new-password" required></div>
+          <label class="booking-consent"><input type="checkbox" name="legalAccepted" required><span>קראתי ואני מסכים/ה ל<a href="terms.html" target="_blank" rel="noopener">תנאי השימוש</a> ול<a href="privacy.html" target="_blank" rel="noopener">מדיניות הפרטיות</a>.</span></label>
+          <button class="btn gold block">פתיחת חשבון</button>
+        </form>`}`;
+
+    content().querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { mode = b.dataset.mode; screen(); });
+    content().querySelectorAll('[data-reg-role]').forEach(b => b.onclick = () => { regRole = b.dataset.regRole; screen(); });
+    if (mode === 'login') bindLogin(); else bindRegister();
   }
 
-  // Step 2 — two separate options: Sign in / Sign up.
-  function modeChoice(role) {
-    const label = role === 'owner' ? 'בעל רכב' : 'שוכר';
-    content().innerHTML = `<button class="link-back" id="auth-back">→ חזרה לבחירת סוג חשבון</button>
-      <div class="auth-head"><span class="role-pill">${label}</span></div>
-      <div class="role-grid">
-        <button class="role-card" data-mode="login"><span class="role-emoji">${ICON.selfie}</span><b>כניסה</b><small>Sign in · כבר יש לי חשבון</small></button>
-        <button class="role-card" data-mode="register"><span class="role-emoji">${ICON.edit}</span><b>הרשמה</b><small>Sign up · פתיחת חשבון חדש</small></button>
-      </div>`;
-    content().querySelector('#auth-back').onclick = roleChoice;
-    content().querySelector('[data-mode="login"]').onclick = () => loginScreen(role);
-    content().querySelector('[data-mode="register"]').onclick = () => registerScreen(role);
-  }
-
-  // Step 3a — Sign in: email + password only.
-  function loginScreen(role) {
-    const label = role === 'owner' ? 'בעל רכב' : 'שוכר';
-    content().innerHTML = `<button class="link-back" id="auth-back">→ חזרה</button>
-      <div class="auth-head"><h2>כניסה · Sign in</h2><p>${label} · הזינו מייל וסיסמה</p></div>
-      <form id="login-form"><div class="field"><label>מייל</label><input name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" required></div><div class="field"><label>סיסמה</label><div class="password-field"><input id="login-password" name="password" type="password" autocomplete="current-password" required><button type="button" data-toggle-password="login-password" aria-pressed="false">הצגה</button></div></div><button class="btn primary block">כניסה</button><button type="button" class="forgot-pw" id="forgot-pw">שכחתי סיסמה</button></form>`;
-    content().querySelector('#auth-back').onclick = () => modeChoice(role);
+  function bindLogin() {
     content().querySelector('#login-form').onsubmit = async event => {
       event.preventDefault();
       const data = formData(event.target);
@@ -1267,32 +1279,40 @@ export function authView() {
       }
       catch (error) { toast(error.message); if (button) { button.disabled = false; button.textContent = 'כניסה'; } }
     };
-    content().querySelector('#forgot-pw').onclick = async () => {
-      const email = content().querySelector('#login-form')?.email?.value?.trim() || prompt('כתובת המייל של החשבון:');
-      if (!email) return;
-      try { await sendPasswordReset(email); toast('נשלח אליכם מייל עם קישור לאיפוס הסיסמה'); }
+    // Was a native prompt() when the email field was empty — a grey browser dialog in the middle of a
+    // designed screen. The field lives in the page now.
+    const box = content().querySelector('#reset-box');
+    content().querySelector('#forgot-pw').onclick = () => {
+      box.hidden = false;
+      const typed = content().querySelector('#login-form')?.email?.value?.trim();
+      const field = content().querySelector('#reset-email');
+      if (typed) field.value = typed;
+      field.focus();
+    };
+    content().querySelector('#reset-send').onclick = async event => {
+      const field = content().querySelector('#reset-email');
+      const email = field.value.trim();
+      if (!validEmail(email)) return fieldError(field, 'כתובת המייל אינה תקינה');
+      event.target.disabled = true;
+      try { await sendPasswordReset(email); toast('נשלח אליכם מייל עם קישור לאיפוס הסיסמה'); box.hidden = true; }
       catch (error) { toast(error.message); }
+      finally { event.target.disabled = false; }
     };
   }
 
-  // Step 3b — Sign up: full name, phone, email, password.
-  function registerScreen(role) {
-    const label = role === 'owner' ? 'בעל רכב' : 'שוכר';
-    content().innerHTML = `<button class="link-back" id="auth-back">→ חזרה</button>
-      <div class="auth-head"><h2>הרשמה · Sign up</h2><p>פתיחת חשבון ${label}</p></div>
-      <form id="register-form"><input type="hidden" name="role" value="${role}"><div class="field"><label>שם מלא</label><input name="name" autocomplete="name" required></div>${phoneField()}<div class="field"><label>מייל</label><input name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" required></div><div class="field"><label>בחירת סיסמה</label><div class="password-field"><input id="register-password" name="password" type="password" minlength="6" autocomplete="new-password" required><button type="button" data-toggle-password="register-password" aria-pressed="false">הצגה</button></div><small>לפחות 6 תווים.</small></div><div class="field"><label>אישור סיסמה</label><input name="passwordConfirm" type="password" minlength="6" autocomplete="new-password" required></div><label class="booking-consent"><input type="checkbox" name="legalAccepted" required><span>קראתי ואני מסכים/ה ל<a href="terms.html" target="_blank" rel="noopener">תנאי השימוש</a> ול<a href="privacy.html" target="_blank" rel="noopener">מדיניות הפרטיות</a>.</span></label><button class="btn primary block">הרשמה כ${label}</button></form>`;
-    content().querySelector('#auth-back').onclick = () => modeChoice(role);
+  function bindRegister() {
     content().querySelector('#register-form').onsubmit = async event => {
       event.preventDefault();
-      const button = event.target.querySelector('button[type=submit], .btn.primary');
+      const button = event.submitter || event.target.querySelector('button[type=submit], .btn.gold');
       const data = composePhone(formData(event.target));
-      const reset = () => { if (button) { button.disabled = false; button.textContent = `הרשמה כ${label}`; } };
+      const reset = () => { if (button) { button.disabled = false; button.textContent = 'פתיחת חשבון'; } };
       if (!validEmail(data.email)) return fieldError(event.target.email, 'כתובת המייל אינה תקינה — בדקו שהיא בפורמט name@example.com');
       if (String(data.password || '').length < 6) return fieldError(event.target.password, 'הסיסמה קצרה מדי — לפחות 6 תווים');
       if (data.password !== data.passwordConfirm) return fieldError(event.target.passwordConfirm, 'הסיסמאות אינן תואמות — הקלידו שוב את אותה הסיסמה');
       delete data.passwordConfirm;
+      data.role = ['renter', 'owner'].includes(data.role) ? data.role : regRole;
       data.legalAccepted = data.legalAccepted === 'on';
-      data.termsVersion = '2026-07-14-rev101';
+      data.termsVersion = TERMS_VERSION;
       if (button) { button.disabled = true; button.textContent = 'נרשם…'; }
       try { await register(data); afterAuthDestination(); }
       catch (error) { toast(error.message); reset(); }
@@ -1305,7 +1325,7 @@ export function authView() {
     content().innerHTML = `<button class="link-back" id="auth-back">→ חזרה</button>
       <div class="auth-head"><span class="role-pill">מנהל האתר</span><h2>כניסת מנהל · Sign in</h2><p>הזינו מייל וסיסמה של חשבון המנהל</p></div>
       <form id="login-form"><div class="field"><label>מייל</label><input name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" required></div><div class="field"><label>סיסמה</label><div class="password-field"><input id="admin-password" name="password" type="password" autocomplete="current-password" required><button type="button" data-toggle-password="admin-password" aria-pressed="false">הצגה</button></div></div><button class="btn primary block">כניסת מנהל</button><button type="button" class="forgot-pw" id="forgot-pw">שכחתי סיסמה</button></form>`;
-    content().querySelector('#auth-back').onclick = roleChoice;
+    content().querySelector('#auth-back').onclick = () => { mode = 'login'; screen(); };
     content().querySelector('#login-form').onsubmit = async event => {
       event.preventDefault();
       const data = formData(event.target);
@@ -1321,9 +1341,10 @@ export function authView() {
     };
   }
 
-  if (pendingAdminLogin) { pendingAdminLogin = false; adminLoginScreen(); }
-  else if (pendingAuthRole) { const role = pendingAuthRole, mode = pendingAuthTab; pendingAuthRole = pendingAuthTab = null; (mode === 'register' ? registerScreen : loginScreen)(role); }
-  else roleChoice();
+  if (pendingAdminLogin) { pendingAdminLogin = false; adminLoginScreen(); return; }
+  // A deep link ("become an owner", "sign up to book") can preselect the tab and the account type.
+  if (pendingAuthRole) { regRole = pendingAuthRole === 'owner' ? 'owner' : 'renter'; if (pendingAuthTab === 'register') mode = 'register'; pendingAuthRole = pendingAuthTab = null; }
+  screen();
 }
 
 // ---------- Lazy chunk: the whole authenticated app (dashboard, chat, forms, modals) ----------
