@@ -686,6 +686,44 @@ export function featuredFirst(cars) {
 // Placeholder cards shown while the FIRST cars snapshot is still loading — so the catalog area has a
 // calm shimmer instead of a "no cars" message or an empty gap (the hero above already rendered).
 const carSkeletons = (n = 6) => Array.from({length: n}, () => '<article class="card car car-sk" aria-hidden="true"><div class="car-photo sk"></div><div class="car-body"><span class="sk-line sk-lg"></span><span class="sk-line sk-sm"></span><span class="sk-line sk-md"></span><span class="sk-btn"></span></div></article>').join('');
+// The price is the fact a renter is deciding on. It used to render as `.summary` rows — the same
+// component, weight and size as "סוג דלק" and "תיבת הילוכים" — so the number that closes the sale
+// looked like a spec-sheet entry. One headline rate, the others beside it as secondary.
+function priceBlock(car, onRequest) {
+  if (onRequest) {
+    return `<div class="price-block price-block-ask">
+      <b>המחיר נקבע מול בעל הרכב</b>
+      <small>שלחו הודעה כדי לקבל מחיר לטווח שבחרתם</small>
+    </div>`;
+  }
+  const daily = Number(car.dailyPrice || 0), hourly = Number(car.priceHourly || 0), weekly = Number(car.priceWeekly || 0);
+  // Lead with the rate the car is actually rented by, not whichever field happens to be filled first.
+  const lead = daily ? [money(daily), 'ליום'] : hourly ? [money(hourly), 'לשעה'] : weekly ? [money(weekly), 'לשבוע'] : null;
+  if (!lead) return '';
+  const others = [
+    daily && hourly ? `${money(hourly)} לשעה` : '',
+    weekly && (daily || hourly) ? `${money(weekly)} לשבוע` : '',
+    Number(car.weekendPrice) && car.weekendEnabled ? `${money(car.weekendPrice)} לסופ״ש` : '',
+  ].filter(Boolean);
+  return `<div class="price-block">
+    <span class="pb-main">${lead[0]}<small>${lead[1]}</small></span>
+    ${others.length ? `<span class="pb-alt">${others.join('<br>')}</span>` : ''}
+  </div>`;
+}
+
+const GATE_ICON = (() => {
+  const wrap = d => `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  return {
+    person:  wrap('<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/>'),
+    car:     wrap('<path d="M4 17v-5l2-5h12l2 5v5"/><circle cx="7.5" cy="17.5" r="1.6"/><circle cx="16.5" cy="17.5" r="1.6"/>'),
+    key:     wrap('<circle cx="8" cy="12" r="4"/><path d="M12 12h9M18 12v4M15 12v3"/>'),
+    blocked: wrap('<circle cx="12" cy="12" r="9"/><path d="M6 6l12 12"/>'),
+    calendar:wrap('<rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/>'),
+    clock:   wrap('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+    id:      wrap('<rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="11" r="2"/><path d="M14 10h4M14 14h4"/>'),
+  };
+})();
+
 export function carGrid(cars, manage = false, period = null, empty = null) {
   if (!cars.length) {
     if (!store.publicReady) return `<div class="grid">${carSkeletons(6)}</div>`;  // still loading — not "no cars"
@@ -966,14 +1004,14 @@ export function openCar(id) {
   // documents locks the identity fields, so a user who photographs first can no longer fill the date
   // that booking-create requires.
   const bookingGate = car.status === 'hidden' ? null
-    : !signedIn ? {icon: '👤', title: 'התחברו כדי להזמין', text: 'הרשמה לוקחת פחות מדקה — שם, מייל וסיסמה.', cta: 'התחברות / הרשמה', act: 'auth'}
-    : isOwnCar ? {icon: '🚗', title: 'זה הרכב שלך', text: 'אי אפשר להזמין רכב שאתם עצמכם מפרסמים. לניהול הרכב עברו לאזור האישי.', cta: 'לרכבים שלי', act: 'mycars'}
-    : (store.isAdmin || store.profile?.role === 'owner') ? {icon: '🔑', title: 'חשבון בעל רכב — אי אפשר להזמין', text: 'החשבון הזה מוגדר כבעל רכב. להשכרת רכב צריך חשבון שוכר — כתבו לנו ונסדר את זה.', cta: 'פנייה לתמיכה', act: 'support'}
-    : age !== null && age < minAge ? {icon: '🚫', title: `הרכב הזה מגיל ${minAge}`, text: `לפי תאריך הלידה בפרופיל אתם בני ${age}. באתר יש רכבים עם גיל מינימלי נמוך יותר — שווה לבדוק.`, cta: 'לרכבים אחרים', act: 'browse'}
-    : age === null ? {icon: '🎂', title: 'חסר תאריך לידה בפרופיל', text: 'צריך אותו כדי לאשר את גיל הנהיגה. לוקח 10 שניות, וכדאי להשלים לפני העלאת המסמכים.', cta: 'השלמת תאריך לידה', act: 'birthdate'}
+    : !signedIn ? {icon: GATE_ICON.person, title: 'התחברו כדי להזמין', text: 'הרשמה לוקחת פחות מדקה — שם, מייל וסיסמה.', cta: 'התחברות / הרשמה', act: 'auth'}
+    : isOwnCar ? {icon: GATE_ICON.car, title: 'זה הרכב שלך', text: 'אי אפשר להזמין רכב שאתם עצמכם מפרסמים. לניהול הרכב עברו לאזור האישי.', cta: 'לרכבים שלי', act: 'mycars'}
+    : (store.isAdmin || store.profile?.role === 'owner') ? {icon: GATE_ICON.key, title: 'חשבון בעל רכב — אי אפשר להזמין', text: 'החשבון הזה מוגדר כבעל רכב. להשכרת רכב צריך חשבון שוכר — כתבו לנו ונסדר את זה.', cta: 'פנייה לתמיכה', act: 'support'}
+    : age !== null && age < minAge ? {icon: GATE_ICON.blocked, title: `הרכב הזה מגיל ${minAge}`, text: `לפי תאריך הלידה בפרופיל אתם בני ${age}. באתר יש רכבים עם גיל מינימלי נמוך יותר — שווה לבדוק.`, cta: 'לרכבים אחרים', act: 'browse'}
+    : age === null ? {icon: GATE_ICON.calendar, title: 'חסר תאריך לידה בפרופיל', text: 'צריך אותו כדי לאשר את גיל הנהיגה. לוקח 10 שניות, וכדאי להשלים לפני העלאת המסמכים.', cta: 'השלמת תאריך לידה', act: 'birthdate'}
     : verStatus === 'approved' ? null
-    : verStatus === 'pending' ? {icon: '⏳', title: 'המסמכים שלך בבדיקה', text: 'נעדכן אותך ברגע שהאימות יאושר — ואז אפשר להזמין כל רכב באתר.', cta: '', act: ''}
-    : {icon: '🪪', title: 'אימות רישיון — שלב אחד לפני הזמנה', text: 'צלמו רישיון נהיגה (2 צדדים) וסלפי. לוקח דקה, וזה חד-פעמי.', cta: 'אימות עכשיו', act: 'verify'};
+    : verStatus === 'pending' ? {icon: GATE_ICON.clock, title: 'המסמכים שלך בבדיקה', text: 'נעדכן אותך ברגע שהאימות יאושר — ואז אפשר להזמין כל רכב באתר.', cta: '', act: ''}
+    : {icon: GATE_ICON.id, title: 'אימות רישיון — שלב אחד לפני הזמנה', text: 'צלמו רישיון נהיגה (2 צדדים) וסלפי. לוקח דקה, וזה חד-פעמי.', cta: 'אימות עכשיו', act: 'verify'};
   const gateHtml = bookingGate ? `<div class="book-gate"><span class="bg-ic">${bookingGate.icon}</span><div class="bg-body"><b>${esc(bookingGate.title)}</b><small>${esc(bookingGate.text)}</small></div>${bookingGate.cta ? `<button type="button" class="btn primary block" id="gate-cta" data-gate-act="${bookingGate.act}">${esc(bookingGate.cta)}</button>` : ''}</div>` : '';
   const draftKey = `cd-booking-draft-${car.id}`;
   const draft = readSession(draftKey, {});
@@ -992,7 +1030,7 @@ export function openCar(id) {
     <!-- Mobile declutter: the DECISION info (price + rating) stays visible; the rest of the spec sheet
          folds into "מפרט מלא" so the modal opens short and scannable. -->
     <div class="detail-summaries key-specs">
-      ${onRequest ? '<div class="summary price-row"><span>מחיר</span><b>שלחו הודעה</b></div>' : `${car.priceHourly ? `<div class="summary price-row"><span>מחיר לשעה</span><b>${money(car.priceHourly)}</b></div>` : ''}${car.dailyPrice ? `<div class="summary"><span>מחיר יומי</span><b>${money(car.dailyPrice)}</b></div>` : ''}${car.priceWeekly ? `<div class="summary"><span>מחיר לשבוע</span><b>${money(car.priceWeekly)}</b></div>` : ''}`}
+      ${priceBlock(car, onRequest)}
       <div class="summary"><span>דירוג</span><b>${carRating(car.id) ? `${stars(carRating(car.id))} ${carRating(car.id).toFixed(1)}` : '<span class="rate-new">חדש באתר — אין דירוגים עדיין</span>'}</b></div>
     </div>
     <details class="spec-more"><summary>מפרט מלא</summary>

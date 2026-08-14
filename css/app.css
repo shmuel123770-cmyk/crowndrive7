@@ -2560,3 +2560,20 @@ h1,h2,h3,.brand,.hero h1,.section-head h1,.auth-head h2,.modal-head h2{
 .pq-line.pq-total b{font-family:var(--font-display);font-size:1.3rem;letter-spacing:-.02em}
 .pq-note{margin:9px 0 0;padding-top:9px;border-top:1px dashed var(--line);
   font-size:.78rem;color:var(--muted);line-height:1.55}
+
+/* ============================================================================
+   CAR AD — the price is a decision, not a spec.
+   It rendered as `.summary` rows, the same component and weight as "סוג דלק",
+   so the number that closes the sale looked like a line in a spec sheet.
+   ============================================================================ */
+.price-block{grid-column:1/-1;display:flex;align-items:flex-end;justify-content:space-between;gap:14px;
+  padding:14px 2px 15px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:2px}
+.price-block .pb-main{font-family:var(--font-display);font-size:2.1rem;font-weight:900;letter-spacing:-.03em;
+  line-height:1;color:var(--text);font-variant-numeric:tabular-nums}
+.price-block .pb-main small{font-family:var(--font-ui);font-size:.8rem;font-weight:500;color:var(--muted);
+  letter-spacing:normal;margin-inline-start:5px}
+.price-block .pb-alt{font-size:.82rem;color:var(--muted);text-align:end;line-height:1.6;font-variant-numeric:tabular-nums}
+.price-block-ask{display:block}
+.price-block-ask b{display:block;font-family:var(--font-ui);font-size:1rem;font-weight:700;color:var(--text)}
+.price-block-ask small{display:block;font-size:.82rem;color:var(--muted);margin-top:3px}
+.book-gate .bg-ic svg{width:26px;height:26px;display:block;color:var(--accent)}
