@@ -24,7 +24,12 @@ export const carImage = car => carPhotos(car)[0] || fallbackImage;
 // commons URL (often 4000-5000px!) to phone-sized thumbs and serve a srcset. Storage/data URLs are already
 // compressed to ≤~1000px on upload and pass through untouched.
 export const wikiThumb = (url, w) => {
-  const m = String(url || '').match(/^https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/([0-9a-f])\/([0-9a-f]{2})\/([^\/?#]+)$/i);
+  // Strip any query/hash FIRST. Copying an image address out of Wikipedia yields tracking parameters
+  // (?utm_source=en.wikipedia.org&…), and anchoring the filename at $ made those URLs miss this
+  // rewrite entirely — so the ORIGINAL was served. One such car put a 10 MB photo on the home page,
+  // 98% of the whole 10.4 MB payload Lighthouse measured, while cars with a clean URL cost ~40 KB.
+  const clean = String(url || '').split(/[?#]/)[0];
+  const m = clean.match(/^https:\/\/upload\.wikimedia\.org\/wikipedia\/commons\/([0-9a-f])\/([0-9a-f]{2})\/([^\/]+)$/i);
   if (!m) return null;
   const suffix = /\.svg$/i.test(m[3]) ? `${w}px-${m[3]}.png` : `${w}px-${m[3]}`;
   return `https://upload.wikimedia.org/wikipedia/commons/thumb/${m[1]}/${m[2]}/${m[3]}/${suffix}`;
