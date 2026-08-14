@@ -4,6 +4,10 @@ export const store = {
   user: null,
   profile: null,
   profileLoaded: false,
+  // profileLoaded means "stop waiting"; profileKnown means "the read actually answered". They differ
+  // exactly when a read fails or times out — and conflating them let the app treat "we could not
+  // reach your profile" as "you have no account type yet".
+  profileKnown: false,
   isAdmin: false,
   adminChecked: false,
   authSettled: false,
@@ -211,15 +215,39 @@ export async function startPrivate(user) {
       const oldStatus = store.profile?.verification?.status || 'missing';
       store.profile = {...(v || {}), verification: {...(v?.verification || {}), status: oldStatus}};
       store.profileLoaded = true;  // the real profile row (or its absence) has now arrived
+      store.profileKnown = true;   // ...and it is a real answer, so an empty role really is empty
       if (!store.isAdmin) subscribeOwnFeeds(store.profile.role);
       emit('profile');
     };
+    // A failed read is NOT an empty profile. Leave profileKnown false so the UI offers a retry
+    // instead of asking an existing user to pick an account type again.
     const onProfileError = error => { console.error('firebase listener profile', error); store.profileLoaded = true; emit('profile'); };
     profileRef.on('value', onProfile, onProfileError);
     store.privateUnsubs.push(() => profileRef.off('value', onProfile));
   }
   // Last-resort safety net: never let the personal area spin for more than a few seconds.
-  setTimeout(() => { if (!store.profileLoaded) { store.profileLoaded = true; emit('profile'); } }, 5000);
+  //
+  // CAREFUL: profileLoaded only means "stop waiting" — NOT "we know who this user is". Treating the
+  // two as the same is what turned renters into owners: on a network where the realtime channel is
+  // blocked this timer fired, the role looked empty, and the personal area offered "choose your
+  // account type" to someone who already had one. So before giving up, read the profile over plain
+  // HTTPS — the same escape hatch the catalogue uses — and only then admit we do not know.
+  setTimeout(async () => {
+    if (store.profileLoaded) return;
+    try {
+      const data = await readViaREST(`users/${user.uid}`);
+      if (store.profileLoaded) return;                 // realtime won the race after all
+      const oldStatus = store.profile?.verification?.status || 'missing';
+      store.profile = {...(data || {}), verification: {...(data?.verification || {}), status: oldStatus}};
+      store.profileKnown = true;                       // a real answer, even if the row is empty
+      if (!store.isAdmin) subscribeOwnFeeds(store.profile.role);
+    } catch (error) {
+      console.error('profile unavailable over realtime AND rest', error);
+      store.profileKnown = false;                      // we genuinely do not know — do not guess a role
+    }
+    store.profileLoaded = true;
+    emit('profile');
+  }, 5000);
   store.privateUnsubs.push(listen(refs.verificationStatus.child(user.uid), status => {
     store.profile = store.profile || {};
     // The listen() helper coerces empty snapshots to {} — keep status a string.
@@ -265,6 +293,7 @@ export function stopPrivate() {
   store.user = null;
   store.profile = null;
   store.profileLoaded = false;
+  store.profileKnown = false;
   store.isAdmin = false;
   store.adminChecked = false;
   store.bookings = {};

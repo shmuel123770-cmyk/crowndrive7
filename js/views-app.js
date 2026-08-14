@@ -5,6 +5,7 @@ import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, s
 import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './media.js';
 import {legacyStatus, migrateLegacy} from './migrate.js';
 import {api} from './api.js';
+import {readViaREST} from './firebase.js';
 import {enablePush, pushPromptable, pushSupported, iosNeedsInstall, initPushForeground} from './push.js';
 import {saveAuthReturn, afterAuthDestination, openCar, CAR_MAKES, CAR_TYPES, ICON, MODELS_BY_MAKE, RENTAL_MODES, TAB_ICONS, app, avatarHtml, carImage, carPhotoList, carStatusPill, carYears, composePhone, emptyState, fallbackImage, kpi, phoneField, roleName, selectOptions, bindCarButtons, carGrid, featuredFirst, userUnreadNotifs, bottomNav} from './views.js';
 
@@ -184,6 +185,9 @@ export function dashboard() {
   else if (role === 'owner') ownerDashboard(store.dashTab);
   else if (role === 'renter') renterDashboard(store.dashTab);
   else if (!store.adminChecked || !store.profileLoaded) app().innerHTML = '<div class="app-loader"><div class="spinner"></div><p>טוען את האזור האישי…</p></div>';
+  // "We could not reach your profile" is NOT "you have no account type". Offering the account-type
+  // chooser here is what let an existing renter re-pick — and the choice is locked to admins after.
+  else if (!store.profileKnown) profileUnavailable();
   else completeProfile();
   maybeReconsent();
 }
@@ -211,7 +215,20 @@ function maybeReconsent() {
   });
 }
 
-// The account exists in Firebase Auth but has no profile in the DB (old broken
+// The profile could not be read at all (both the realtime channel and the REST fallback failed).
+// The account is fine — we simply do not know it right now, so the only honest offer is to retry.
+function profileUnavailable() {
+  app().innerHTML = `<section class="card auth-shell">
+    <div class="auth-head"><h2>לא הצלחנו לטעון את החשבון</h2>
+      <p>נראה שיש תקלת חיבור. החשבון והפרטים שלכם לא נפגעו.</p></div>
+    <button type="button" class="btn primary block" id="profile-retry">ניסיון נוסף</button>
+    <button type="button" class="link-back" id="profile-support">פנייה לתמיכה</button>
+  </section>`;
+  document.querySelector('#profile-retry').onclick = () => location.reload();
+  document.querySelector('#profile-support').onclick = () => { location.hash = 'chats'; };
+}
+
+// The account exists in Firebase Auth but genuinely has no profile in the DB (old broken
 // registrations) — let the user finish setup and choose their real role.
 function completeProfile() {
   app().innerHTML = `<section class="card auth-shell"><div class="auth-head"><h2>עוד צעד אחד וסיימנו</h2><p>${store.profile?.name ? 'איך תרצו להשתמש באתר?' : 'נשלים את פרטי החשבון כדי לפתוח את האזור האישי המתאים לך'}</p></div>
@@ -219,20 +236,33 @@ function completeProfile() {
       <button class="role-card" data-cp-role="renter"><span class="role-emoji">${ICON.key}</span><b>אני שוכר</b><small>מחפש רכב לשכור</small></button>
       <button class="role-card" data-cp-role="owner"><span class="role-emoji">${ICON.car}</span><b>אני בעל רכב</b><small>רוצה להשכיר רכב ולנהל הזמנות</small></button>
     </div>
+    <div id="cp-confirm" style="display:none"><div class="notice">סוג החשבון נקבע פעם אחת. שינוי מאוחר יותר אפשרי רק דרך מנהל האתר.</div><button type="button" class="btn primary block" id="cp-commit"></button></div>
     <form id="cp-form" style="display:none"><input type="hidden" name="role"><div class="field"><label>שם מלא</label><input name="name" value="${esc(store.user.displayName || '')}" required></div>${phoneField()}<button class="btn primary block">שמירה וכניסה לאזור האישי</button></form></section>`;
   const hasProfile = Boolean(store.profile?.name);
   const form = document.querySelector('#cp-form');
-  document.querySelectorAll('[data-cp-role]').forEach(card => card.onclick = async () => {
+  const confirmBox = document.querySelector('#cp-confirm');
+  const commit = document.querySelector('#cp-commit');
+  let picked = null;
+  document.querySelectorAll('[data-cp-role]').forEach(card => card.onclick = () => {
     document.querySelectorAll('[data-cp-role]').forEach(x => x.classList.toggle('role-selected', x === card));
+    picked = card.dataset.cpRole;
     if (hasProfile) {
-      // name+phone already saved at signup — one tap sets the role and we're in.
-      try { await createOwnProfile({name: store.profile?.name, phone: store.profile?.phone, role: card.dataset.cpRole}); toast('החשבון מוכן!'); }
-      catch (error) { toast(error.message); }
+      // Was a single tap that wrote the role immediately — and the role is then locked to admins,
+      // so one stray tap permanently turned a renter into an owner. Selecting now only ARMS the
+      // choice; committing needs a second, explicit press.
+      commit.textContent = picked === 'owner' ? 'אישור — פתיחת חשבון בעל רכב' : 'אישור — פתיחת חשבון שוכר';
+      confirmBox.style.display = '';
       return;
     }
-    form.role.value = card.dataset.cpRole;
+    form.role.value = picked;
     form.style.display = '';
   });
+  commit.onclick = async () => {
+    if (!picked) return;
+    commit.disabled = true;
+    try { await createOwnProfile({name: store.profile?.name, phone: store.profile?.phone, role: picked}); toast('החשבון מוכן!'); }
+    catch (error) { toast(error.message); commit.disabled = false; }
+  };
   form.onsubmit = async event => {
     event.preventDefault();
     const data = composePhone(formData(event.target));
@@ -1914,7 +1944,8 @@ function selectThread(key) {
     catch (error) { toast(error.message); }
   });
 
-  const ref = firebase.database().ref(isSupport ? `messages/admin/${id}` : isInquiry ? `messages/inquiry/${id}` : `messages/${id}`).limitToLast(100);
+  const msgPath = isSupport ? `messages/admin/${id}` : isInquiry ? `messages/inquiry/${id}` : `messages/${id}`;
+  const ref = firebase.database().ref(msgPath).limitToLast(100);
   // Smooth, WhatsApp-style rendering: APPEND only new bubbles instead of rebuilding the whole list on
   // every snapshot (no flicker, images never reload, scroll position is kept), with day dividers, sender
   // grouping, and a "↓ הודעות חדשות" pill when a message arrives while you're reading history above.
