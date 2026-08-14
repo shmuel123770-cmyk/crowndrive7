@@ -2599,3 +2599,32 @@ h1,h2,h3,.brand,.hero h1,.section-head h1,.auth-head h2,.modal-head h2{
 .stat-row .stat{font:inherit;cursor:pointer;text-align:center;width:100%}
 .stat-row button.stat:active{transform:scale(.985)}
 .stat-row .stat:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+
+/* ============================================================================
+   DASHBOARD TABS ON A PHONE — they were underneath the bottom navigation.
+   Under (max-width:820px) the tab strip is `position:fixed; bottom:0`, and the
+   site already pins .bottom-nav to bottom:0 as well. Measured on a 375x812
+   screen: the strip occupied 735-812 and the nav 744-812 — a 68px overlap, the
+   whole strip. elementFromPoint at the strip's centre returned the bottom nav's
+   button, so every tap meant for a tab hit the nav instead. And because the
+   strip is nowrap with default flex-shrink, ten tabs plus two group labels
+   squeezed to 22px each with the text truncated.
+   This affects every role — dashboardLayout() emits .dashboard-tabs for the
+   renter, the owner and the admin alike. Nothing is removed: the strip sits
+   above the nav and scrolls, so all ten tabs stay reachable.
+   ============================================================================ */
+@media (max-width: 820px){
+  :root{--bottom-nav-h:68px}
+  .dashboard-tabs{
+    bottom:calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px));
+    border-radius:16px 16px 0 0;
+    scroll-padding-inline:14px;
+    scrollbar-width:none;
+  }
+  .dashboard-tabs::-webkit-scrollbar{display:none}
+  /* Let the strip scroll instead of crushing every tab to an unreadable 22px. */
+  .dashboard-tabs .tab,
+  .dashboard-tabs .tab-group-label{flex:0 0 auto}
+  /* The panel has to clear BOTH bars now, not just the nav. */
+  .dashboard-panel{padding-bottom:calc(var(--bottom-nav-h) + 96px + env(safe-area-inset-bottom, 0px))}
+}
