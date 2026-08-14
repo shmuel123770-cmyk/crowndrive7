@@ -429,7 +429,10 @@ export function home() {
   const all = list(store.cars);
   const available = all.filter(car => car.status === 'available');
   const rented = all.filter(car => car.status === 'rented');
-  const ready = store.publicReady;  // until the cars snapshot is in, show '·' instead of a flashing 0
+  // Until the cars snapshot is in, show '·' instead of a flashing 0 — and keep showing '·' when the
+  // catalogue could not be loaded at all. A confident "0 רכבים באתר" is the same false claim as the
+  // empty-state copy: it tells a visitor the business has no fleet when we simply could not reach it.
+  const ready = store.publicReady && store.catalogTransport !== 'failed';
   const html = `
   <section class="hero">
     <div class="aur aur-1" aria-hidden="true"></div><div class="aur aur-2" aria-hidden="true"></div><div class="aur aur-3" aria-hidden="true"></div>
@@ -684,6 +687,12 @@ export function carGrid(cars, manage = false, period = null, empty = null) {
     // The default copy is written for a RENTER browsing the catalogue ("we add cars all the time").
     // Shown to an owner staring at their own empty garage it tells them to wait for someone else to
     // do the very thing they are here to do — callers with an owner context pass their own text.
+    // "We could not reach the catalogue" is NOT "there are no cars". Saying the latter when the real
+    // problem is connectivity tells a customer the business has no fleet — and gives them nothing to
+    // act on. Only the genuine empty catalogue gets the reassuring copy.
+    if (store.catalogTransport === 'failed') {
+      return `<div class="grid">${emptyState(ICON.car, 'לא הצלחנו לטעון את הרכבים', 'נראה שיש תקלת חיבור. בדקו את החיבור לאינטרנט ונסו שוב.', '<button type="button" class="btn primary" data-catalog-retry>נסו שוב</button>')}</div>`;
+    }
     return `<div class="grid">${empty || emptyState(ICON.car, 'אין כרגע רכבים זמינים', 'נסו שוב בקרוב — אנחנו מוסיפים רכבים כל הזמן.')}</div>`;
   }
   let ordered = featuredFirst(cars);

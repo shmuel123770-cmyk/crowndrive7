@@ -1,0 +1,12 @@
+# Build output — Netlify regenerates dist/ on every deploy (scripts/build.mjs).
+# Committing it would ship a stale copy alongside the real one.
+dist/
+
+# Dependencies — restored from package.json by the build.
+node_modules/
+package-lock.json
+
+# Local noise
+.DS_Store
+*.log
+.netlify/

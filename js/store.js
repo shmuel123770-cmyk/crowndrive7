@@ -1,4 +1,4 @@
-import {refs} from './firebase.js';
+import {refs, readViaREST} from './firebase.js';
 
 export const store = {
   user: null,
@@ -8,6 +8,10 @@ export const store = {
   adminChecked: false,
   authSettled: false,
   publicReady: false,
+  // How the catalog actually arrived: 'realtime' | 'rest' | 'failed' | null (still loading).
+  // Lets the UI tell "loaded, genuinely no cars" apart from "we could not load the cars" — two very
+  // different things to show a customer.
+  catalogTransport: null,
   // store.cars is a MERGED view (audit #45 phase B): the public mirror (no hidden cars) + the legacy
   // public node during the transition + the signed-in user's own cars (incl. their hidden ones) + the
   // admin's full tree. Everything else in the app keeps reading store.cars as before.
@@ -104,10 +108,44 @@ export async function startPublic() {
     store.publicUnsubs.push(listen(refs.cars, v => { store.legacyCatalog = v; mergeCars(); store.publicReady = true; }, 'cars',
       () => { store.legacyCatalog = {}; mergeCars(); if (!store.publicReady) { store.publicReady = true; } emit('cars'); }));
   };
+  let catalogArrived = false;
   store.publicUnsubs.push(listen(refs.publicCars, v => {
+    catalogArrived = true;
+    store.catalogTransport = 'realtime';
     store.publicCatalog = v; mergeCars(); store.publicReady = true;
     if (!v || !Object.keys(v).length) tryLegacyCatalog();
   }, 'cars', () => { tryLegacyCatalog(); if (!store.publicReady) { store.publicReady = true; emit('cars'); } }));
+
+  // WATCHDOG — this is the failure that showed customers an empty fleet.
+  //
+  // listen() above is ref.on('value'). When the RTDB WebSocket cannot be established (a filtered or
+  // proxied network) Firebase falls back to a long-poll transport that injects <script> tags at the
+  // database host; if the page CSP does not allow that host, the fallback dies too. With both
+  // transports down the SDK calls NEITHER the value handler NOR the error handler — it stays silent
+  // indefinitely. So tryLegacyCatalog() never runs, the error branch never runs, and app.js's own 5s
+  // deadline settles the UI on "אין כרגע רכבים זמינים": a connectivity failure shown as a real answer.
+  //
+  // If nothing has arrived in 2.5s, pull the same node over plain HTTPS — comfortably inside that 5s
+  // deadline. Whichever transport answers first wins; a redundant 16KB GET is a trivial price.
+  setTimeout(async () => {
+    if (catalogArrived || Object.keys(store.publicCatalog).length) return;
+    try {
+      const data = await readViaREST('publicCars');
+      if (catalogArrived) return;              // realtime won the race after all
+      store.publicCatalog = data || {};
+      store.catalogTransport = 'rest';
+      mergeCars();
+      store.publicReady = true;
+      emit('cars');
+    } catch (error) {
+      // Both transports are down. Flag it so the UI can say "loading failed, try again" instead of
+      // "there are no cars" — to a customer those are completely different statements.
+      console.error('catalog unavailable over realtime AND rest', error);
+      store.catalogTransport = 'failed';
+      store.publicReady = true;
+      emit('cars');
+    }
+  }, 2500);
   // Read the SANITIZED public projection (carId/targetUid/type/score/review/date) — the full ratings
   // node (with authorUid + bookingId) is no longer public (audit #3).
   store.publicUnsubs.push(listen(refs.publicRatings, v => { store.ratings = v; }, 'ratings'));

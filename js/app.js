@@ -153,6 +153,9 @@ function render() {
 }
 
 document.addEventListener('click', event => {
+  // Retry after the catalogue failed to load over BOTH transports. A full reload is the honest
+  // recovery: it re-runs boot from scratch, so a network that has since come back simply works.
+  if (event.target.closest('[data-catalog-retry]')) { location.reload(); return; }
   const passwordToggle = event.target.closest('[data-toggle-password]');
   if (passwordToggle) {
     const input = document.getElementById(passwordToggle.dataset.togglePassword);
