@@ -2420,3 +2420,11 @@ body[data-page="dashboard"] .dashboard-tabs .tab-group-label:first-child{border-
 .book-gate .bg-body b{display:block;font-size:1rem;font-weight:800;color:var(--text);margin-bottom:2px}
 .book-gate .bg-body small{color:var(--muted);font-size:.84rem;line-height:1.45}
 .book-gate .btn{flex:1 1 100%;margin:0}
+
+/* Which bookings are blocking a car deletion. Owners reported "I can't delete my car" because the
+   old dialog said only THAT it was blocked — this names each one so they can go clear it. */
+.blocking-list{list-style:none;margin:12px 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.blocking-list li{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--bg-soft);
+  border:1px solid var(--hair);border-radius:10px;padding:9px 12px;font-size:.88rem}
+.blocking-list li b{font-weight:700}
+.blocking-list li small{color:var(--muted);font-size:.78rem;width:100%}

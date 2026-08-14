@@ -760,11 +760,7 @@ export function bindCarButtons() {
     // car-action REFUSES a delete while a booking is open (409) for anyone but an admin. Say so instead
     // of asking "are you sure?" and then failing on the round-trip.
     const live = list(store.bookings).filter(b => b.carId === id && ['pending', 'approved', 'active'].includes(b.status));
-    if (live.length && !store.isAdmin) {
-      const many = live.length > 1;
-      alert(`אי אפשר למחוק את הרכב — יש עליו ${many ? `${live.length} הזמנות פתוחות` : 'הזמנה פתוחה'}.\n\nאפשר לסמן את הרכב כתפוס כדי שלא יתקבלו בקשות חדשות, ולמחוק אחרי ש${many ? 'ההזמנות יסתיימו' : 'ההזמנה תסתיים'} או יבוטלו.`);
-      return;
-    }
+    if (live.length && !store.isAdmin) { carDeleteBlocked(id, live); return; }
     // An admin CAN delete through a live booking. Deleting also wipes privateCarDetails, so a renter
     // mid-rental loses the pickup address — worth naming before it happens. (adminDashboard binds this
     // same attribute for its own table; keeping the two messages equivalent means it does not matter
@@ -1336,6 +1332,35 @@ export function teardownChat() { try { __appMod?.teardownChatThread?.(); } catch
 // Preload the personal-area module (idempotent) — used to activate the owner's rental-request popup
 // watcher even when the owner is browsing public pages.
 export function ensureAppModule() { try { return loadApp(); } catch { return Promise.resolve(); } }
+// Owners reported "I can't delete my car". car-action 409s a delete while any booking on it is
+// pending/approved/active, and the old dialog was a native alert() that said only THAT it was
+// blocked — not which booking, and not that the owner can clear it themselves. Every blocking state
+// has an owner-side exit (pending → reject, approved → cancel, active → done), so name them and
+// point at the tab. Exported because the admin table binds [data-car-delete] separately.
+export function carDeleteBlocked(carId, live) {
+  const many = live.length > 1;
+  const rows = live
+    .slice()
+    .sort((a, b) => (new Date(a.startAt || 0)).getTime() - (new Date(b.startAt || 0)).getTime())
+    .map(b => {
+      const when = b.startAt && b.endAt
+        ? `${fmtDate(new Date(b.startAt).getTime())} – ${fmtDate(new Date(b.endAt).getTime())}` : '';
+      return `<li><b>${esc(b.renterName || 'שוכר')}</b><span class="status-badge ${esc(b.status)}">${statusLabel(b.status)}</span>${when ? `<small>${esc(when)}</small>` : ''}</li>`;
+    }).join('');
+  modal(`<div class="modal-head"><h2>אי אפשר למחוק את הרכב</h2><button class="close" data-close-modal aria-label="סגירה">×</button></div>
+    <p>${many ? `יש עליו ${live.length} הזמנות פתוחות` : 'יש עליו הזמנה פתוחה'}. אפשר למחוק אותו אחרי ש${many ? 'הן יסתיימו או יבוטלו' : 'היא תסתיים או תבוטל'}.</p>
+    <ul class="blocking-list">${rows}</ul>
+    <p class="mut">${many ? 'כל אחת מהן' : 'ההזמנה'} ניתנת לטיפול מתוך "הזמנות": בקשה שממתינה אפשר לדחות, מאושרת אפשר לבטל, ופעילה אפשר לסמן כהושלמה.</p>
+    <button type="button" class="btn primary block" id="blocking-goto">מעבר להזמנות</button>
+    <button type="button" class="btn outline block" id="blocking-hide">הסתרת הרכב במקום</button>`);
+  document.querySelector('#blocking-goto').onclick = () => { closeModal(); store.dashTab = 'bookings'; dashboard(); };
+  document.querySelector('#blocking-hide').onclick = async () => {
+    closeModal();
+    try { await setCarStatus(carId, 'hidden'); toast('הרכב הוסתר — הוא לא יופיע בקטלוג ולא יתקבלו עליו בקשות חדשות'); }
+    catch (error) { toast(error.message); }
+  };
+}
+
 export function dashboard() {
   resetPaint();
   if (store.user?.isAnonymous) { toast('הירשמו כדי לפתוח אזור אישי'); location.hash = 'auth'; return; }

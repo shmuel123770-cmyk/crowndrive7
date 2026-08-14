@@ -7,7 +7,7 @@ import {legacyStatus, migrateLegacy} from './migrate.js';
 import {api} from './api.js';
 import {readViaREST} from './firebase.js';
 import {enablePush, pushPromptable, pushSupported, iosNeedsInstall, initPushForeground} from './push.js';
-import {saveAuthReturn, afterAuthDestination, openCar, CAR_MAKES, CAR_TYPES, ICON, MODELS_BY_MAKE, RENTAL_MODES, TAB_ICONS, app, avatarHtml, carImage, carPhotoList, carStatusPill, carYears, composePhone, emptyState, fallbackImage, kpi, phoneField, roleName, selectOptions, bindCarButtons, carGrid, featuredFirst, userUnreadNotifs, bottomNav} from './views.js';
+import {saveAuthReturn, afterAuthDestination, openCar, CAR_MAKES, CAR_TYPES, ICON, MODELS_BY_MAKE, RENTAL_MODES, TAB_ICONS, app, avatarHtml, carImage, carPhotoList, carStatusPill, carYears, composePhone, emptyState, fallbackImage, kpi, phoneField, roleName, selectOptions, bindCarButtons, carDeleteBlocked, carGrid, featuredFirst, userUnreadNotifs, bottomNav} from './views.js';
 
 // ---------- New rental-request popup for owners (they were MISSING incoming requests) ----------
 // The moment a pending request for the owner's car arrives, a prominent modal pops with the renter's
@@ -699,11 +699,7 @@ function adminDashboard(tab = 'overview') {
     // car-action REFUSES a delete with live bookings for anyone but an admin (409). Asking an owner
     // "למחוק בכל זאת?" and then failing is act-then-fail — say plainly that it is blocked, and what to
     // do instead. The admin keeps the override, with the warning about wiping the pickup address.
-    if (live.length && !store.isAdmin) {
-      const many = live.length > 1;
-      alert(`אי אפשר למחוק את הרכב — יש עליו ${many ? `${live.length} הזמנות פתוחות` : 'הזמנה פתוחה'}.\n\nאפשר לסמן את הרכב כתפוס כדי שלא יתקבלו בקשות חדשות, ולמחוק אחרי ש${many ? 'ההזמנות יסתיימו' : 'ההזמנה תסתיים'} או יבוטלו.`);
-      return;
-    }
+    if (live.length && !store.isAdmin) { carDeleteBlocked(button.dataset.carDelete, live); return; }
     const warning = live.length
       ? `לרכב יש ${live.length === 1 ? 'הזמנה אחת פעילה או ממתינה' : `${live.length} הזמנות פעילות או ממתינות`}. מחיקה תסיר גם את כתובת האיסוף, והשוכרים יאבדו אותה באמצע ההשכרה.\n\nלמחוק בכל זאת?`
       : 'למחוק את הרכב לצמיתות?';
