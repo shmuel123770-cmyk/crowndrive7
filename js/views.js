@@ -777,7 +777,13 @@ export function bindCarButtons() {
     // Fade the photo in when it decodes (no more "pop"). If it's already cached, show it instantly — never
     // leave it stuck at opacity:0.
     const show = () => image.classList.add('loaded');
-    if (image.complete && image.naturalWidth) show();
+    // Adding .loaded is not enough on a RE-RENDER. The element is brand new, so it starts at
+    // opacity:0 with the .5s transition armed, and the browser can paint one transparent frame before
+    // the class lands — every already-cached photo fades in again. A route function replaces #app
+    // wholesale whenever data arrives (measured: a third full rebuild ~1.8s after first paint), so a
+    // settled page visibly flashed all its photos. If the image is already decoded there is nothing
+    // to fade: show it with the transition switched off.
+    if (image.complete && image.naturalWidth) { image.classList.add('instant'); show(); }
     else image.addEventListener('load', show, {once: true});
     image.addEventListener('error', () => {
       // A broken Wikimedia THUMB falls back to the original full image first; only then the placeholder.

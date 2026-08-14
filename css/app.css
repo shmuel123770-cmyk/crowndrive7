@@ -2628,3 +2628,6 @@ h1,h2,h3,.brand,.hero h1,.section-head h1,.auth-head h2,.modal-head h2{
   /* The panel has to clear BOTH bars now, not just the nav. */
   .dashboard-panel{padding-bottom:calc(var(--bottom-nav-h) + 96px + env(safe-area-inset-bottom, 0px))}
 }
+/* An already-decoded photo has nothing to fade in from — without this every full re-render replays
+   the .5s fade on every cached image, which is what read as the page "flashing" a second after load. */
+.car-photo img.instant{transition:none}
