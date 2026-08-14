@@ -5,7 +5,6 @@ import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, s
 import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './media.js';
 import {legacyStatus, migrateLegacy} from './migrate.js';
 import {api} from './api.js';
-import {readViaREST} from './firebase.js';
 import {enablePush, pushPromptable, pushSupported, iosNeedsInstall, initPushForeground} from './push.js';
 import {saveAuthReturn, afterAuthDestination, openCar, CAR_MAKES, CAR_TYPES, ICON, MODELS_BY_MAKE, RENTAL_MODES, TAB_ICONS, app, avatarHtml, carImage, carPhotoList, carStatusPill, carYears, composePhone, emptyState, fallbackImage, kpi, phoneField, roleName, selectOptions, bindCarButtons, carDeleteBlocked, carGrid, featuredFirst, userUnreadNotifs, bottomNav} from './views.js';
 
