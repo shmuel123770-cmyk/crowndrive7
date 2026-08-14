@@ -1,5 +1,5 @@
 import {store, list, myRole, myBookings, myCars, carRating, carRatingCount, userRating} from './store.js';
-import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail, paintApp, resetPaint, TERMS_VERSION, heCount, heCountF} from './core.js';
+import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail, paintApp, resetPaint, TERMS_VERSION, heCount, heCountF, reconcileMessages} from './core.js';
 import {register, login, logout, sendVerify, refreshEmailStatus, sendPasswordReset, createOwnProfile, signInGuest} from './auth.js';
 import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, startInquiry, setBookingStatus, registerDocument, approveVerification, sendMessage, deleteMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction, setMaintenance, setCarStatus, setCarFeatured, checkIsAdmin, saveExternalRental, deleteExternalRental} from './db.js';
 import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './media.js';
@@ -1862,9 +1862,34 @@ function selectThread(key) {
       // mid-flight (slow connection) and then failing would put this thread's text into the OTHER
       // thread's input box, where the next tap on "send" delivers it to the wrong person.
       const sentFrom = key;
-      try { await sendMessage(isSupport ? {thread: 'admin', userUid: id, text} : isInquiry ? {inquiryId: id, text} : {bookingId: id, text}); }
+      // Draw the bubble NOW. It carries a temporary id and a clock; reconcileMessages swaps it for the
+      // real record when the listener echoes it back, so it never turns into a duplicate.
+      const tempId = `t${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      const entry = {tempId, realId: null};
+      const box = document.querySelector('#chat-msgs');
+      if (box) {
+        pending.push(entry);
+        box.querySelector('.empty')?.remove();
+        box.insertAdjacentHTML('beforeend', renderChatMessage(
+          {tempId, senderUid: store.user?.uid, text, createdAt: Date.now(), pending: true}, false));
+        scrollChatToEnd(box, true);
+      }
+      const bubble = () => document.querySelector(`[data-temp="${CSS.escape(tempId)}"]`);
+      try {
+        const result = await sendMessage(isSupport ? {thread: 'admin', userUid: id, text} : isInquiry ? {inquiryId: id, text} : {bookingId: id, text});
+        // Remember the server id so the echo resolves THIS placeholder rather than drawing again.
+        entry.realId = result?.id || null;
+        if (!entry.realId) {
+          // No id came back (older endpoint): the placeholder cannot be matched, so drop it and let the
+          // listener draw the real message. Better one late bubble than two identical ones.
+          const at = pending.indexOf(entry); if (at >= 0) pending.splice(at, 1);
+          bubble()?.remove();
+        }
+      }
       catch (error) {
         toast(error.message);
+        const at = pending.indexOf(entry); if (at >= 0) pending.splice(at, 1);
+        bubble()?.remove();                       // nothing was stored — the bubble must not linger
         if (chatState.thread === sentFrom) { form.text.value = text; chatState.draft = text; }
       }
       finally { if (sendBtn && chatState.thread === sentFrom) { sendBtn.disabled = false; sendBtn.textContent = sendLabel; } }
@@ -1945,6 +1970,9 @@ function selectThread(key) {
   // every snapshot (no flicker, images never reload, scroll position is kept), with day dividers, sender
   // grouping, and a "↓ הודעות חדשות" pill when a message arrives while you're reading history above.
   const seen = new Set();
+  // Bubbles drawn before the server confirmed them: [{tempId, realId|null}]. reconcileMessages
+  // uses this to tell 'my own message came back' from 'a new message arrived'.
+  const pending = [];
   let firstBatch = true, lastDay = '', prevSender = '';
   const dayKey = ts => new Date(Number(ts) || 0).toDateString();
   const dayLabel = ts => { const d = new Date(Number(ts) || 0); const now = new Date(); if (d.toDateString() === now.toDateString()) return 'היום'; const y = new Date(now); y.setDate(now.getDate() - 1); if (d.toDateString() === y.toDateString()) return 'אתמול'; return d.toLocaleDateString('he-IL', {day: 'numeric', month: 'long', year: d.getFullYear() === now.getFullYear() ? undefined : 'numeric'}); };
@@ -1959,14 +1987,32 @@ function selectThread(key) {
     const currentIds = new Set(messages.map(m => m.id));
     let deleted = false; for (const sid of seen) if (!currentIds.has(sid)) { deleted = true; break; }
     if (deleted) { seen.clear(); lastDay = ''; prevSender = ''; box.innerHTML = ''; firstBatch = true; }
-    if (firstBatch) { box.innerHTML = ''; }
+    if (firstBatch) { box.innerHTML = ''; if (deleted) pending.length = 0; }
+    // What to draw is decided by reconcileMessages (core.js, unit-tested): it skips what is already on
+    // screen and, for a message this device sent optimistically, resolves the placeholder instead of
+    // drawing a second bubble for the same text.
+    const plan = reconcileMessages(messages, seen, pending);
+    plan.seenAdds.forEach(id => seen.add(id));
+    for (const tempId of plan.resolve) {
+      const node = box.querySelector(`[data-temp="${CSS.escape(tempId)}"]`);
+      if (node) {
+        node.classList.remove('is-pending');
+        const mark = node.querySelector('.msg-tick');
+        // Swap the glyph too — dropping the class alone left a clock wearing the "sent" style.
+        if (mark) { mark.classList.remove('pending'); mark.textContent = '✓'; mark.title = 'נשלח'; }
+      }
+      const at = pending.findIndex(p => p.tempId === tempId);
+      if (at >= 0) pending.splice(at, 1);
+    }
     let appended = false, newFromOther = false;
-    for (const m of messages) {
-      if (seen.has(m.id)) continue;
-      seen.add(m.id);
+    for (const m of plan.append) {
       const dk = dayKey(m.createdAt);
       if (dk !== lastDay) { box.insertAdjacentHTML('beforeend', `<div class="chat-day"><span>${esc(dayLabel(m.createdAt))}</span></div>`); lastDay = dk; prevSender = ''; }
-      box.insertAdjacentHTML('beforeend', renderChatMessage(m, m.senderUid === prevSender));
+      // A still-in-flight bubble of mine must stay last, so insert real messages before it.
+      const firstPending = box.querySelector('.message.is-pending');
+      const html = renderChatMessage(m, m.senderUid === prevSender);
+      if (firstPending) firstPending.insertAdjacentHTML('beforebegin', html);
+      else box.insertAdjacentHTML('beforeend', html);
       prevSender = m.senderUid;
       appended = true;
       if (m.senderUid !== store.user?.uid) newFromOther = true;
@@ -2038,11 +2084,18 @@ function renderChatMessage(message, grouped = false) {
         : `<button class="msg-att" data-att-path="${esc(att.path)}">${attLabels[att.type] || 'קובץ'} · צפייה</button>`)
     : '';
   const time = (() => { const d = new Date(Number(message.createdAt) || 0); return Number.isNaN(d.getTime()) ? '' : d.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'}); })();
-  const tick = mine && !sys ? '<span class="msg-tick" title="נשלח" aria-hidden="true">✓</span>' : '';
-  // You can delete your OWN messages; the admin can delete any. (Server re-checks.)
-  const canDelete = (mine || store.isAdmin) && !sys && message.id;
+  // An optimistic bubble is drawn before the server has stored anything, so it must not claim to be
+  // sent. It shows a clock until the write is confirmed, and says so plainly if the send failed.
+  const tick = !mine || sys ? ''
+    : message.failed ? '<span class="msg-tick failed" title="השליחה נכשלה" aria-hidden="true">!</span>'
+    : message.pending ? '<span class="msg-tick pending" title="שולח…" aria-hidden="true">◷</span>'
+    : '<span class="msg-tick" title="נשלח" aria-hidden="true">✓</span>';
+  // You can delete your OWN messages; the admin can delete any. (Server re-checks.) A bubble that is
+  // still in flight has no server id yet, so there is nothing to delete.
+  const canDelete = (mine || store.isAdmin) && !sys && message.id && !message.pending;
   const del = canDelete ? `<button class="msg-del" data-del="${esc(message.id)}" title="מחיקת הודעה" aria-label="מחיקת הודעה">🗑</button>` : '';
-  return `<div class="message ${mine ? 'mine' : ''} ${grouped ? 'grouped' : ''} ${sys ? 'sys' : ''}" data-mid="${esc(message.id || '')}">${del}${message.text ? `<p>${esc(message.text)}</p>` : ''}${attachment}<small>${time}${tick}</small></div>`;
+  const temp = message.tempId ? ` data-temp="${esc(message.tempId)}"` : '';
+  return `<div class="message ${mine ? 'mine' : ''} ${grouped ? 'grouped' : ''} ${sys ? 'sys' : ''}${message.pending ? ' is-pending' : ''}${message.failed ? ' is-failed' : ''}" data-mid="${esc(message.id || '')}"${temp}>${del}${message.text ? `<p>${esc(message.text)}</p>` : ''}${attachment}<small>${time}${tick}</small></div>`;
 }
 
 function paymentModal(bookingId, onDone = null) {

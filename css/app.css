@@ -2430,3 +2430,10 @@ body[data-page="dashboard"] .dashboard-tabs .tab-group-label:first-child{border-
   border:1px solid var(--hair);border-radius:10px;padding:9px 12px;font-size:.88rem}
 .blocking-list li b{font-weight:700}
 .blocking-list li small{color:var(--muted);font-size:.78rem;width:100%}
+
+/* Optimistic send: the bubble is drawn before the server confirms, so its state must be honest —
+   a clock while in flight, and a clear mark if the write failed. */
+.chat-msgs .message.is-pending{opacity:.72}
+.msg-tick.pending{opacity:.9}
+.msg-tick.failed{color:#FFD3D0;font-weight:800}
+.chat-msgs .message.is-failed{outline:1px solid rgba(215,0,21,.5)}

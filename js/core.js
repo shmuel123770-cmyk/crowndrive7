@@ -153,3 +153,39 @@ export function validPassword(value) { return String(value || '').length >= 6; }
 export function validEmail(value) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim()); }
 export function validImageUrl(value) { return typeof value === 'string' && /^https:\/\//.test(value); }
 export function stars(score) { return `${'★'.repeat(Math.round(score || 0))}${'☆'.repeat(5 - Math.round(score || 0))}`; }
+
+// ---------------------------------------------------------------------------
+// Chat rendering plan — the part of optimistic sending that must be provably correct.
+//
+// A message travels through a serverless function and only reaches the thread when the realtime
+// listener echoes it back. On a network where the RTDB falls back to long-polling that round trip is
+// seconds long, so the sender watches their own message not appear. The fix is to draw the bubble
+// immediately ("optimistic"), then reconcile when the real record arrives.
+//
+// Reconciling is where optimistic UIs go wrong: show the bubble twice, or drop the real one and keep
+// a bubble that was never stored. So the decision is isolated here as a pure function — no DOM, no
+// network — and covered by tests, instead of living inside an event handler that needs a real login
+// to exercise.
+//
+//   messages : the snapshot, oldest → newest
+//   seen     : Set of server ids already on screen
+//   pending  : optimistic bubbles on screen, [{tempId, realId|null}]
+//
+// Returns what the caller should do, and nothing else:
+//   append   : messages to draw (in order)
+//   resolve  : tempIds whose real record has now arrived — swap the placeholder, do NOT draw again
+//   seenAdds : ids to record as drawn
+export function reconcileMessages(messages, seen, pending = []) {
+  const claimed = new Map();
+  for (const p of pending) if (p && p.realId) claimed.set(p.realId, p.tempId);
+  const append = [], resolve = [], seenAdds = [];
+  for (const message of messages || []) {
+    if (!message || !message.id) continue;      // a record with no id cannot be tracked — skip it
+    if (seen.has(message.id)) continue;         // already drawn
+    seenAdds.push(message.id);
+    const tempId = claimed.get(message.id);
+    if (tempId !== undefined) { resolve.push(tempId); continue; }  // this is our own optimistic bubble
+    append.push(message);
+  }
+  return {append, resolve, seenAdds};
+}
