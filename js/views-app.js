@@ -1842,6 +1842,22 @@ function chatListTime(at) {
 // Refresh the unread badge everywhere it appears (bottom nav + dashboard tab bar) after read-state changes.
 function refreshChatBadges() { try { bottomNav(); } catch {} }
 
+// Which car, which dates, what state. All of that lived only in the header <h3>, which is a single
+// truncating line — so once a conversation had a few messages there was nothing on screen saying what
+// it was about. Rendered only when there is something real to say; a support thread gets nothing.
+function chatContextRow(car, booking) {
+  const name = `${car?.make || ''} ${car?.model || ''}`.trim();
+  if (!name) return '';
+  const when = booking?.startAt && booking?.endAt
+    ? `${fmtDate(new Date(booking.startAt).getTime())} – ${fmtDate(new Date(booking.endAt).getTime())}`
+    : '';
+  return `<div class="chat-ctx">
+    <b>${esc(name)}${car?.year ? ` ${esc(car.year)}` : ''}</b>
+    ${when ? `<span class="ctx-when">${esc(when)}</span>` : ''}
+    ${booking ? `<span class="status-badge ${esc(booking.status)}">${statusLabel(booking.status)}</span>` : ''}
+  </div>`;
+}
+
 function selectThread(key) {
   chatState.unsub?.();
   chatState.unsub = null;
@@ -1903,14 +1919,14 @@ function selectThread(key) {
         <button type="button" class="ev-chip ${ev.payment ? 'ok' : ''}" id="ev-payment">תשלום</button>
       </div>` : '';
   const composer = live
-    ? `${evidenceRow}<form class="chat-composer" id="chat-composer" autocomplete="off"><label class="chat-attach" title="שליחת תמונה">${ICON.image}<input hidden type="file" accept="image/*" id="chat-photo"></label><input name="text" aria-label="כתיבת הודעה" maxlength="2000" placeholder="כתבו הודעה…" value="${esc(chatState.draft)}"><button class="btn primary">שליחה</button></form>`
+    ? `${evidenceRow}<form class="chat-composer" id="chat-composer" autocomplete="off"><label class="chat-attach" title="שליחת תמונה">${ICON.image}<input hidden type="file" accept="image/*" id="chat-photo"></label><textarea name="text" aria-label="כתיבת הודעה" maxlength="2000" rows="1" placeholder="כתבו הודעה…">${esc(chatState.draft)}</textarea><button class="btn primary">שליחה</button></form>`
     : `<div class="chat-closed">${convEnded && isRenter ? 'השיחה נסגרה על ידי הצד השני — לא ניתן לשלוח הודעות נוספות' : 'ההשכרה הסתיימה — הצ׳אט פתוח רק מאישור ההזמנה ועד סיום ההשכרה'}</div>`;
 
   pane.innerHTML = `<header class="chat-head">
       <button class="chat-back" id="chat-back" aria-label="חזרה לרשימה">→</button><button class="chat-x" id="chat-close" aria-label="סגירת הצ׳אט">×</button>
-      <div class="chat-head-main"><h3>${esc(title)}</h3>${otherParty ? `<span class="chat-who">${esc(otherParty)}</span>` : ''}${booking ? `<span class="status-badge ${esc(booking.status)}">${statusLabel(booking.status)}</span>` : isInquiry ? '<span class="pill ok">פנייה על רכב · טרם הזמנה</span>' : '<span class="pill ok">שירות לקוחות</span>'}</div>
+      <div class="chat-head-main"><h3>${esc(title)}</h3>${otherParty ? `<span class="chat-who">${esc(otherParty)}</span>` : ''}${booking ? '' : isInquiry ? '<span class="pill ok">פנייה על רכב · טרם הזמנה</span>' : '<span class="pill ok">שירות לקוחות</span>'}</div>
       <div class="chips">${headActions}</div>
-    </header>${checklist}<div class="chat-msgs" id="chat-msgs"><div class="empty">טוען הודעות…</div></div>${composer}`;
+    </header>${chatContextRow(car, booking)}${checklist}<div class="chat-msgs" id="chat-msgs"><div class="empty">טוען הודעות…</div></div>${composer}`;
 
   // Hide the "new messages" pill as soon as the reader scrolls down to the bottom themselves.
   pane.querySelector('#chat-msgs')?.addEventListener('scroll', event => { const b = event.currentTarget; if (b.scrollHeight - b.scrollTop - b.clientHeight < 60) document.querySelector('#chat-newpill')?.remove(); });
@@ -1918,12 +1934,28 @@ function selectThread(key) {
   pane.querySelector('#chat-close').onclick = () => { chatState.unsub?.(); chatState.unsub = null; chatState.thread = null; document.querySelector('#chat-shell')?.classList.remove('show-pane'); pane.innerHTML = '<div class="chat-empty"><span class="chat-empty-ic">${ICON.chat}</span><p>בחרו שיחה מהרשימה</p></div>'; document.querySelectorAll('[data-thread]').forEach(el => el.classList.remove('active')); };
   const form = pane.querySelector('#chat-composer');
   if (form) {
-    form.text.oninput = () => { chatState.draft = form.text.value; };
+    // A textarea does not submit on Enter the way the old single-line input did, and it does not grow
+    // by itself. Both have to be wired or the composer regresses: Enter would insert a newline and the
+    // message would never send.
+    const grow = () => {
+      const el = form.text;
+      el.style.height = 'auto';
+      el.style.height = `${Math.min(el.scrollHeight, 120)}px`;   // a few lines, then it scrolls
+    };
+    form.text.oninput = () => { chatState.draft = form.text.value; grow(); };
+    form.text.onkeydown = event => {
+      // Enter sends; Shift+Enter (and the on-screen keyboard's newline on mobile) makes a new line.
+      if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
+        event.preventDefault();
+        form.requestSubmit ? form.requestSubmit() : form.dispatchEvent(new Event('submit', {cancelable: true}));
+      }
+    };
+    grow();
     form.onsubmit = async event => {
       event.preventDefault();
       const text = form.text.value.trim();
       if (!text) return;
-      form.text.value = ''; chatState.draft = '';
+      form.text.value = ''; chatState.draft = ''; form.text.style.height = 'auto';
       // The message travels through a serverless function, so the bubble only appears once the write
       // lands AND the listener echoes it back. Clearing the field is the double-send guard, but on a
       // slow connection it also means the text vanishes with nothing yet in the thread — which reads

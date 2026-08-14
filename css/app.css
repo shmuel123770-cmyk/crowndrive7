@@ -2631,3 +2631,29 @@ h1,h2,h3,.brand,.hero h1,.section-head h1,.auth-head h2,.modal-head h2{
 /* An already-decoded photo has nothing to fade in from — without this every full re-render replays
    the .5s fade on every cached image, which is what read as the page "flashing" a second after load. */
 .car-photo img.instant{transition:none}
+
+/* ============================================================================
+   CHAT — readable messages and a composer you can see what you typed in.
+   Bubbles were .86rem (13.8px), below comfortable reading size on a phone, and
+   the composer was a single-line <input>: anything past its width scrolled out
+   of sight while you were still writing it.
+   ============================================================================ */
+.chat-msgs .message,.messages .message{font-size:.95rem;line-height:1.5}
+.chat-msgs .message small{font-size:.68rem}
+
+.chat-composer{align-items:flex-end}
+.chat-composer textarea{
+  flex:1;border:1px solid var(--line);border-radius:20px;padding:10px 16px;background:var(--surface);
+  font:inherit;font-size:.95rem;line-height:1.45;resize:none;overflow-y:auto;max-height:120px;
+  min-height:42px;color:var(--text)}
+.chat-composer textarea:focus{outline:none;border-color:var(--brand)}
+.chat-composer .btn{align-self:flex-end}
+
+/* Context: which car and which dates this conversation is about. It was only in the header title,
+   which truncates, so a thread gave no clue what it referred to once you scrolled. */
+.chat-ctx{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 14px;
+  background:var(--gold-wash,rgba(233,169,61,.12));border-bottom:1px solid rgba(233,169,61,.24);
+  font-size:.78rem;flex-shrink:0}
+.chat-ctx b{font-weight:700}
+.chat-ctx .ctx-when{color:var(--muted)}
+.chat-ctx .status-badge{margin-inline-start:auto}
