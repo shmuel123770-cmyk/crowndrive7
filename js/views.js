@@ -1126,13 +1126,28 @@ export function openCar(id) {
       addressField?.classList.toggle('hide', !delivery);
       const input = addressField?.querySelector('input'); if (input) input.required = delivery;
     };
+    // The lowest advertised rate this car has, for the summary bar before any date is picked.
+    const fromPriceLabel = () => {
+      const daily = Number(car.dailyPrice || 0), hourly = Number(car.priceHourly || 0), weekly = Number(car.priceWeekly || 0);
+      if (daily) return `מ־${money(daily)} ליום`;
+      if (hourly) return `מ־${money(hourly)} לשעה`;
+      if (weekly) return `מ־${money(weekly)} לשבוע`;
+      return '';
+    };
     const recalc = () => {
       if (!estBox) return;
       const sd = bookingForm.querySelector('input[name="startDate"]')?.value || '';
       const ed = bookingForm.querySelector('input[name="endDate"]')?.value || '';
       const sh = bookingForm.querySelector('select[name="startHour"]')?.value || '10:00';
       const eh = bookingForm.querySelector('select[name="endHour"]')?.value || '10:00';
-      if (!sd || !ed) { estBox.innerHTML = ''; if (mobileTotal) mobileTotal.textContent = 'בחרו תאריכים'; return; }
+      if (!sd || !ed) {
+        estBox.innerHTML = '';
+        // The summary bar used to read "בחרו תאריכים" — an instruction sitting where the price goes, so
+        // the bar looked broken until the form was filled. Show what the car costs from, which is the
+        // thing a renter is weighing while they pick dates.
+        if (mobileTotal) mobileTotal.textContent = onRequest ? 'מחיר בתיאום' : (fromPriceLabel() || 'המחיר יחושב');
+        return;
+      }
       const s = new Date(`${sd}T${sh}`).getTime(), e = new Date(`${ed}T${eh}`).getTime();
       if (!(e > s)) { estBox.innerHTML = '<div class="period-note">תאריך ההחזרה חייב להיות אחרי האיסוף</div>'; if (mobileTotal) mobileTotal.textContent = 'טווח לא תקין'; return; }
       if (onRequest) { estBox.innerHTML = '<div class="period-note contact">שלחו הודעה לבעל הרכב לקבלת מחיר לטווח שבחרתם</div>'; if (mobileTotal) mobileTotal.textContent = 'מחיר בתיאום'; return; }
@@ -1153,8 +1168,15 @@ export function openCar(id) {
       // different totals and the smaller one was wrong. Show the fee as its own line and total once.
       const delivery = fulfillment?.value === 'delivery' ? Number(car.deliveryCost || 0) : 0;
       const grand = est ? est.total + delivery : 0;
+      // One figure with a caption told a renter the number but not how it was reached, which is exactly
+      // where hesitation happens. Itemise it: what the rate produced, the delivery fee if any, the total.
       estBox.innerHTML = est
-        ? `<div class="period-est"><span>מחיר משוער</span><b>${money(grand)}</b><small>${est.label}${delivery ? ` + ${money(delivery)} מסירה` : ''}</small></div>`
+        ? `<div class="period-quote">
+             <div class="pq-line"><span>${esc(est.label)}</span><b>${money(est.total)}</b></div>
+             ${delivery ? `<div class="pq-line"><span>מסירה</span><b>${money(delivery)}</b></div>` : ''}
+             <div class="pq-line pq-total"><span>סה״כ</span><b>${money(grand)}</b></div>
+             <p class="pq-note">התשלום אינו נגבה עכשיו — בעל הרכב מאשר את הבקשה תחילה.</p>
+           </div>`
         : '';
       if (mobileTotal) mobileTotal.textContent = est ? money(grand) : 'המחיר יחושב';
     };
