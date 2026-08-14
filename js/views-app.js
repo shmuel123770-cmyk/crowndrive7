@@ -538,6 +538,32 @@ function renterDashboard(tab = 'overview') {
   if (tab === 'overview') bindPushBanner();
 }
 
+// What an owner opens the dashboard for. Earnings were a small chip inside a row of counts —
+// the same visual weight as "3 רכבים" — so the figure the business runs on was the least prominent
+// thing on the screen.
+function ownerMoney(approvedTotal, pendingPayments) {
+  return `<section class="owner-money">
+    <button type="button" class="om-cell" data-nav-tab="summary">
+      <small>תשלומים שאושרו</small><b>${money(approvedTotal)}</b>
+    </button>
+    <button type="button" class="om-cell${pendingPayments ? ' om-alert' : ''}" data-goto-tab="bookings">
+      <small>ממתין לאישורך</small><b>${pendingPayments}</b>
+    </button>
+  </section>`;
+}
+// The old row mixed three plain <span>s with one <button class="stat-link"> and styled them
+// identically, so three quarters of it looked clickable and was not. Every tile here is a button and
+// every one goes somewhere.
+function ownerFleetStats(cars, bookings) {
+  const available = cars.filter(c => c.status === 'available').length;
+  const active = bookings.filter(b => b.status === 'active').length;
+  return `<div class="stat-row">
+    <button type="button" class="stat" data-goto-tab="cars"><b>${cars.length}</b><small>רכבים</small></button>
+    <button type="button" class="stat" data-goto-tab="cars"><b>${available}</b><small>זמינים</small></button>
+    <button type="button" class="stat" data-goto-tab="bookings"><b>${active}</b><small>השכרות פעילות</small></button>
+  </div>`;
+}
+
 function ownerDashboard(tab = 'overview') {
   const bookings = myBookings();
   const cars = myCars();
@@ -557,7 +583,7 @@ function ownerDashboard(tab = 'overview') {
     ? `<div class="admin-todo"><div class="admin-sec-h">דורש טיפול</div>${ownerTodo.map(([label, n, t]) => `<button class="todo-row" data-goto-tab="${t}"><span class="todo-count">${n}</span><span class="todo-label">${esc(label)}</span><span class="todo-go" aria-hidden="true">›</span></button>`).join('')}</div>`
     : '';
   const contents = {
-    overview: `${pushBanner()}${todoHtml}<div class="admin-stats-mini"><span><b>${cars.length}</b> רכבים</span><span><b>${cars.filter(c => c.status === 'available').length}</b> זמינים</span><button type="button" class="stat-link" data-nav-tab="summary"><b>${money(approvedTotal)}</b> תשלומים שאושרו</button><span><b>${bookings.filter(b => b.status === 'active').length}</b> פעילות</span></div><h2>הזמנות פעילות</h2>${bookingList(bookings.filter(b => ['pending','approved','active'].includes(b.status)), 'owner')}`,
+    overview: `${pushBanner()}${ownerMoney(approvedTotal, pendingPayments)}${todoHtml}${ownerFleetStats(cars, bookings)}<h2>הזמנות פעילות</h2>${bookingList(bookings.filter(b => ['pending','approved','active'].includes(b.status)), 'owner')}`,
     bookings: `<h2>הזמנות</h2>${bookingList(bookings, 'owner')}`,
     cars: `<div class="section-head"><h2>הרכבים שלי</h2><div class="chips"><button class="btn outline" id="goto-external">📒 השכרות חוץ</button><button class="btn gold" id="add-car">הוספת רכב</button></div></div>${carGrid(cars, true, null, emptyState(ICON.car, 'עוד לא פרסמתם רכב', 'הוסיפו את הרכב הראשון שלכם — תמונות, מחיר וזמינות, ואפשר להתחיל לקבל בקשות.', '<button class="btn primary" id="add-car-empty">הוספת רכב ראשון</button>'))}`,
     external: externalRentalsView(cars),

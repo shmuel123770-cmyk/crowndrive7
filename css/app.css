@@ -2577,3 +2577,25 @@ h1,h2,h3,.brand,.hero h1,.section-head h1,.auth-head h2,.modal-head h2{
 .price-block-ask b{display:block;font-family:var(--font-ui);font-size:1rem;font-weight:700;color:var(--text)}
 .price-block-ask small{display:block;font-size:.82rem;color:var(--muted);margin-top:3px}
 .book-gate .bg-ic svg{width:26px;height:26px;display:block;color:var(--accent)}
+
+/* ============================================================================
+   OWNER DASHBOARD — money first, and one affordance.
+   Earnings sat as a chip in a row of counts, at the same weight as "3 רכבים".
+   That row also mixed three plain <span>s with one <button> styled identically,
+   so three quarters of it looked tappable and was not.
+   ============================================================================ */
+.owner-money{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:13px}
+.owner-money .om-cell{display:block;text-align:start;background:linear-gradient(150deg,#26303C,var(--dark));
+  color:#fff;border:none;border-radius:14px;padding:13px 15px;font:inherit;cursor:pointer;
+  box-shadow:0 3px 14px rgba(16,24,40,.16);transition:transform .15s var(--ease)}
+.owner-money .om-cell:active{transform:scale(.985)}
+.owner-money .om-cell small{display:block;font-size:.7rem;color:rgba(255,255,255,.62)}
+.owner-money .om-cell b{display:block;font-family:var(--font-display);font-size:1.45rem;letter-spacing:-.025em;
+  margin-top:3px;font-variant-numeric:tabular-nums;color:var(--accent)}
+.owner-money .om-cell.om-alert b{color:#FFB4AE}
+.owner-money .om-cell:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* The shared stat tiles are buttons on the owner screen, so give them the button reset. */
+.stat-row .stat{font:inherit;cursor:pointer;text-align:center;width:100%}
+.stat-row button.stat:active{transform:scale(.985)}
+.stat-row .stat:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
