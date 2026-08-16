@@ -81,9 +81,44 @@ async function offloadImage(dataUrl, kind, entityId) {
   } catch { return ''; }
 }
 
+
+// ---- Voice notes and documents -----------------------------------------------------------------
+// These must NOT go through toImageDataUrl(): that decodes into a <canvas> and re-encodes as JPEG,
+// which for anything that is not an image produces either an error or a valid JPEG of nothing. They
+// travel as their own bytes instead, through the same server function (Admin SDK, so no Storage
+// rules to publish) that already carries images.
+const MAX_MEDIA_BYTES = 4 * 1024 * 1024;   // matches MAX_MEDIA in netlify/functions/media-upload.mjs
+// Chrome reports "audio/webm;codecs=opus"; the server compares against exact types, so the
+// parameters have to come off or every Chrome recording would be rejected as an unknown type.
+const baseType = file => String(file?.type || '').split(';')[0].trim().toLowerCase();
+export const isAudioFile = file => baseType(file).startsWith('audio/');
+export const isDocFile = file => baseType(file) === 'application/pdf' || /\.pdf$/i.test(file?.name || '');
+function readAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('לא הצלחנו לקרוא את הקובץ'));
+    reader.readAsDataURL(file);
+  });
+}
+async function uploadRawMedia(file, kind, entityId) {
+  if (file.size > MAX_MEDIA_BYTES) {
+    throw new Error(`הקובץ גדול מדי (${(file.size / 1048576).toFixed(1)}MB) — עד 4MB`);
+  }
+  const dataUrl = await readAsDataUrl(file);
+  // Safari records audio/mp4, Chrome and Android audio/webm. An empty type happens when a file
+  // arrives from a picker that did not set one; the server sniffs the bytes regardless, so the
+  // declared value only has to be honest about which door it is asking for.
+  const type = isDocFile(file) ? 'application/pdf' : (baseType(file) || 'audio/webm');
+  const result = await api('media-upload', {name: file.name || 'attachment', type, kind, entityId, data: dataUrl});
+  if (!result?.path) throw new Error('העלאת הקובץ נכשלה — נסו שוב');
+  return result.path;
+}
+
 export async function uploadPrivate(file, kind, entityId = '') {
   if (!file) throw new Error('לא נבחר קובץ');
   if (isVideo(file)) return (await uploadVideoViaSdk(file, kind, entityId)).path;
+  if (isAudioFile(file) || isDocFile(file)) return uploadRawMedia(file, kind, entityId);
   const dataUrl = await toImageDataUrl(file);
   const result = await api('media-upload', {name: `${kind}.jpg`, type: 'image/jpeg', kind, entityId, data: dataUrl});
   if (!result?.path) throw new Error('העלאת התמונה נכשלה — נסו שוב');

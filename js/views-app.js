@@ -2049,7 +2049,7 @@ function selectThread(key) {
         <button type="button" class="ev-chip ${ev.payment ? 'ok' : ''}" id="ev-payment">תשלום</button>
       </div>` : '';
   const composer = live
-    ? `${evidenceRow}<form class="chat-composer" id="chat-composer" autocomplete="off"><label class="chat-attach" title="שליחת תמונה">${ICON.image}<input hidden type="file" accept="image/*" id="chat-photo"></label>${isSupport || isInquiry ? '' : `<label class="chat-attach" title="שליחת סרטון"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="14" height="12" rx="2.5"/><path d="m16 11 6-3.5v9L16 13z"/></svg><input hidden type="file" accept="video/*" id="chat-video"></label>`}<textarea name="text" aria-label="כתיבת הודעה" maxlength="2000" rows="1" placeholder="כתבו הודעה…">${esc(chatState.draft)}</textarea><button class="btn primary">שליחה</button></form>`
+    ? `${evidenceRow}<form class="chat-composer" id="chat-composer" autocomplete="off"><label class="chat-attach" title="שליחת תמונה">${ICON.image}<input hidden type="file" accept="image/*" id="chat-photo"></label>${isSupport || isInquiry ? '' : `<label class="chat-attach" title="שליחת סרטון"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="14" height="12" rx="2.5"/><path d="m16 11 6-3.5v9L16 13z"/></svg><input hidden type="file" accept="video/*" id="chat-video"></label><label class="chat-attach" title="שליחת מסמך"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v5h5"/><path d="M19 8v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7z"/></svg><input hidden type="file" accept="application/pdf,.pdf" id="chat-doc"></label><button type="button" class="chat-attach" id="chat-mic" title="הקלטת הודעה קולית" aria-label="הקלטת הודעה קולית"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4"/></svg></button>`}<textarea name="text" aria-label="כתיבת הודעה" maxlength="2000" rows="1" placeholder="כתבו הודעה…">${esc(chatState.draft)}</textarea><button class="btn primary">שליחה</button></form><div class="chat-recbar" id="chat-recbar" hidden><button type="button" class="recbar-cancel" id="rec-cancel" aria-label="ביטול ההקלטה">✕</button><span class="recbar-dot" aria-hidden="true"></span><span class="recbar-time" id="rec-time">0:00</span><span class="recbar-hint">מקליט…</span><button type="button" class="btn primary recbar-send" id="rec-send">שליחה</button></div>`
     : `<div class="chat-closed">${convEnded && isRenter ? 'השיחה נסגרה על ידי הצד השני — לא ניתן לשלוח הודעות נוספות' : 'ההשכרה הסתיימה — הצ׳אט פתוח רק מאישור ההזמנה ועד סיום ההשכרה'}</div>`;
 
   pane.innerHTML = `<header class="chat-head">
@@ -2151,6 +2151,98 @@ function selectThread(key) {
     } catch (error) { toast(error.message); }
     finally { attach?.classList.remove('busy'); }
   });
+  pane.querySelector('#chat-doc')?.addEventListener('change', async event => {
+    const file = event.target.files[0];
+    event.target.value = '';
+    if (!file) return;
+    const attach = event.target.closest('.chat-attach');
+    attach?.classList.add('busy');
+    try {
+      toast('מעלה מסמך…');
+      const path = await uploadPrivate(file, 'booking-media', id);
+      await sendMessage({bookingId: id, text: '', attachment: {path, type: 'file', name: file.name}});
+      toast('המסמך נשלח');
+    } catch (error) { toast(error.message); }
+    finally { attach?.classList.remove('busy'); }
+  });
+
+  // Voice notes. Tap to start, tap to send, with an explicit cancel — NOT hold-to-record. Holding is
+  // the phone convention but it is unreliable inside a browser: a long press can raise the context
+  // menu or start a text selection, and losing the pointer mid-hold aborts the take silently. The bar
+  // replaces the composer while recording so a 375px screen never shows a half-recorded state next to
+  // a live text field.
+  const micButton = pane.querySelector('#chat-mic');
+  if (micButton) {
+    const bar = pane.querySelector('#chat-recbar');
+    const composer = pane.querySelector('#chat-composer');
+    const timeLabel = pane.querySelector('#rec-time');
+    let recorder = null, chunks = [], ticker = null, startedAt = 0, aborted = false;
+
+    const showBar = on => { if (bar) bar.hidden = !on; if (composer) composer.style.display = on ? 'none' : ''; };
+    const stopTracks = () => recorder?.stream?.getTracks().forEach(track => track.stop());
+    const reset = () => {
+      clearInterval(ticker); ticker = null; recorder = null; chunks = [];
+      showBar(false); micButton.classList.remove('busy');
+    };
+
+    micButton.addEventListener('click', async () => {
+      if (recorder) return;                       // already recording — the bar owns the controls now
+      if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+        toast('הדפדפן הזה לא תומך בהקלטה — נסו Chrome או Safari מעודכן'); return;
+      }
+      let stream;
+      try { stream = await navigator.mediaDevices.getUserMedia({audio: true}); }
+      catch (error) {
+        toast(['NotAllowedError', 'PermissionDeniedError'].includes(error?.name)
+          ? 'לא ניתנה הרשאה למיקרופון — אפשרו גישה בהגדרות הדפדפן'
+          : 'לא הצלחנו לפתוח את המיקרופון');
+        return;
+      }
+      // Let the browser pick its own container: Chrome and Android give WebM/Opus, Safari gives MP4.
+      // Naming a mimeType here is how recording breaks on one of them.
+      try { recorder = new MediaRecorder(stream); }
+      catch { stream.getTracks().forEach(t => t.stop()); toast('ההקלטה נכשלה בדפדפן הזה'); return; }
+      aborted = false; chunks = []; startedAt = Date.now();
+      recorder.ondataavailable = event => { if (event.data?.size) chunks.push(event.data); };
+      recorder.onstop = async () => {
+        stopTracks();
+        const blob = new Blob(chunks, {type: recorder?.mimeType || 'audio/webm'});
+        const seconds = Math.round((Date.now() - startedAt) / 1000);
+        reset();
+        if (aborted) return;
+        // Under a second is a mis-tap, not a message. Sending it would put an unplayable blip in the
+        // thread that the other side still gets notified about.
+        if (seconds < 1 || blob.size < 1200) { toast('ההקלטה קצרה מדי'); return; }
+        const ext = /mp4|m4a|aac/i.test(blob.type) ? 'm4a' : /ogg/i.test(blob.type) ? 'ogg' : 'webm';
+        const file = new File([blob], `voice-${seconds}s.${ext}`, {type: blob.type});
+        micButton.classList.add('busy');
+        try {
+          toast('שולח הקלטה…');
+          const path = await uploadPrivate(file, 'booking-media', id);
+          await sendMessage({bookingId: id, text: '', attachment: {path, type: 'audio', seconds}});
+          toast('ההקלטה נשלחה');
+        } catch (error) { toast(error.message); }
+        finally { micButton.classList.remove('busy'); }
+      };
+      recorder.start();
+      showBar(true);
+      const tick = () => {
+        const total = Math.floor((Date.now() - startedAt) / 1000);
+        if (timeLabel) timeLabel.textContent = `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+        // A 4MB ceiling is roughly five minutes of Opus, but a phone left recording in a pocket would
+        // sail past it and only fail at upload. Stop at three minutes while the take is still sendable.
+        if (total >= 180) { toast('ההקלטה הגיעה ל־3 דקות ונשלחת'); try { recorder?.stop(); } catch {} }
+      };
+      tick(); ticker = setInterval(tick, 250);
+    });
+
+    pane.querySelector('#rec-send')?.addEventListener('click', () => { try { recorder?.stop(); } catch { reset(); } });
+    pane.querySelector('#rec-cancel')?.addEventListener('click', () => {
+      aborted = true;
+      try { recorder?.stop(); } catch { stopTracks(); reset(); }
+    });
+  }
+
   pane.querySelector('#chat-photo')?.addEventListener('change', async event => {
     const file = event.target.files[0];
     event.target.value = '';
@@ -2273,6 +2365,31 @@ function selectThread(key) {
       appended = true;
       if (m.senderUid !== store.user?.uid) newFromOther = true;
     }
+    box.querySelectorAll('[data-att-audio]:not([data-bound])').forEach(button => {
+      button.dataset.bound = '1';
+      button.onclick = async () => {
+        if (button.classList.contains('playing')) {                 // second tap stops it
+          button.querySelector('audio')?.pause(); return;
+        }
+        button.classList.add('loading');
+        try {
+          const url = await signedRead(button.dataset.attAudio);
+          // Only one voice note at a time; two talking over each other is nobody's intent.
+          box.querySelectorAll('.msg-voice audio').forEach(a => a.pause());
+          let audio = button.querySelector('audio');
+          if (!audio) {
+            audio = document.createElement('audio');
+            audio.preload = 'none';
+            audio.onplay = () => button.classList.add('playing');
+            audio.onpause = audio.onended = () => button.classList.remove('playing');
+            button.appendChild(audio);
+          }
+          audio.src = url;
+          await audio.play();
+        } catch { toast('לא הצלחנו להשמיע את ההקלטה'); }
+        finally { button.classList.remove('loading'); }
+      };
+    });
     box.querySelectorAll('[data-att-path]:not([data-bound])').forEach(button => { button.dataset.bound = '1'; button.onclick = async () => {
       try { window.open(await signedRead(button.dataset.attPath), '_blank', 'noopener'); }
       catch (error) { toast(error.message); }
@@ -2330,14 +2447,20 @@ function showNewPill(box) {
 function renderChatMessage(message, grouped = false) {
   const mine = message.senderUid === store.user?.uid;
   const sys = message.senderUid === 'system';
-  const attLabels = {'evidence-video': 'סרטון הרכב מבחוץ', 'evidence-fuel': 'תמונת דלק', 'evidence-odometer': 'תמונת קילומטראז׳', photo: 'קובץ מצורף', video: 'סרטון'};
+  const attLabels = {'evidence-video': 'סרטון הרכב מבחוץ', 'evidence-fuel': 'תמונת דלק', 'evidence-odometer': 'תמונת קילומטראז׳', photo: 'קובץ מצורף', video: 'סרטון', audio: 'הודעה קולית', file: 'מסמך'};
   const att = message.attachment;
   // Inline images are already the picture (data URL) — show them directly. Videos / legacy
   // storage paths keep the click-to-open button (fetched through signedRead).
+  const secs = Number(att?.seconds || 0);
+  const durLabel = secs ? `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}` : '';
   const attachment = att
     ? (/^data:image\//i.test(String(att.path || ''))
         ? `<img class="msg-img" src="${esc(att.path)}" alt="${esc(attLabels[att.type] || 'תמונה')}" loading="lazy" data-att-img="${esc(att.path)}">`
-        : `<button class="msg-att" data-att-path="${esc(att.path)}">${attLabels[att.type] || 'קובץ'} · צפייה</button>`)
+        : att.type === 'audio'
+          ? `<button class="msg-voice" data-att-audio="${esc(att.path)}" aria-label="השמעת הודעה קולית${durLabel ? ` ${durLabel}` : ''}"><span class="mv-play" aria-hidden="true">▶</span><span class="mv-bars" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>${durLabel ? `<span class="mv-time">${durLabel}</span>` : ''}</button>`
+          : att.type === 'file'
+            ? `<button class="msg-file" data-att-path="${esc(att.path)}"><span class="mf-ic" aria-hidden="true">${ICON.doc || 'PDF'}</span><span class="mf-main"><b>${esc(att.name || 'מסמך')}</b><small>הקשה לפתיחה</small></span></button>`
+            : `<button class="msg-att" data-att-path="${esc(att.path)}">${attLabels[att.type] || 'קובץ'} · צפייה</button>`)
     : '';
   const time = (() => { const d = new Date(Number(message.createdAt) || 0); return Number.isNaN(d.getTime()) ? '' : d.toLocaleTimeString('he-IL', {hour: '2-digit', minute: '2-digit'}); })();
   // An optimistic bubble is drawn before the server has stored anything, so it must not claim to be

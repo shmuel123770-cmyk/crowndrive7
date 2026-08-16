@@ -1,7 +1,7 @@
 import {verify, json, canAccessBooking, isAdmin, profile, cleanText, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
 import {putStorageObject} from './_storage.mjs';
 import {rateLimit, tooMany} from './_ratelimit.mjs';
-import {detectedImageType} from './_media.mjs';
+import {detectedImageType, detectedMediaType, AUDIO_TYPES, DOC_TYPES} from './_media.mjs';
 
 // Direct server-side image upload: the client POSTs base64 bytes to THIS same-origin function
 // and the Admin SDK writes them to Storage. This works inside in-app browsers (Telegram/IG
@@ -12,6 +12,16 @@ import {detectedImageType} from './_media.mjs';
 // the received bytes are far smaller than the source. This is the ceiling for the encoded
 // bytes (well within Netlify's ~6MB request limit); any image type is accepted.
 const MAX_IMAGE = 4 * 1024 * 1024;
+// Voice notes and documents ride the same base64 body, so they share the image ceiling — it is the
+// Netlify request limit that sets it, not the media. 4MB decoded is ~5.3MB encoded, which the image
+// path has been carrying in production. A minute of Opus is well under 1MB; a scanned PDF is the
+// case that will actually hit this, and the client says so plainly rather than failing at the server.
+const MAX_MEDIA = 4 * 1024 * 1024;
+// Chat attachments ONLY. Avatars, car photos, identity documents and payment proofs stay images:
+// widening those would be a different decision with different review paths behind it.
+const MEDIA_KINDS = new Set(['booking-media']);
+const EXT_FOR = {'audio/webm': 'webm', 'audio/ogg': 'ogg', 'audio/wav': 'wav', 'audio/mpeg': 'mp3',
+                 'audio/mp4': 'm4a', 'application/pdf': 'pdf'};
 const safe = value => String(value || 'file').replace(/[^a-zA-Z0-9._-]/g, '_').slice(-100);
 // Shared magic-byte detector from _media.mjs; this endpoint stays stricter than the detector (no GIF).
 const ACCEPTED = new Set(['image/jpeg', 'image/png', 'image/webp']);
@@ -25,14 +35,31 @@ export async function handler(event) {
     const reqBody = parseBody(event);
     if (!reqBody) return json(400, {error: 'בקשה לא תקינה — נסו שוב'});
     const {name, type, kind, entityId, data} = reqBody;
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(String(type || '').toLowerCase())) return json(400, {error: 'יש להעלות תמונת JPG, PNG או WebP'});
+    const declared = String(type || '').toLowerCase();
+    // A voice note or a document is only offered inside a booking chat, so the door only opens for
+    // that kind. Everything else keeps the original image-only contract untouched.
+    const wantsMedia = MEDIA_KINDS.has(kind) && (AUDIO_TYPES.has(declared) || DOC_TYPES.has(declared));
+    if (!wantsMedia && !['image/jpeg', 'image/png', 'image/webp'].includes(declared)) return json(400, {error: 'יש להעלות תמונת JPG, PNG או WebP'});
     const base64 = String(data || '').replace(/^data:[^,]*,/, '');
     if (!base64) return json(400, {error: 'לא התקבל קובץ'});
     const buffer = Buffer.from(base64, 'base64');
     if (!buffer.length) return json(400, {error: 'קובץ ריק'});
-    if (buffer.length > MAX_IMAGE) return json(400, {error: 'התמונה גדולה מדי גם אחרי אופטימיזציה — נסו תמונה אחרת'});
-    const detectedType = detectedImageType(buffer);
-    if (!ACCEPTED.has(detectedType)) return json(400, {error: 'תוכן הקובץ אינו תמונת JPG, PNG או WebP תקינה'});
+
+    let detectedType;
+    if (wantsMedia) {
+      if (buffer.length > MAX_MEDIA) return json(400, {error: 'הקובץ גדול מדי — עד 4MB'});
+      // The declared type is the client's claim; this is what the bytes actually are. They must
+      // agree, so a PDF cannot be posted as audio and played, and audio cannot be filed as a document.
+      detectedType = detectedMediaType(buffer);
+      if (!detectedType) return json(400, {error: 'סוג הקובץ אינו נתמך — הקלטה קולית או PDF בלבד'});
+      const bothAudio = AUDIO_TYPES.has(detectedType) && AUDIO_TYPES.has(declared);
+      const bothDocs = DOC_TYPES.has(detectedType) && DOC_TYPES.has(declared);
+      if (!bothAudio && !bothDocs) return json(400, {error: 'תוכן הקובץ אינו תואם לסוג שהוצהר'});
+    } else {
+      if (buffer.length > MAX_IMAGE) return json(400, {error: 'התמונה גדולה מדי גם אחרי אופטימיזציה — נסו תמונה אחרת'});
+      detectedType = detectedImageType(buffer);
+      if (!ACCEPTED.has(detectedType)) return json(400, {error: 'תוכן הקובץ אינו תמונת JPG, PNG או WebP תקינה'});
+    }
 
     let path;
     if (kind === 'user-document') {
@@ -43,7 +70,9 @@ export async function handler(event) {
       path = `bookings/${cleanText(entityId, 100)}/payments/${user.uid}/${Date.now()}-${safe(name)}`;
     } else if (kind === 'booking-media') {
       if (!await canAccessBooking(user.uid, entityId)) return json(403, {error: 'אין הרשאה'});
-      path = `bookings/${cleanText(entityId, 100)}/media/${user.uid}/${Date.now()}-${safe(name)}`;
+      const ext = EXT_FOR[detectedType];
+      const filename = ext ? `${safe(name).replace(/\.[a-z0-9]+$/i, '')}.${ext}` : safe(name);
+      path = `bookings/${cleanText(entityId, 100)}/media/${user.uid}/${Date.now()}-${filename}`;
     } else if (kind === 'avatar') {
       path = `avatars/${user.uid}/${Date.now()}-${safe(name)}`;
     } else if (kind === 'car-image') {
