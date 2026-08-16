@@ -129,19 +129,31 @@ export async function startPublic() {
   // indefinitely. So tryLegacyCatalog() never runs, the error branch never runs, and app.js's own 5s
   // deadline settles the UI on "אין כרגע רכבים זמינים": a connectivity failure shown as a real answer.
   //
-  // If nothing has arrived in 2.5s, pull the same node over plain HTTPS — comfortably inside that 5s
-  // deadline. Whichever transport answers first wins; a redundant 16KB GET is a trivial price.
-  setTimeout(async () => {
+  // The same read over plain HTTPS, RACED AGAINST the realtime channel from the very first moment
+  // rather than held back 2.5s. Waiting was a correct fix for the wrong problem: it rescued the
+  // never-answers case but left the common slow case alone, and the realtime channel routinely takes
+  // 1–3.5s to hand over the fleet. That is long after the page has painted, so the catalogue landed
+  // while the customer was already reading — a full repaint under their eyes, which is the "the site
+  // jumps when I open it" complaint. A single ~16KB GET usually answers in a few hundred ms, so the
+  // fleet is there before the first look instead of arriving on top of it.
+  //
+  // Racing does not double the repaint: when the realtime copy lands afterwards with the same data it
+  // produces byte-identical HTML, and paintApp()'s memo skips the DOM write entirely.
+  const seedFromREST = async announceFailure => {
     if (catalogArrived || Object.keys(store.publicCatalog).length) return;
     try {
       const data = await readViaREST('publicCars');
-      if (catalogArrived) return;              // realtime won the race after all
+      if (catalogArrived || Object.keys(store.publicCatalog).length) return;   // realtime won the race
       store.publicCatalog = data || {};
       store.catalogTransport = 'rest';
       mergeCars();
       store.publicReady = true;
       emit('cars');
     } catch (error) {
+      // The EARLY attempt stays quiet on failure — realtime may still be on its way, and declaring
+      // the catalogue dead at 300ms would turn a slow network into a visible error. Only the 2.5s
+      // watchdog gets to announce it, which is the deadline the UI was already built around.
+      if (!announceFailure) { console.warn('early catalog read over https failed — realtime may still answer', error); return; }
       // Both transports are down. Flag it so the UI can say "loading failed, try again" instead of
       // "there are no cars" — to a customer those are completely different statements.
       console.error('catalog unavailable over realtime AND rest', error);
@@ -149,7 +161,9 @@ export async function startPublic() {
       store.publicReady = true;
       emit('cars');
     }
-  }, 2500);
+  };
+  seedFromREST(false);
+  setTimeout(() => seedFromREST(true), 2500);
   // Read the SANITIZED public projection (carId/targetUid/type/score/review/date) — the full ratings
   // node (with authorUid + bookingId) is no longer public (audit #3).
   store.publicUnsubs.push(listen(refs.publicRatings, v => { store.ratings = v; }, 'ratings'));
