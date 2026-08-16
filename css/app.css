@@ -2757,3 +2757,50 @@ h1,h2,h3,.brand,.hero h1,.section-head h1,.auth-head h2,.modal-head h2{
   .chat-filter-chips{padding-inline:12px;scroll-padding-inline:12px}
   .chat-markall{margin-inline-start:12px}
 }
+
+/* ---- Voice notes and documents in a booking chat ---------------------------------------------- */
+/* The recording bar REPLACES the composer rather than sitting beside it: on a 375px screen a
+   half-recorded state next to a live text field is two competing affordances at once. */
+.chat-recbar{display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:1px solid var(--line);background:var(--surface)}
+.chat-recbar[hidden]{display:none}
+.recbar-cancel{border:none;background:none;color:var(--muted);font-size:var(--t-subhead);line-height:1;cursor:pointer;
+  width:40px;height:40px;border-radius:50%;display:grid;place-items:center;flex:0 0 40px}
+.recbar-cancel:hover{background:var(--bg2);color:var(--danger)}
+.recbar-dot{width:9px;height:9px;border-radius:50%;background:var(--danger);flex:0 0 9px;animation:recPulse 1.2s ease-in-out infinite}
+@keyframes recPulse{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){.recbar-dot{animation:none}}
+.recbar-time{font-variant-numeric:tabular-nums;font-weight:700;font-size:var(--t-body);min-width:44px}
+.recbar-hint{color:var(--muted);font-size:var(--t-meta);flex:1}
+.recbar-send{flex:0 0 auto;padding-inline:20px}
+
+/* A voice note reads as one tappable object: play affordance, a waveform standing in for length,
+   and the duration. The bars are decorative — the duration is what actually carries the information,
+   so it is text and not a picture of text. */
+.msg-voice{display:inline-flex;align-items:center;gap:10px;padding:9px 13px;border:none;border-radius:99px;
+  background:rgba(0,0,0,.06);color:inherit;cursor:pointer;max-width:100%;font:inherit}
+.message.mine .msg-voice{background:rgba(255,255,255,.16)}
+.msg-voice:hover{filter:brightness(.97)}
+.mv-play{font-size:.8em;line-height:1;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;
+  background:var(--brand);color:#fff;flex:0 0 26px}
+.msg-voice.playing .mv-play{font-size:0}
+.msg-voice.playing .mv-play::after{content:"";width:9px;height:10px;border-inline:3px solid #fff}
+.msg-voice.loading .mv-play{opacity:.5}
+.mv-bars{display:flex;align-items:center;gap:2px;height:20px;flex:1;min-width:56px}
+.mv-bars i{flex:1;background:currentColor;opacity:.35;border-radius:1px;height:35%}
+.mv-bars i:nth-child(3n){height:75%}
+.mv-bars i:nth-child(4n){height:55%}
+.mv-bars i:nth-child(5n){height:90%}
+.msg-voice.playing .mv-bars i{opacity:.7}
+.mv-time{font-variant-numeric:tabular-nums;font-size:var(--t-meta);opacity:.75;flex:0 0 auto}
+.msg-voice audio{display:none}
+
+/* A document is named, because "מסמך · צפייה" tells the other side nothing about which one. */
+.msg-file{display:flex;align-items:center;gap:11px;padding:10px 13px;border:1px solid var(--line);
+  border-radius:var(--r-md);background:rgba(0,0,0,.04);color:inherit;cursor:pointer;text-align:start;max-width:100%;font:inherit}
+.message.mine .msg-file{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.22)}
+.msg-file:hover{filter:brightness(.97)}
+.mf-ic{flex:0 0 30px;width:30px;height:30px;display:grid;place-items:center;opacity:.8}
+.mf-ic svg{width:22px;height:22px}
+.mf-main{min-width:0;display:grid}
+.mf-main b{font-size:var(--t-meta);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mf-main small{font-size:var(--t-micro);opacity:.7}
