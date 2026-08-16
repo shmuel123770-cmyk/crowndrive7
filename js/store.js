@@ -1,4 +1,5 @@
 import {refs, readViaREST} from './firebase.js';
+import {firstToAnswer} from './core.js';
 
 export const store = {
   user: null,
@@ -185,8 +186,20 @@ export async function startPrivate(user) {
     store.isAdmin = false;
   } else {
     try {
+      // Both transports from the start, not realtime-then-fall-back. This read is AWAITED — nothing
+      // private is set up until it answers — so every second it spends is a second the personal area
+      // shows nothing and then rebuilds when it finally lands.
+      //
+      // firstToAnswer, not Promise.race: it takes the first transport to ANSWER and ignores one that
+      // merely fails, so a refused or offline read cannot settle the question as "not an admin" while
+      // the other is still in flight. It rejects only once BOTH have failed, landing in the catch
+      // below exactly as before. (Promise.any has these semantics but is ES2021; this site's visitors
+      // are on phones of unknown vintage, and four lines cost less than an unknown.)
       store.isAdmin = await Promise.race([
-        refs.admins.child(user.uid).once('value').then(snap => snap.val() === true),
+        firstToAnswer(
+          refs.admins.child(user.uid).once('value').then(snap => snap.val() === true),
+          readViaREST(`admins/${user.uid}`).then(value => value === true),
+        ),
         new Promise((_, reject) => setTimeout(() => reject(new Error('admin-check-timeout')), 6000)),
       ]);
     } catch (error) {
@@ -256,7 +269,12 @@ export async function startPrivate(user) {
   // blocked this timer fired, the role looked empty, and the personal area offered "choose your
   // account type" to someone who already had one. So before giving up, read the profile over plain
   // HTTPS — the same escape hatch the catalogue uses — and only then admit we do not know.
-  setTimeout(async () => {
+  // ...and, like the catalogue, run that HTTPS read FROM THE START rather than only after 5s. Waiting
+  // is what makes the personal area appear in stages: blank, then the profile drops in seconds later
+  // and the page is rebuilt under the reader. The realtime listener stays authoritative — when it
+  // answers it overwrites this seed — but on a slow channel the screen is already correct by then,
+  // and paintApp()'s memo means an identical answer costs no repaint at all.
+  const seedProfileFromREST = async announceFailure => {
     if (store.profileLoaded) return;
     try {
       const data = await readViaREST(`users/${user.uid}`);
@@ -266,12 +284,18 @@ export async function startPrivate(user) {
       store.profileKnown = true;                       // a real answer, even if the row is empty
       if (!store.isAdmin) subscribeOwnFeeds(store.profile.role);
     } catch (error) {
+      // The early attempt must stay silent. profileLoaded means "stop waiting", and setting it here
+      // would end the wait on a transient failure at 300ms — the personal area would show its
+      // could-not-load screen while the realtime listener was still perfectly on its way.
+      if (!announceFailure) { console.warn('early profile read over https failed — realtime may still answer', error); return; }
       console.error('profile unavailable over realtime AND rest', error);
       store.profileKnown = false;                      // we genuinely do not know — do not guess a role
     }
     store.profileLoaded = true;
     emit('profile');
-  }, 5000);
+  };
+  if (!user.isAnonymous) seedProfileFromREST(false);
+  setTimeout(() => seedProfileFromREST(true), 5000);
   store.privateUnsubs.push(listen(refs.verificationStatus.child(user.uid), status => {
     store.profile = store.profile || {};
     // The listen() helper coerces empty snapshots to {} — keep status a string.

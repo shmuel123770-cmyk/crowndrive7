@@ -189,3 +189,19 @@ export function reconcileMessages(messages, seen, pending = []) {
   }
   return {append, resolve, seenAdds};
 }
+
+// Resolve with the first promise that FULFILLS; reject only once every one has rejected. Used to run
+// the realtime channel and plain HTTPS against each other, where a transport that fails must simply
+// drop out of the race rather than answer for the one still in flight.
+export function firstToAnswer(...promises) {
+  return new Promise((resolve, reject) => {
+    let failed = 0;
+    const errors = [];
+    for (const promise of promises) {
+      promise.then(resolve, error => {
+        errors.push(error);
+        if (++failed === promises.length) reject(new Error(`all-transports-failed: ${errors.map(e => e?.message || e).join(' | ')}`));
+      });
+    }
+  });
+}
