@@ -1919,7 +1919,7 @@ function selectThread(key) {
         <button type="button" class="ev-chip ${ev.payment ? 'ok' : ''}" id="ev-payment">תשלום</button>
       </div>` : '';
   const composer = live
-    ? `${evidenceRow}<form class="chat-composer" id="chat-composer" autocomplete="off"><label class="chat-attach" title="שליחת תמונה">${ICON.image}<input hidden type="file" accept="image/*" id="chat-photo"></label><textarea name="text" aria-label="כתיבת הודעה" maxlength="2000" rows="1" placeholder="כתבו הודעה…">${esc(chatState.draft)}</textarea><button class="btn primary">שליחה</button></form>`
+    ? `${evidenceRow}<form class="chat-composer" id="chat-composer" autocomplete="off"><label class="chat-attach" title="שליחת תמונה">${ICON.image}<input hidden type="file" accept="image/*" id="chat-photo"></label>${isSupport || isInquiry ? '' : `<label class="chat-attach" title="שליחת סרטון"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="14" height="12" rx="2.5"/><path d="m16 11 6-3.5v9L16 13z"/></svg><input hidden type="file" accept="video/*" id="chat-video"></label>`}<textarea name="text" aria-label="כתיבת הודעה" maxlength="2000" rows="1" placeholder="כתבו הודעה…">${esc(chatState.draft)}</textarea><button class="btn primary">שליחה</button></form>`
     : `<div class="chat-closed">${convEnded && isRenter ? 'השיחה נסגרה על ידי הצד השני — לא ניתן לשלוח הודעות נוספות' : 'ההשכרה הסתיימה — הצ׳אט פתוח רק מאישור ההזמנה ועד סיום ההשכרה'}</div>`;
 
   pane.innerHTML = `<header class="chat-head">
@@ -2005,6 +2005,22 @@ function selectThread(key) {
       finally { if (sendBtn && chatState.thread === sentFrom) { sendBtn.disabled = false; sendBtn.textContent = sendLabel; } }
     };
   }
+  pane.querySelector('#chat-video')?.addEventListener('change', async event => {
+    const file = event.target.files[0];
+    event.target.value = '';
+    if (!file) return;
+    const attach = event.target.closest('.chat-attach');
+    attach?.classList.add('busy');
+    try {
+      toast('מעלה סרטון… זה יכול לקחת קצת');
+      // 'booking-media' puts it under bookings/<id>/media/<uid>/, the only prefix message-send accepts
+      // for a non-image attachment, and the only one the Storage rules allow video bytes in.
+      const path = await uploadPrivate(file, 'booking-media', id);
+      await sendMessage({bookingId: id, text: '', attachment: {path, type: 'video'}});
+      toast('הסרטון נשלח');
+    } catch (error) { toast(error.message); }
+    finally { attach?.classList.remove('busy'); }
+  });
   pane.querySelector('#chat-photo')?.addEventListener('change', async event => {
     const file = event.target.files[0];
     event.target.value = '';
@@ -2184,7 +2200,7 @@ function showNewPill(box) {
 function renderChatMessage(message, grouped = false) {
   const mine = message.senderUid === store.user?.uid;
   const sys = message.senderUid === 'system';
-  const attLabels = {'evidence-video': 'סרטון הרכב מבחוץ', 'evidence-fuel': 'תמונת דלק', 'evidence-odometer': 'תמונת קילומטראז׳', photo: 'קובץ מצורף'};
+  const attLabels = {'evidence-video': 'סרטון הרכב מבחוץ', 'evidence-fuel': 'תמונת דלק', 'evidence-odometer': 'תמונת קילומטראז׳', photo: 'קובץ מצורף', video: 'סרטון'};
   const att = message.attachment;
   // Inline images are already the picture (data URL) — show them directly. Videos / legacy
   // storage paths keep the click-to-open button (fetched through signedRead).

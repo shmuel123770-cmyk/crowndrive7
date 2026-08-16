@@ -14,7 +14,7 @@ const CHAT_OPEN = new Set(['pending', 'approved', 'active']);
 // is cancelled leaves the renter's money out with no way to reach the owner. The owner still has
 // "סיום שיחה" if the conversation has run its course.
 const EVIDENCE_KEYS = {'evidence-video': 'video', 'evidence-fuel': 'fuel', 'evidence-odometer': 'odometer'};
-const ATTACHMENT_TYPES = new Set(['evidence-video', 'evidence-fuel', 'evidence-odometer', 'photo']);
+const ATTACHMENT_TYPES = new Set(['evidence-video', 'evidence-fuel', 'evidence-odometer', 'photo', 'video']);
 
 export async function handler(event) {
   try {
@@ -158,7 +158,7 @@ export async function handler(event) {
     await ref.set({senderUid: token.uid, text, ...(stored ? {attachment: stored} : {}), createdAt: Date.now()});
     // Cheap unread summary on the booking node (both participants already read their bookings) — a
     // preview + who-sent + when, so the chat list shows unread + a last-message line with no message reads.
-    await db.ref(`bookings/${bookingId}`).update({lastMsgAt: Date.now(), lastMsgFrom: token.uid, lastMsgText: (text || '📷 תמונה').slice(0, 90)}).catch(() => {});
+    await db.ref(`bookings/${bookingId}`).update({lastMsgAt: Date.now(), lastMsgFrom: token.uid, lastMsgText: (text || (stored?.type === 'video' ? 'סרטון' : stored ? 'תמונה' : '')).slice(0, 90)}).catch(() => {});
     if (stored && EVIDENCE_KEYS[stored.type]) {
       await db.ref(`bookings/${bookingId}/evidence/${EVIDENCE_KEYS[stored.type]}`).set({path: stored.path, by: token.uid, at: Date.now()});
     }
