@@ -6,7 +6,7 @@ import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './medi
 import {legacyStatus, migrateLegacy} from './migrate.js';
 import {api} from './api.js';
 import {enablePush, pushPromptable, pushSupported, iosNeedsInstall, initPushForeground} from './push.js';
-import {saveAuthReturn, afterAuthDestination, openCar, CAR_MAKES, CAR_TYPES, ICON, MODELS_BY_MAKE, RENTAL_MODES, TAB_ICONS, app, avatarHtml, carImage, carPhotoList, carStatusPill, carYears, composePhone, emptyState, fallbackImage, kpi, phoneField, roleName, selectOptions, bindCarButtons, carDeleteBlocked, carGrid, featuredFirst, userUnreadNotifs, bottomNav} from './views.js';
+import {saveAuthReturn, afterAuthDestination, openAdminLogin, openCar, CAR_MAKES, CAR_TYPES, ICON, MODELS_BY_MAKE, RENTAL_MODES, TAB_ICONS, app, avatarHtml, carImage, carPhotoList, carStatusPill, carYears, composePhone, emptyState, fallbackImage, kpi, phoneField, roleName, selectOptions, bindCarButtons, carDeleteBlocked, carGrid, featuredFirst, userUnreadNotifs, bottomNav} from './views.js';
 
 // ---------- New rental-request popup for owners (they were MISSING incoming requests) ----------
 // The moment a pending request for the owner's car arrives, a prominent modal pops with the renter's
@@ -221,9 +221,14 @@ function profileUnavailable() {
     <div class="auth-head"><h2>לא הצלחנו לטעון את החשבון</h2>
       <p>נראה שיש תקלת חיבור. החשבון והפרטים שלכם לא נפגעו.</p></div>
     <button type="button" class="btn primary block" id="profile-retry">ניסיון נוסף</button>
+    <button type="button" class="btn outline block" id="profile-admin">כניסת מנהל</button>
     <button type="button" class="link-back" id="profile-support">פנייה לתמיכה</button>
   </section>`;
   document.querySelector('#profile-retry').onclick = () => location.reload();
+  // An admin whose profile row could not be read was stranded here: their authority comes from
+  // admins/<uid>, not from users/<uid>, so a failed profile read says nothing about it. Always leave
+  // the admin door open rather than making this screen terminal.
+  document.querySelector('#profile-admin').onclick = () => openAdminLogin();
   document.querySelector('#profile-support').onclick = () => { location.hash = 'chats'; };
 }
 

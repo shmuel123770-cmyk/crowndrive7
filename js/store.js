@@ -176,8 +176,18 @@ export async function startPrivate(user) {
         new Promise((_, reject) => setTimeout(() => reject(new Error('admin-check-timeout')), 6000)),
       ]);
     } catch (error) {
-      console.error('admin check failed — continuing as non-admin', error);
-      store.isAdmin = false;
+      // The read above goes over the realtime channel, which is exactly the transport this site has to
+      // assume is blocked — it is why the catalogue and the profile both needed a plain-HTTPS escape
+      // hatch. Without one here, an admin on such a network silently became a non-admin after the 6s
+      // timeout: signed in correctly, but the app did not know they were an admin, so it routed them
+      // by profile state and they could not reach the admin dashboard at all.
+      console.warn('admin check over realtime failed — retrying over https', error);
+      try {
+        store.isAdmin = (await readViaREST(`admins/${user.uid}`)) === true;
+      } catch (restError) {
+        console.error('admin check failed over BOTH transports — continuing as non-admin', restError);
+        store.isAdmin = false;
+      }
     }
   }
   store.adminChecked = true;  // admin status is now known — safe to decide renter/owner vs admin
