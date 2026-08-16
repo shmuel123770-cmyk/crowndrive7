@@ -2758,3 +2758,15 @@ h1,h2,h3,.brand,.hero h1,.section-head h1,.auth-head h2,.modal-head h2{
   .ask-actions{flex-direction:column-reverse}
   .ask-actions .btn,.ask-actions .btn.outline{flex:1 1 auto;width:100%}
 }
+
+/* ---- Admin: accounts that look wrongly flipped renter → owner --------------------------------- */
+.role-flip-note{border:1px solid var(--warn);background:var(--warn-bg);border-radius:14px;padding:14px 16px;margin-bottom:16px;display:grid;gap:8px}
+.role-flip-note b{font-size:.95rem}
+.role-flip-note p{margin:0;color:var(--muted);font-size:.86rem;line-height:1.5}
+.role-flip-note ul{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:8px}
+.role-flip-note li{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:9px 12px}
+.rf-who{flex:1;min-width:0;font-weight:600;font-size:.88rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rf-fix{flex:0 0 auto;min-height:40px;padding-inline:14px;font-size:.82rem}
+/* The limitation is part of the finding, not a footnote to hide — an admin who reads this as "these
+   are all of them" will stop looking. */
+.role-flip-note small{color:var(--muted);font-size:.76rem;line-height:1.45}

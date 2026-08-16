@@ -751,6 +751,19 @@ function adminDashboard(tab = 'overview') {
     if (event.target.closest('button')) return;   // the card's own buttons keep their meaning
     store.adminUserUid = el.dataset.openUser; store.dashTab = 'userPage'; adminDashboard('userPage');
   });
+  document.querySelectorAll('[data-fix-role]').forEach(button => button.onclick = async () => {
+    const uid = button.dataset.fixRole;
+    const user = store.users[uid] || {};
+    const who = user.name || user.email || uid;
+    if (!await askConfirm(`להחזיר את ${who} לשוכר?\nהחשבון מסומן כבעל רכב אך אין לו רכבים ויש לו הזמנה כשוכר. אפשר לשנות חזרה בכל רגע מכרטיס המשתמש.`,
+                          {confirmLabel: 'החזרה לשוכר'})) return;
+    button.disabled = true;
+    try {
+      await adminAction('user-update', {uid, patch: {role: 'renter'}});
+      toast(`${who} הוחזר לשוכר`);
+      adminDashboard('users');
+    } catch (error) { toast(error.message); button.disabled = false; }
+  });
   document.querySelector('[data-back-users]')?.addEventListener('click', () => { store.dashTab = 'users'; adminDashboard('users'); });
   const userQ = document.querySelector('#admin-user-q');
   if (userQ) userQ.oninput = () => {
@@ -968,6 +981,23 @@ function adminUserPage(uid, allBookings) {
 }
 // Users split into the two groups the admin actually thinks in (Shmuel: "2 רשימות ... שוכרים ובעלי
 // רכבים"). Anyone whose role was never set lands in a third group so they can't silently disappear.
+// Several renters reported their account silently turning into an owner. The cause is fixed, but the
+// accounts it already happened to are still wrong in the database, and an admin looking at a list of
+// users has no way to tell which ones — that is what this finds.
+//
+// The signal is deliberately narrow. Owning no car proves nothing on its own: an owner who has not
+// listed yet looks identical. What makes it conclusive is a booking taken as the RENTER — nobody
+// rents a car through their own site, so an "owner" who has rented is someone who chose "renter" and
+// had it changed underneath them.
+//
+// What this CANNOT find, and the panel says so rather than implying a clean bill of health: a flipped
+// account that has not booked anything yet is indistinguishable from a genuine new owner.
+function suspectedRoleFlips(users) {
+  const owns = new Set(list(store.cars).map(car => car.ownerUid).filter(Boolean));
+  const rented = new Set(list(store.bookings).map(booking => booking.renterUid).filter(Boolean));
+  return users.filter(user => user.role === 'owner' && !owns.has(user.id) && rented.has(user.id));
+}
+
 function adminUsersSplit(users) {
   const q = (store.adminUserQ || '').trim().toLowerCase();
   const match = u => !q || `${u.name || ''} ${u.email || ''} ${u.phone || ''}`.toLowerCase().includes(q);
@@ -978,7 +1008,15 @@ function adminUsersSplit(users) {
     ['none', 'ללא תפקיד', shown.filter(u => !['renter', 'owner'].includes(u.role))],
   ].filter(([, , rows]) => rows.length);
   const pending = shown.filter(u => u.verification?.status === 'pending').length;
-  return `<div class="section-head"><h2>משתמשים</h2><span class="mut">${users.length} סה״כ${pending ? ` · ${pending} ממתינים לאימות` : ''}</span></div>
+  const flips = suspectedRoleFlips(users);   // over ALL users — a search must not hide them
+  const flipNote = flips.length ? `<div class="role-flip-note">
+    <b>${flips.length === 1 ? 'חשבון אחד כנראה סומן בטעות כבעל רכב' : `${flips.length} חשבונות כנראה סומנו בטעות כבעלי רכב`}</b>
+    <p>הם מסומנים כבעלי רכב, אין להם אף רכב, ויש להם הזמנה כשוכר — הדפוס שדווח. בדקו לפני שמחזירים.</p>
+    <ul>${flips.map(user => `<li><span class="rf-who">${esc(user.name || user.email || user.id)}</span>
+      <button type="button" class="btn outline rf-fix" data-fix-role="${esc(user.id)}">החזרה לשוכר</button></li>`).join('')}</ul>
+    <small>חשבון שהתהפך ועדיין לא הזמין כלום נראה בדיוק כמו בעל רכב חדש, ולכן לא יופיע כאן.</small>
+  </div>` : '';
+  return `${flipNote}<div class="section-head"><h2>משתמשים</h2><span class="mut">${users.length} סה״כ${pending ? ` · ${pending} ממתינים לאימות` : ''}</span></div>
     <input class="user-search" id="admin-user-q" type="search" placeholder="חיפוש לפי שם, מייל או טלפון" value="${esc(store.adminUserQ || '')}" aria-label="חיפוש משתמשים">
     ${groups.length ? groups.map(([key, label, rows]) => `<details class="user-group" ${rows.length <= 25 || q ? 'open' : ''}>
       <summary><b>${label}</b><span class="ug-count">${rows.length}</span></summary>
