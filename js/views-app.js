@@ -171,19 +171,24 @@ function bindDashboardTabs(renderer) {
   const headAvatar = document.querySelector('[data-goto-profile]');
   if (headAvatar) headAvatar.onclick = () => { store.dashTab = 'profile'; renderer('profile'); bottomNav(); };
 }
+// Write #app directly, for the screens that are not memoized (loaders, the account-type shells, the
+// chat page). resetPaint() must accompany EVERY such write: paintApp() skips a repaint when the HTML
+// matches what it last painted, so a raw write it does not know about would let a later, identical
+// paint be skipped while the DOM is showing something else entirely.
+const paintRaw = html => { resetPaint(); app().innerHTML = html; };
+
 export function dashboard() {
-  resetPaint();
   // A guest (anonymous) has no personal area — send them to register instead of a dead-end profile screen.
   if (store.user?.isAnonymous) { toast('הירשמו כדי לפתוח אזור אישי'); location.hash = 'auth'; return; }
   if (!store.user) {
-    if (!store.authSettled) { app().innerHTML = '<div class="app-loader"><div class="spinner"></div><p>טוען…</p></div>'; return; }
+    if (!store.authSettled) { paintRaw('<div class="app-loader"><div class="spinner"></div><p>טוען…</p></div>'); return; }
     location.hash = 'auth'; return;
   }
   const role = myRole();
   if (role === 'admin') adminDashboard(store.dashTab);
   else if (role === 'owner') ownerDashboard(store.dashTab);
   else if (role === 'renter') renterDashboard(store.dashTab);
-  else if (!store.adminChecked || !store.profileLoaded) app().innerHTML = '<div class="app-loader"><div class="spinner"></div><p>טוען את האזור האישי…</p></div>';
+  else if (!store.adminChecked || !store.profileLoaded) paintRaw('<div class="app-loader"><div class="spinner"></div><p>טוען את האזור האישי…</p></div>');
   // "We could not reach your profile" is NOT "you have no account type". Offering the account-type
   // chooser here is what let an existing renter re-pick — and the choice is locked to admins after.
   else if (!store.profileKnown) profileUnavailable();
@@ -217,13 +222,13 @@ function maybeReconsent() {
 // The profile could not be read at all (both the realtime channel and the REST fallback failed).
 // The account is fine — we simply do not know it right now, so the only honest offer is to retry.
 function profileUnavailable() {
-  app().innerHTML = `<section class="card auth-shell">
+  paintRaw(`<section class="card auth-shell">
     <div class="auth-head"><h2>לא הצלחנו לטעון את החשבון</h2>
       <p>נראה שיש תקלת חיבור. החשבון והפרטים שלכם לא נפגעו.</p></div>
     <button type="button" class="btn primary block" id="profile-retry">ניסיון נוסף</button>
     <button type="button" class="btn outline block" id="profile-admin">כניסת מנהל</button>
     <button type="button" class="link-back" id="profile-support">פנייה לתמיכה</button>
-  </section>`;
+  </section>`);
   document.querySelector('#profile-retry').onclick = () => location.reload();
   // An admin whose profile row could not be read was stranded here: their authority comes from
   // admins/<uid>, not from users/<uid>, so a failed profile read says nothing about it. Always leave
@@ -235,13 +240,13 @@ function profileUnavailable() {
 // The account exists in Firebase Auth but genuinely has no profile in the DB (old broken
 // registrations) — let the user finish setup and choose their real role.
 function completeProfile() {
-  app().innerHTML = `<section class="card auth-shell"><div class="auth-head"><h2>עוד צעד אחד וסיימנו</h2><p>${store.profile?.name ? 'איך תרצו להשתמש באתר?' : 'נשלים את פרטי החשבון כדי לפתוח את האזור האישי המתאים לך'}</p></div>
+  paintRaw(`<section class="card auth-shell"><div class="auth-head"><h2>עוד צעד אחד וסיימנו</h2><p>${store.profile?.name ? 'איך תרצו להשתמש באתר?' : 'נשלים את פרטי החשבון כדי לפתוח את האזור האישי המתאים לך'}</p></div>
     <div class="role-grid" id="cp-roles">
       <button class="role-card" data-cp-role="renter"><span class="role-emoji">${ICON.key}</span><b>אני שוכר</b><small>מחפש רכב לשכור</small></button>
       <button class="role-card" data-cp-role="owner"><span class="role-emoji">${ICON.car}</span><b>אני בעל רכב</b><small>רוצה להשכיר רכב ולנהל הזמנות</small></button>
     </div>
     <div id="cp-confirm" style="display:none"><div class="notice">סוג החשבון נקבע פעם אחת. שינוי מאוחר יותר אפשרי רק דרך מנהל האתר.</div><button type="button" class="btn primary block" id="cp-commit"></button></div>
-    <form id="cp-form" style="display:none"><input type="hidden" name="role"><div class="field"><label>שם מלא</label><input name="name" value="${esc(store.user.displayName || '')}" required></div>${phoneField()}<button class="btn primary block">שמירה וכניסה לאזור האישי</button></form></section>`;
+    <form id="cp-form" style="display:none"><input type="hidden" name="role"><div class="field"><label>שם מלא</label><input name="name" value="${esc(store.user.displayName || '')}" required></div>${phoneField()}<button class="btn primary block">שמירה וכניסה לאזור האישי</button></form></section>`);
   const hasProfile = Boolean(store.profile?.name);
   const form = document.querySelector('#cp-form');
   const confirmBox = document.querySelector('#cp-confirm');
@@ -537,7 +542,13 @@ function renterDashboard(tab = 'overview') {
     notifications: userNotificationsView(),
     messages: messagesView(),
   };
-  app().innerHTML = dashboardLayout('האזור האישי', [['overview','סקירה'],['bookings','הזמנות'],['chats','צ׳אטים'],['notifications',`התראות${userUnreadNotifs() ? ` (${userUnreadNotifs()})` : ''}`],['profile','פרופיל ואימות']], tab, contents[tab] || contents.overview);
+  // Memoized, exactly like home() and cars(). Every arriving dataset (users, bookings, payments,
+  // inquiries, cars, ratings, config, reservations, notifications…) reaches render(), and this view
+  // rebuilt its ENTIRE DOM on each one even when the resulting markup was byte-identical — an admin
+  // opening the personal area watched it flash several times as the listeners resolved one by one.
+  // Returning early when nothing changed also skips the re-binding below, so the handlers that are
+  // attached with addEventListener cannot stack up on elements that were never replaced.
+  if (!paintApp(dashboardLayout('האזור האישי', [['overview','סקירה'],['bookings','הזמנות'],['chats','צ׳אטים'],['notifications',`התראות${userUnreadNotifs() ? ` (${userUnreadNotifs()})` : ''}`],['profile','פרופיל ואימות']], tab, contents[tab] || contents.overview))) return;
   bindDashboardTabs(renterDashboard); bindActions(); bindProfileActions();
   if (tab === 'notifications') bindNotifThreads();
   if (tab === 'overview') bindPushBanner();
@@ -596,7 +607,13 @@ function ownerDashboard(tab = 'overview') {
     notifications: userNotificationsView(),
     profile: ownerProfileView(),
   };
-  app().innerHTML = dashboardLayout('לוח בעל רכב', [['overview','סקירה'],['bookings','הזמנות'],['cars','רכבים'],['summary','סיכום'],['external','השכרות חוץ'],['chats','צ׳אטים'],['notifications',`התראות${userUnreadNotifs() ? ` (${userUnreadNotifs()})` : ''}`],['profile','פרופיל']], tab, contents[tab] || contents.overview, '<button class="btn gold" id="add-car-head">+ הוספת רכב</button>');
+  // Memoized, exactly like home() and cars(). Every arriving dataset (users, bookings, payments,
+  // inquiries, cars, ratings, config, reservations, notifications…) reaches render(), and this view
+  // rebuilt its ENTIRE DOM on each one even when the resulting markup was byte-identical — an admin
+  // opening the personal area watched it flash several times as the listeners resolved one by one.
+  // Returning early when nothing changed also skips the re-binding below, so the handlers that are
+  // attached with addEventListener cannot stack up on elements that were never replaced.
+  if (!paintApp(dashboardLayout('לוח בעל רכב', [['overview','סקירה'],['bookings','הזמנות'],['cars','רכבים'],['summary','סיכום'],['external','השכרות חוץ'],['chats','צ׳אטים'],['notifications',`התראות${userUnreadNotifs() ? ` (${userUnreadNotifs()})` : ''}`],['profile','פרופיל']], tab, contents[tab] || contents.overview, '<button class="btn gold" id="add-car-head">+ הוספת רכב</button>'))) return;
   bindDashboardTabs(ownerDashboard); bindActions(); bindCarButtons(); bindProfileActions();
   // The overview's stats strip doubles as navigation (the admin hub already worked this way).
   document.querySelectorAll('[data-nav-tab]').forEach(btn => btn.onclick = () => { store.dashTab = btn.dataset.navTab; ownerDashboard(btn.dataset.navTab); });
@@ -690,12 +707,18 @@ function adminDashboard(tab = 'overview') {
   };
   // Two clear zones (user: "האזור האישי של המנהל חייב סידור מחדש"): site management first,
   // then the admin's own owner-side area — mirrored in the desktop tab bar and the mobile "עוד" sheet.
-  app().innerHTML = dashboardLayout('לוח ניהול מנהל', [
+  // Memoized, exactly like home() and cars(). Every arriving dataset (users, bookings, payments,
+  // inquiries, cars, ratings, config, reservations, notifications…) reaches render(), and this view
+  // rebuilt its ENTIRE DOM on each one even when the resulting markup was byte-identical — an admin
+  // opening the personal area watched it flash several times as the listeners resolved one by one.
+  // Returning early when nothing changed also skips the re-binding below, so the handlers that are
+  // attached with addEventListener cannot stack up on elements that were never replaced.
+  if (!paintApp(dashboardLayout('לוח ניהול מנהל', [
     ['#', 'ניהול האתר'],
     ['overview','סקירה'],['users','משתמשים'],['cars','רכבים'],['bookings','הזמנות'],['chats','צ׳אטים'],['notifications', `התראות${unread ? ` (${unread})` : ''}`],
     ['#', 'האזור שלי'],
     ['myCars','הרכבים שלי'],['summary','סיכום השכרות'],['external','השכרות חוץ'],['profile','פרופיל'],
-  ], tab, contents[tab] || contents.overview, '<button class="btn gold" id="admin-add-car">+ הוספת רכב</button>', '<button class="btn dark-out block" id="admin-refresh" title="רענון נתונים">רענון</button><button class="btn dark-out block" id="admin-logout">יציאה</button>');
+  ], tab, contents[tab] || contents.overview, '<button class="btn gold" id="admin-add-car">+ הוספת רכב</button>', '<button class="btn dark-out block" id="admin-refresh" title="רענון נתונים">רענון</button><button class="btn dark-out block" id="admin-logout">יציאה</button>'))) return;
   document.querySelector('#admin-add-car')?.addEventListener('click', () => carForm());
   document.querySelector('#add-car')?.addEventListener('click', () => carForm());
   document.querySelector('#add-car-empty')?.addEventListener('click', () => carForm());
@@ -1688,7 +1711,7 @@ const evidenceState = (booking, bookingId) => {
 export function chatsPage() {
   resetPaint();
   if (!store.user) {
-    if (!store.authSettled) { app().innerHTML = '<div class="app-loader"><div class="spinner"></div><p>טוען…</p></div>'; return; }
+    if (!store.authSettled) { paintRaw('<div class="app-loader"><div class="spinner"></div><p>טוען…</p></div>'); return; }
     saveAuthReturn({hash: 'chats'});  // come back to the chats after signing in
     location.hash = 'auth'; return;
   }
@@ -1696,14 +1719,14 @@ export function chatsPage() {
   // list refreshed — do NOT rebuild the whole shell. Rebuilding wiped the open conversation AND the reply
   // the admin was typing, which is exactly why "the admin can't reply" happened.
   if (document.querySelector('#chat-shell')) { renderChatItems(); return; }
-  app().innerHTML = `<div class="chat-shell" id="chat-shell">
+  paintRaw(`<div class="chat-shell" id="chat-shell">
     <aside class="chat-list">
       <div class="chat-list-head"><button type="button" class="chat-page-back" id="chat-page-back" title="חזרה לאזור האישי" aria-label="חזרה">→</button><h2>צ׳אטים</h2><button type="button" class="chat-refresh" id="chat-refresh" title="רענון השיחות" aria-label="רענון השיחות">⟳</button>${'<input id="chat-search" type="search" aria-label="חיפוש בשיחות" placeholder="' + (store.isAdmin ? 'חיפוש משתמש…' : 'חיפוש שיחה…') + '" autocomplete="off">'}</div>
       <div class="chat-filter" id="chat-filter"></div>
       <div class="chat-items" id="chat-items"></div>
     </aside>
     <section class="chat-pane" id="chat-pane"><div class="chat-empty"><span class="chat-empty-ic">${ICON.chat}</span><p>בחרו שיחה מהרשימה</p></div></section>
-  </div>`;
+  </div>`);
   document.querySelector('#chat-refresh')?.addEventListener('click', async event => {
     // The list is driven by live listeners, so a refresh is really "re-read what the store has and
     // repaint" — plus a spin so the tap visibly did something even when nothing changed.
