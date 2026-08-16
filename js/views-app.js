@@ -1698,7 +1698,7 @@ export function chatsPage() {
   if (document.querySelector('#chat-shell')) { renderChatItems(); return; }
   app().innerHTML = `<div class="chat-shell" id="chat-shell">
     <aside class="chat-list">
-      <div class="chat-list-head"><button type="button" class="chat-page-back" id="chat-page-back" title="חזרה לאזור האישי" aria-label="חזרה">→</button><h2>צ׳אטים</h2><button type="button" class="chat-refresh" id="chat-refresh" title="רענון השיחות" aria-label="רענון השיחות">⟳</button>${store.isAdmin ? '<input id="chat-search" aria-label="חיפוש משתמש בצ׳אטים" placeholder="חיפוש משתמש…" autocomplete="off">' : ''}</div>
+      <div class="chat-list-head"><button type="button" class="chat-page-back" id="chat-page-back" title="חזרה לאזור האישי" aria-label="חזרה">→</button><h2>צ׳אטים</h2><button type="button" class="chat-refresh" id="chat-refresh" title="רענון השיחות" aria-label="רענון השיחות">⟳</button>${'<input id="chat-search" type="search" aria-label="חיפוש בשיחות" placeholder="' + (store.isAdmin ? 'חיפוש משתמש…' : 'חיפוש שיחה…') + '" autocomplete="off">'}</div>
       <div class="chat-filter" id="chat-filter"></div>
       <div class="chat-items" id="chat-items"></div>
     </aside>
@@ -1836,7 +1836,15 @@ function chatItems() {
 function renderChatItems() {
   const box = document.querySelector('#chat-items');
   if (!box) return;
-  const all = chatItems();
+  let all = chatItems();
+  // Search. The admin branch already filtered inside chatItems(), across fields that never reach the
+  // screen (email), so re-filtering its output by visible text would discard correct matches — hence
+  // this runs for everyone else. It narrows the list BEFORE the counts are computed, so a chip never
+  // claims "הכל 8" above three rows.
+  if (!store.isAdmin) {
+    const query = (document.querySelector('#chat-search')?.value || '').trim().toLowerCase();
+    if (query) all = all.filter(i => `${i.title} ${i.subtitle}`.toLowerCase().includes(query));
+  }
   const inbox = all.filter(i => !isArchived(i.key));          // everything the archive is not hiding
   const archived = all.filter(i => isArchived(i.key));
   const unreadCount = inbox.filter(i => i.unread).length;      // archived threads never nag
@@ -1872,9 +1880,10 @@ function renderChatItems() {
     : chatFilter === 'all' ? inbox
     : inbox.filter(i => chatKind(i.key) === chatFilter);
   const EMPTY = {all: 'אין שיחות עדיין', unread: 'הכול נקרא', bookings: 'אין שיחות על הזמנות', inquiries: 'אין פניות פתוחות', support: 'אין פניות לתמיכה', archive: 'הארכיון ריק'};
+  const searching = !!(document.querySelector('#chat-search')?.value || '').trim();
   box.innerHTML = items.length
     ? items.map(item => `<div class="chat-row ${item.key === chatState.thread ? 'active' : ''}"><button class="chat-item ${item.key === chatState.thread ? 'active' : ''} ${item.live ? '' : 'ended'} ${item.unread ? 'is-unread' : ''}" data-thread="${esc(item.key)}">${item.avatar || `<span class="chat-item-emoji">${item.emoji}</span>`}<span class="chat-item-main"><b>${esc(item.title)}</b><small>${esc(item.subtitle)}</small></span><span class="chat-item-meta"><span class="chat-item-when">${item.at ? `<time>${chatListTime(item.at)}</time>` : ''}${item.unread ? '<span class="chat-unread-dot" title="הודעה שלא נקראה" aria-label="הודעה שלא נקראה"></span>' : ''}</span>${item.status ? `<span class="status-badge ${esc(item.status)}">${statusLabel(item.status)}</span>` : ''}</span></button><button type="button" class="chat-item-more" data-more="${esc(item.key)}" aria-label="אפשרויות לשיחה ${esc(item.title)}">${ICON.dots}</button></div>`).join('')
-    : `<div class="empty">${EMPTY[chatFilter] || EMPTY.all}</div>`;
+    : `<div class="empty">${searching ? 'לא נמצאו שיחות מתאימות' : (EMPTY[chatFilter] || EMPTY.all)}</div>`;
   box.querySelectorAll('[data-thread]').forEach(button => button.onclick = () => selectThread(button.dataset.thread));
   box.querySelectorAll('[data-more]').forEach(button => button.onclick = () => {
     const item = items.find(i => i.key === button.dataset.more);
