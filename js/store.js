@@ -1,5 +1,5 @@
 import {refs, readViaREST} from './firebase.js';
-import {firstToAnswer} from './core.js';
+import {firstToAnswer, createFloodTracker} from './core.js';
 
 export const store = {
   user: null,
@@ -44,9 +44,27 @@ export const store = {
 
 const value = snap => snap.val() || {};
 function emit(key) { window.dispatchEvent(new CustomEvent('storechange', {detail: key})); }
+
+// ---- Opening-flood tracking -------------------------------------------------------------------
+// The owner counts the site "jumping eight times" when he opens it, and the cause is timing, not
+// rendering: each listener that reports paints the screen again. On a fast connection they all land
+// within a couple of hundred ms and the renderer's debounce folds them into one paint — which is why
+// this was never visible while developing. On a slow phone they land SECONDS apart, every one alone,
+// and every one repaints.
+//
+// A longer debounce cannot fix that (measured: identical paint counts), because the arrivals are
+// further apart than any debounce worth having. What the renderer actually needs is to know that the
+// opening flood is still in progress, so it can batch patiently until the screen is worth showing —
+// and then go back to reacting immediately. That is what this counts: how many listeners registered
+// during startup have yet to report for the first time.
+const flood = createFloodTracker();
+export const initialFloodActive = () => flood.active();
+const trackListener = () => flood.track();
+
 function listen(ref, setter, key, onErr) {
-  const handler = snap => { setter(value(snap)); emit(key); };
-  const onError = error => { console.error(`firebase listener ${key}`, error); if (onErr) onErr(error); emit(`${key}:error`); };
+  const reported = trackListener();
+  const handler = snap => { setter(value(snap)); reported(); emit(key); };
+  const onError = error => { console.error(`firebase listener ${key}`, error); reported(); if (onErr) onErr(error); emit(`${key}:error`); };
   ref.on('value', handler, onError);
   return () => ref.off('value', handler);
 }
@@ -68,10 +86,11 @@ function listen(ref, setter, key, onErr) {
 export function listenCollection(ref, setter, key, onErr) {
   const map = {};
   let timer = null;
-  const onError = error => { console.error(`firebase listener ${key}`, error); if (onErr) onErr(error); emit(`${key}:error`); };
+  const reported = trackListener();
+  const onError = error => { console.error(`firebase listener ${key}`, error); reported(); if (onErr) onErr(error); emit(`${key}:error`); };
   const flush = () => {
     if (timer) return;
-    timer = setTimeout(() => { timer = null; setter({...map}); emit(key); }, 16);
+    timer = setTimeout(() => { timer = null; setter({...map}); reported(); emit(key); }, 16);
   };
   const upsert = snap => { map[snap.key] = snap.val(); flush(); };
   const remove = snap => { delete map[snap.key]; flush(); };

@@ -1,4 +1,4 @@
-import {startPublic, store} from './store.js';
+import {startPublic, store, initialFloodActive} from './store.js';
 import {authReady} from './auth.js';
 import {nav, bottomNav, home, cars, authView, dashboard, chatsPage, openAdminLogin, openCar, ensureAppModule, teardownChat} from './views.js';
 import {toast, closeModal, resetPaint, enhanceUI} from './core.js';
@@ -38,14 +38,34 @@ function watchReveals() {
 // bookings/users/…) resolve over the first ~200ms, spread across several animation frames — so a
 // per-frame guard still let ~5 renders through (the "jumping / refreshing 5 times" on open). A
 // short TRAILING debounce collapses the whole burst into a single render once it goes quiet.
-let renderTimer = null, renderFirstAt = 0;
+let renderTimer = null, renderFirstAt = 0, hasPainted = false;
 function scheduleRender() {
   const now = Date.now();
   if (!renderTimer) renderFirstAt = now;
   clearTimeout(renderTimer);
-  // Debounce a burst by 110ms, but NEVER hold a render longer than 700ms even under a continuous
-  // stream of events — otherwise a chatty listener could starve the render and freeze the spinner.
-  renderTimer = setTimeout(() => { renderTimer = null; render(); }, (now - renderFirstAt) >= 700 ? 0 : 110);
+  // A 110ms debounce coalesces the listeners into one paint ONLY when they arrive together, which is
+  // what happens on a fast connection — they all resolve inside the first couple of hundred ms.
+  //
+  // On a slow phone they arrive SECONDS apart. Every arrival then sits alone, clears the debounce on
+  // its own, and repaints: eight datasets become eight visible repaints, which is what the owner is
+  // counting when he says the site jumps eight times on open. The debounce was never the problem on
+  // the connection it was tuned on, and was never doing anything on the connection that matters.
+  //
+  // So after the first paint has put something on screen, the app spends a few seconds SETTLING:
+  // batch far more patiently, because during the opening flood nothing on screen is stable enough to
+  // be worth showing four times. The first paint itself is never delayed — that would trade eight
+  // jumps for a longer blank screen, which is a worse deal — and once the window closes the app goes
+  // back to reacting quickly, because by then a repaint means a real event the user caused.
+  // Batch patiently only while the OPENING FLOOD is still landing — that is, while listeners
+  // registered at startup have yet to report for the first time. Time-based windows were tried and
+  // measured to change nothing: on a slow phone the arrivals are further apart than any debounce
+  // worth having, so what matters is knowing the flood is still in progress, not how long it has
+  // been. Once every listener has spoken once, the app is back to reacting immediately, because from
+  // then on a repaint means a real event rather than the page still assembling itself.
+  const settling = hasPainted && initialFloodActive();
+  const wait = settling ? 500 : 110;
+  const maxHold = settling ? 2000 : 700;
+  renderTimer = setTimeout(() => { renderTimer = null; render(); }, (now - renderFirstAt) >= maxHold ? 0 : wait);
 }
 
 let rendering = false;
@@ -153,6 +173,9 @@ function render() {
     watchReveals();
     enhanceUI(document);
     firstPaintDone = true;
+    // Something is on screen now, so the app can afford to batch patiently while the rest of the
+    // data lands. Opening the window HERE rather than at boot is what keeps the first paint fast.
+    hasPainted = true;
     window.__CD_BOOT_READY__?.();  // app painted — stand the boot watchdog down
     document.querySelector('#app')?.setAttribute('aria-busy', 'false');
   } catch (error) {

@@ -277,3 +277,28 @@ export function askText(message, initial = '', {confirmLabel = 'אישור', can
     try { input?.focus({preventScroll: true}); input?.select?.(); } catch {}
   });
 }
+
+// Tracks the OPENING FLOOD: how many listeners registered at startup have yet to report for the
+// first time. The renderer batches patiently while this is true and reacts immediately once it is
+// false, which is what stops a slow phone repainting once per arriving dataset.
+//
+// Injectable clock and window so the deadline is testable without waiting twelve real seconds.
+export function createFloodTracker({windowMs = 12000, now = () => Date.now()} = {}) {
+  let pending = 0;
+  let deadline = 0;
+  return {
+    // Returns the release function. Calling it twice must NOT double-decrement: a listener that
+    // errors and later recovers would otherwise drive the count below zero and end the flood early
+    // for everyone else.
+    track() {
+      pending++;
+      if (!deadline) deadline = now() + windowMs;
+      let released = false;
+      return () => { if (released) return; released = true; pending--; };
+    },
+    // A listener that never answers — the blocked-transport case this app is built around — must not
+    // hold the app in batching mode forever, hence the deadline.
+    active: () => pending > 0 && now() < deadline,
+    pending: () => pending,
+  };
+}
