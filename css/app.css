@@ -1131,10 +1131,24 @@ h1,h2{letter-spacing:-.03em}
 #profile-form input:disabled,#profile-form select:disabled{opacity:.75;color:var(--muted);cursor:not-allowed}
 
 /* ================= SERIOUS PERSONAL-AREA THEME ================= */
-body[data-page="dashboard"],body[data-page="chats"]{background:#1A212B}
-body[data-page="dashboard"]::before,body[data-page="chats"]::before{background:
-  radial-gradient(900px 460px at 85% -10%, rgba(85,127,161,.14), transparent 60%),
-  #1E2530}
+/* The personal area sat on ONE flat navy across a whole phone screen. Flat is not the same as calm:
+   with nothing happening anywhere, it reads as unfinished rather than restrained — which is fair, and
+   is what the owner meant by wanting it alive.
+   What makes a dark surface feel like MATERIAL rather than a swatch is not a glow bolted into a corner
+   (that was the old look, and it went): it is a wide, slow tonal shift like a single soft light off one
+   corner, and a grain fine enough that the eye never resolves it as a pattern. The grain is an inline
+   SVG — no asset to load, no request — blended in soft-light so it adds texture without lifting the
+   whole surface toward grey. Nothing here animates; a background should not cost a phone frames. */
+body[data-page="dashboard"],body[data-page="chats"]{background:#141C28}
+body[data-page="dashboard"]::before,body[data-page="chats"]::before{
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='150' height='150' filter='url(%23g)' opacity='0.55'/%3E%3C/svg%3E") repeat,
+    radial-gradient(1100px 620px at 84% -14%, rgba(104,150,196,.22), transparent 62%),
+    radial-gradient(880px 600px at -10% 106%, rgba(44,72,108,.40), transparent 64%),
+    linear-gradient(168deg,#1E2A3B 0%,#161F2C 48%,#0F151E 100%);
+  background-size:150px 150px,auto,auto,auto;
+  background-blend-mode:soft-light,normal,normal,normal;
+}
 body[data-page="dashboard"] .dashboard-head,body[data-page="chats"] .dashboard-head{border:1px solid rgba(255,255,255,.08)}
 /* Inside the personal area the top-bar actions are redundant (its own header + tabs handle it). */
 body[data-page="dashboard"] .nav-actions{display:none}
