@@ -2743,3 +2743,18 @@ h1,h2,h3,.brand,.hero h1,.section-head h1,.auth-head h2,.modal-head h2{
 .mf-main{min-width:0;display:grid}
 .mf-main b{font-size:var(--t-meta);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mf-main small{font-size:var(--t-micro);opacity:.7}
+
+/* ---- In-app confirm / prompt (replacing the browser's own) ------------------------------------ */
+.ask-body{margin:2px 0 0;color:var(--muted);font-size:.92rem;line-height:1.55;white-space:normal}
+.ask-form{display:grid;gap:12px;margin-top:12px}
+.ask-form input,.ask-form textarea{width:100%;font:inherit}
+.ask-form textarea{resize:vertical;min-height:76px}
+/* Confirm sits on the RIGHT in RTL — the affirmative is where the thumb rests, and it is visually
+   heavier than cancel so a destructive action is never the quiet default. */
+.ask-actions{display:flex;gap:10px;margin-top:16px}
+.ask-actions .btn{flex:1;min-height:48px}
+.ask-actions .btn.outline{flex:0 1 40%}
+@media (max-width:380px){
+  .ask-actions{flex-direction:column-reverse}
+  .ask-actions .btn,.ask-actions .btn.outline{flex:1 1 auto;width:100%}
+}

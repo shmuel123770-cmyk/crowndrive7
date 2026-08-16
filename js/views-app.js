@@ -1,5 +1,5 @@
 import {store, list, myRole, myBookings, myCars, carRating, carRatingCount, userRating} from './store.js';
-import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail, paintApp, resetPaint, TERMS_VERSION, heCount, heCountF, reconcileMessages} from './core.js';
+import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail, paintApp, resetPaint, TERMS_VERSION, heCount, heCountF, reconcileMessages, askConfirm, askText} from './core.js';
 import {register, login, logout, sendVerify, refreshEmailStatus, sendPasswordReset, createOwnProfile, signInGuest} from './auth.js';
 import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, startInquiry, setBookingStatus, registerDocument, approveVerification, sendMessage, deleteMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction, setMaintenance, setCarStatus, setCarFeatured, checkIsAdmin, saveExternalRental, deleteExternalRental} from './db.js';
 import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './media.js';
@@ -49,7 +49,7 @@ function showRequestModal(b) {
   </div>`);
   const done = () => { reqPopupOpen = false; closeModal(); refreshChatBadges(); setTimeout(() => { maybeShowRequestPopup(); maybeShowStatusPopup(); }, 350); };
   document.querySelector('#req-approve').onclick = async event => { event.currentTarget.disabled = true; try { await setBookingStatus(b.id, 'approved'); toast('ההזמנה אושרה ✓ — מסרו לשוכר מיקום ומפתח בצ׳אט'); done(); } catch (error) { toast(error.message); event.currentTarget.disabled = false; } };
-  document.querySelector('#req-reject').onclick = async event => { if (!confirm('לדחות את הבקשה? השוכר יקבל הודעה שהבקשה נדחתה.')) return; event.currentTarget.disabled = true; try { await setBookingStatus(b.id, 'rejected'); toast('הבקשה נדחתה'); done(); } catch (error) { toast(error.message); event.currentTarget.disabled = false; } };
+  document.querySelector('#req-reject').onclick = async event => { if (!await askConfirm('לדחות את הבקשה? השוכר יקבל הודעה שהבקשה נדחתה.')) return; event.currentTarget.disabled = true; try { await setBookingStatus(b.id, 'rejected'); toast('הבקשה נדחתה'); done(); } catch (error) { toast(error.message); event.currentTarget.disabled = false; } };
   document.querySelector('#req-chat').onclick = () => { reqPopupOpen = false; closeModal(); openChatThread(`b:${b.id}`); };
   document.querySelector('#req-later').onclick = () => done();
 }
@@ -442,7 +442,7 @@ function bindExternalRentals(cars, renderer) {
     if (r) externalRentalModal(cars, {id: btn.dataset.extEdit, ...r}, renderer);
   });
   document.querySelectorAll('[data-ext-del]').forEach(btn => btn.onclick = async () => {
-    if (!confirm('למחוק את רישום ההשכרה?')) return;
+    if (!await askConfirm('למחוק את רישום ההשכרה?')) return;
     try { await deleteExternalRental(btn.dataset.extDel); toast('הרישום נמחק'); renderer('external'); }
     catch (error) { toast(error.message); }
   });
@@ -765,7 +765,7 @@ function adminDashboard(tab = 'overview') {
   document.querySelectorAll('[data-quick-approve]').forEach(button => button.onclick = async () => {
     const uid = button.dataset.quickApprove;
     const name = store.users[uid]?.name || store.users[uid]?.email || 'המשתמש';
-    if (!confirm(`לאשר את האימות של ${name}? מומלץ לבדוק קודם את המסמכים (כפתור "מסמכים").`)) return;
+    if (!await askConfirm(`לאשר את האימות של ${name}? מומלץ לבדוק קודם את המסמכים (כפתור "מסמכים").`)) return;
     button.disabled = true;
     try { await approveVerification(uid, 'approved'); toast('האימות אושר ✓'); }
     catch (error) { toast(error.message); button.disabled = false; }
@@ -775,9 +775,9 @@ function adminDashboard(tab = 'overview') {
   document.querySelectorAll('[data-user-edit]').forEach(button => button.onclick = async () => {
     const uid = button.dataset.userEdit;
     const user = store.users[uid] || {};
-    const name = prompt('שם המשתמש:', user.name || '');
+    const name = await askText('שם המשתמש:', user.name || '');
     if (name === null) return;
-    const phone = prompt('טלפון:', user.phone || '');
+    const phone = await askText('טלפון:', user.phone || '');
     if (phone === null) return;
     try { await adminAction('user-update', {uid, patch: {name, phone}}); toast('המשתמש עודכן'); }
     catch (error) { toast(error.message); }
@@ -785,14 +785,14 @@ function adminDashboard(tab = 'overview') {
   document.querySelectorAll('[data-user-block]').forEach(button => button.onclick = async () => {
     const uid = button.dataset.userBlock;
     const blocked = !store.users[uid]?.blocked;
-    if (!confirm(blocked ? 'לחסום את המשתמש? הוא לא יוכל לבצע שום פעולה באתר.' : 'לשחרר את החסימה?')) return;
+    if (!await askConfirm(blocked ? 'לחסום את המשתמש? הוא לא יוכל לבצע שום פעולה באתר.' : 'לשחרר את החסימה?')) return;
     try { await adminAction('user-block', {uid, blocked}); toast(blocked ? 'המשתמש נחסם' : 'החסימה הוסרה'); }
     catch (error) { toast(error.message); }
   });
   document.querySelectorAll('[data-user-delete]').forEach(button => button.onclick = async () => {
     const uid = button.dataset.userDelete;
     const user = store.users[uid] || {};
-    if (!confirm(`למחוק לצמיתות את ${user.name || user.email || 'המשתמש'}? הפעולה מוחקת את הפרופיל, המסמכים והחשבון.`)) return;
+    if (!await askConfirm(`למחוק לצמיתות את ${user.name || user.email || 'המשתמש'}? הפעולה מוחקת את הפרופיל, המסמכים והחשבון.`)) return;
     try { await adminAction('user-delete', {uid}); toast('המשתמש נמחק'); }
     catch (error) { toast(error.message); }
   });
@@ -808,7 +808,7 @@ function adminDashboard(tab = 'overview') {
     const warning = live.length
       ? `לרכב יש ${live.length === 1 ? 'הזמנה אחת פעילה או ממתינה' : `${live.length} הזמנות פעילות או ממתינות`}. מחיקה תסיר גם את כתובת האיסוף, והשוכרים יאבדו אותה באמצע ההשכרה.\n\nלמחוק בכל זאת?`
       : 'למחוק את הרכב לצמיתות?';
-    if (!confirm(warning)) return;
+    if (!await askConfirm(warning)) return;
     try { await deleteCar(button.dataset.carDelete); toast('הרכב נמחק'); }
     catch (error) { toast(error.message); }
   });
@@ -818,7 +818,7 @@ function adminDashboard(tab = 'overview') {
   document.querySelector('#maintenance-toggle')?.addEventListener('click', async event => {
     const button = event.currentTarget;
     const on = !store.config?.maintenance?.on;
-    if (!confirm(on ? 'להעביר את האתר למצב תחזוקה? רק מנהלים יוכלו לגלוש.' : 'לפתוח את האתר לכולם? כל המבקרים יחזרו לגלישה רגילה.')) return;
+    if (!await askConfirm(on ? 'להעביר את האתר למצב תחזוקה? רק מנהלים יוכלו לגלוש.' : 'לפתוח את האתר לכולם? כל המבקרים יחזרו לגלישה רגילה.')) return;
     button.disabled = true;
     try { await setMaintenance(on); toast(on ? 'האתר עבר למצב תחזוקה' : 'האתר חזר למצב רגיל — פתוח לכולם'); }
     catch (error) { toast('לא ניתן לעדכן את מצב התחזוקה — יש לפרסם את חוקי ה-Firebase המעודכנים'); button.disabled = false; }
@@ -889,7 +889,7 @@ function bindAdminUserPage() {
   };
   document.querySelectorAll('[data-up-review]').forEach(btn => btn.onclick = async () => {
     const status = btn.dataset.upReview;
-    const note = status === 'approved' ? '' : prompt('מה צריך לתקן? (נשלח למשתמש בהתראה וב-SMS)') || '';
+    const note = status === 'approved' ? '' : await askText('מה צריך לתקן? (נשלח למשתמש בהתראה וב-SMS)') || '';
     try { await approveVerification(uid, status, note); toast('סטטוס האימות עודכן'); reload(); }
     catch (error) { toast(error.message); }
   });
@@ -900,13 +900,13 @@ function bindAdminUserPage() {
   document.querySelector('[data-up-message]')?.addEventListener('click', () => openChatThread(`a:${uid}`));
   document.querySelector('[data-up-block]')?.addEventListener('click', async event => {
     const blocking = event.currentTarget.dataset.upBlock === '1';
-    if (blocking && !confirm('לחסום את המשתמש? הוא יינעל מכל האתר, ותישלח לו הודעה. הוא יוכל לערער בצ׳אט התמיכה.')) return;
+    if (blocking && !await askConfirm('לחסום את המשתמש? הוא יינעל מכל האתר, ותישלח לו הודעה. הוא יוכל לערער בצ׳אט התמיכה.')) return;
     try { await adminAction('user-block', {uid, blocked: blocking}); toast(blocking ? 'המשתמש נחסם' : 'החסימה הוסרה'); reload(); }
     catch (error) { toast(error.message); }
   });
   document.querySelector('[data-up-delete]')?.addEventListener('click', async () => {
     const name = store.users[uid]?.name || store.users[uid]?.email || 'המשתמש';
-    if (!confirm(`למחוק לצמיתות את ${name}?\n\nיימחקו הפרופיל, המסמכים, הרכבים, הפניות והדירוגים. הזמנות יישמרו לצד השני עם שם מוסתר.\n\nהפעולה בלתי הפיכה.`)) return;
+    if (!await askConfirm(`למחוק לצמיתות את ${name}?\n\nיימחקו הפרופיל, המסמכים, הרכבים, הפניות והדירוגים. הזמנות יישמרו לצד השני עם שם מוסתר.\n\nהפעולה בלתי הפיכה.`)) return;
     try { await adminAction('user-delete', {uid}); toast('המשתמש נמחק'); store.dashTab = 'users'; adminDashboard('users'); }
     catch (error) { toast(error.message); }
   });
@@ -1050,7 +1050,7 @@ function bindAdminCarActions() {
     catch (error) { toast(error.message); }
   });
   document.querySelectorAll('[data-car-owner]').forEach(button => button.onclick = async () => {
-    const email = prompt('מייל של בעל הרכב החדש:');
+    const email = await askText('מייל של בעל הרכב החדש:');
     if (!email) return;
     const target = list(store.users).find(u => (u.email || '').toLowerCase() === email.trim().toLowerCase());
     if (!target) return toast('לא נמצא משתמש עם המייל הזה');
@@ -1063,16 +1063,16 @@ function bindAdminBookingActions() {
   document.querySelectorAll('[data-admin-status]').forEach(select => select.onchange = async () => {
     if (!select.value) return;
     // Confirm the destructive changes; reset the dropdown if the admin backs out.
-    if ((select.value === 'cancelled' || select.value === 'rejected') && !confirm(select.value === 'cancelled' ? 'לבטל את ההזמנה?' : 'לדחות את ההזמנה?')) { select.value = ''; return; }
+    if ((select.value === 'cancelled' || select.value === 'rejected') && !await askConfirm(select.value === 'cancelled' ? 'לבטל את ההזמנה?' : 'לדחות את ההזמנה?')) { select.value = ''; return; }
     try { await setBookingStatus(select.dataset.adminStatus, select.value); toast('הסטטוס עודכן'); }
     catch (error) { toast(error.message); select.value = ''; }
   });
   document.querySelectorAll('[data-admin-note]').forEach(button => button.onclick = async () => {
     const id = button.dataset.adminNote;
     const booking = store.bookings[id] || {};
-    const note = prompt('הערת מנהל להזמנה:', booking.adminNote || '');
+    const note = await askText('הערת מנהל להזמנה:', booking.adminNote || '');
     if (note === null) return;
-    const amount = prompt('סכום מתוקן (רשות, מספר בלבד):', booking.adminAmount ?? '');
+    const amount = await askText('סכום מתוקן (רשות, מספר בלבד):', booking.adminAmount ?? '');
     try { await adminAction('booking-admin', {bookingId: id, note, ...(amount !== null && amount !== '' ? {amount: Number(amount)} : {})}); toast('ההזמנה עודכנה'); }
     catch (error) { toast(error.message); }
   });
@@ -1346,7 +1346,7 @@ function bindActions() {
     const status = button.dataset.status;
     // Confirm the significant/irreversible transitions (reject denies the renter; done ends the rental) — the
     // forward steps (approve/start) don't need it. Also disable during the call so a double-click can't double-submit.
-    if (status === 'rejected' && !confirm('לדחות את ההזמנה? השוכר יקבל הודעה שהבקשה נדחתה.')) return;
+    if (status === 'rejected' && !await askConfirm('לדחות את ההזמנה? השוכר יקבל הודעה שהבקשה נדחתה.')) return;
     // Ending the rental is the moment the renter's return documentation stops being routine — say so
     // when it's still missing, instead of letting the owner close it without realising.
     if (status === 'done') {
@@ -1354,7 +1354,7 @@ function bindActions() {
       const msg = bk.handover?.return
         ? 'לסיים את ההשכרה?'
         : 'השוכר עדיין לא תיעד את החזרת הרכב.\n\nאפשר לסיים — יישארו לו 24 שעות להשלים את התיעוד, ואחר כך לא תהיה הוכחה למצב שבו הרכב הוחזר.\n\nלסיים בכל זאת?';
-      if (!confirm(msg)) return;
+      if (!await askConfirm(msg)) return;
     }
     button.disabled = true;
     try { await setBookingStatus(button.dataset.booking, status); toast('ההזמנה עודכנה'); }
@@ -1366,8 +1366,8 @@ function bindActions() {
     // Cancelling never touches the payment record, so a paid booking is being cancelled with money
     // outstanding. Say the amount out loud before it happens, not after.
     const cancelPmt = store.payments[button.dataset.cancelBooking];
-    if (cancelPmt && !confirm(`שולם על ההזמנה הזו ${money(cancelPmt.amount)}.\n\nביטול אינו מבצע החזר אוטומטי — תצטרכו לסגור את ההחזר ישירות מול הצד השני (הצ׳אט יישאר פתוח).\n\nלהמשיך לביטול?`)) return;
-    const reason = prompt('לבטל את ההזמנה? אפשר לציין סיבה (רשות):', '');
+    if (cancelPmt && !await askConfirm(`שולם על ההזמנה הזו ${money(cancelPmt.amount)}.\n\nביטול אינו מבצע החזר אוטומטי — תצטרכו לסגור את ההחזר ישירות מול הצד השני (הצ׳אט יישאר פתוח).\n\nלהמשיך לביטול?`)) return;
+    const reason = await askText('לבטל את ההזמנה? אפשר לציין סיבה (רשות):', '');
     if (reason === null) return;
     button.disabled = true;
     try { await setBookingStatus(button.dataset.cancelBooking, 'cancelled', reason.trim()); toast('ההזמנה בוטלה'); }
@@ -1379,12 +1379,12 @@ function bindActions() {
   document.querySelectorAll('[data-handover]').forEach(button => button.onclick = () => handoverModal(button.dataset.handover, button.dataset.stage));
   document.querySelectorAll('[data-view-payment]').forEach(button => button.onclick = () => viewPaymentModal(button.dataset.viewPayment));
   document.querySelectorAll('[data-pay-approve]').forEach(button => button.onclick = async () => {
-    if (!confirm('לאשר את הוכחת התשלום? לאחר האישור אפשר יהיה להתחיל את ההשכרה.')) return;
+    if (!await askConfirm('לאשר את הוכחת התשלום? לאחר האישור אפשר יהיה להתחיל את ההשכרה.')) return;
     try { await api('booking-action', {action: 'payment-review', bookingId: button.dataset.payApprove, decision: 'approved'}); toast('התשלום אושר'); }
     catch (error) { toast(error.message); }
   });
   document.querySelectorAll('[data-pay-reject]').forEach(button => button.onclick = async () => {
-    if (!confirm('לדחות את הוכחת התשלום? השוכר יתבקש לשלוח הוכחה מעודכנת.')) return;
+    if (!await askConfirm('לדחות את הוכחת התשלום? השוכר יתבקש לשלוח הוכחה מעודכנת.')) return;
     try { await api('booking-action', {action: 'payment-review', bookingId: button.dataset.payReject, decision: 'rejected'}); toast('התשלום נדחה'); }
     catch (error) { toast(error.message); }
   });
@@ -2293,17 +2293,17 @@ function selectThread(key) {
     catch (error) { toast(error.message); }
   });
   pane.querySelector('#rental-end')?.addEventListener('click', async () => {
-    if (!confirm('לסיים את ההשכרה?')) return;
+    if (!await askConfirm('לסיים את ההשכרה?')) return;
     try { await setBookingStatus(id, 'done'); toast('ההשכרה הסתיימה'); }
     catch (error) { toast(error.message); }
   });
   pane.querySelector('#chat-clear')?.addEventListener('click', async () => {
-    if (!confirm('למחוק לצמיתות את כל ההודעות בשיחה זו?')) return;
+    if (!await askConfirm('למחוק לצמיתות את כל ההודעות בשיחה זו?')) return;
     try { await adminAction('chat-clear', isSupport ? {userUid: id} : isInquiry ? {inquiryId: id} : {bookingId: id}); toast('הצ׳אט נוקה'); }
     catch (error) { toast(error.message); }
   });
   pane.querySelector('#chat-end')?.addEventListener('click', async () => {
-    if (!confirm('לסיים את השיחה? הצד השני לא יוכל לשלוח יותר הודעות.')) return;
+    if (!await askConfirm('לסיים את השיחה? הצד השני לא יוכל לשלוח יותר הודעות.')) return;
     try { await api('booking-action', {action: 'end-chat', bookingId: id}); toast('השיחה נסגרה'); }
     catch (error) { toast(error.message); }
   });
@@ -2396,7 +2396,7 @@ function selectThread(key) {
     }; });
     box.querySelectorAll('[data-del]:not([data-bound])').forEach(button => { button.dataset.bound = '1'; button.onclick = async event => {
       event.stopPropagation();
-      if (!confirm('למחוק את ההודעה? הפעולה בלתי הפיכה.')) return;
+      if (!await askConfirm('למחוק את ההודעה? הפעולה בלתי הפיכה.')) return;
       const ref = isSupport ? {thread: 'admin', userUid: id, deleteId: button.dataset.del} : isInquiry ? {inquiryId: id, deleteId: button.dataset.del} : {bookingId: id, deleteId: button.dataset.del};
       try { await deleteMessage(ref); } catch (error) { toast(error.message); }
     }; });
@@ -2626,13 +2626,13 @@ async function adminUserModal(uid) {
     document.querySelector('[data-message-user]')?.addEventListener('click', () => { closeModal(); openChatThread(`a:${uid}`); });
     document.querySelectorAll('[data-review]').forEach(button => button.onclick = async () => {
       // This note is the user's ONLY explanation — it goes into their notification, SMS and profile.
-      const note = button.dataset.review === 'approved' ? '' : prompt('מה צריך לתקן? (נשלח למשתמש בהתראה וב-SMS)') || '';
+      const note = button.dataset.review === 'approved' ? '' : await askText('מה צריך לתקן? (נשלח למשתמש בהתראה וב-SMS)') || '';
       try { await approveVerification(uid, button.dataset.review, note); closeModal(); toast('סטטוס האימות עודכן'); }
       catch (error) { toast(error.message); }
     });
     document.querySelector('[data-role-toggle]')?.addEventListener('click', async event => {
       const role = event.currentTarget.dataset.roleToggle;
-      if (!confirm(`לשנות את התפקיד של המשתמש ל${roleName(role)}?`)) return;
+      if (!await askConfirm(`לשנות את התפקיד של המשתמש ל${roleName(role)}?`)) return;
       try { await adminAction('user-update', {uid, patch: {role}}); closeModal(); toast('התפקיד עודכן'); }
       catch (error) { toast(error.message); }
     });
@@ -2957,7 +2957,7 @@ async function migratePrompt() {
   try {
     const status = await legacyStatus();
     if (!status?.exists) return toast('לא נמצאו נתונים ישנים');
-    if (!confirm(`נמצאו ${status.cars} רכבים, ${status.owners + status.renters} משתמשים ו-${status.bookings} הזמנות. להעתיק למבנה החדש בלי למחוק את הישן?`)) return;
+    if (!await askConfirm(`נמצאו ${status.cars} רכבים, ${status.owners + status.renters} משתמשים ו-${status.bookings} הזמנות. להעתיק למבנה החדש בלי למחוק את הישן?`)) return;
     const count = await migrateLegacy();
     toast(`הועתקו ${count} רשומות`);
   } catch (error) { toast(error.message); }
@@ -2968,7 +2968,7 @@ async function migratePrompt() {
 // documents before auto-approval existed, so nothing will ever fire for them on its own. Bounded batches
 // server-side; loop until it reports done.
 async function healVerificationsPrompt() {
-  if (!confirm('לאשר את כל המשתמשים שכבר הגישו את שלושת המסמכים ונשארו בהמתנה?\n\nמשתמשים שנדחו או שהתבקשו לצלם מחדש לא יושפעו. הפעולה בטוחה וניתן להריץ אותה שוב.')) return;
+  if (!await askConfirm('לאשר את כל המשתמשים שכבר הגישו את שלושת המסמכים ונשארו בהמתנה?\n\nמשתמשים שנדחו או שהתבקשו לצלם מחדש לא יושפעו. הפעולה בטוחה וניתן להריץ אותה שוב.')) return;
   const button = document.querySelector('#verification-heal');
   const label = button?.textContent;
   if (button) button.disabled = true;
@@ -2985,7 +2985,7 @@ async function healVerificationsPrompt() {
   finally { if (button) { button.disabled = false; button.textContent = label; } }
 }
 async function migrateMediaPrompt() {
-  if (!confirm('להעביר תמונות רכבים ותמונות פרופיל לאחסון CDN? זה מאיץ משמעותית את טעינת האתר, ובמיוחד את לוח הניהול. הפעולה בטוחה, חד-פעמית וניתן להריץ אותה שוב.')) return;
+  if (!await askConfirm('להעביר תמונות רכבים ותמונות פרופיל לאחסון CDN? זה מאיץ משמעותית את טעינת האתר, ובמיוחד את לוח הניהול. הפעולה בטוחה, חד-פעמית וניתן להריץ אותה שוב.')) return;
   const button = document.querySelector('#media-migrate');
   const label = button?.textContent;
   if (button) button.disabled = true;

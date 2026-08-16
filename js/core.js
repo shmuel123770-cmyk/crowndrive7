@@ -205,3 +205,75 @@ export function firstToAnswer(...promises) {
     }
   });
 }
+
+// ---------------------------------------------------------------------------
+// In-app confirm / prompt.
+//
+// The app reached the browser's own confirm() and prompt() in 35 places, and they sat on exactly the
+// paths that matter: cancelling a booking, deleting a user permanently, wiping a conversation,
+// collecting the note that tells someone why their documents were rejected. On a phone the browser
+// renders those as a system alert titled "crowndrive770.com אומר:", which is the loudest possible
+// signal that a site is unfinished — and iOS suppresses prompt() outright inside a standalone/PWA
+// window, so any flow that COLLECTED input through one did not merely look wrong there, it broke.
+//
+// Signatures mirror the native ones so the call sites read the same way. Both resolve instead of
+// throwing, and both resolve to the cancel value when the modal is dismissed any other way — Escape,
+// the backdrop, the Android back button — so no caller can hang waiting on a dialog that is gone.
+// The FIRST line of the message becomes the heading and the rest becomes body text, which is how the
+// existing multi-line warnings were already written.
+function splitMessage(message) {
+  const text = String(message == null ? '' : message);
+  const cut = text.indexOf('\n');
+  return cut === -1 ? [text, ''] : [text.slice(0, cut).trim(), text.slice(cut + 1).trim()];
+}
+export function askConfirm(message, {confirmLabel = 'אישור', cancelLabel = 'ביטול', danger = false} = {}) {
+  return new Promise(resolve => {
+    const [title, body] = splitMessage(message);
+    let settled = false;
+    const finish = value => { if (settled) return; settled = true; resolve(value); };
+    modal(`<div class="modal-head"><h2>${esc(title)}</h2></div>
+      ${body ? `<p class="ask-body">${esc(body).replace(/\n/g, '<br>')}</p>` : ''}
+      <div class="ask-actions">
+        <button type="button" class="btn outline" id="ask-no">${esc(cancelLabel)}</button>
+        <button type="button" class="btn ${danger ? 'danger' : 'primary'}" id="ask-yes">${esc(confirmLabel)}</button>
+      </div>`);
+    // Dismissed by Escape / backdrop / Back counts as "no" — the same as the native dialog.
+    $('#modal-root .modal')?.addEventListener('cd:modal-close', () => finish(false));
+    $('#ask-no')?.addEventListener('click', () => { finish(false); closeModal(); });
+    const yes = $('#ask-yes');
+    // finish() BEFORE closeModal(), because closing fires cd:modal-close and would otherwise answer
+    // "no" for a button the user actually pressed. The settled guard makes the order decisive.
+    yes?.addEventListener('click', () => { finish(true); closeModal(); });
+    try { yes?.focus({preventScroll: true}); } catch {}
+  });
+}
+export function askText(message, initial = '', {confirmLabel = 'אישור', cancelLabel = 'ביטול', placeholder = '', multiline = false, required = false} = {}) {
+  return new Promise(resolve => {
+    const [title, body] = splitMessage(message);
+    let settled = false;
+    const finish = value => { if (settled) return; settled = true; resolve(value); };
+    const field = multiline
+      ? `<textarea id="ask-input" rows="3" placeholder="${esc(placeholder)}">${esc(initial ?? '')}</textarea>`
+      : `<input id="ask-input" type="text" value="${esc(initial ?? '')}" placeholder="${esc(placeholder)}">`;
+    modal(`<div class="modal-head"><h2>${esc(title)}</h2></div>
+      ${body ? `<p class="ask-body">${esc(body).replace(/\n/g, '<br>')}</p>` : ''}
+      <form class="ask-form" id="ask-form">${field}
+        <div class="ask-actions">
+          <button type="button" class="btn outline" id="ask-no">${esc(cancelLabel)}</button>
+          <button type="submit" class="btn primary">${esc(confirmLabel)}</button>
+        </div>
+      </form>`);
+    // null on cancel, exactly like prompt() — callers already distinguish it from an empty string,
+    // which is a meaningful answer for the optional notes these collect.
+    $('#modal-root .modal')?.addEventListener('cd:modal-close', () => finish(null));
+    $('#ask-no')?.addEventListener('click', () => { finish(null); closeModal(); });
+    const input = $('#ask-input');
+    $('#ask-form')?.addEventListener('submit', event => {
+      event.preventDefault();
+      const value = String(input?.value ?? '');
+      if (required && !value.trim()) { input?.focus(); return; }
+      finish(value); closeModal();
+    });
+    try { input?.focus({preventScroll: true}); input?.select?.(); } catch {}
+  });
+}

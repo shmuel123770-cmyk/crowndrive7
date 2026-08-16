@@ -1,5 +1,5 @@
 import {store, list, myRole, myBookings, myCars, carRating, carRatingCount, userRating} from './store.js';
-import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail, paintApp, resetPaint, fieldError, TERMS_VERSION, heCount, heCountF} from './core.js';
+import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail, paintApp, resetPaint, fieldError, TERMS_VERSION, heCount, heCountF, askConfirm, askText} from './core.js';
 import {register, login, logout, sendVerify, refreshEmailStatus, sendPasswordReset, createOwnProfile, signInGuest} from './auth.js';
 import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, startInquiry, setBookingStatus, registerDocument, approveVerification, sendMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction, setMaintenance, setCarStatus, setCarFeatured, checkIsAdmin} from './db.js';
 import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './media.js';
@@ -819,7 +819,7 @@ export function bindCarButtons() {
     const warning = live.length
       ? `לרכב יש ${live.length === 1 ? 'הזמנה אחת פעילה או ממתינה' : `${live.length} הזמנות פעילות או ממתינות`}. מחיקה תסיר גם את כתובת האיסוף, והשוכרים יאבדו אותה באמצע ההשכרה.\n\nלמחוק בכל זאת?`
       : 'למחוק את הרכב לצמיתות? הפעולה אינה הפיכה.';
-    if (!confirm(warning)) return;
+    if (!await askConfirm(warning)) return;
     button.disabled = true;
     try { await deleteCar(id); toast('הרכב נמחק'); }
     catch (error) { toast(error.message); button.disabled = false; }
@@ -1347,7 +1347,7 @@ export function authView() {
       }
       catch (error) { toast(error.message); if (button) { button.disabled = false; button.textContent = 'כניסה'; } }
     };
-    // Was a native prompt() when the email field was empty — a grey browser dialog in the middle of a
+    // Was a native await askText() when the email field was empty — a grey browser dialog in the middle of a
     // designed screen. The field lives in the page now.
     const box = content().querySelector('#reset-box');
     content().querySelector('#forgot-pw').onclick = () => {
@@ -1402,7 +1402,7 @@ export function authView() {
       catch (error) { toast(error.message); if (button) { button.disabled = false; button.textContent = 'כניסת מנהל'; } }
     };
     content().querySelector('#forgot-pw').onclick = async () => {
-      const email = content().querySelector('#login-form')?.email?.value?.trim() || prompt('כתובת המייל של החשבון:');
+      const email = content().querySelector('#login-form')?.email?.value?.trim() || await askText('כתובת המייל של החשבון:');
       if (!email) return;
       try { await sendPasswordReset(email); toast('נשלח אליכם מייל עם קישור לאיפוס הסיסמה'); }
       catch (error) { toast(error.message); }
