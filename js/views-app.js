@@ -1568,7 +1568,26 @@ const adminThreadUnread = id => !!adminUnread[id] && (adminChatActivity?.[id] ||
 // per thread: bookings→lastMsgAt/lastMsgFrom, inquiries→updatedAt/lastSender, support→the user's own
 // profile supportMsgAt/supportMsgFrom. "Read" is a per-device localStorage timestamp per thread. ----
 let chatRead = (() => { try { return JSON.parse(localStorage.getItem('cd-chat-read') || '{}'); } catch { return {}; } })();
-let chatFilterUnread = false;   // the "לא נקראו" filter toggle on the list head
+// Archive is a per-device view preference, held in localStorage exactly like the read marks above.
+// It deliberately touches nothing on the server: no database write, no rules change to publish, and
+// nothing that can fail on the filtered networks this site has to survive. The trade-off is real and
+// worth stating — archiving on the phone does not archive on the desktop.
+let chatArchive = (() => { try { return JSON.parse(localStorage.getItem('cd-chat-archive') || '{}'); } catch { return {}; } })();
+const isArchived = key => chatArchive[key] === true;
+function setArchived(key, on) {
+  if (on) chatArchive[key] = true; else delete chatArchive[key];
+  try { localStorage.setItem('cd-chat-archive', JSON.stringify(chatArchive)); } catch {}
+}
+// Mark a thread unread again ("deal with this later"). Only meaningful when the last message came from
+// the OTHER side — threadUnread() ignores threads whose last message is mine, so offering it there
+// would be a button that visibly does nothing.
+function markThreadUnread(key) {
+  delete chatRead[key];
+  try { localStorage.setItem('cd-chat-read', JSON.stringify(chatRead)); } catch {}
+  if (store.isAdmin && key.startsWith('a:')) { const uid = key.slice(2); setAdminReadAt(uid, 0); adminUnread[uid] = true; }
+}
+let chatFilter = 'all';   // all | unread | bookings | inquiries | support | archive
+const chatKind = key => key.startsWith('b:') ? 'bookings' : key.startsWith('i:') ? 'inquiries' : 'support';
 const chatReadAt = key => Number(chatRead[key] || 0);
 function markThreadRead(key, at = 0) {
   // Compare like with like. threadUnread() tests against threadMeta().at — the SUMMARY timestamp the
@@ -1604,9 +1623,12 @@ function threadUnread(key) {
 // Total unread threads — powers the badge shown on the "צ׳אטים" tab across every personal area.
 export function chatUnreadTotal() {
   try {
-    if (store.isAdmin) { let n = 0; for (const uid in (adminChatActivity || {})) if (adminThreadUnread(uid)) n++; return n; }
+    // Archived threads do not drive the badge — that is what archiving MEANS. They are still counted
+    // on the ארכיון chip itself, and push notifications are server-side and unaffected, so nothing
+    // actually goes unseen; it just stops nagging from the bottom nav.
+    if (store.isAdmin) { let n = 0; for (const uid in (adminChatActivity || {})) if (adminThreadUnread(uid) && !isArchived(`a:${uid}`)) n++; return n; }
     if (!store.user || store.user.isAnonymous) return 0;
-    return chatItems().filter(it => it.unread).length;
+    return chatItems().filter(it => it.unread && !isArchived(it.key)).length;
   } catch { return 0; }
 }
 
@@ -1815,23 +1837,93 @@ function renderChatItems() {
   const box = document.querySelector('#chat-items');
   if (!box) return;
   const all = chatItems();
-  const unreadCount = all.filter(i => i.unread).length;
-  // Filter head: "הכל / לא נקראו (N)" + "סמן הכל כנקרא" (mirrors WhatsApp's unread filter).
+  const inbox = all.filter(i => !isArchived(i.key));          // everything the archive is not hiding
+  const archived = all.filter(i => isArchived(i.key));
+  const unreadCount = inbox.filter(i => i.unread).length;      // archived threads never nag
+
+  // Which chips are worth showing is decided by what this account actually HAS. A renter with no
+  // bookings gains nothing from a "הזמנות" chip that filters a list down to itself, and an owner
+  // with one support thread gains nothing from a "תמיכה" chip. Chips that filter nothing are noise.
+  const has = kind => inbox.some(i => chatKind(i.key) === kind);
+  const count = kind => inbox.filter(i => chatKind(i.key) === kind).length;
+  const chips = [['all', 'הכל', inbox.length], ['unread', 'לא נקראו', unreadCount]];
+  if (has('bookings')) chips.push(['bookings', 'הזמנות', count('bookings')]);
+  if (has('inquiries')) chips.push(['inquiries', 'פניות', count('inquiries')]);
+  if (store.isAdmin && has('support')) chips.push(['support', 'תמיכה', count('support')]);
+  if (archived.length) chips.push(['archive', 'ארכיון', archived.length, archived.some(i => i.unread)]);
+  // Restoring the last archived thread (or reading the last unread one) can delete the very chip that
+  // is selected. Without this the list would go blank with no lit chip and no way back except reload.
+  if (!chips.some(([id]) => id === chatFilter)) chatFilter = 'all';
+
   const filterBar = document.querySelector('#chat-filter');
   if (filterBar) {
-    filterBar.innerHTML = `<div class="chat-filter-chips"><button type="button" class="chat-fchip ${chatFilterUnread ? '' : 'on'}" data-chat-filter="all">הכל</button><button type="button" class="chat-fchip ${chatFilterUnread ? 'on' : ''}" data-chat-filter="unread">לא נקראו${unreadCount ? ` (${unreadCount})` : ''}</button></div>${unreadCount ? '<button type="button" class="chat-markall" id="chat-markall">סימון הכל כנקרא</button>' : ''}`;
-    filterBar.querySelectorAll('[data-chat-filter]').forEach(chip => chip.onclick = () => { chatFilterUnread = chip.dataset.chatFilter === 'unread'; renderChatItems(); });
+    filterBar.innerHTML = `<div class="chat-filter-chips">${chips.map(([id, label, n, dot]) =>
+      `<button type="button" class="chat-fchip ${chatFilter === id ? 'on' : ''}" data-chat-filter="${id}" aria-pressed="${chatFilter === id}">${label}${n ? ` <span class="fchip-n">${n}</span>` : ''}${dot ? '<span class="fchip-dot" aria-label="יש הודעות שלא נקראו"></span>' : ''}</button>`).join('')}</div>${unreadCount ? '<button type="button" class="chat-markall" id="chat-markall">סימון הכל כנקרא</button>' : ''}`;
+    filterBar.querySelectorAll('[data-chat-filter]').forEach(chip => chip.onclick = () => { chatFilter = chip.dataset.chatFilter; renderChatItems(); });
     filterBar.querySelector('#chat-markall')?.addEventListener('click', () => {
       let changed = false;
-      for (const it of all) if (it.unread) { markThreadRead(it.key, threadMeta(it.key)?.at); if (store.isAdmin && it.key.startsWith('a:')) { const uid = it.key.slice(2); setAdminReadAt(uid, Date.now()); adminUnread[uid] = false; } changed = true; }
+      for (const it of inbox) if (it.unread) { markThreadRead(it.key, threadMeta(it.key)?.at); if (store.isAdmin && it.key.startsWith('a:')) { const uid = it.key.slice(2); setAdminReadAt(uid, Date.now()); adminUnread[uid] = false; } changed = true; }
       if (changed) { renderChatItems(); refreshChatBadges(); }
     });
   }
-  const items = chatFilterUnread ? all.filter(i => i.unread) : all;
+
+  const items = chatFilter === 'archive' ? archived
+    : chatFilter === 'unread' ? inbox.filter(i => i.unread)
+    : chatFilter === 'all' ? inbox
+    : inbox.filter(i => chatKind(i.key) === chatFilter);
+  const EMPTY = {all: 'אין שיחות עדיין', unread: 'הכול נקרא', bookings: 'אין שיחות על הזמנות', inquiries: 'אין פניות פתוחות', support: 'אין פניות לתמיכה', archive: 'הארכיון ריק'};
   box.innerHTML = items.length
-    ? items.map(item => `<button class="chat-item ${item.key === chatState.thread ? 'active' : ''} ${item.live ? '' : 'ended'} ${item.unread ? 'is-unread' : ''}" data-thread="${esc(item.key)}">${item.avatar || `<span class="chat-item-emoji">${item.emoji}</span>`}<span class="chat-item-main"><b>${esc(item.title)}</b><small>${esc(item.subtitle)}</small></span><span class="chat-item-meta"><span class="chat-item-when">${item.at ? `<time>${chatListTime(item.at)}</time>` : ''}${item.unread ? '<span class="chat-unread-dot" title="הודעה שלא נקראה" aria-label="הודעה שלא נקראה"></span>' : ''}</span>${item.status ? `<span class="status-badge ${esc(item.status)}">${statusLabel(item.status)}</span>` : ''}</span></button>`).join('')
-    : `<div class="empty">${chatFilterUnread ? 'אין הודעות שלא נקראו 🎉' : 'אין שיחות עדיין'}</div>`;
+    ? items.map(item => `<div class="chat-row ${item.key === chatState.thread ? 'active' : ''}"><button class="chat-item ${item.key === chatState.thread ? 'active' : ''} ${item.live ? '' : 'ended'} ${item.unread ? 'is-unread' : ''}" data-thread="${esc(item.key)}">${item.avatar || `<span class="chat-item-emoji">${item.emoji}</span>`}<span class="chat-item-main"><b>${esc(item.title)}</b><small>${esc(item.subtitle)}</small></span><span class="chat-item-meta"><span class="chat-item-when">${item.at ? `<time>${chatListTime(item.at)}</time>` : ''}${item.unread ? '<span class="chat-unread-dot" title="הודעה שלא נקראה" aria-label="הודעה שלא נקראה"></span>' : ''}</span>${item.status ? `<span class="status-badge ${esc(item.status)}">${statusLabel(item.status)}</span>` : ''}</span></button><button type="button" class="chat-item-more" data-more="${esc(item.key)}" aria-label="אפשרויות לשיחה ${esc(item.title)}">${ICON.dots}</button></div>`).join('')
+    : `<div class="empty">${EMPTY[chatFilter] || EMPTY.all}</div>`;
   box.querySelectorAll('[data-thread]').forEach(button => button.onclick = () => selectThread(button.dataset.thread));
+  box.querySelectorAll('[data-more]').forEach(button => button.onclick = () => {
+    const item = items.find(i => i.key === button.dataset.more);
+    if (item) chatItemMenu(item);
+  });
+}
+
+// Detach the live listener, drop the selection and put the pane back to its resting state. Both the
+// X button and archiving-the-open-thread need exactly this, and the copy that lived inline on the X
+// handler was building its placeholder with a SINGLE-QUOTED '${ICON.chat}' — so closing a conversation
+// printed that source text on screen where the icon belonged.
+function closeThreadPane() {
+  chatState.unsub?.();
+  chatState.unsub = null;
+  chatState.thread = null;
+  document.querySelector('#chat-shell')?.classList.remove('show-pane');
+  const pane = document.querySelector('#chat-pane');
+  if (pane) pane.innerHTML = `<div class="chat-empty"><span class="chat-empty-ic">${ICON.chat}</span><p>בחרו שיחה מהרשימה</p></div>`;
+  document.querySelectorAll('[data-thread]').forEach(el => el.classList.remove('active'));
+}
+
+// Per-thread actions. A phone has no hover and no right-click, so these cannot hide behind a gesture
+// nobody will discover — hence a visible button on the row rather than swipe-to-archive.
+function chatItemMenu(item) {
+  const archived = isArchived(item.key);
+  const from = threadMeta(item.key)?.from;
+  const canUnread = !item.unread && from && from !== store.user?.uid;
+  modal(`<h3>${esc(item.title)}</h3>
+    <div class="chat-menu-actions">
+      ${item.unread ? '<button type="button" class="btn outline block" data-act="read">סימון כנקרא</button>' : ''}
+      ${canUnread ? '<button type="button" class="btn outline block" data-act="unread">סימון כלא נקרא</button>' : ''}
+      <button type="button" class="btn outline block" data-act="archive">${archived ? 'הוצאה מהארכיון' : 'העברה לארכיון'}</button>
+      <button type="button" class="btn outline block chat-menu-cancel" data-act="close">ביטול</button>
+    </div>`);
+  document.querySelectorAll('#modal-root [data-act]').forEach(button => button.onclick = () => {
+    const act = button.dataset.act;
+    if (act === 'read') { markThreadRead(item.key, threadMeta(item.key)?.at); if (store.isAdmin && item.key.startsWith('a:')) { const uid = item.key.slice(2); setAdminReadAt(uid, Date.now()); adminUnread[uid] = false; } }
+    if (act === 'unread') markThreadUnread(item.key);
+    if (act === 'archive') {
+      setArchived(item.key, !archived);
+      // Archiving the thread you are reading would leave the open conversation pane showing something
+      // the list no longer offers — on a phone, where the pane IS the screen, that reads as a bug.
+      if (!archived && chatState.thread === item.key) closeThreadPane();
+      toast(archived ? 'הוחזר מהארכיון' : 'הועבר לארכיון');
+    }
+    closeModal();
+    renderChatItems();
+    refreshChatBadges();
+  });
 }
 // Short relative time for the conversation list (today → HH:MM, else a short date), like a messaging app.
 function chatListTime(at) {
@@ -1869,6 +1961,7 @@ function selectThread(key) {
   if (chatState.thread !== key) chatState.draft = '';
   chatState.thread = key;
   document.querySelectorAll('[data-thread]').forEach(el => el.classList.toggle('active', el.dataset.thread === key));
+  document.querySelectorAll('.chat-row').forEach(el => el.classList.toggle('active', el.querySelector('[data-thread]')?.dataset.thread === key));
   document.querySelector('#chat-shell')?.classList.add('show-pane');
   const pane = document.querySelector('#chat-pane');
   if (!pane) return;
@@ -1936,7 +2029,7 @@ function selectThread(key) {
   // Hide the "new messages" pill as soon as the reader scrolls down to the bottom themselves.
   pane.querySelector('#chat-msgs')?.addEventListener('scroll', event => { const b = event.currentTarget; if (b.scrollHeight - b.scrollTop - b.clientHeight < 60) document.querySelector('#chat-newpill')?.remove(); });
   pane.querySelector('#chat-back').onclick = () => document.querySelector('#chat-shell')?.classList.remove('show-pane');
-  pane.querySelector('#chat-close').onclick = () => { chatState.unsub?.(); chatState.unsub = null; chatState.thread = null; document.querySelector('#chat-shell')?.classList.remove('show-pane'); pane.innerHTML = '<div class="chat-empty"><span class="chat-empty-ic">${ICON.chat}</span><p>בחרו שיחה מהרשימה</p></div>'; document.querySelectorAll('[data-thread]').forEach(el => el.classList.remove('active')); };
+  pane.querySelector('#chat-close').onclick = () => closeThreadPane();
   const form = pane.querySelector('#chat-composer');
   if (form) {
     // A textarea does not submit on Enter the way the old single-line input did, and it does not grow

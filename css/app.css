@@ -2657,3 +2657,42 @@ h1,h2,h3,.brand,.hero h1,.section-head h1,.auth-head h2,.modal-head h2{
 .chat-ctx b{font-weight:700}
 .chat-ctx .ctx-when{color:var(--muted)}
 .chat-ctx .status-badge{margin-inline-start:auto}
+
+/* ---- Conversation list: per-row actions + kind filters (archive, bookings, inquiries) ---------- */
+/* The row used to BE the button. It now holds two: the thread itself and a "⋯" for its actions. A
+   button inside a button is invalid HTML and Safari drops the inner one, so they are siblings. */
+.chat-row{display:flex;align-items:center;border-radius:12px}
+.chat-row .chat-item{flex:1;min-width:0}
+.chat-row:hover{background:var(--bg-soft)}
+.chat-row.active{background:rgba(63,107,142,.08)}
+.chat-row:hover .chat-item,.chat-row.active .chat-item{background:none}
+.chat-item-more{flex:0 0 34px;width:34px;height:34px;margin-inline-end:4px;display:grid;place-items:center;
+  border:none;background:none;border-radius:50%;color:var(--muted);cursor:pointer;opacity:.55;transition:opacity .15s,background .15s}
+.chat-item-more svg{width:17px;height:17px}
+.chat-item-more:hover,.chat-item-more:focus-visible{opacity:1;background:var(--bg2)}
+/* Coarse pointers get no hover to reveal it, so it stays legible — and a full 44px touch target. */
+@media (pointer: coarse){
+  .chat-item-more{opacity:.75;width:40px;height:44px;flex:0 0 40px;border-radius:12px}
+}
+/* Counts on the chips: quieter than the label, and never reflowing as the number grows. */
+.fchip-n{font-variant-numeric:tabular-nums;opacity:.65;font-weight:600}
+.chat-fchip.on .fchip-n{opacity:.8}
+.chat-menu-actions{display:grid;gap:8px;margin-top:10px}
+.chat-menu-actions .btn{min-height:48px}
+.chat-menu-cancel{border-color:transparent;color:var(--muted)}
+.fchip-dot{width:6px;height:6px;border-radius:50%;background:var(--ok,#2e9e63);display:inline-block;margin-inline-start:5px;vertical-align:middle}
+.chat-fchip.on .fchip-dot{background:#fff}
+
+/* The chip row now carries up to six chips (kinds + archive). On a 375px phone flex was SHRINKING
+   them instead of overflowing, so "לא נקראו 2" collapsed into a three-line blob. Scroll sideways
+   like every mobile filter bar does, and never let a chip compress or break its label. */
+.chat-filter-chips{flex:1 1 100%;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;padding-bottom:2px}
+.chat-filter-chips::-webkit-scrollbar{display:none}
+.chat-fchip{flex:0 0 auto;white-space:nowrap}
+@media (max-width: 480px){
+  .chat-fchip{padding:6px 12px;font-size:.78rem}
+  /* Edge-to-edge scroll: the first chip still lines up with the rows, the last is not clipped mid-word. */
+  .chat-filter{padding-inline:0}
+  .chat-filter-chips{padding-inline:12px;scroll-padding-inline:12px}
+  .chat-markall{margin-inline-start:12px}
+}
