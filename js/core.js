@@ -302,3 +302,17 @@ export function createFloodTracker({windowMs = 12000, now = () => Date.now()} = 
     pending: () => pending,
   };
 }
+
+// The email the person last signed in with, so returning to the login screen does not mean retyping
+// it. ONLY the address — never the password. A password belongs in the device's own password
+// manager, which the auth form is already marked up for (autocomplete="email" +
+// "current-password"); storing one here would be putting a secret in localStorage, where every
+// script on the page can read it.
+const LAST_EMAIL_KEY = 'cd-last-email';
+export function rememberedEmail() {
+  try { return localStorage.getItem(LAST_EMAIL_KEY) || ''; } catch { return ''; }
+}
+export function rememberEmail(email) {
+  const value = String(email || '').trim();
+  try { if (value) localStorage.setItem(LAST_EMAIL_KEY, value.slice(0, 200)); } catch {}
+}

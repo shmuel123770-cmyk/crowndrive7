@@ -288,3 +288,56 @@ function maybeShowInstallTip() {
     document.querySelector('#install-tip')?.remove();
   };
 }
+
+// ---------------------------------------------------------------------------
+// "The change is only on the computer, not on mobile."
+//
+// It was on mobile. The phone was running a build from before the change, and nothing on screen said
+// so — which is the worst version of this: the person is looking at stale software and reasonably
+// reports the feature as broken. A page left open keeps whatever build it loaded with, and a
+// home-screen install is worse still, because iOS freezes and RESTORES the page instead of reloading
+// it, so an install can sit on the same build for weeks.
+//
+// BUILD_ID.txt is published with must-revalidate, so one tiny conditional request answers it. The
+// reload is always the user's choice — reloading under someone mid-message would be its own bug.
+const RUNNING_BUILD = document.querySelector('meta[name="crowndrive-build"]')?.content || '';
+let updateOffered = false;
+let lastBuildCheck = 0;
+
+function showUpdateBar() {
+  if (document.querySelector('#update-bar')) return;
+  const bar = document.createElement('div');
+  bar.id = 'update-bar';
+  bar.setAttribute('role', 'status');
+  bar.innerHTML = `<span>גרסה חדשה של האתר זמינה</span>
+    <button type="button" id="update-now" class="btn primary">רענון</button>
+    <button type="button" id="update-later" aria-label="סגירה">✕</button>`;
+  document.body.appendChild(bar);
+  bar.querySelector('#update-now').onclick = () => location.reload();
+  // Dismissing hides the bar for this page-view only; the next check will offer again, because the
+  // page really is out of date and quietly giving up would put us back where we started.
+  bar.querySelector('#update-later').onclick = () => { bar.remove(); updateOffered = false; };
+}
+
+async function checkForNewBuild() {
+  if (updateOffered || !RUNNING_BUILD || navigator.onLine === false) return;
+  if (Date.now() - lastBuildCheck < 60000) return;
+  lastBuildCheck = Date.now();
+  try {
+    const res = await fetch(`BUILD_ID.txt?t=${Date.now()}`, {cache: 'no-store'});
+    if (!res.ok) return;
+    const latest = (await res.text()).trim();
+    if (!latest || latest === RUNNING_BUILD) return;
+    updateOffered = true;
+    showUpdateBar();
+  } catch {
+    // Offline, or the network is filtering us. Being out of date is not worth an error message.
+  }
+}
+
+// Not during startup — the opening flood is already competing for the connection.
+setTimeout(checkForNewBuild, 5000);
+// The moment that actually matters: coming BACK to a page that has been sitting in the background,
+// which is exactly how a home-screen install is used.
+document.addEventListener('visibilitychange', () => { if (!document.hidden) checkForNewBuild(); });
+window.addEventListener('online', checkForNewBuild);

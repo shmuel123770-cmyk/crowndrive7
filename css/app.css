@@ -2770,3 +2770,17 @@ h1,h2,h3,.brand,.hero h1,.section-head h1,.auth-head h2,.modal-head h2{
 /* The limitation is part of the finding, not a footnote to hide — an admin who reads this as "these
    are all of them" will stop looking. */
 .role-flip-note small{color:var(--muted);font-size:.76rem;line-height:1.45}
+
+/* ---- "a new version is available" ------------------------------------------------------------ */
+/* Sits above the bottom nav and the safe area, because on a phone anything at the very bottom is
+   either under the home indicator or under the nav bar. */
+#update-bar{position:fixed;z-index:80;inset-inline:12px;
+  bottom:calc(12px + var(--bottom-nav-h, 0px) + env(safe-area-inset-bottom, 0px));
+  display:flex;align-items:center;gap:10px;padding:11px 13px;
+  background:var(--dark);color:#fff;border-radius:14px;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+#update-bar span{flex:1;font-size:.86rem;font-weight:600}
+#update-bar .btn{min-height:40px;padding-inline:18px;font-size:.84rem}
+#update-bar #update-later{background:none;border:none;color:rgba(255,255,255,.6);font-size:1rem;
+  cursor:pointer;width:34px;height:34px;border-radius:50%;flex:0 0 34px}
+#update-bar #update-later:hover{background:rgba(255,255,255,.12);color:#fff}
+body[data-page="chats"] #update-bar{bottom:calc(12px + env(safe-area-inset-bottom, 0px))}

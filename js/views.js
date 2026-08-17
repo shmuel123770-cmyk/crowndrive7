@@ -1,5 +1,5 @@
 import {store, list, myRole, myBookings, myCars, carRating, carRatingCount, userRating} from './store.js';
-import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail, paintApp, resetPaint, fieldError, TERMS_VERSION, heCount, heCountF, askConfirm, askText} from './core.js';
+import {esc, money, fmtDate, statusLabel, verificationLabel, modal, closeModal, formData, toast, stars, validEmail, paintApp, resetPaint, fieldError, TERMS_VERSION, heCount, heCountF, askConfirm, askText, rememberedEmail, rememberEmail} from './core.js';
 import {register, login, logout, sendVerify, refreshEmailStatus, sendPasswordReset, createOwnProfile, signInGuest} from './auth.js';
 import {saveUser, setOwnPhoto, createCar, updateCar, deleteCar, createBooking, startInquiry, setBookingStatus, registerDocument, approveVerification, sendMessage, savePayment, saveHandover, submitRating, carMediaPublic, adminAction, setMaintenance, setCarStatus, setCarFeatured, checkIsAdmin} from './db.js';
 import {uploadPrivate, uploadPublicMedia, signedRead, capturePhoto} from './media.js';
@@ -1307,7 +1307,7 @@ export function authView() {
       <div class="auth-switch">${seg('login', 'כניסה')}${seg('register', 'הרשמה')}</div>
       ${mode === 'login' ? `
         <form id="login-form" autocomplete="on">
-          <div class="field"><label>מייל</label><input name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" required></div>
+          <div class="field"><label>מייל</label><input name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" value="${esc(rememberedEmail())}" required></div>
           <div class="field"><label>סיסמה</label><div class="password-field"><input id="login-password" name="password" type="password" autocomplete="current-password" required><button type="button" data-toggle-password="login-password" aria-pressed="false">הצגה</button></div></div>
           <button class="btn gold block">כניסה</button>
           <button type="button" class="forgot-pw" id="forgot-pw">שכחתי סיסמה</button>
@@ -1341,6 +1341,7 @@ export function authView() {
       const button = event.submitter; if (button) { button.disabled = true; button.textContent = 'מתחבר…'; }
       try {
         const user = await login(data.email, data.password);
+        rememberEmail(data.email);   // only after it worked, so a typo is never remembered
         // Admins may enter ONLY through the "כניסת מנהל" button at the bottom of the home page.
         if (await checkIsAdmin(user.uid)) { await logout(); return toast('זהו חשבון מנהל — יש להיכנס דרך כפתור "כניסת מנהל" בתחתית דף הבית'); }
         afterAuthDestination();
@@ -1392,7 +1393,7 @@ export function authView() {
   function adminLoginScreen() {
     content().innerHTML = `<button class="link-back" id="auth-back">→ חזרה</button>
       <div class="auth-head"><span class="role-pill">מנהל האתר</span><h2>כניסת מנהל · Sign in</h2><p>הזינו מייל וסיסמה של חשבון המנהל</p></div>
-      <form id="login-form"><div class="field"><label>מייל</label><input name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" required></div><div class="field"><label>סיסמה</label><div class="password-field"><input id="admin-password" name="password" type="password" autocomplete="current-password" required><button type="button" data-toggle-password="admin-password" aria-pressed="false">הצגה</button></div></div><button class="btn primary block">כניסת מנהל</button><button type="button" class="forgot-pw" id="forgot-pw">שכחתי סיסמה</button></form>`;
+      <form id="login-form"><div class="field"><label>מייל</label><input name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" value="${esc(rememberedEmail())}" required></div><div class="field"><label>סיסמה</label><div class="password-field"><input id="admin-password" name="password" type="password" autocomplete="current-password" required><button type="button" data-toggle-password="admin-password" aria-pressed="false">הצגה</button></div></div><button class="btn primary block">כניסת מנהל</button><button type="button" class="forgot-pw" id="forgot-pw">שכחתי סיסמה</button></form>`;
     content().querySelector('#auth-back').onclick = () => { mode = 'login'; screen(); };
     content().querySelector('#login-form').onsubmit = async event => {
       event.preventDefault();
