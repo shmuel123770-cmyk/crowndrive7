@@ -1746,6 +1746,33 @@ const evidenceState = (booking, bookingId) => {
   return {video: Boolean(ev.video), fuel: Boolean(ev.fuel), odometer: Boolean(ev.odometer), payment: paymentApproved(store.payments[bookingId])};
 };
 
+// The other side's profile photo. An admin already has users/ in the store; everyone else gets this
+// from the chat-people function, because the database rules hide other people's profiles from them.
+let chatPeopleAsked = false;
+async function loadChatPeople() {
+  if (chatPeopleAsked || store.isAdmin || !store.user || store.user.isAnonymous) return;
+  chatPeopleAsked = true;
+  try {
+    const {people} = await api('chat-people', {});
+    if (people && Object.keys(people).length) { store.chatPeople = people; renderChatItems(); }
+  } catch (error) {
+    // A missing photo is not worth an error message — the initial-letter fallback already reads fine.
+    console.warn('chat-people unavailable', error);
+  }
+}
+// The counterpart on a thread: an admin reads store.users, everyone else reads what chat-people sent.
+function threadPerson(item) {
+  const key = item?.key || '';
+  if (key.startsWith('a:')) return store.isAdmin ? store.users[key.slice(2)] : null;   // support: no face
+  const id = key.slice(2);
+  const record = key.startsWith('b:') ? store.bookings[id] : store.inquiries[id];
+  if (!record) return null;
+  const mine = store.user?.uid;
+  const other = record.renterUid === mine ? record.ownerUid : record.renterUid;
+  if (!other) return null;
+  return store.users[other] || store.chatPeople[other] || null;
+}
+
 export function chatsPage() {
   resetPaint();
   if (!store.user) {
@@ -1781,6 +1808,7 @@ export function chatsPage() {
   renderChatItems();
   document.querySelector('#chat-page-back')?.addEventListener('click', () => { location.hash = (store.user && !store.user.isAnonymous) ? 'dashboard' : 'home'; });
   document.querySelector('#chat-search')?.addEventListener('input', renderChatItems);
+  loadChatPeople();
   const wanted = pendingThread || chatState.thread;
   pendingThread = null;
   if (wanted) selectThread(wanted);
@@ -1942,8 +1970,14 @@ function renderChatItems() {
     : inbox.filter(i => chatKind(i.key) === chatFilter);
   const EMPTY = {all: 'אין שיחות עדיין', unread: 'הכול נקרא', bookings: 'אין שיחות על הזמנות', inquiries: 'אין פניות פתוחות', support: 'אין פניות לתמיכה', archive: 'הארכיון ריק'};
   const searching = !!(document.querySelector('#chat-search')?.value || '').trim();
+  // A conversation is with a PERSON, so their photo leads — the car name is already the row title.
+  // Falls back to whatever the row had before (car photo, then a glyph) when there is no photo yet.
+  const withFace = item => {
+    const person = threadPerson(item);
+    return person?.photoURL ? `<span class="chat-item-photo">${avatarHtml(person, 42)}</span>` : (item.avatar || '');
+  };
   box.innerHTML = items.length
-    ? items.map(item => `<div class="chat-row ${item.key === chatState.thread ? 'active' : ''}"><button class="chat-item ${item.key === chatState.thread ? 'active' : ''} ${item.live ? '' : 'ended'} ${item.unread ? 'is-unread' : ''}" data-thread="${esc(item.key)}">${item.avatar || `<span class="chat-item-emoji">${item.emoji}</span>`}<span class="chat-item-main"><b>${esc(item.title)}</b><small>${esc(item.subtitle)}</small></span><span class="chat-item-meta"><span class="chat-item-when">${item.at ? `<time>${chatListTime(item.at)}</time>` : ''}${item.unread ? '<span class="chat-unread-dot" title="הודעה שלא נקראה" aria-label="הודעה שלא נקראה"></span>' : ''}</span>${item.status ? `<span class="status-badge ${esc(item.status)}">${statusLabel(item.status)}</span>` : ''}</span></button><button type="button" class="chat-item-more" data-more="${esc(item.key)}" aria-label="אפשרויות לשיחה ${esc(item.title)}">${ICON.dots}</button></div>`).join('')
+    ? items.map(item => `<div class="chat-row ${item.key === chatState.thread ? 'active' : ''}"><button class="chat-item ${item.key === chatState.thread ? 'active' : ''} ${item.live ? '' : 'ended'} ${item.unread ? 'is-unread' : ''}" data-thread="${esc(item.key)}">${withFace(item) || `<span class="chat-item-emoji">${item.emoji}</span>`}<span class="chat-item-main"><b>${esc(item.title)}</b><small>${esc(item.subtitle)}</small></span><span class="chat-item-meta"><span class="chat-item-when">${item.at ? `<time>${chatListTime(item.at)}</time>` : ''}${item.unread ? '<span class="chat-unread-dot" title="הודעה שלא נקראה" aria-label="הודעה שלא נקראה"></span>' : ''}</span>${item.status ? `<span class="status-badge ${esc(item.status)}">${statusLabel(item.status)}</span>` : ''}</span></button><button type="button" class="chat-item-more" data-more="${esc(item.key)}" aria-label="אפשרויות לשיחה ${esc(item.title)}">${ICON.dots}</button></div>`).join('')
     : `<div class="empty">${searching ? 'לא נמצאו שיחות מתאימות' : (EMPTY[chatFilter] || EMPTY.all)}</div>`;
   box.querySelectorAll('[data-thread]').forEach(button => button.onclick = () => selectThread(button.dataset.thread));
   box.querySelectorAll('[data-more]').forEach(button => button.onclick = () => {
@@ -2090,9 +2124,12 @@ function selectThread(key) {
     ? `${evidenceRow}<form class="chat-composer" id="chat-composer" autocomplete="off"><div class="composer-field"><textarea name="text" aria-label="כתיבת הודעה" maxlength="2000" rows="1" placeholder="הודעה">${esc(chatState.draft)}</textarea><span class="composer-tools"><button type="button" class="chat-attach" id="chat-clip" title="צירוף קובץ" aria-label="צירוף קובץ" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.2-9.19a3.67 3.67 0 1 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.6-2.6l8.5-8.48"/></svg></button></span><input hidden type="file" accept="image/*" id="chat-photo">${isSupport || isInquiry ? '' : `<input hidden type="file" accept="video/*" id="chat-video">`}<input hidden type="file" accept="application/pdf,.pdf" id="chat-doc"></div><button type="button" class="composer-action" id="chat-mic" title="הקלטת הודעה קולית" aria-label="הקלטת הודעה קולית"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4"/></svg></button><button class="composer-action composer-send" id="chat-send" aria-label="שליחה" hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.4 20.4 21 12 3.4 3.6 3.39 10.13 15.5 12 3.39 13.87z"/></svg></button></form><div class="chat-recbar" id="chat-recbar" hidden><button type="button" class="recbar-cancel" id="rec-cancel" aria-label="ביטול ההקלטה">✕</button><span class="recbar-dot" aria-hidden="true"></span><span class="recbar-time" id="rec-time">0:00</span><span class="recbar-hint">מקליט…</span><button type="button" class="btn primary recbar-send" id="rec-send">שליחה</button></div>`
     : `<div class="chat-closed">${convEnded && isRenter ? 'השיחה נסגרה על ידי הצד השני — לא ניתן לשלוח הודעות נוספות' : 'ההשכרה הסתיימה — הצ׳אט פתוח רק מאישור ההזמנה ועד סיום ההשכרה'}</div>`;
 
+  // The other side's face at the top of the conversation, the way a messaging app does it.
+  const headPerson = threadPerson({key});
+  const headFace = headPerson?.photoURL ? `<span class="chat-head-face">${avatarHtml(headPerson, 34)}</span>` : '';
   pane.innerHTML = `<header class="chat-head">
       <button class="chat-back" id="chat-back" aria-label="חזרה לרשימה">→</button><button class="chat-x" id="chat-close" aria-label="סגירת הצ׳אט">×</button>
-      <div class="chat-head-main"><h3>${esc(title)}</h3>${otherParty ? `<span class="chat-who">${esc(otherParty)}</span>` : ''}${booking ? '' : isInquiry ? '<span class="pill ok">פנייה על רכב · טרם הזמנה</span>' : '<span class="pill ok">שירות לקוחות</span>'}</div>
+      <div class="chat-head-main">${headFace}<h3>${esc(title)}</h3>${otherParty ? `<span class="chat-who">${esc(otherParty)}</span>` : ''}${booking ? '' : isInquiry ? '<span class="pill ok">פנייה על רכב · טרם הזמנה</span>' : '<span class="pill ok">שירות לקוחות</span>'}</div>
       <div class="chips">${headActions}</div>
     </header>${chatContextRow(car, booking)}${checklist}<div class="chat-msgs" id="chat-msgs"><div class="empty">טוען הודעות…</div></div>${composer}`;
 

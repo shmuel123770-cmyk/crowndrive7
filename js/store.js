@@ -36,6 +36,10 @@ export const store = {
   reservations: {},
   userNotifications: {},
   externalRentals: {},
+  // uid → {name, photoURL} for the people the signed-in user is in a conversation with.
+  // users/$uid is unreadable to anyone but its owner and an admin, so this is filled by the
+  // chat-people function rather than by a listener.
+  chatPeople: {},
   route: 'home',
   dashTab: 'overview',  // which personal-area tab is active (shared: bottomNav in views.js + dashboard in views-app.js)
   publicUnsubs: [],
