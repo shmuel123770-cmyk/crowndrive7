@@ -75,6 +75,14 @@ export async function canAccessBooking(uid, id) {
   const value = await booking(id);
   return !!value && [value.ownerUid, value.renterUid].includes(uid);
 }
+// Who may attach to a pre-booking inquiry thread: the two people in it, or an admin. Mirrors
+// canAccessBooking so the upload endpoint and message-send agree on one definition of "in this
+// conversation" rather than each inventing its own.
+export async function canAccessInquiry(uid, id) {
+  if (await isAdmin(uid)) return true;
+  const value = (await getAdmin().database().ref(`inquiries/${cleanText(id, 200)}`).once('value')).val();
+  return !!value && [value.ownerUid, value.renterUid].includes(uid);
+}
 export async function canReadUserDocs(viewer, target) {
   return viewer === target || await isAdmin(viewer);
 }

@@ -2087,7 +2087,7 @@ function selectThread(key) {
         <button type="button" class="ev-chip ${ev.payment ? 'ok' : ''}" id="ev-payment">תשלום</button>
       </div>` : '';
   const composer = live
-    ? `${evidenceRow}<form class="chat-composer" id="chat-composer" autocomplete="off"><label class="chat-attach" title="שליחת תמונה">${ICON.image}<input hidden type="file" accept="image/*" id="chat-photo"></label>${isSupport || isInquiry ? '' : `<label class="chat-attach" title="שליחת סרטון"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="14" height="12" rx="2.5"/><path d="m16 11 6-3.5v9L16 13z"/></svg><input hidden type="file" accept="video/*" id="chat-video"></label><label class="chat-attach" title="שליחת מסמך"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v5h5"/><path d="M19 8v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7z"/></svg><input hidden type="file" accept="application/pdf,.pdf" id="chat-doc"></label><button type="button" class="chat-attach" id="chat-mic" title="הקלטת הודעה קולית" aria-label="הקלטת הודעה קולית"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4"/></svg></button>`}<textarea name="text" aria-label="כתיבת הודעה" maxlength="2000" rows="1" placeholder="כתבו הודעה…">${esc(chatState.draft)}</textarea><button class="btn primary">שליחה</button></form><div class="chat-recbar" id="chat-recbar" hidden><button type="button" class="recbar-cancel" id="rec-cancel" aria-label="ביטול ההקלטה">✕</button><span class="recbar-dot" aria-hidden="true"></span><span class="recbar-time" id="rec-time">0:00</span><span class="recbar-hint">מקליט…</span><button type="button" class="btn primary recbar-send" id="rec-send">שליחה</button></div>`
+    ? `${evidenceRow}<form class="chat-composer" id="chat-composer" autocomplete="off"><label class="chat-attach" title="שליחת תמונה">${ICON.image}<input hidden type="file" accept="image/*" id="chat-photo"></label>${isSupport || isInquiry ? '' : `<label class="chat-attach" title="שליחת סרטון"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="14" height="12" rx="2.5"/><path d="m16 11 6-3.5v9L16 13z"/></svg><input hidden type="file" accept="video/*" id="chat-video"></label>`}<label class="chat-attach" title="שליחת מסמך"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v5h5"/><path d="M19 8v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7z"/></svg><input hidden type="file" accept="application/pdf,.pdf" id="chat-doc"></label><button type="button" class="chat-attach" id="chat-mic" title="הקלטת הודעה קולית" aria-label="הקלטת הודעה קולית"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4"/></svg></button><textarea name="text" aria-label="כתיבת הודעה" maxlength="2000" rows="1" placeholder="כתבו הודעה…">${esc(chatState.draft)}</textarea><button class="btn primary">שליחה</button></form><div class="chat-recbar" id="chat-recbar" hidden><button type="button" class="recbar-cancel" id="rec-cancel" aria-label="ביטול ההקלטה">✕</button><span class="recbar-dot" aria-hidden="true"></span><span class="recbar-time" id="rec-time">0:00</span><span class="recbar-hint">מקליט…</span><button type="button" class="btn primary recbar-send" id="rec-send">שליחה</button></div>`
     : `<div class="chat-closed">${convEnded && isRenter ? 'השיחה נסגרה על ידי הצד השני — לא ניתן לשלוח הודעות נוספות' : 'ההשכרה הסתיימה — הצ׳אט פתוח רק מאישור ההזמנה ועד סיום ההשכרה'}</div>`;
 
   pane.innerHTML = `<header class="chat-head">
@@ -2189,6 +2189,15 @@ function selectThread(key) {
     } catch (error) { toast(error.message); }
     finally { attach?.classList.remove('busy'); }
   });
+  // A voice note or a document has to be filed against whichever conversation is open. Each surface
+  // has its own Storage prefix and its own send shape, and the server checks that the path matches
+  // the thread — so getting this wrong is a rejected upload, not a misplaced file.
+  const mediaKind = isSupport ? 'support-media' : isInquiry ? 'inquiry-media' : 'booking-media';
+  const sendWith = attachment => sendMessage(
+    isSupport ? {thread: 'admin', userUid: id, text: '', attachment}
+    : isInquiry ? {inquiryId: id, text: '', attachment}
+    : {bookingId: id, text: '', attachment});
+
   pane.querySelector('#chat-doc')?.addEventListener('change', async event => {
     const file = event.target.files[0];
     event.target.value = '';
@@ -2197,8 +2206,8 @@ function selectThread(key) {
     attach?.classList.add('busy');
     try {
       toast('מעלה מסמך…');
-      const path = await uploadPrivate(file, 'booking-media', id);
-      await sendMessage({bookingId: id, text: '', attachment: {path, type: 'file', name: file.name}});
+      const path = await uploadPrivate(file, mediaKind, id);
+      await sendWith({path, type: 'file', name: file.name});
       toast('המסמך נשלח');
     } catch (error) { toast(error.message); }
     finally { attach?.classList.remove('busy'); }
@@ -2256,8 +2265,8 @@ function selectThread(key) {
         micButton.classList.add('busy');
         try {
           toast('שולח הקלטה…');
-          const path = await uploadPrivate(file, 'booking-media', id);
-          await sendMessage({bookingId: id, text: '', attachment: {path, type: 'audio', seconds}});
+          const path = await uploadPrivate(file, mediaKind, id);
+          await sendWith({path, type: 'audio', seconds});
           toast('ההקלטה נשלחה');
         } catch (error) { toast(error.message); }
         finally { micButton.classList.remove('busy'); }

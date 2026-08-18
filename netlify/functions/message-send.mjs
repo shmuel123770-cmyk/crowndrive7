@@ -71,12 +71,22 @@ export async function handler(event) {
           return json(429, {error: 'שלחתם הודעה — נחזור אליכם בקרוב. אפשר להמשיך לכתוב לאחר שנענה.'});
         }
       }
-      // Support chat accepts inline image attachments (stored as a data URL, like everywhere else).
+      // Images stay inline data URLs, as everywhere else. Voice notes and documents are Storage
+      // paths, and the path is what proves which thread they belong to: it must be the one
+      // media-upload wrote for THIS thread and THIS sender, or a member could point a message at
+      // somebody else's file and have the other side served a signed URL for it.
       let stored = null;
       if (attachment) {
         const raw = String(attachment.path || '');
-        if (!/^data:image\//i.test(raw)) return json(400, {error: 'ניתן לצרף תמונה בלבד'});
-        stored = {type: 'photo', path: validateImageDataUrl(raw)};  // verify real image bytes
+        const type = String(attachment.type || '');
+        if (/^data:image\//i.test(raw)) {
+          stored = {type: 'photo', path: validateImageDataUrl(raw)};  // verify real image bytes
+        } else if (type === 'audio' || type === 'file') {
+          const path = cleanText(raw, 500);
+          if (!path.startsWith(`support/${userUid}/${token.uid}/`)) return json(400, {error: 'נתיב קובץ לא תקין'});
+          stored = {type, path, ...(attachment.name ? {name: cleanText(attachment.name, 120)} : {}),
+                    ...(Number(attachment.seconds) > 0 ? {seconds: Math.min(3600, Math.round(Number(attachment.seconds)))} : {})};
+        } else return json(400, {error: 'סוג צירוף לא נתמך'});
       }
       const ref = db.ref(`messages/admin/${userUid}`).push();
       await ref.set({senderUid: token.uid, fromAdmin: admin, text, ...(stored ? {attachment: stored} : {}), createdAt: Date.now()});
@@ -116,12 +126,19 @@ export async function handler(event) {
       let stored = null;
       if (attachment) {
         const raw = String(attachment.path || '');
-        if (!/^data:image\//i.test(raw)) return json(400, {error: 'ניתן לצרף תמונה בלבד'});
-        stored = {type: 'photo', path: validateImageDataUrl(raw)};  // verify real image bytes
+        const type = String(attachment.type || '');
+        if (/^data:image\//i.test(raw)) {
+          stored = {type: 'photo', path: validateImageDataUrl(raw)};  // verify real image bytes
+        } else if (type === 'audio' || type === 'file') {
+          const path = cleanText(raw, 500);
+          if (!path.startsWith(`inquiries/${inquiryId}/${token.uid}/`)) return json(400, {error: 'נתיב קובץ לא תקין'});
+          stored = {type, path, ...(attachment.name ? {name: cleanText(attachment.name, 120)} : {}),
+                    ...(Number(attachment.seconds) > 0 ? {seconds: Math.min(3600, Math.round(Number(attachment.seconds)))} : {})};
+        } else return json(400, {error: 'סוג צירוף לא נתמך'});
       }
       const ref = db.ref(`messages/inquiry/${inquiryId}`).push();
       await ref.set({senderUid: token.uid, text, ...(stored ? {attachment: stored} : {}), createdAt: Date.now()});
-      await db.ref(`inquiries/${inquiryId}`).update({updatedAt: Date.now(), lastText: (text || '📷 תמונה').slice(0, 90), lastSender: token.uid});
+      await db.ref(`inquiries/${inquiryId}`).update({updatedAt: Date.now(), lastText: (text || (stored ? (ATTACHMENT_LABEL[stored.type] || 'תמונה') : '')).slice(0, 90), lastSender: token.uid});
       await audit(token.uid, 'inquiry_message', 'inquiry', inquiryId, stored ? {attachment: stored.type} : {});
       // SMS the OTHER party (debounced 2 min per inquiry, so a burst of messages ≠ a burst of texts).
       if (await onceGuard(`imsg/${inquiryId}`, 2 * 60 * 1000)) {
@@ -156,7 +173,12 @@ export async function handler(event) {
         if (token.uid !== value.renterUid && !admin) return json(403, {error: 'תיעוד לפני נסיעה נשלח על ידי השוכר'});
         if (value.status !== 'approved' && !admin) return json(409, {error: 'תיעוד נשלח לפני תחילת ההשכרה'});
       }
-      stored = {type, path};
+      // Carry the filename and the recording length through. The client sends both and this used to
+      // drop them, so a document arrived as an anonymous "מסמך" and a voice note had no duration —
+      // exactly the information that makes either one worth opening. Bounded on the way in, because
+      // both come from the client.
+      stored = {type, path, ...(attachment.name ? {name: cleanText(attachment.name, 120)} : {}),
+                ...(Number(attachment.seconds) > 0 ? {seconds: Math.min(3600, Math.round(Number(attachment.seconds)))} : {})};
     }
 
     const ref = db.ref(`messages/${bookingId}`).push();

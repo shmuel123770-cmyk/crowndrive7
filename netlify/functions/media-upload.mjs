@@ -1,4 +1,4 @@
-import {verify, json, canAccessBooking, isAdmin, profile, cleanText, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
+import {verify, json, canAccessBooking, canAccessInquiry, isAdmin, profile, cleanText, parseBody, maintenanceBlocked} from './_firebase-admin.mjs';
 import {putStorageObject} from './_storage.mjs';
 import {rateLimit, tooMany} from './_ratelimit.mjs';
 import {detectedImageType, detectedMediaType, AUDIO_TYPES, DOC_TYPES} from './_media.mjs';
@@ -19,7 +19,9 @@ const MAX_IMAGE = 4 * 1024 * 1024;
 const MAX_MEDIA = 4 * 1024 * 1024;
 // Chat attachments ONLY. Avatars, car photos, identity documents and payment proofs stay images:
 // widening those would be a different decision with different review paths behind it.
-const MEDIA_KINDS = new Set(['booking-media']);
+// The three conversation surfaces. Everything else — avatars, car photos, identity documents,
+// payment proofs — stays images only; widening those is a different decision.
+const MEDIA_KINDS = new Set(['booking-media', 'support-media', 'inquiry-media']);
 const EXT_FOR = {'audio/webm': 'webm', 'audio/ogg': 'ogg', 'audio/wav': 'wav', 'audio/mpeg': 'mp3',
                  'audio/mp4': 'm4a', 'application/pdf': 'pdf'};
 const safe = value => String(value || 'file').replace(/[^a-zA-Z0-9._-]/g, '_').slice(-100);
@@ -73,6 +75,19 @@ export async function handler(event) {
       const ext = EXT_FOR[detectedType];
       const filename = ext ? `${safe(name).replace(/\.[a-z0-9]+$/i, '')}.${ext}` : safe(name);
       path = `bookings/${cleanText(entityId, 100)}/media/${user.uid}/${Date.now()}-${filename}`;
+    } else if (kind === 'support-media') {
+      // entityId is the support thread's owner. A member may only attach to their OWN thread; an
+      // admin may attach to any, which is the whole point of adding this for the admin.
+      const threadUid = cleanText(entityId, 128);
+      if (threadUid !== user.uid && !await isAdmin(user.uid)) return json(403, {error: 'אין הרשאה'});
+      const ext = EXT_FOR[detectedType];
+      const filename = ext ? `${safe(name).replace(/\.[a-z0-9]+$/i, '')}.${ext}` : safe(name);
+      path = `support/${threadUid}/${user.uid}/${Date.now()}-${filename}`;
+    } else if (kind === 'inquiry-media') {
+      if (!await canAccessInquiry(user.uid, entityId)) return json(403, {error: 'אין הרשאה'});
+      const ext = EXT_FOR[detectedType];
+      const filename = ext ? `${safe(name).replace(/\.[a-z0-9]+$/i, '')}.${ext}` : safe(name);
+      path = `inquiries/${cleanText(entityId, 200)}/${user.uid}/${Date.now()}-${filename}`;
     } else if (kind === 'avatar') {
       path = `avatars/${user.uid}/${Date.now()}-${safe(name)}`;
     } else if (kind === 'car-image') {
@@ -84,7 +99,7 @@ export async function handler(event) {
     // Write the bytes to Storage server-side (Admin credential → GCS JSON API) and get back a
     // permanent, publicly-readable, CDN-cached token URL. Shared with media-migrate.
     // Identity documents, payment proofs and handover evidence are private: no permanent public token.
-    const privateObject = ['user-document', 'payment', 'booking-media'].includes(kind);
+    const privateObject = ['user-document', 'payment', 'booking-media', 'support-media', 'inquiry-media'].includes(kind);
     const url = await putStorageObject(path, buffer, detectedType, {privateObject});
     return json(200, {path, url});
   } catch (error) {
