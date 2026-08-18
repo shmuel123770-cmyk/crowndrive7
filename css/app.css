@@ -2791,3 +2791,21 @@ h1,h2,h3,.brand,.hero h1,.section-head h1,.auth-head h2,.modal-head h2{
   cursor:pointer;width:34px;height:34px;border-radius:50%;flex:0 0 34px}
 #update-bar #update-later:hover{background:rgba(255,255,255,.12);color:#fff}
 body[data-page="chats"] #update-bar{bottom:calc(12px + env(safe-area-inset-bottom, 0px))}
+
+/* ---- Touch targets ---------------------------------------------------------------------------- */
+/* Most of the icon buttons are drawn at 30-42px, which looks right and is under the 44px a finger
+   actually needs. .fav-btn already solved this with an invisible 44px ::before that extends the hit
+   area WITHOUT changing the layout — the button still draws at its designed size. That technique was
+   never applied anywhere else, so this extends it to the rest.
+   Scoped to coarse pointers on purpose: on a desktop these sit close together, and a 44px invisible
+   overlay could swallow a click meant for the control beside it. A mouse does not need the help. */
+@media (pointer: coarse){
+  .icon-btn, .chat-refresh, .chat-x, .cal-nav, .dash-close, .pb-close,
+  .install-tip .install-x, .dash-bell, .modal .close, .chat-attach{position:relative}
+  .icon-btn::before, .chat-refresh::before, .chat-x::before, .cal-nav::before, .dash-close::before,
+  .pb-close::before, .install-tip .install-x::before, .dash-bell::before, .modal .close::before,
+  .chat-attach::before{
+    content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    width:44px;height:44px;border-radius:50%;
+  }
+}
