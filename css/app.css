@@ -2809,3 +2809,55 @@ body[data-page="chats"] #update-bar{bottom:calc(12px + env(safe-area-inset-botto
     width:44px;height:44px;border-radius:50%;
   }
 }
+
+/* ---- Chat header: the name wins the space ----------------------------------------------------- */
+/* Measured at 375px on a real support thread: the header is 349px wide and the person's name was
+   getting 52px — truncated to "אורח…" — while a static "שירות לקוחות" pill took 83px beside it.
+   The name had no flex of its own, so it was the only thing that shrank.
+   Who you are talking to is the one fact a conversation header must carry, and the one thing you
+   cannot infer from anywhere else on screen. */
+.chat-head-main h3{flex:1 1 auto;min-width:7ch}
+.chat-head-main .pill{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media (max-width:560px){
+  /* And on a phone the type label goes entirely: you arrived here from a list whose chips already
+     group by תמיכה / פניות, so it is repeating what you just tapped, at the name's expense. */
+  .chat-head-main .pill{display:none}
+}
+
+/* ---- Composer, WhatsApp-shaped ---------------------------------------------------------------- */
+/* The attach icons used to be siblings of the textarea, so every button added took width from the
+   typing area — with three of them at 375px the placeholder wrapped onto three lines. A messaging
+   app solves this by putting the attachments INSIDE the field and keeping exactly one round button
+   outside, which is the microphone until you type and the send arrow after. */
+.chat-composer{align-items:flex-end;gap:8px;padding:9px 10px}
+.composer-field{flex:1;min-width:0;display:flex;align-items:flex-end;gap:2px;
+  background:var(--bg-soft);border:1px solid var(--line);border-radius:22px;padding:2px 6px 2px 4px}
+.composer-field:focus-within{border-color:var(--brand)}
+/* The textarea loses its own chrome — the field around it is the input now. */
+.chat-composer .composer-field textarea{flex:1;min-width:0;border:none;background:none;border-radius:0;
+  padding:9px 10px;min-height:38px;max-height:120px;box-shadow:none}
+.chat-composer .composer-field textarea:focus{outline:none;border:none;box-shadow:none}
+.composer-tools{display:flex;align-items:center;gap:1px;flex:0 0 auto;padding-bottom:2px}
+.composer-tools .chat-attach{width:36px;height:36px;flex:0 0 36px;border:none;background:none;
+  border-radius:50%;display:grid;place-items:center;color:var(--muted);cursor:pointer}
+.composer-tools .chat-attach:hover{background:var(--bg2);color:var(--text)}
+.composer-tools .chat-attach svg{width:19px;height:19px}
+.composer-tools .chat-attach.busy{opacity:.45;pointer-events:none}
+/* The one round action. Sized as a real touch target from the start rather than needing hit-slop. */
+.composer-action{flex:0 0 46px;width:46px;height:46px;border:none;border-radius:50%;cursor:pointer;
+  display:grid;place-items:center;background:var(--brand);color:#fff;padding:0;
+  transition:background .15s,transform .12s}
+.composer-action svg{width:21px;height:21px}
+.composer-action:hover{background:var(--brand-d)}
+.composer-action:active{transform:scale(.94)}
+.composer-action[hidden]{display:none}
+.composer-action.is-sending{opacity:.6;pointer-events:none}
+/* A paper plane, not an arrow. An arrow in RTL has to point left to follow the text, and a
+   left-pointing arrow in a Hebrew interface reads as "back" — which is the opposite of send. The
+   plane is directional without being a navigation symbol, which is why WhatsApp uses one. */
+.composer-send svg{transform:scaleX(-1)}
+/* Rows in the attachment sheet: icon then label, so the list is scannable rather than three
+   identically-shaped buttons. */
+.attach-row{display:flex;align-items:center;gap:12px;justify-content:flex-start;text-align:start}
+.attach-row .ar-ic{flex:0 0 24px;display:grid;place-items:center;opacity:.75}
+.attach-row .ar-ic svg{width:20px;height:20px}

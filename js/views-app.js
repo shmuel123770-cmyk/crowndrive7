@@ -2087,7 +2087,7 @@ function selectThread(key) {
         <button type="button" class="ev-chip ${ev.payment ? 'ok' : ''}" id="ev-payment">תשלום</button>
       </div>` : '';
   const composer = live
-    ? `${evidenceRow}<form class="chat-composer" id="chat-composer" autocomplete="off"><label class="chat-attach" title="שליחת תמונה">${ICON.image}<input hidden type="file" accept="image/*" id="chat-photo"></label>${isSupport || isInquiry ? '' : `<label class="chat-attach" title="שליחת סרטון"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="14" height="12" rx="2.5"/><path d="m16 11 6-3.5v9L16 13z"/></svg><input hidden type="file" accept="video/*" id="chat-video"></label>`}<label class="chat-attach" title="שליחת מסמך"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3v5h5"/><path d="M19 8v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7z"/></svg><input hidden type="file" accept="application/pdf,.pdf" id="chat-doc"></label><button type="button" class="chat-attach" id="chat-mic" title="הקלטת הודעה קולית" aria-label="הקלטת הודעה קולית"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4"/></svg></button><textarea name="text" aria-label="כתיבת הודעה" maxlength="2000" rows="1" placeholder="כתבו הודעה…">${esc(chatState.draft)}</textarea><button class="btn primary">שליחה</button></form><div class="chat-recbar" id="chat-recbar" hidden><button type="button" class="recbar-cancel" id="rec-cancel" aria-label="ביטול ההקלטה">✕</button><span class="recbar-dot" aria-hidden="true"></span><span class="recbar-time" id="rec-time">0:00</span><span class="recbar-hint">מקליט…</span><button type="button" class="btn primary recbar-send" id="rec-send">שליחה</button></div>`
+    ? `${evidenceRow}<form class="chat-composer" id="chat-composer" autocomplete="off"><div class="composer-field"><textarea name="text" aria-label="כתיבת הודעה" maxlength="2000" rows="1" placeholder="הודעה">${esc(chatState.draft)}</textarea><span class="composer-tools"><button type="button" class="chat-attach" id="chat-clip" title="צירוף קובץ" aria-label="צירוף קובץ" aria-haspopup="dialog"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.2-9.19a3.67 3.67 0 1 1 5.18 5.18l-9.2 9.2a1.83 1.83 0 0 1-2.6-2.6l8.5-8.48"/></svg></button></span><input hidden type="file" accept="image/*" id="chat-photo">${isSupport || isInquiry ? '' : `<input hidden type="file" accept="video/*" id="chat-video">`}<input hidden type="file" accept="application/pdf,.pdf" id="chat-doc"></div><button type="button" class="composer-action" id="chat-mic" title="הקלטת הודעה קולית" aria-label="הקלטת הודעה קולית"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="11" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v4"/></svg></button><button class="composer-action composer-send" id="chat-send" aria-label="שליחה" hidden><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3.4 20.4 21 12 3.4 3.6 3.39 10.13 15.5 12 3.39 13.87z"/></svg></button></form><div class="chat-recbar" id="chat-recbar" hidden><button type="button" class="recbar-cancel" id="rec-cancel" aria-label="ביטול ההקלטה">✕</button><span class="recbar-dot" aria-hidden="true"></span><span class="recbar-time" id="rec-time">0:00</span><span class="recbar-hint">מקליט…</span><button type="button" class="btn primary recbar-send" id="rec-send">שליחה</button></div>`
     : `<div class="chat-closed">${convEnded && isRenter ? 'השיחה נסגרה על ידי הצד השני — לא ניתן לשלוח הודעות נוספות' : 'ההשכרה הסתיימה — הצ׳אט פתוח רק מאישור ההזמנה ועד סיום ההשכרה'}</div>`;
 
   pane.innerHTML = `<header class="chat-head">
@@ -2110,7 +2110,17 @@ function selectThread(key) {
       el.style.height = 'auto';
       el.style.height = `${Math.min(el.scrollHeight, 120)}px`;   // a few lines, then it scrolls
     };
-    form.text.oninput = () => { chatState.draft = form.text.value; grow(); };
+    // WhatsApp's trick, and the reason its composer never runs out of room on a phone: ONE round
+    // button, microphone while the field is empty and send the moment there is something to send.
+    const micBtn = form.querySelector('#chat-mic');
+    const sendBtn2 = form.querySelector('#chat-send');
+    const syncAction = () => {
+      const hasText = form.text.value.trim().length > 0;
+      if (micBtn) micBtn.hidden = hasText;
+      if (sendBtn2) sendBtn2.hidden = !hasText;
+    };
+    form.text.oninput = () => { chatState.draft = form.text.value; grow(); syncAction(); };
+    syncAction();   // a restored draft must show SEND, not the microphone
     form.text.onkeydown = event => {
       // Enter sends; Shift+Enter (and the on-screen keyboard's newline on mobile) makes a new line.
       if (event.key === 'Enter' && !event.shiftKey && !event.isComposing) {
@@ -2123,14 +2133,16 @@ function selectThread(key) {
       event.preventDefault();
       const text = form.text.value.trim();
       if (!text) return;
-      form.text.value = ''; chatState.draft = ''; form.text.style.height = 'auto';
+      form.text.value = ''; chatState.draft = ''; form.text.style.height = 'auto'; syncAction();
       // The message travels through a serverless function, so the bubble only appears once the write
       // lands AND the listener echoes it back. Clearing the field is the double-send guard, but on a
       // slow connection it also means the text vanishes with nothing yet in the thread — which reads
       // as "my message disappeared". Hold a visible sending state until the round trip finishes.
-      const sendBtn = form.querySelector('button');
-      const sendLabel = sendBtn ? sendBtn.textContent : '';
-      if (sendBtn) { sendBtn.disabled = true; sendBtn.textContent = 'שולח…'; }
+      // Target the send button BY ID. form.querySelector('button') used to be right when the send
+      // button was the only one; the composer now opens with the microphone, so that selector would
+      // have disabled the mic and overwritten its icon with the word "שולח…".
+      const sendBtn = form.querySelector('#chat-send');
+      if (sendBtn) { sendBtn.disabled = true; sendBtn.classList.add('is-sending'); }
       // ALWAYS pass userUid = the thread's user id. For the admin it's the person they're messaging;
       // for a regular user it's their own uid (harmlessly ignored server-side). Previously this was
       // gated on store.isAdmin — if that flag was momentarily false the message lost its target and
@@ -2168,16 +2180,16 @@ function selectThread(key) {
         toast(error.message);
         const at = pending.indexOf(entry); if (at >= 0) pending.splice(at, 1);
         bubble()?.remove();                       // nothing was stored — the bubble must not linger
-        if (chatState.thread === sentFrom) { form.text.value = text; chatState.draft = text; }
+        if (chatState.thread === sentFrom) { form.text.value = text; chatState.draft = text; syncAction(); }
       }
-      finally { if (sendBtn && chatState.thread === sentFrom) { sendBtn.disabled = false; sendBtn.textContent = sendLabel; } }
+      finally { if (sendBtn && chatState.thread === sentFrom) { sendBtn.disabled = false; sendBtn.classList.remove('is-sending'); } }
     };
   }
   pane.querySelector('#chat-video')?.addEventListener('change', async event => {
     const file = event.target.files[0];
     event.target.value = '';
     if (!file) return;
-    const attach = event.target.closest('.chat-attach');
+    const attach = pane.querySelector('#chat-clip');   // the inputs live outside the button now
     attach?.classList.add('busy');
     try {
       toast('מעלה סרטון… זה יכול לקחת קצת');
@@ -2198,11 +2210,32 @@ function selectThread(key) {
     : isInquiry ? {inquiryId: id, text: '', attachment}
     : {bookingId: id, text: '', attachment});
 
+  pane.querySelector('#chat-clip')?.addEventListener('click', () => {
+    const rows = [
+      ['chat-photo', ICON.image, 'תמונה'],
+      ...(isSupport || isInquiry ? [] : [['chat-video', ICON.car, 'סרטון']]),
+      ['chat-doc', ICON.doc, 'מסמך'],
+    ];
+    modal(`<h3>צירוף לשיחה</h3>
+      <div class="chat-menu-actions">
+        ${rows.map(([target, icon, label]) =>
+          `<button type="button" class="btn outline block attach-row" data-pick="${target}"><span class="ar-ic">${icon}</span>${label}</button>`).join('')}
+        <button type="button" class="btn outline block chat-menu-cancel" data-pick="">ביטול</button>
+      </div>`);
+    document.querySelectorAll('#modal-root [data-pick]').forEach(button => button.onclick = () => {
+      const target = button.dataset.pick;
+      closeModal();
+      // The picker must open from the click that closed the sheet, or iOS treats it as untrusted and
+      // silently refuses to show the file chooser.
+      if (target) pane.querySelector(`#${target}`)?.click();
+    });
+  });
+
   pane.querySelector('#chat-doc')?.addEventListener('change', async event => {
     const file = event.target.files[0];
     event.target.value = '';
     if (!file) return;
-    const attach = event.target.closest('.chat-attach');
+    const attach = pane.querySelector('#chat-clip');   // the inputs live outside the button now
     attach?.classList.add('busy');
     try {
       toast('מעלה מסמך…');
@@ -2296,7 +2329,7 @@ function selectThread(key) {
     if (!file) return;
     // Same gap the evidence chips had: one 3-second toast for an upload that can run much longer, with
     // the attach button still live the whole time — so a second tap sends the photo twice.
-    const attach = pane.querySelector('.chat-attach');
+    const attach = pane.querySelector('#chat-clip');
     attach?.classList.add('busy');
     try {
       toast('מעלה תמונה…');
