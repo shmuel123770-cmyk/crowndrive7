@@ -2512,7 +2512,7 @@ function renderChatMessage(message, grouped = false) {
   const canDelete = (mine || store.isAdmin) && !sys && message.id && !message.pending;
   const del = canDelete ? `<button class="msg-del" data-del="${esc(message.id)}" title="מחיקת הודעה" aria-label="מחיקת הודעה">🗑</button>` : '';
   const temp = message.tempId ? ` data-temp="${esc(message.tempId)}"` : '';
-  return `<div class="message ${mine ? 'mine' : ''} ${grouped ? 'grouped' : ''} ${sys ? 'sys' : ''}${message.pending ? ' is-pending' : ''}${message.failed ? ' is-failed' : ''}" data-mid="${esc(message.id || '')}"${temp}>${del}${message.text ? `<p>${esc(message.text)}</p>` : ''}${attachment}<small>${time}${tick}</small></div>`;
+  return `<div class="message ${mine ? 'mine' : ''} ${grouped ? 'grouped' : ''} ${sys ? 'sys' : ''}${message.pending ? ' is-pending' : ''}${message.failed ? ' is-failed' : ''}" data-mid="${esc(message.id || '')}"${temp}>${message.text ? `<p>${esc(message.text)}</p>` : ''}${attachment}<small>${time}${tick}${del}</small></div>`;
 }
 
 function paymentModal(bookingId, onDone = null) {
