@@ -3,6 +3,13 @@ import {authReady} from './auth.js';
 import {nav, bottomNav, home, cars, authView, dashboard, chatsPage, openAdminLogin, openCar, ensureAppModule, teardownChat} from './views.js';
 import {toast, closeModal, resetPaint, enhanceUI} from './core.js';
 
+// iOS Safari only honours :active (the press-feedback scale() on buttons, cards, tabs, rows — all
+// over app.css) once SOME touch listener exists anywhere on the page. Without this, every :active
+// rule in the stylesheet is correct and simply never fires on an iPhone. One empty, passive,
+// page-wide listener is the whole fix — see "Response" in Apple's Designing Fluid Interfaces (WWDC
+// 2018): feedback belongs on touch-down, not on release.
+document.addEventListener('touchstart', () => {}, {passive: true});
+
 // Start data + auth in the background — do NOT block first paint on them.
 // The home page renders instantly; auth-gated views wait via store.authSettled.
 startPublic();

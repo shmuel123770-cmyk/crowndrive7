@@ -22,6 +22,12 @@
   --shadow-2:0 30px 80px rgba(0,0,0,.25);
   --dur-press:160ms; --dur-fast:200ms; --dur-base:260ms; --dur-sheet:420ms;
   --ease-out:cubic-bezier(.23,1,.32,1); --ease-in-out:cubic-bezier(.77,0,.175,1); --ease-drawer:cubic-bezier(.32,.72,0,1);
+  /* Mild overshoot ≈ damping 0.8 (Apple's "Designing Fluid Interfaces"). For a gesture that itself
+     carries momentum ONLY — nothing on the site is drag-driven yet, so nothing uses this today. */
+  --ease-spring:cubic-bezier(.34,1.56,.64,1);
+  /* The two glass weights already in use below (topbar, modal-head, nav-btn.pill, dashboard-tabs) —
+     named here so new chrome (.cd-sheet/.cd-toast) can reach for the same material instead of a flat fill. */
+  --glass-1:saturate(1.4) blur(14px); --glass-2:saturate(1.6) blur(18px);
   --accent:#E9A93D; --accent-soft:#FBF3E1;
   /* --accent is a BACKGROUND colour: badges and gradients put dark #2A1F08 on it, which reads fine.
      As a FOREGROUND on a light surface it measures 2.06:1 — below the 3:1 that WCAG 1.4.11 requires of
@@ -2921,21 +2927,35 @@ body[data-page="chats"] #update-bar{bottom:calc(12px + env(safe-area-inset-botto
 .cd-field.is-error input{border-color:var(--danger)}
 .cd-field.is-error small{color:var(--danger)}
 
-.cd-sheet{position:absolute;inset-inline:0;bottom:0;background:var(--surface);border-radius:var(--radius-xl) var(--radius-xl) 0 0;
+/* Glass, not flat — the same material the top bar already ships (var(--glass-2)), just applied to a
+   surface rather than a bar. Still unused by any real screen; kept at parity with the design-system
+   artifact's reference version so the two never drift apart. */
+.cd-scrim{position:absolute;inset:0;background:rgba(10,14,19,.45);transition:opacity var(--dur-fast) ease}
+.cd-sheet{position:absolute;inset-inline:0;bottom:0;background:rgba(255,255,255,.82);backdrop-filter:var(--glass-2);-webkit-backdrop-filter:var(--glass-2);
+  border-radius:var(--radius-xl) var(--radius-xl) 0 0;border-top:1px solid rgba(255,255,255,.6);
   padding:var(--space-2) var(--space-6) calc(var(--space-6) + env(safe-area-inset-bottom));box-shadow:var(--shadow-2);
   transition:transform var(--dur-sheet) var(--ease-drawer)}
-.cd-sheet__grip{width:36px;height:5px;border-radius:var(--radius-pill);background:var(--bg3);margin:0 auto var(--space-4)}
+@starting-style{.cd-sheet{transform:translateY(100%)}.cd-scrim{opacity:0}}
+.cd-sheet.is-leaving{transform:translateY(100%);transition-duration:var(--dur-fast);transition-timing-function:var(--ease-out)}
+.cd-sheet__grip{width:36px;height:5px;border-radius:var(--radius-pill);background:rgba(27,34,43,.22);margin:0 auto var(--space-4)}
 .cd-sheet__title{margin:0 0 var(--space-2);font-size:22px;font-weight:800;letter-spacing:-.015em}
 
-.cd-toast{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-4);background:var(--dark);color:#fff;
-  border-radius:var(--radius-pill);box-shadow:var(--shadow-1);font-size:14px;
+.cd-toast{display:flex;align-items:center;gap:var(--space-3);padding:var(--space-3) var(--space-4);
+  background:rgba(23,30,39,.82);backdrop-filter:var(--glass-2);-webkit-backdrop-filter:var(--glass-2);color:#fff;
+  border-radius:var(--radius-pill);box-shadow:var(--shadow-1);font-size:14px;border:1px solid rgba(255,255,255,.08);
   transition:transform 400ms ease,opacity 400ms ease}
+@starting-style{.cd-toast{transform:translateY(100%);opacity:0}}
 .cd-toast.is-leaving{transform:translateY(100%);opacity:0;transition-duration:var(--dur-fast)}
 .cd-toast .cd-status{color:#fff}
 
 @media (prefers-reduced-motion:reduce){
   .cd-btn:active{transform:none}
   .cd-sheet,.cd-toast{transition:opacity var(--dur-fast) ease}
+  @starting-style{.cd-sheet,.cd-toast{transform:none;opacity:0}}
+}
+@media (prefers-reduced-transparency:reduce){
+  .cd-sheet{background:var(--surface);backdrop-filter:none;-webkit-backdrop-filter:none;border-top-color:var(--line)}
+  .cd-toast{background:var(--dark);backdrop-filter:none;-webkit-backdrop-filter:none;border-color:transparent}
 }
 
 /* Storage/cookie-transparency notice (index.html #storage-notice). Bottom bar, same dark surface as
