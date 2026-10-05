@@ -8,7 +8,7 @@
   <meta name="format-detection" content="telephone=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="crowndrive-version" content="222">
+  <meta name="crowndrive-version" content="223">
   <title>Crown Drive · השכרת רכבים · קראון הייטס</title>
   <meta name="description" content="השכרת רכבים בקראון הייטס, ברוקלין — חיפוש לפי זמן איסוף והחזרה, תיעוד מלא ודירוגים אמיתיים. הזמנה פשוטה ומאובטחת.">
   <!-- Social sharing (WhatsApp / Facebook / iMessage) + SEO. og:image/url are absolute (crawlers need that) so the build leaves them untouched. -->
@@ -66,6 +66,10 @@
 <div id="network-status" class="network-status" role="status" aria-live="polite" hidden></div>
 <div id="modal-root"></div>
 <nav id="bottom-nav" class="bottom-nav hide" aria-label="ניווט תחתון"></nav>
+<div id="storage-notice" class="storage-notice" role="status" hidden>
+  <p>האתר לא משתמש בעוגיות מעקב או פרסום. חלק מהמידע — כמו מועדפים והתחברות — נשמר במכשיר שלך בלבד, כדי שהשירות יעבוד. <a href="privacy.html" target="_blank" rel="noopener">מדיניות פרטיות</a></p>
+  <button type="button" id="storage-notice-ok" class="cd-btn cd-btn--outline">הבנתי</button>
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.5/firebase-auth-compat.js"></script>
@@ -76,5 +80,6 @@
 <script src="js/tawk.js?v=118"></script>
 <script type="module" src="js/app.js?v=118"></script>
 <script src="js/sw-register.js?v=118"></script>
+<script src="js/storage-notice.js"></script>
 </body>
 </html>

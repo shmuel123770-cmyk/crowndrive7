@@ -2937,3 +2937,18 @@ body[data-page="chats"] #update-bar{bottom:calc(12px + env(safe-area-inset-botto
   .cd-btn:active{transform:none}
   .cd-sheet,.cd-toast{transition:opacity var(--dur-fast) ease}
 }
+
+/* Storage/cookie-transparency notice (index.html #storage-notice). Bottom bar, same dark surface as
+   the top bar so it reads as system-level chrome rather than page content. Shown at most once per
+   browser — see js/storage-notice.js. */
+.storage-notice{position:fixed;inset-inline:0;bottom:0;z-index:70;display:flex;align-items:center;gap:var(--space-4);
+  padding:var(--space-4) max(var(--space-4),env(safe-area-inset-left)) calc(var(--space-4) + env(safe-area-inset-bottom)) max(var(--space-4),env(safe-area-inset-right));
+  background:var(--dark);color:#fff;box-shadow:var(--shadow-2);
+  transform:translateY(100%);opacity:0;transition:transform var(--dur-base) var(--ease-out),opacity var(--dur-base) var(--ease-out)}
+.storage-notice.is-shown{transform:none;opacity:1}
+.storage-notice.is-leaving{transition-duration:var(--dur-fast)}
+.storage-notice p{margin:0;flex:1;font-size:.82rem;line-height:1.5;color:rgba(255,255,255,.88)}
+.storage-notice p a{color:#fff;font-weight:700}
+.storage-notice .cd-btn{flex:0 0 auto;min-height:40px;padding:0 var(--space-4);font-size:.82rem;background:transparent;border-color:rgba(255,255,255,.35);color:#fff}
+@media (hover:hover) and (pointer:fine){.storage-notice .cd-btn:hover{border-color:#fff}}
+@media (max-width:480px){.storage-notice{flex-direction:column;align-items:stretch;text-align:start}.storage-notice .cd-btn{width:100%}}
