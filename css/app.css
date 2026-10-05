@@ -394,7 +394,7 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
 .auth-head .role-pill{background:rgba(63,107,142,.12);color:var(--brand-d)}
 .role-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .role-card{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:26px 20px;
-  background:var(--bg2);border:1.5px solid transparent;border-radius:var(--radius-xl);transition:all .2s}
+  background:var(--bg2);border:1.5px solid transparent;border-radius:var(--radius-xl);transition:background-color .2s ease,border-color .2s ease,box-shadow .2s ease,transform .2s var(--ease-out)}
 .role-card:hover{border-color:var(--brand);background:var(--surface);box-shadow:0 10px 30px rgba(0,0,0,.08);transform:translateY(-2px)}
 .role-card b{font-size:1rem;font-weight:600}
 .role-card small{color:var(--muted);line-height:1.5;font-weight:300}
@@ -402,7 +402,7 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
 .link-back{border:0;background:transparent;color:var(--muted);font-size:.8rem;letter-spacing:.05em;padding:0 0 14px;cursor:pointer}
 .link-back:hover{color:var(--brand-d)}
 .tabs{display:flex;background:var(--bg2);border-radius:var(--radius-pill);padding:4px;margin-bottom:22px;border:none;gap:2px}
-.tabs .tab{flex:1;border:none;background:transparent;color:var(--muted);font-weight:500;font-size:.88rem;padding:10px;border-radius:var(--radius-pill);transition:all .2s}
+.tabs .tab{flex:1;border:none;background:transparent;color:var(--muted);font-weight:500;font-size:.88rem;padding:10px;border-radius:var(--radius-pill);transition:background-color .2s ease,color .2s ease}
 .tabs .tab.active{background:#232A33;color:#fff;font-weight:600}
 
 /* ---------- dashboard ---------- */
@@ -419,7 +419,7 @@ main{width:min(1200px,94vw);margin:0 auto 80px;outline:none}
 .dash-head-actions{display:flex;gap:10px;flex-wrap:wrap}
 .dash-head-actions .btn{flex:1;min-width:150px;white-space:nowrap}
 .dashboard-tabs{display:flex;gap:6px;background:rgba(255,255,255,.6);backdrop-filter:saturate(1.4) blur(14px);-webkit-backdrop-filter:saturate(1.4) blur(14px);padding:10px 14px;border:1px solid rgba(255,255,255,.65);border-radius:var(--radius-xl);overflow-x:auto;box-shadow:0 8px 24px rgba(12,20,32,.07)}
-.dashboard-tabs .tab{border:none;background:transparent;color:var(--muted);font-weight:500;font-size:.88rem;padding:12px 18px;border-radius:var(--radius-md);white-space:nowrap;transition:all .2s}
+.dashboard-tabs .tab{border:none;background:transparent;color:var(--muted);font-weight:500;font-size:.88rem;padding:12px 18px;border-radius:var(--radius-md);white-space:nowrap;transition:background-color .2s ease,color .2s ease}
 .dashboard-tabs .tab.active{background:var(--dark);color:#fff;font-weight:600}
 .nav-footer{display:none}
 .dashboard-panel{padding:26px;min-height:470px;animation:tabIn .35s var(--ease)}
@@ -449,7 +449,7 @@ table.data tr:last-child td{border-bottom:0}
 table.data tbody tr:hover{background:rgba(63,107,142,.03)}
 table.data .t-main{font-weight:600}
 table.data .t-actions{display:flex;gap:8px;justify-content:flex-start;flex-wrap:wrap}
-.icon-btn{border:1px solid var(--line);background:var(--surface);border-radius:var(--radius-pill);width:36px;height:36px;display:grid;place-items:center;cursor:pointer;color:var(--muted);transition:all .18s}
+.icon-btn{border:1px solid var(--line);background:var(--surface);border-radius:var(--radius-pill);width:36px;height:36px;display:grid;place-items:center;cursor:pointer;color:var(--muted);transition:border-color .18s ease,color .18s ease}
 .icon-btn:hover{border-color:var(--text);color:var(--text)}
 .icon-btn.danger{color:var(--danger);border-color:rgba(215,0,21,.3)}
 .icon-btn.danger:hover{background:var(--danger-bg)}
@@ -732,7 +732,7 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
 .wizard-step p{margin:0 0 20px;color:var(--muted)}
 .wizard-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .wizard-btn{display:grid;gap:6px;place-items:center;padding:22px 12px;font-size:1.6rem;cursor:pointer;
-  background:var(--bg2);border:1.5px solid transparent;border-radius:var(--radius);transition:all .2s}
+  background:var(--bg2);border:1.5px solid transparent;border-radius:var(--radius);transition:background-color .2s ease,border-color .2s ease,transform .2s var(--ease-out)}
 .wizard-btn b{font-size:.9rem}
 .wizard-btn:hover{border-color:var(--brand);background:var(--surface);transform:translateY(-2px)}
 .wizard-note{min-height:1.2em;margin:12px 0 0;font-size:.82rem}
@@ -878,7 +878,7 @@ main>*:not(.reveal){animation:fadeUp .45s var(--ease) both}
 .chat-composer input{flex:1;border:1px solid var(--line);border-radius:var(--radius-pill);padding:10px 16px;background:var(--surface)}
 .chat-composer input:focus{outline:none;border-color:var(--brand)}
 .chat-composer .btn{border-radius:var(--radius-pill);padding:10px 22px}
-.chat-attach{display:grid;place-items:center;width:42px;min-width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--surface);cursor:pointer;color:var(--brand-d);transition:all .18s}
+.chat-attach{display:grid;place-items:center;width:42px;min-width:42px;height:42px;border-radius:50%;border:1px solid var(--line);background:var(--surface);cursor:pointer;color:var(--brand-d);transition:border-color .18s ease,background-color .18s ease}
 .chat-attach svg{width:20px;height:20px}
 .chat-attach:hover{border-color:var(--brand);background:var(--bg2)}
 .msg-img{display:block;margin-top:7px;max-width:230px;width:100%;border-radius:var(--radius-md);cursor:pointer}
@@ -1226,9 +1226,9 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 .nav-link.active{color:#E9C46A;font-weight:700}
 .nav-link.active::after{content:"";position:absolute;bottom:-4px;inset-inline:2px;height:2px;border-radius:2px;background:#E9C46A}
 .nav-actions{display:flex;gap:10px;align-items:center}
-.dark-pill{background:#11151B;border:1px solid rgba(255,255,255,.16);color:#fff;border-radius:var(--radius-pill);padding:12px 26px;font-weight:700;font-size:.92rem;cursor:pointer;transition:all .2s}
+.dark-pill{background:#11151B;border:1px solid rgba(255,255,255,.16);color:#fff;border-radius:var(--radius-pill);padding:12px 26px;font-weight:700;font-size:.92rem;cursor:pointer;transition:border-color .2s ease,transform .2s var(--ease-out)}
 .dark-pill:hover{border-color:rgba(255,255,255,.4);transform:translateY(-1px)}
-.gold-pill{background:#E9C46A;border:none;color:#241C05;border-radius:var(--radius-pill);padding:12px 22px;font-weight:800;font-size:.92rem;cursor:pointer;box-shadow:0 6px 18px rgba(233,196,106,.3);transition:all .2s}
+.gold-pill{background:#E9C46A;border:none;color:#241C05;border-radius:var(--radius-pill);padding:12px 22px;font-weight:800;font-size:.92rem;cursor:pointer;box-shadow:0 6px 18px rgba(233,196,106,.3);transition:background-color .2s ease,transform .2s var(--ease-out)}
 .gold-pill:hover{background:#F0D084;transform:translateY(-1px)}
 @media(max-width:900px){
   .nav-links{display:none}
@@ -1293,6 +1293,20 @@ body[data-page="dashboard"] .fab{box-shadow:inset 0 1px 0 rgba(255,255,255,.35),
 }
 @media (update: slow), (max-width:380px){
   .topbar,.dashboard-tabs,.chat-composer,.chat-list{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+}
+/* Users who've asked the OS for LESS transparency (a real accessibility setting, not a device-speed
+   guess like the rule above): every glass surface on the site goes flat. Blanket rule first — mirrors
+   the reduced-motion block above — then solid backgrounds for the handful of structural, persistent
+   surfaces where "translucent but unblurred" would still be hard to read (everything else here is a
+   small badge/chip where its existing background colour alone is already enough once blur drops). */
+@media (prefers-reduced-transparency:reduce){
+  *{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  .topbar{background:var(--dark)}
+  .modal-backdrop{background:rgba(5,5,7,.94)}
+  .modal-head{background:var(--surface)}
+  #toast{background:#181A1E}
+  .dashboard-tabs{background:var(--surface)}
+  .nav-btn.pill{background:rgba(255,255,255,.18)}
 }
 
 /* ---------- data tables become CARDS on mobile (no cramped horizontal table) ---------- */
@@ -2219,7 +2233,7 @@ body[data-page="dashboard"] .dashboard-tabs .tab-group-label:first-child{border-
 /* Filter head: הכל / לא נקראו + סמן הכל כנקרא */
 .chat-filter{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px 4px;flex-wrap:wrap}
 .chat-filter-chips{display:flex;gap:6px}
-.chat-fchip{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:var(--radius-pill);padding:6px 14px;font-size:.8rem;font-weight:700;cursor:pointer;transition:all .15s}
+.chat-fchip{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:var(--radius-pill);padding:6px 14px;font-size:.8rem;font-weight:700;cursor:pointer;transition:background-color .15s ease,border-color .15s ease,color .15s ease}
 .chat-fchip.on{background:var(--brand);border-color:var(--brand);color:#fff}
 .chat-markall{background:none;border:none;color:var(--brand-d);font-size:.78rem;font-weight:700;cursor:pointer;padding:4px 6px}
 .chat-markall:hover{text-decoration:underline}
